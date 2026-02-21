@@ -1,0 +1,35 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import dbConnect from "@/lib/mongodb"
+import Course from "@/lib/models/course"
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await dbConnect()
+
+    const course = await Course.findById(params.id)
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 })
+    }
+
+    // Check if already enrolled
+    if (course.enrolledStudents.includes(session.user.id)) {
+      return NextResponse.json({ error: "Already enrolled" }, { status: 400 })
+    }
+
+    // Add student to course
+    course.enrolledStudents.push(session.user.id)
+    await course.save()
+
+    return NextResponse.json({ success: true, course })
+  } catch (error) {
+    console.error("Enroll error:", error)
+    return NextResponse.json({ error: "Failed to enroll" }, { status: 500 })
+  }
+}

@@ -1,0 +1,80 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { connectDB } from "@/lib/mongodb"
+import { Favorite } from "@/lib/models/favorite"
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectDB()
+
+    const { searchParams } = new URL(request.url)
+    const itemType = searchParams.get("itemType")
+
+    const query: any = { userId: (session.user as any).id }
+    if (itemType) query.itemType = itemType
+
+    const favorites = await Favorite.find(query).sort({ createdAt: -1 })
+
+    return NextResponse.json(favorites)
+  } catch (error) {
+    console.error("Error fetching favorites:", error)
+    return NextResponse.json({ error: "Failed to fetch favorites" }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectDB()
+
+    const { itemType, itemId } = await request.json()
+
+    const favorite = await Favorite.create({
+      userId: (session.user as any).id,
+      itemType,
+      itemId,
+    })
+
+    return NextResponse.json(favorite, { status: 201 })
+  } catch (error: any) {
+    if (error.code === 11000) {
+      return NextResponse.json({ error: "Already in favorites" }, { status: 400 })
+    }
+    console.error("Error adding favorite:", error)
+    return NextResponse.json({ error: "Failed to add favorite" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectDB()
+
+    const { searchParams } = new URL(request.url)
+    const itemId = searchParams.get("itemId")
+
+    await Favorite.deleteOne({
+      userId: (session.user as any).id,
+      itemId,
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Error removing favorite:", error)
+    return NextResponse.json({ error: "Failed to remove favorite" }, { status: 500 })
+  }
+}
