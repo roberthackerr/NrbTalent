@@ -17,9 +17,9 @@ interface SettingsSidebarProps {
 
 export function SettingsSidebar({ activeTab, onTabChange, tabs }: SettingsSidebarProps) {
   return (
-    <div className="hidden lg:block w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div className=" hidden lg:block w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="p-6">
-        <h2 className="text-lg font-semibold mb-6 text-slate-900 dark:text-slate-100">
+        <h2 className="sticky text-lg font-semibold mb-6 text-slate-900 dark:text-slate-100">
           Paramètres
         </h2>
         <nav className="space-y-2">

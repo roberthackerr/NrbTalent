@@ -1,4 +1,5 @@
 // types/chat.ts - FIXED VERSION
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'error'
 export interface User {
   _id: string
   name: string
@@ -44,7 +45,7 @@ export interface Message {
   updatedAt?: string
   isAIMessage?: boolean // Made optional for backward compatibility
   type?: 'text' | 'image' | 'file' | 'system'
-  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'error'
+  status?: MessageStatus
   readAt?: string
   readBy?: string[] // For group messages
   tempId?: string // For optimistic updates
@@ -55,7 +56,6 @@ export interface Message {
     role: 'ai_assistant'
   }
 }
-
 export interface MessagePreferences {
   // 🔔 Notifications
   soundEnabled: boolean
@@ -251,7 +251,7 @@ export const createEmptyConversation = (overrides: Partial<Conversation> = {}): 
 
 // 🔥 UTILITY TYPES FOR BETTER DEVELOPER EXPERIENCE
 
-export type MessageStatus = Message['status']
+
 export type MessageType = Message['type']
 export type ConversationType = Conversation['type']
 export type UserRole = User['role']

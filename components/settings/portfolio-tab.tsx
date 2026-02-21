@@ -1,16 +1,11 @@
+// components/settings/portfolio-tab.tsx
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Briefcase, Plus, X, Edit, ExternalLink, Star, Calendar, Building } from "lucide-react"
+import { Briefcase, Building } from "lucide-react"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 import { ExperienceSection } from "./experience-section"
 import { PortfolioSection } from "./portfolio-section"
 
@@ -27,6 +22,7 @@ interface PortfolioItem {
   technologies: string[]
   category: string
   featured: boolean
+  createdAt?: Date
 }
 
 interface Experience {
@@ -38,6 +34,7 @@ interface Experience {
   current: boolean
   description: string
   technologies: string[]
+  achievement: string
 }
 
 export function PortfolioTab({ user }: PortfolioTabProps) {
@@ -46,26 +43,67 @@ export function PortfolioTab({ user }: PortfolioTabProps) {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
   const [experiences, setExperiences] = useState<Experience[]>([])
 
+  // Charger les données initiales
   useEffect(() => {
     fetchData()
   }, [])
 
   const fetchData = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/users/profile')
-      if (response.ok) {
-        const userData = await response.json()
-        setPortfolioItems(userData.portfolio || [])
-        setExperiences(userData.experience || [])
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile data')
       }
+      
+      const userData = await response.json()
+      console.log('Données reçues:', userData) // Debug
+      
+      // Traiter le portfolio
+      const portfolioData = userData.portfolio || []
+      console.log('Portfolio brut:', portfolioData) // Debug
+      
+      const sortedPortfolio = [...portfolioData].sort((a: PortfolioItem, b: PortfolioItem) => {
+        // Featured d'abord
+        if (a.featured && !b.featured) return -1
+        if (!a.featured && b.featured) return 1
+        
+        // Ensuite par date (plus ancien d'abord)
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return dateA - dateB
+      })
+      
+      console.log('Portfolio trié:', sortedPortfolio) // Debug
+      setPortfolioItems(sortedPortfolio)
+      
+      // Traiter les expériences
+      const experienceData = userData.experience || []
+      
+      const sortedExperiences = [...experienceData].sort((a: Experience, b: Experience) => {
+        // Postes actuels d'abord
+        if (a.current && !b.current) return -1
+        if (!a.current && b.current) return 1
+        
+        // Ensuite par date de début (plus récent d'abord)
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      })
+      
+      setExperiences(sortedExperiences)
+      
     } catch (error) {
       console.error('Error fetching data:', error)
       toast.error("Erreur lors du chargement des données")
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Implémentation similaire pour portfolio et expériences...
-  // (Le code serait très similaire à l'onglet compétences)
+  const handleUpdate = async () => {
+    console.log('Rafraîchissement des données...') // Debug
+    await fetchData()
+  }
 
   return (
     <div className="space-y-6">
@@ -79,7 +117,7 @@ export function PortfolioTab({ user }: PortfolioTabProps) {
               className="flex-1"
             >
               <Briefcase className="h-4 w-4 mr-2" />
-              Portfolio
+              Portfolio ({portfolioItems.length})
             </Button>
             <Button
               variant={activeSection === "experience" ? "default" : "outline"}
@@ -87,30 +125,28 @@ export function PortfolioTab({ user }: PortfolioTabProps) {
               className="flex-1"
             >
               <Building className="h-4 w-4 mr-2" />
-              Expériences
+              Expériences ({experiences.length})
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Contenu dynamique selon la section active */}
+      {/* Contenu dynamique */}
       {activeSection === "portfolio" && (
-        <PortfolioSection 
+        <PortfolioSection
           items={portfolioItems}
-          onUpdate={fetchData}
+          onUpdate={handleUpdate}
           loading={loading}
         />
       )}
 
       {activeSection === "experience" && (
-        <ExperienceSection 
+        <ExperienceSection
           experiences={experiences}
-          onUpdate={fetchData}
+          onUpdate={handleUpdate}
           loading={loading}
         />
       )}
     </div>
   )
 }
-
-// Composants enfants pour chaque section...

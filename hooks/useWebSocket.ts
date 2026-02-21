@@ -430,3 +430,168 @@ export const useWebSocketManager = (onMessage: (message: WebSocketMessage) => vo
     wsRef
   }
 }
+
+type WebSocketOptions = {
+  onOpen?: (event: Event) => void;
+  onClose?: (event: CloseEvent) => void;
+  onError?: (event: Event) => void;
+  onMessage?: (message: WebSocketMessage) => void;
+  reconnectAttempts?: number;
+  reconnectInterval?: number;
+  autoConnect?: boolean;
+};
+
+export function useWebSocket(
+  url: string | (() => string),
+  options: WebSocketOptions = {}
+) {
+  const {
+    onOpen,
+    onClose,
+    onError,
+    onMessage,
+    reconnectAttempts = 5,
+    reconnectInterval = 3000,
+    autoConnect = true,
+  } = options;
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectCountRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState<MessageEvent | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const connect = useCallback(() => {
+    try {
+      const wsUrl = typeof url === 'function' ? url() : url;
+      
+      // Nettoyer la connexion existante
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+
+      // Créer la nouvelle connexion
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = (event) => {
+        console.log('WebSocket connecté');
+        setIsConnected(true);
+        setError(null);
+        reconnectCountRef.current = 0;
+        onOpen?.(event);
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket déconnecté', event.code, event.reason);
+        setIsConnected(false);
+        onClose?.(event);
+
+        // Tentative de reconnexion
+        if (reconnectCountRef.current < reconnectAttempts) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectCountRef.current += 1;
+            console.log(`Tentative de reconnexion ${reconnectCountRef.current}/${reconnectAttempts}`);
+            connect();
+          }, reconnectInterval);
+        }
+      };
+
+      ws.onerror = (event) => {
+        console.error('WebSocket erreur:', event);
+        setError('Erreur de connexion WebSocket');
+        onError?.(event);
+      };
+
+      ws.onmessage = (event) => {
+        setLastMessage(event);
+        try {
+          const message = JSON.parse(event.data);
+          onMessage?.(message);
+        } catch (err) {
+          console.error('Erreur parsing message:', err);
+        }
+      };
+    } catch (err) {
+      console.error('Erreur création WebSocket:', err);
+      setError('Impossible de créer la connexion WebSocket');
+    }
+  }, [url, onOpen, onClose, onError, onMessage, reconnectAttempts, reconnectInterval]);
+
+  const disconnect = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    setIsConnected(false);
+  }, []);
+
+  const sendMessage = useCallback((message: WebSocketMessage) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const messageWithTimestamp = {
+        ...message,
+        timestamp: Date.now(),
+      };
+      wsRef.current.send(JSON.stringify(messageWithTimestamp));
+      return true;
+    }
+    console.warn('WebSocket non connecté, impossible d\'envoyer le message');
+    return false;
+  }, []);
+
+  // Auto-connect on mount
+  useEffect(() => {
+    if (autoConnect) {
+      connect();
+    }
+
+    return () => {
+      disconnect();
+    };
+  }, [connect, disconnect, autoConnect]);
+
+  // Reconnect on URL change
+  useEffect(() => {
+    if (autoConnect) {
+      const wsUrl = typeof url === 'function' ? url() : url;
+      if (wsRef.current?.url !== wsUrl) {
+        connect();
+      }
+    }
+  }, [url, autoConnect, connect]);
+
+  return {
+    isConnected,
+    lastMessage,
+    error,
+    sendMessage,
+    connect,
+    disconnect,
+    reconnectCount: reconnectCountRef.current,
+  };
+}
+
+// Hook spécifique pour le whiteboard
+export function useWhiteboardWebSocket(projectId: string, userId: string) {
+  const getWebSocketUrl = useCallback(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    return `${protocol}//${host}/api/ws/whiteboard?projectId=${projectId}&userId=${userId}`;
+  }, [projectId, userId]);
+
+  const { sendMessage, lastMessage, isConnected, error } = useWebSocket(getWebSocketUrl, {
+    reconnectAttempts: 10,
+    reconnectInterval: 2000,
+  });
+
+  return {
+    sendMessage,
+    lastMessage,
+    isConnected,
+    error,
+  };
+}

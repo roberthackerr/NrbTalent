@@ -85,7 +85,7 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
       </div>
 
       {/* Grid des services */}
-     <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-3">
+     <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-2">
         {gigs.map((gig) => (
           <GigCard key={gig._id} gig={gig} />
         ))}

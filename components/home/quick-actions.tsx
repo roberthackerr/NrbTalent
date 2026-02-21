@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Rocket, Plus, Search, TrendingUp, Users, Sparkles } from "lucide-react"
+import Link from "next/link"
 
 interface QuickActionsProps {
   user: any
@@ -13,7 +14,7 @@ const freelanceActions = [
     title: "Publier un service",
     description: "Créez votre gig et commencez à recevoir des demandes",
     icon: Plus,
-    action: "/dashboard/gigs/create",
+    action: "/gigs/create",
     color: "bg-gradient-to-r from-blue-500 to-purple-600"
   },
   {
@@ -27,7 +28,7 @@ const freelanceActions = [
     title: "Optimiser mon profil",
     description: "Améliorez votre visibilité avec notre IA",
     icon: Sparkles,
-    action: "/dashboard/profile",
+    action: "/dashboard/settings",
     color: "bg-gradient-to-r from-orange-500 to-red-600"
   }
 ]
@@ -118,8 +119,10 @@ export function QuickActions({ user }: QuickActionsProps) {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
-                      Commencer
+                    <Button asChild className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
+                      <Link href={action.action}>
+                        Commencer
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>

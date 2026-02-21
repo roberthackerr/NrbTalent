@@ -1,0 +1,308 @@
+import type { NextAuthOptions, Session, User } from "next-auth"
+import type { JWT } from "next-auth/jwt"
+// 🔴 IMPORT MANQUANT - À AJOUTER
+import { getServerSession } from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
+import { getDatabase } from "./mongodb"
+import bcrypt from "bcryptjs"
+import type { User as MongoUser } from "./models/user"
+import { ObjectId } from "mongodb"
+
+// Extend types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      name?: string | null
+      email?: string | null
+      image?: string | null
+      role?: string
+      onboardingCompleted?: boolean
+    }
+  }
+  
+  interface User {
+    id: string
+    role?: string
+    onboardingCompleted?: boolean
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string
+    role?: string
+    onboardingCompleted?: boolean
+  }
+}
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        }
+      }
+    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        name: { label: "Name", type: "text", optional: true },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text", optional: true },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("Email and password required")
+          }
+
+          const db = await getDatabase()
+          
+          const user = await db.collection<MongoUser>("users").findOne({
+            email: credentials.email,
+          })
+
+          // SIGN UP
+          if (credentials.name) {
+            if (user) {
+              throw new Error("Email already exists")
+            }
+
+            const hashedPassword = await bcrypt.hash(credentials.password, 10)
+            
+            const newUser: MongoUser = {
+              _id: new ObjectId(),
+              name: credentials.name,
+              email: credentials.email,
+              password: hashedPassword,
+              role: credentials.role || "freelance",
+              avatar: "",
+              bio: "",
+              skills: [],
+              hourlyRate: 0,
+              location: "",
+              languages: [],
+              portfolio: [],
+              certifications: [],
+              badges: [],
+              rating: 0,
+              completedProjects: 0,
+              totalEarnings: 0,
+              responseTime: 0,
+              availability: "available",
+              verified: false,
+              onboardingCompleted: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+
+            await db.collection<MongoUser>("users").insertOne(newUser)
+
+            return {
+              id: newUser._id.toString(),
+              email: newUser.email,
+              name: newUser.name,
+              role: newUser.role,
+              onboardingCompleted: newUser.onboardingCompleted,
+            }
+          }
+
+          // LOGIN
+          if (!user) {
+            throw new Error("No user found with this email")
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.password)
+
+          if (!isValid) {
+            throw new Error("Invalid password")
+          }
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            avatar: user.avatar,
+            onboardingCompleted: user.onboardingCompleted,
+          }
+        } catch (error) {
+          console.error("Authorize error:", error)
+          return null
+        }
+      },
+    }),
+  ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      try {
+        if (account?.provider === "google") {
+          const db = await getDatabase()
+          
+          const existingUser = await db.collection<MongoUser>("users").findOne({
+            email: user.email!,
+          })
+
+          if (!existingUser) {
+            await db.collection<MongoUser>("users").insertOne({
+              _id: new ObjectId(),
+              name: user.name!,
+              email: user.email!,
+              password: "",
+              role: "freelance",
+              avatar: user.image || "",
+              bio: "",
+              skills: [],
+              hourlyRate: 0,
+              location: "",
+              languages: [],
+              portfolio: [],
+              certifications: [],
+              badges: [],
+              rating: 0,
+              completedProjects: 0,
+              totalEarnings: 0,
+              responseTime: 0,
+              availability: "available",
+              verified: false,
+              onboardingCompleted: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+          }
+        }
+        return true
+      } catch (error) {
+        console.error("SignIn callback error:", error)
+        return false
+      }
+    },
+    
+    async jwt({ token, user, trigger, session }) {
+      if (user) {
+        const db = await getDatabase()
+        const dbUser = await db.collection<MongoUser>("users").findOne({
+          email: user.email!,
+        })
+
+        if (dbUser) {
+          token.id = dbUser._id.toString()
+          token.role = dbUser.role
+          token.onboardingCompleted = dbUser.onboardingCompleted ?? false
+          token.email = dbUser.email
+          token.name = dbUser.name
+        }
+      }
+
+      if (trigger === "update" && session) {
+        if (session.role) token.role = session.role
+        if (session.onboardingCompleted !== undefined) {
+          token.onboardingCompleted = session.onboardingCompleted
+        }
+        
+        if (token.email) {
+          const db = await getDatabase()
+          const dbUser = await db.collection<MongoUser>("users").findOne({
+            email: token.email,
+          })
+          
+          if (dbUser) {
+            token.id = dbUser._id.toString()
+            token.role = dbUser.role
+            token.onboardingCompleted = dbUser.onboardingCompleted ?? false
+          }
+        }
+      }
+
+      return token
+    },
+    
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id
+        session.user.role = token.role
+        session.user.onboardingCompleted = token.onboardingCompleted
+        session.user.email = token.email
+        session.user.name = token.name
+      }
+      return session
+    },
+
+    // ✅ AJOUT OBLIGATOIRE - Callback de redirection
+    async redirect({ url, baseUrl }) {
+      // Permet les redirections relatives
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`
+      }
+      // Permet les URLs de callback
+      else if (url.startsWith(baseUrl)) {
+        return url
+      }
+      return baseUrl
+    }
+  },
+  pages: {
+    signIn: "/auth/signin",
+    signUp: "/auth/signup",
+    error: "/auth/error",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  // ✅ AJOUT POUR VERCEL
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      }
+    }
+  },
+  trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
+}
+
+// ✅ CORRECTION - Ajout de try/catch
+export async function getCurrentUser() {
+  try {
+    const session = await getServerSession(authOptions)
+    return session?.user || null
+  } catch (error) {
+    console.error("Error getting current user:", error)
+    return null
+  }
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const user = await getCurrentUser()
+    return user?.id || null
+  } catch (error) {
+    console.error("Error getting current user ID:", error)
+    return null
+  }
+}

@@ -1,8 +1,10 @@
+
+// Et voici le code complet mis à jour pour votre navigation :
 "use client"
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, Sparkles, Rocket, Users, Zap, Settings, MessageCircle, User, LayoutDashboard, LogOut } from "lucide-react"
+import { Menu, X, Sparkles, Rocket, Users, Zap, Settings, MessageCircle, User, LayoutDashboard, LogOut, Building } from "lucide-react"
 import { useState, useEffect } from "react"
 import { UserMenu } from "@/components/user-menu"
 import { SearchCommand } from "@/components/search-command"
@@ -52,9 +54,15 @@ export function Navigation() {
       description: "Opportunités freelance"
     },
     {
+      href: "/ai-matching",
+      label: "AI Matching",
+      icon: <Sparkles className="h-4 w-4" />,
+      description: "Match parfait IA"
+    },
+    {
       href: "/enterprise",
       label: "Entreprise",
-      icon: <Sparkles className="h-4 w-4" />,
+      icon: <Building className="h-4 w-4" />,
       description: "Solutions sur mesure"
     }
   ]
@@ -82,8 +90,8 @@ export function Navigation() {
               <Image 
                 src="/logo.png" 
                 alt="NRBTalents" 
-                width={32} 
-                height={32} 
+                width={16} 
+                height={16} 
                 className="h-8 w-8 transition-transform group-hover:scale-110" 
               />
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity" />

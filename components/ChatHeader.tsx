@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Video, Phone, MoreVertical, Wifi, WifiOff, Settings } from "lucide-react"
+import { RefreshCw, Video, Phone, MoreVertical, Wifi, WifiOff, Settings, Radio } from "lucide-react"
 import { Conversation } from "@/types/chat"
 import { useState, useEffect } from "react"
 
@@ -10,6 +10,11 @@ interface ChatHeaderProps {
   onRefresh: () => void
   isConnected: boolean
   onOpenSettings: () => void // 🔥 NOUVEAU : Callback pour ouvrir les paramètres
+  onStartVideoCall?: () => void
+  onStartVoiceCall?: () => void
+  onEndCall?: () => void
+  callStatus?: "idle" | "connecting" | "connected"
+  callRemoteCount?: number
 }
 
 export const ChatHeader=({ 
@@ -17,7 +22,12 @@ export const ChatHeader=({
   otherParticipant, 
   onRefresh, 
   isConnected,
-  onOpenSettings // 🔥 NOUVEAU
+  onOpenSettings, // 🔥 NOUVEAU
+  onStartVideoCall,
+  onStartVoiceCall,
+  onEndCall,
+  callStatus = "idle",
+  callRemoteCount = 0
 }: ChatHeaderProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
@@ -169,6 +179,15 @@ export const ChatHeader=({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          {callStatus !== "idle" && (
+            <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+              callStatus === "connected" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-800"
+            }`}>
+              <Radio className={`h-3.5 w-3.5 ${callStatus === "connected" ? "text-green-600" : "text-yellow-600"}`} />
+              <span>{callStatus === "connected" ? "En appel" : "Connexion…"}</span>
+              {callRemoteCount > 0 && <span className="text-slate-500">• {callRemoteCount} distant(s)</span>}
+            </div>
+          )}
           {/* 🔥 Bouton de rafraîchissement amélioré */}
           <Button 
             variant="ghost" 
@@ -189,11 +208,19 @@ export const ChatHeader=({
           <Button 
             variant="ghost" 
             size="icon"
-            disabled={!isConnected || !otherParticipant?.isOnline}
+            type="button"
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              console.log("header video mousedown")
+              onStartVideoCall?.()
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              console.log("header video click")
+              onStartVideoCall?.()
+            }}
             title={
-              !isConnected ? "Connexion requise" :
-              !otherParticipant?.isOnline ? "Utilisateur hors ligne" :
-              "Appel vidéo"
+              isConnected ? "Appel vidéo" : "Ouvrir l'appel (connexion recommandée)"
             }
             className="h-10 w-10 rounded-full text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors disabled:opacity-30"
           >
@@ -203,16 +230,33 @@ export const ChatHeader=({
           <Button 
             variant="ghost" 
             size="icon"
-            disabled={!isConnected || !otherParticipant?.isOnline}
-            title={
-              !isConnected ? "Connexion requise" :
-              !otherParticipant?.isOnline ? "Utilisateur hors ligne" :
-              "Appel vocal"
-            }
+            type="button"
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              console.log("header voice mousedown")
+              onStartVoiceCall?.()
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              console.log("header voice click")
+              onStartVoiceCall?.()
+            }}
+            title={isConnected ? "Appel vocal" : "Ouvrir l'appel (connexion recommandée)"}
             className="h-10 w-10 rounded-full text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors disabled:opacity-30"
           >
             <Phone className="h-5 w-5" />
           </Button>
+          
+          {callStatus === "connected" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEndCall?.()}
+              className="rounded-full bg-red-50 text-red-700 hover:bg-red-100 px-4 py-2 text-xs font-semibold"
+            >
+              Raccrocher
+            </Button>
+          )}
           
           {/* 🔥 Menu options avec dropdown */}
           <div className="relative">

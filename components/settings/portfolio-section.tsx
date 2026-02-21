@@ -1,3 +1,4 @@
+// components/settings/portfolio-section.tsx
 "use client"
 
 import { useState } from "react"
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Image, Plus, Edit, Trash2, ExternalLink, Star, X, FolderOpen } from "lucide-react"
+import { Image, Plus, Edit, Trash2, ExternalLink, Star, X, FolderOpen, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +23,7 @@ interface PortfolioItem {
   technologies: string[]
   category: string
   featured: boolean
+  createdAt?: Date
 }
 
 interface PortfolioSectionProps {
@@ -55,6 +57,8 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
   })
   const [newTechnology, setNewTechnology] = useState("")
   const [imagePreview, setImagePreview] = useState("")
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const resetForm = () => {
     setFormData({
@@ -68,6 +72,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
     })
     setNewTechnology("")
     setImagePreview("")
+    setImageFile(null)
     setEditingItem(null)
   }
 
@@ -87,6 +92,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
       featured: item.featured
     })
     setImagePreview(item.image)
+    setImageFile(null)
     setEditingItem(item)
     setIsDialogOpen(true)
   }
@@ -109,121 +115,143 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error("Veuillez sélectionner une image valide")
-        return
-      }
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("L'image doit faire moins de 5MB")
-        return
-      }
-
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-        setFormData(prev => ({ ...prev, image: e.target?.result as string }))
-      }
-      reader.readAsDataURL(file)
+    const file = files[0]
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error("Veuillez sélectionner une image valide")
+      return
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("L'image doit faire moins de 5MB")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+
+    setImageFile(file)
+  }
+
+  const uploadImage = async (file: File, portfolioId?: string): Promise<string> => {
+    const uploadFormData = new FormData()
+    uploadFormData.append("image", file)
+    
+    if (portfolioId) {
+      uploadFormData.append("portfolioId", portfolioId)
+    }
+
+    const response = await fetch('/api/users/upload-portfolio-image', {
+      method: 'POST',
+      body: uploadFormData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Échec de l\'upload de l\'image')
+    }
+
+    const data = await response.json()
+    return data.imageUrl
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!formData.title || !formData.description || !formData.image || !formData.category) {
+
+    if (!formData.title || !formData.description || !formData.category) {
       toast.error("Veuillez remplir les champs obligatoires")
       return
     }
 
+    if (editingItem && !imageFile && !formData.image) {
+      toast.error("Une image est requise")
+      return
+    }
+
+    if (!editingItem && !imageFile) {
+      toast.error("Veuillez sélectionner une image")
+      return
+    }
+
+    setUploading(true)
+
     try {
+      let finalImageUrl = formData.image
+
+      if (imageFile) {
+        finalImageUrl = await uploadImage(imageFile, editingItem?.id)
+      }
+
+      const portfolioData = {
+        title: formData.title,
+        description: formData.description,
+        image: finalImageUrl,
+        url: formData.url || undefined,
+        technologies: formData.technologies,
+        category: formData.category,
+        featured: formData.featured,
+        id: editingItem ? editingItem.id : Date.now().toString()
+      }
+
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           section: 'portfolio',
-          data: editingItem 
-            ? { ...formData, id: editingItem.id }
-            : { ...formData, id: Date.now().toString() }
+          data: portfolioData
         })
       })
 
-      if (response.ok) {
-        toast.success(editingItem ? "Projet mis à jour!" : "Projet ajouté!")
-        setIsDialogOpen(false)
-        resetForm()
-        onUpdate()
-      } else {
+      if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to save portfolio item')
       }
+
+      const message = editingItem ? "Projet mis à jour!" : "Projet ajouté avec succès!"
+      toast.success(message)
+      
+      setIsDialogOpen(false)
+      resetForm()
+      
+      await onUpdate()
+
     } catch (error) {
       console.error('Error saving portfolio item:', error)
       toast.error(error instanceof Error ? error.message : "Erreur lors de la sauvegarde")
+    } finally {
+      setUploading(false)
     }
   }
 
-  const deletePortfolioItem = async (itemId: string) => {
-    try {
-      const response = await fetch('/api/users/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          section: 'portfolio',
-          data: { id: itemId, _delete: true }
-        })
-      })
+  // Trier les projets : featured d'abord, puis par date (plus récent en bas)
+  const sortedItems = [...items].sort((a, b) => {
+    if (a.featured && !b.featured) return -1
+    if (!a.featured && b.featured) return 1
+    
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+    return dateA - dateB
+  })
 
-      if (response.ok) {
-        toast.success("Projet supprimé!")
-        onUpdate()
-      } else {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to delete portfolio item')
-      }
-    } catch (error) {
-      console.error('Error deleting portfolio item:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression")
-    }
+  // Identifier les projets récents (ajoutés dans les dernières 24h)
+  const now = new Date().getTime()
+  const oneDayAgo = now - (24 * 60 * 60 * 1000)
+  const isRecentlyAdded = (item: PortfolioItem) => {
+    if (!item.createdAt) return false
+    const createdTime = new Date(item.createdAt).getTime()
+    return createdTime > oneDayAgo
   }
 
-  const toggleFeatured = async (itemId: string) => {
-    try {
-      const item = items.find(item => item.id === itemId)
-      if (!item) return
-
-      const response = await fetch('/api/users/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          section: 'portfolio',
-          data: { ...item, featured: !item.featured }
-        })
-      })
-
-      if (response.ok) {
-        toast.success("Projet mis à jour!")
-        onUpdate()
-      } else {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update portfolio item')
-      }
-    } catch (error) {
-      console.error('Error updating portfolio item:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour")
-    }
-  }
-
-  const featuredItems = items.filter(item => item.featured)
-  const otherItems = items.filter(item => !item.featured)
+  const featuredItems = sortedItems.filter(item => item.featured)
+  const otherItems = sortedItems.filter(item => !item.featured)
 
   return (
     <div className="space-y-6">
@@ -255,7 +283,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                   Ajoutez les détails de votre projet portfolio
                 </DialogDescription>
               </DialogHeader>
-              
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-3">
                   <Label htmlFor="title" className="text-sm font-medium">
@@ -326,7 +354,10 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                           className="absolute top-2 right-2"
                           onClick={() => {
                             setImagePreview("")
-                            setFormData(prev => ({ ...prev, image: "" }))
+                            setImageFile(null)
+                            if (!editingItem) {
+                              setFormData(prev => ({ ...prev, image: "" }))
+                            }
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -339,10 +370,16 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="border-slate-200 dark:border-slate-700"
+                      required={!editingItem}
                     />
                     <p className="text-xs text-slate-500">
                       PNG, JPG jusqu'à 5MB. Format recommandé : 16:9
                     </p>
+                    {editingItem && !imageFile && (
+                      <p className="text-xs text-blue-600">
+                        L'image actuelle sera conservée si aucune nouvelle image n'est sélectionnée
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -380,7 +417,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   {formData.technologies.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {formData.technologies.map((tech) => (
@@ -410,11 +447,27 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                 </div>
 
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsDialogOpen(false)}
+                    disabled={uploading}
+                  >
                     Annuler
                   </Button>
-                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                    {editingItem ? "Mettre à jour" : "Ajouter le projet"}
+                  <Button 
+                    type="submit" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                        {editingItem ? "Mise à jour..." : "Ajout..."}
+                      </>
+                    ) : (
+                      editingItem ? "Mettre à jour" : "Ajouter le projet"
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
@@ -442,8 +495,8 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                   key={item.id}
                   item={item}
                   onEdit={openEditDialog}
-                  onDelete={deletePortfolioItem}
-                  onToggleFeatured={toggleFeatured}
+                  onUpdate={onUpdate}
+                  isNew={isRecentlyAdded(item)}
                 />
               ))}
             </div>
@@ -451,24 +504,25 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
         </Card>
       )}
 
-      {/* Tous les projets */}
+      {/* Tous les autres projets */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader>
-          <CardTitle>Mes Projets</CardTitle>
+          <CardTitle>Tous les Projets</CardTitle>
           <CardDescription>
             {items.length} projet{items.length > 1 ? 's' : ''} au total
           </CardDescription>
         </CardHeader>
         <CardContent>
           {otherItems.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-6">
               {otherItems.map((item) => (
                 <PortfolioCard
                   key={item.id}
                   item={item}
                   onEdit={openEditDialog}
-                  onDelete={deletePortfolioItem}
-                  onToggleFeatured={toggleFeatured}
+                  onUpdate={onUpdate}
+                  isNew={isRecentlyAdded(item)}
+                  fullWidth
                 />
               ))}
             </div>
@@ -531,19 +585,73 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
 }
 
 // Composant Carte de Portfolio
-function PortfolioCard({ 
-  item, 
-  onEdit, 
-  onDelete, 
-  onToggleFeatured 
+function PortfolioCard({
+  item,
+  onEdit,
+  onUpdate,
+  isNew = false,
+  fullWidth = false
 }: {
   item: PortfolioItem
   onEdit: (item: PortfolioItem) => void
-  onDelete: (id: string) => void
-  onToggleFeatured: (id: string) => void
+  onUpdate: () => void
+  isNew?: boolean
+  fullWidth?: boolean
 }) {
+  const deletePortfolioItem = async (itemId: string) => {
+    try {
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          section: 'portfolio',
+          data: { id: itemId, _delete: true }
+        })
+      })
+
+      if (response.ok) {
+        toast.success("Projet supprimé!")
+        onUpdate()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete portfolio item')
+      }
+    } catch (error) {
+      console.error('Error deleting portfolio item:', error)
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression")
+    }
+  }
+
+  const toggleFeatured = async (itemId: string) => {
+    try {
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          section: 'portfolio',
+          data: { ...item, featured: !item.featured }
+        })
+      })
+
+      if (response.ok) {
+        toast.success("Projet mis à jour!")
+        onUpdate()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update portfolio item')
+      }
+    } catch (error) {
+      console.error('Error updating portfolio item:', error)
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour")
+    }
+  }
+
   return (
-    <div className="group border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+    <div className={`group border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] ${fullWidth ? '' : 'max-w-full'}`}>
       <div className="aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
         <img
           src={item.image}
@@ -551,9 +659,15 @@ function PortfolioCard({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-        
+
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
+          {isNew && (
+            <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+              <CheckCircle className="h-3 w-3 mr-1 fill-current" />
+              Nouveau
+            </Badge>
+          )}
           {item.featured && (
             <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white border-0">
               <Star className="h-3 w-3 mr-1 fill-current" />
@@ -570,7 +684,7 @@ function PortfolioCard({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => onToggleFeatured(item.id)}
+            onClick={() => toggleFeatured(item.id)}
             className="h-8 w-8 p-0 bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-900"
           >
             <Star className={cn(
@@ -589,7 +703,7 @@ function PortfolioCard({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => onDelete(item.id)}
+            onClick={() => deletePortfolioItem(item.id)}
             className="h-8 w-8 p-0 bg-white/90 dark:bg-slate-900/90 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600"
           >
             <Trash2 className="h-4 w-4" />
@@ -604,7 +718,7 @@ function PortfolioCard({
         <p className="text-slate-600 dark:text-slate-400 text-sm mb-3 line-clamp-2">
           {item.description}
         </p>
-        
+
         <div className="flex flex-wrap gap-1 mb-3">
           {item.technologies.slice(0, 3).map((tech) => (
             <Badge key={tech} variant="outline" className="text-xs bg-slate-50 dark:bg-slate-800">
@@ -626,6 +740,11 @@ function PortfolioCard({
                 <span className="text-xs">Voir le projet</span>
               </a>
             </Button>
+          )}
+          {item.createdAt && (
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Ajouté le {new Date(item.createdAt).toLocaleDateString('fr-FR')}
+            </span>
           )}
         </div>
       </div>

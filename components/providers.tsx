@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-
-import { SessionProvider } from "next-auth/react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { NotificationProvider } from "@/contexts/NotificationContext"
+import { SessionProvider } from "./providers/SessionProvider";
+import { LanguageProvider } from "@/context/language-context";
+import { StripeProvider } from "@/app/providers/stripe-provider";
 interface AppProvidersProps {
   children: React.ReactNode;
   session?: any;
@@ -17,9 +18,13 @@ export function Providers({
   return (
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-        <NotificationProvider session={session}>
-          {children}
-        </NotificationProvider>
+        <LanguageProvider>
+          <NotificationProvider session={session}>
+                <StripeProvider>
+      {children}
+    </StripeProvider>
+          </NotificationProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </SessionProvider>
   )

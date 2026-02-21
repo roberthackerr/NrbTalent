@@ -1,28 +1,58 @@
-import type { ObjectId } from "mongodb"
-
-export interface Verification {
-  _id?: ObjectId
-  userId: ObjectId
-  type: "identity" | "payment" | "email" | "phone"
-  status: "pending" | "approved" | "rejected"
-  documents?: {
-    type: "passport" | "id_card" | "driver_license"
-    url: string
-    uploadedAt: Date
-  }[]
-  rejectionReason?: string
-  verifiedAt?: Date
-  createdAt: Date
-  updatedAt: Date
+export interface IdentityDocument {
+  front: string // URL or path to front image
+  back?: string // URL or path to back image (if applicable)
+  type: 'passport' | 'id_card' | 'driver_license'
+  number?: string
+  expiryDate?: Date
+  issuedCountry: string
 }
 
-export interface VideoCall {
-  _id?: ObjectId
-  roomId: string
-  participants: ObjectId[]
-  projectId?: ObjectId
-  startedAt: Date
-  endedAt?: Date
-  duration?: number
-  status: "active" | "ended"
+export interface VerificationRequest {
+  _id?: string
+  userId: string
+  type: 'identity' | 'phone' | 'payment' | 'email'
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  submittedAt: Date
+  reviewedAt?: Date
+  reviewedBy?: string
+  comments?: string
+  
+  // Identity-specific fields
+  identityDocuments?: IdentityDocument[]
+  firstName?: string
+  lastName?: string
+  dateOfBirth?: Date
+  
+  // Phone-specific fields
+  phoneNumber?: string
+  phoneVerified?: boolean
+  verificationCode?: string
+  codeExpiresAt?: Date
+  
+  // Payment-specific fields
+  paymentMethod?: 'card' | 'bank_account'
+  lastFourDigits?: string
+  provider?: string
+  
+  // Common fields
+  rejectionReason?: string
+  metadata?: Record<string, any>
+  files?: Array<{
+    url: string
+    filename: string
+    size: number
+    mimeType: string
+    uploadedAt: Date
+  }>
+}
+
+export interface UserVerificationStatus {
+  userId: string
+  email: boolean
+  phone: boolean
+  identity: boolean
+  payment: boolean
+  overallStatus: 'unverified' | 'partially_verified' | 'fully_verified'
+  lastUpdated: Date
+  level: 0 | 1 | 2 | 3 // Verification level based on completed verifications
 }

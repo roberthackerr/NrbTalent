@@ -18,26 +18,47 @@ import {
   CheckCircle,
   Zap,
   Building,
-  Globe
+  Globe,
+  Briefcase,
+  Target,
+  TrendingUp,
+  Award
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Router } from "next/router"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { useState, useEffect } from "react" // Ajouté pour gérer les données
 
 interface ProjectsGridProps {
   projects: any[]
   loading: boolean
   searchQuery: string
   onRefresh?: () => void
+  pagination?: {
+    page: number
+    limit: number
+    totalCount: number
+    totalPages: number
+    hasNext: boolean
+    hasPrev: boolean
+  }
+  onPageChange?: (page: number) => void
 }
 
-export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: ProjectsGridProps) {
+export function ProjectsGrid({ 
+  projects, 
+  loading, 
+  searchQuery, 
+  onRefresh,
+  pagination,
+  onPageChange 
+}: ProjectsGridProps) {
   const { data: session } = useSession()
-  const router=useRouter()
-  const user=session?.user
+  const router = useRouter()
+  const user = session?.user
+
   const handleSaveProject = async (projectId: string) => {
     try {
       const response = await fetch(`/api/projects/${projectId}/save`, {
@@ -59,17 +80,32 @@ export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: Proj
   }
 
   const handleApply = (projectId: string) => {
-    // Navigation vers la page de candidature
-    
     router.push(`/projects/${projectId}/apply`)
-    // window.location.href = `/projects/${projectId}/apply`
   }
   
-  const handledetail = (projectId: string) => {
-    // Navigation vers la page de candidature
-    
+  const handleDetail = (projectId: string) => {
     router.push(`/projects/${projectId}`)
-    // window.location.href = `/projects/${projectId}/apply`
+  }
+
+  const handleShare = async (project: any) => {
+    const shareData = {
+      title: project.title,
+      text: `Découvrez ce projet : ${project.title} - ${project.description?.substring(0, 100)}...`,
+      url: `${window.location.origin}/projects/${project._id}`
+    }
+    
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+        toast.success("Projet partagé avec succès!")
+      } catch (err) {
+        console.log('Erreur de partage:', err)
+      }
+    } else {
+      // Fallback: copier le lien
+      navigator.clipboard.writeText(shareData.url)
+      toast.success("Lien copié dans le presse-papier!")
+    }
   }
 
   const formatBudget = (budget: any) => {
@@ -93,6 +129,34 @@ export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: Proj
     if (diffDays < 7) return `${diffDays} jours`
     if (diffDays < 30) return `${Math.ceil(diffDays / 7)} semaines`
     return `${Math.ceil(diffDays / 30)} mois`
+  }
+
+  const getBudgetRangePosition = (budget: any, proposed?: number) => {
+    if (!budget || !proposed) return { position: 0, type: 'default' }
+    
+    const range = budget.max - budget.min
+    if (range <= 0) return { position: 0, type: 'default' }
+    
+    const position = ((proposed - budget.min) / range) * 100
+    let type = 'competitive'
+    
+    if (proposed < budget.min) type = 'below'
+    else if (proposed > budget.max) type = 'above'
+    else if (proposed < budget.min + (range * 0.3)) type = 'competitive'
+    else if (proposed > budget.min + (range * 0.7)) type = 'premium'
+    else type = 'average'
+    
+    return { position: Math.min(100, Math.max(0, position)), type }
+  }
+
+  const getSkillMatchCount = (projectSkills: string[], userSkills: string[] = []) => {
+    if (!projectSkills || !userSkills) return 0
+    return projectSkills.filter(skill => 
+      userSkills.some(userSkill => 
+        userSkill.toLowerCase().includes(skill.toLowerCase()) ||
+        skill.toLowerCase().includes(userSkill.toLowerCase())
+      )
+    ).length
   }
 
   if (loading) {
@@ -120,12 +184,12 @@ export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: Proj
               Voir tous les projets
             </Button>
           ) : (
-            <Button size="lg">
-              <Zap className="h-4 w-4 mr-2" />
-              Activer les notifications
+            <Button size="lg" onClick={() => router.push('/projects/create')}>
+              <Briefcase className="h-4 w-4 mr-2" />
+              Publier votre premier projet
             </Button>
           )}
-          <Button variant="outline" size="lg">
+          <Button variant="outline" size="lg" onClick={() => router.push('/categories')}>
             Explorer les catégories
           </Button>
         </div>
@@ -142,17 +206,19 @@ export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: Proj
             Projets disponibles
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg mt-2">
-            {projects.length} opportunité{projects.length > 1 ? 's' : ''} correspondant à vos compétences
+            {pagination?.totalCount || projects.length} opportunité{(pagination?.totalCount || projects.length) > 1 ? 's' : ''} correspondant à vos compétences
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Share2 className="h-4 w-4" />
-            Partager
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => {
+              if (onRefresh) onRefresh()
+            }}
+          >
             <Sparkles className="h-4 w-4" />
-            Trier
+            Actualiser
           </Button>
         </div>
       </div>
@@ -161,35 +227,59 @@ export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: Proj
       <div className="space-y-4">
         {projects.map((project) => (
           <ProjectCard 
-            key={project._id} 
+            key={project._id || project.id} 
             project={project} 
             onSave={handleSaveProject}
             onApply={handleApply}
+            onDetail={handleDetail}
+            onShare={handleShare}
             formatBudget={formatBudget}
             getTimeRemaining={getTimeRemaining}
-            onDetail={handledetail}
-
+            getBudgetRangePosition={getBudgetRangePosition}
+            getSkillMatchCount={getSkillMatchCount}
+            userSkills={user?.skills || []}
           />
         ))}
       </div>
 
       {/* Pagination */}
-      {projects.length >= 12 && (
+      {pagination && pagination.totalPages > 1 && (
         <div className="flex justify-center pt-8">
           <div className="flex gap-2">
-            <Button variant="outline" size="lg">
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => onPageChange && onPageChange(pagination.page - 1)}
+              disabled={!pagination.hasPrev}
+            >
               ← Précédent
             </Button>
-            <Button variant="outline" size="lg" className="bg-blue-50 text-blue-700 border-blue-200">
-              1
-            </Button>
-            <Button variant="outline" size="lg">
-              2
-            </Button>
-            <Button variant="outline" size="lg">
-              3
-            </Button>
-            <Button variant="outline" size="lg">
+            
+            {[...Array(Math.min(5, pagination.totalPages))].map((_, index) => {
+              const pageNum = index + 1
+              return (
+                <Button
+                  key={pageNum}
+                  variant={pagination.page === pageNum ? "default" : "outline"}
+                  size="lg"
+                  onClick={() => onPageChange && onPageChange(pageNum)}
+                  className={pagination.page === pageNum ? "bg-blue-600 text-white" : ""}
+                >
+                  {pageNum}
+                </Button>
+              )
+            })}
+            
+            {pagination.totalPages > 5 && (
+              <span className="px-3 py-2 text-slate-500">...</span>
+            )}
+            
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => onPageChange && onPageChange(pagination.page + 1)}
+              disabled={!pagination.hasNext}
+            >
               Suivant →
             </Button>
           </div>
@@ -199,22 +289,41 @@ export function ProjectsGrid({ projects, loading, searchQuery, onRefresh }: Proj
   )
 }
 
-function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeRemaining }: any) {
+function ProjectCard({ 
+  project, 
+  onSave, 
+  onApply, 
+  onDetail, 
+  onShare,
+  formatBudget, 
+  getTimeRemaining, 
+  getBudgetRangePosition,
+  getSkillMatchCount,
+  userSkills = []
+}: any) {
+  const { data: session } = useSession()
+  const router = useRouter()
+  
   const isUrgent = project.urgency === "urgent" || project.urgency === "very-urgent"
   const isFeatured = project.featured
-    const { data: session } = useSession()
-  const router=useRouter()
+  const isPremium = project.client?.plan === "premium" || project.client?.plan === "enterprise"
+  const skillMatches = getSkillMatchCount(project.skills || [], userSkills)
+  const matchPercentage = project.skills?.length ? Math.round((skillMatches / project.skills.length) * 100) : 0
+
+  const getMatchBadgeColor = (percentage: number) => {
+    if (percentage >= 80) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+    if (percentage >= 50) return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+    if (percentage >= 30) return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+    return "bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
+  }
+
   return (
     <Card className={cn(
       "border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 group",
       isFeatured && "border-l-4 border-l-blue-500",
-      isUrgent && "border-l-4 border-l-orange-500"
+      isUrgent && "border-l-4 border-l-orange-500",
+      isPremium && "border-t-2 border-t-yellow-400"
     )}>
-      {session?.user?.role !== "freelance" && (
-  <p className="text-sm text-slate-500 mt-2 text-center">
-    💡 Seuls les <span className="font-semibold text-blue-600">freelances</span> peuvent postuler à un projet.
-  </p>
-)}
       <CardContent className="p-6">
         <div className="flex gap-6">
           {/* Colonne principale */}
@@ -223,21 +332,32 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 cursor-pointer"
+                    onClick={() => onDetail(project._id)}
+                  >
                     {project.title}
                   </h3>
-                  {isFeatured && (
-                    <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                      <Star className="h-3 w-3 mr-1" />
-                      Featured
-                    </Badge>
-                  )}
-                  {isUrgent && (
-                    <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                      <Zap className="h-3 w-3 mr-1" />
-                      Urgent
-                    </Badge>
-                  )}
+                  
+                  <div className="flex gap-2">
+                    {isFeatured && (
+                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        <Star className="h-3 w-3 mr-1" />
+                        Featured
+                      </Badge>
+                    )}
+                    {isUrgent && (
+                      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                        <Zap className="h-3 w-3 mr-1" />
+                        Urgent
+                      </Badge>
+                    )}
+                    {isPremium && (
+                      <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">
+                        <Award className="h-3 w-3 mr-1" />
+                        Premium
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 
                 <p className="text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
@@ -254,6 +374,14 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
                   className="opacity-60 hover:opacity-100 transition-opacity"
                 >
                   <Bookmark className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onShare(project)}
+                  className="opacity-60 hover:opacity-100 transition-opacity"
+                >
+                  <Share2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -281,7 +409,7 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
                     {project.client.rating && (
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                        <span className="text-slate-500">{project.client.rating}</span>
+                        <span className="text-slate-500">{project.client.rating.toFixed(1)}</span>
                       </div>
                     )}
                   </div>
@@ -289,7 +417,7 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
                 {project.location && (
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                     <MapPin className="h-4 w-4" />
-                    <span>{project.location}</span>
+                    <span>{project.location.city || project.location.country || 'Télétravail'}</span>
                   </div>
                 )}
               </div>
@@ -309,19 +437,37 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
 
             {/* Compétences requises */}
             <div className="mb-4">
-              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Compétences requises:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {project.skills?.slice(0, 8).map((skill: string, index: number) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                  >
-                    {skill}
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Compétences requises:
+                </h4>
+                {skillMatches > 0 && (
+                  <Badge className={getMatchBadgeColor(matchPercentage)}>
+                    <Target className="h-3 w-3 mr-1" />
+                    {matchPercentage}% de correspondance
                   </Badge>
-                ))}
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {project.skills?.slice(0, 8).map((skill: string, index: number) => {
+                  const isMatched = userSkills.some((userSkill: string) => 
+                    userSkill.toLowerCase().includes(skill.toLowerCase()) ||
+                    skill.toLowerCase().includes(userSkill.toLowerCase())
+                  )
+                  return (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className={cn(
+                        "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+                        isMatched && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                      )}
+                    >
+                      {skill}
+                      {isMatched && <CheckCircle className="h-3 w-3 ml-1" />}
+                    </Badge>
+                  )
+                })}
                 {project.skills && project.skills.length > 8 && (
                   <Badge variant="outline" className="text-slate-500">
                     +{project.skills.length - 8} autres
@@ -329,9 +475,6 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
                 )}
               </div>
             </div>
-
-
-         
 
             {/* Informations supplémentaires */}
             <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-slate-500">
@@ -363,20 +506,18 @@ function ProjectCard({ project, onSave, onApply,onDetail, formatBudget, getTimeR
             </div>
             
             <div className="space-y-3">
-              
-          <Button 
-  onClick={() => onApply(project._id)}
-  size="lg"
-  disabled={session?.user?.role !== "freelance"}
-  className={` font-semibold 
-    ${session?.user?.role === "freelance" 
-      ? "bg-blue-600 hover:bg-blue-700 text-white w-full " 
-      : "bg-gray-400 opacity-60 cursor-not-allowed text-red w-full"}`
-  }
->
-Postuler
-</Button>
-
+              <Button 
+                onClick={() => onApply(project._id)}
+                size="lg"
+                disabled={session?.user?.role !== "freelance" && session?.user?.role !== "freelancer"}
+                className={`font-semibold w-full ${
+                  session?.user?.role === "freelance" || session?.user?.role === "freelancer"
+                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                    : "bg-gray-400 opacity-60 cursor-not-allowed"
+                }`}
+              >
+                Postuler
+              </Button>
               
               <Button 
                 variant="outline" 

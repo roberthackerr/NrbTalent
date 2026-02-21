@@ -51,7 +51,104 @@ class NotificationService {
       actionUrl: `/orders/${orderId}`,
       data: { entityId: orderId, entityType: 'order' }
     }),
+    // Ajoute dans la classe NotificationService, dans l'objet templates :
 
+// Groupes
+groupJoinRequest: (groupName: string, groupId: string, userName: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'MEDIUM',
+  title: '👥 Demande d\'adhésion',
+  message: `${userName} souhaite rejoindre "${groupName}"`,
+  actionUrl: `/groups/${groupId}/requests`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName
+  }
+}),
+
+groupJoinApproved: (groupName: string, groupId: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'MEDIUM',
+  title: '✅ Demande acceptée !',
+  message: `Votre demande pour rejoindre "${groupName}" a été acceptée`,
+  actionUrl: `/groups/${groupId}`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName
+  }
+}),
+
+groupJoinRejected: (groupName: string, groupId: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'MEDIUM',
+  title: '❌ Demande refusée',
+  message: `Votre demande pour rejoindre "${groupName}" a été refusée`,
+  actionUrl: `/groups`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName
+  }
+}),
+
+groupMemberRemoved: (groupName: string, groupId: string, removedBy: string, reason?: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'HIGH',
+  title: '🚪 Retiré d\'un groupe',
+  message: reason 
+    ? `${removedBy} vous a retiré de "${groupName}" : ${reason}`
+    : `${removedBy} vous a retiré de "${groupName}"`,
+  actionUrl: `/groups`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName,
+    removedBy
+  }
+}),
+
+groupRoleChanged: (groupName: string, groupId: string, newRole: string, changedBy: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'MEDIUM',
+  title: '🎭 Rôle modifié',
+  message: `${changedBy} vous a attribué le rôle de ${newRole} dans "${groupName}"`,
+  actionUrl: `/groups/${groupId}`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName,
+    newRole,
+    changedBy
+  }
+}),
+
+groupNewPost: (groupName: string, groupId: string, postTitle: string, authorName: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'LOW',
+  title: '📝 Nouveau post',
+  message: `${authorName} a publié "${postTitle}" dans "${groupName}"`,
+  actionUrl: `/groups/${groupId}`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName
+  }
+}),
+
+groupEventCreated: (groupName: string, groupId: string, eventTitle: string): NotificationTemplate => ({
+  category: 'COMMUNITY',
+  priority: 'MEDIUM',
+  title: '📅 Nouvel événement',
+  message: `Un nouvel événement "${eventTitle}" a été créé dans "${groupName}"`,
+  actionUrl: `/groups/${groupId}/events`,
+  data: { 
+    entityId: groupId, 
+    entityType: 'group',
+    entityName: groupName
+  }
+}),
     orderCompleted: (gigTitle: string, orderId: string): NotificationTemplate => ({
       category: 'ORDER',
       priority: 'MEDIUM',
@@ -130,7 +227,7 @@ class NotificationService {
         status: 'UNREAD',
       };
 
-      const response = await fetch('/api/notifications', {
+      const response = await fetch('http://localhost:3000/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(notification),

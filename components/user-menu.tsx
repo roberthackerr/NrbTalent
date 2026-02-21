@@ -76,14 +76,44 @@ export function UserMenu() {
     return conversation.participants.find(p => p._id !== user.id)
   }
 
-  const formatLastMessage = (content: string) => {
-    return content.length > 25 ? content.substring(0, 25) + '...' : content
+  // Fonction corrigée pour formater le dernier message
+  const formatLastMessage = (lastMessage: any) => {
+    if (!lastMessage) return 'Aucun message'
+    
+    // Si lastMessage est une chaîne, la formater directement
+    if (typeof lastMessage === 'string') {
+      return lastMessage.length > 25 ? lastMessage.substring(0, 25) + '...' : lastMessage
+    }
+    
+    // Si lastMessage est un objet avec une propriété content
+    if (lastMessage.content && typeof lastMessage.content === 'string') {
+      return lastMessage.content.length > 25 
+        ? lastMessage.content.substring(0, 25) + '...' 
+        : lastMessage.content
+    }
+    
+    // Si lastMessage est un objet sans propriété content visible
+    return 'Nouveau message'
+  }
+
+  // Fonction pour obtenir le timestamp
+  const getMessageTime = (conversation: Conversation) => {
+    if (conversation.lastMessage?.createdAt) {
+      return new Date(conversation.lastMessage.createdAt).toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+    return new Date(conversation.updatedAt).toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   return (
     <div className="flex items-center gap-2">
       {/* 🔔 Notifications */}
-        <NotificationBell />
+      <NotificationBell />
 
       {/* 💬 Messages Dropdown séparé */}
       <DropdownMenu open={messagesOpen} onOpenChange={setMessagesOpen}>
@@ -172,21 +202,13 @@ export function UserMenu() {
                             <p className={`text-sm font-semibold truncate ${isUnread ? 'text-foreground' : 'text-foreground/80'}`}>
                               {otherParticipant?.name || 'Utilisateur'}
                             </p>
-                            {conversation.lastMessage && (
-                              <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
-                                {new Date(conversation.updatedAt).toLocaleTimeString('fr-FR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            )}
+                            <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                              {getMessageTime(conversation)}
+                            </span>
                           </div>
                           
                           <p className={`text-sm truncate ${isUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                            {conversation.lastMessage 
-                              ? formatLastMessage(conversation.lastMessage)
-                              : 'Aucun message'
-                            }
+                            {formatLastMessage(conversation.lastMessage)}
                           </p>
                         </div>
                         
@@ -309,7 +331,7 @@ export function UserMenu() {
           {/* Paramètres et Déconnexion */}
           <div className="p-1">
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="cursor-pointer flex items-center gap-2">
+              <Link href="/dashboard/settings" className="cursor-pointer flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 <span>Paramètres</span>
               </Link>

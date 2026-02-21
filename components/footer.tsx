@@ -9,9 +9,13 @@ export const Footer = () => {
           {/* Logo et description */}
           <div>
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">NRB</span>
-              </div>
+               <Image 
+  src={`/logo.png?v=${Date.now()}`} 
+  alt="NRBTalents" 
+  width={32} 
+  height={32} 
+  className="h-8 w-8 transition-transform group-hover:scale-110" 
+/>
               <span className="text-xl font-bold">NRBTalents</span>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">

@@ -48,7 +48,7 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
       const formData = new FormData()
       formData.append('avatar', selectedImage)
 
-      const response = await fetch('/api/users/upload-avatar', {
+      const response = await fetch('/api/users/avatar', {
         method: 'POST',
         body: formData,
       })

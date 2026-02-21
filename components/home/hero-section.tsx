@@ -2,15 +2,16 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Rocket, Star, TrendingUp, Shield, Zap } from "lucide-react"
+import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar } from "lucide-react"
 import { useState } from "react"
 
 interface HeroSectionProps {
   user: any
   onSearch: (query: string) => void
+  onCalendarClick?: () => void // Nouveau prop pour le calendrier
 }
 
-export function HeroSection({ user, onSearch }: HeroSectionProps) {
+export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
   const handleSearch = (e: React.FormEvent) => {
@@ -29,7 +30,7 @@ export function HeroSection({ user, onSearch }: HeroSectionProps) {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8">
             <Zap className="h-4 w-4 text-yellow-300" />
             <span className="text-sm font-medium text-white">
-              Plateforme #1 pour les freelances en 2024
+              Plateforme #1 pour les freelances en 2025
             </span>
           </div>
 
@@ -90,7 +91,7 @@ export function HeroSection({ user, onSearch }: HeroSectionProps) {
           </div>
 
           {/* Actions principales */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             {!user ? (
               <>
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-2xl">
@@ -123,6 +124,34 @@ export function HeroSection({ user, onSearch }: HeroSectionProps) {
               </>
             )}
           </div>
+
+          {/* Nouvelle section Calendrier */}
+          {user && (
+            <div className="animate-fade-in">
+              <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white font-semibold text-sm">
+                      Nouveau : Votre Calendrier Intelligent
+                    </p>
+                    <p className="text-blue-200 text-xs">
+                      Gérez vos rendez-vous et projets en un seul endroit
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={onCalendarClick}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/25"
+                >
+                  Découvrir
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
