@@ -54,6 +54,12 @@
   "onboarding": {
     "title": "Complétez votre profil",
     "subtitle": "Dites-nous en plus sur vous pour de meilleures opportunités",
+    "benefits": {
+      "freelance_title": "Libérez votre potentiel freelance",
+      "freelance_desc": "Rejoignez des milliers de freelances qui développent leur carrière sur NRBTalents",
+      "client_title": "Trouvez les talents exceptionnels",
+      "client_desc": "Accédez à notre réseau de professionnels vérifiés et compétents"
+    },
     "role": {
       "title": "Je veux :",
       "freelance": "Travailler",

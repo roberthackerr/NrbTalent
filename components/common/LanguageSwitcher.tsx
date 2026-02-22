@@ -1,3 +1,4 @@
+// components/common/LanguageSwitcher.tsx
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
@@ -23,27 +24,38 @@ export default function LanguageSwitcher({ lang }: { lang: Locale }) {
     router.push(newPathname)
   }
   
+  // Fonction pour empêcher la propagation du clic
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2">
-          <Globe className="h-4 w-4" />
-          <span className="hidden md:inline">{localeNames[lang]}</span>
-          <span className="md:hidden">{localeFlags[lang]}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {locales.map((locale) => (
-          <DropdownMenuItem
-            key={locale}
-            onClick={() => switchLanguage(locale)}
-            className={locale === lang ? 'bg-accent' : ''}
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={handleTriggerClick}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-2 relative z-[100] cursor-pointer"
           >
-            <span className="mr-2">{localeFlags[locale]}</span>
-            {localeNames[locale]}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <Globe className="h-4 w-4" />
+            <span className="hidden md:inline">{localeNames[lang]}</span>
+            <span className="md:hidden">{localeFlags[lang]}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="z-[100]">
+          {locales.map((locale) => (
+            <DropdownMenuItem
+              key={locale}
+              onClick={() => switchLanguage(locale)}
+              className={locale === lang ? 'bg-accent cursor-pointer' : 'cursor-pointer'}
+            >
+              <span className="mr-2">{localeFlags[locale]}</span>
+              {localeNames[locale]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }

@@ -1,0 +1,103 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "projects": "Projects",
+    "messages": "Messages",
+    "settings": "Settings",
+    "signin": "Sign In",
+    "signup": "Sign Up",
+    "signout": "Sign Out"
+  },
+  "auth": {
+    "welcome": "Welcome to NRBTalents",
+    "subtitle": "The platform connecting talents and opportunities",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Username",
+    "login": "Log in",
+    "register": "Create account",
+    "google": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "forgotPassword": "Forgot password?",
+    "or": "Or",
+    "errors": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 8 characters",
+      "passwordsNotMatch": "Passwords do not match",
+      "nameRequired": "Name is required",
+      "userExists": "User with this email already exists",
+      "invalidCredentials": "Invalid email or password",
+      "googleAccount": "This account uses Google. Sign in with Google."
+    },
+    "success": {
+      "signup": "Account created successfully!",
+      "login": "Login successful!"
+    }
+  },
+  "onboarding": {
+    "title": "Complete your profile",
+    "subtitle": "Tell us more about yourself for better opportunities",
+        "benefits": {
+      "freelance_title": "Unlock your freelance potential",
+      "freelance_desc": "Join thousands of freelancers building their careers on NRBTalents",
+      "client_title": "Find exceptional talent",
+      "client_desc": "Access our network of verified and skilled professionals"
+    },
+    "role": {
+      "title": "I want to:",
+      "freelance": "Work",
+      "client": "Hire",
+      "benefits": {
+        "freelance": [
+          "Find projects matching your skills",
+          "Build your reputation",
+          "Secure payments",
+          "AI Matching for relevance"
+        ],
+        "client": [
+          "Access thousands of qualified freelancers",
+          "Find the perfect talent",
+          "Manage projects easily",
+          "Secure and guaranteed payments"
+        ]
+      }
+    },
+    "skills": "Your skills",
+    "hourlyRate": "Hourly rate",
+    "location": "Location",
+    "languages": "Languages spoken",
+    "bio": "Biography",
+    "complete": "Complete onboarding"
+  },
+  "dashboard": {
+    "welcome": "Hello, {{name}}",
+    "stats": {
+      "projects": "Completed projects",
+      "earnings": "Total earnings",
+      "rating": "Satisfaction",
+      "responseTime": "Response time"
+    }
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy"
+  }
+}

@@ -1,3 +1,4 @@
+// app/[lang]/auth/signup/SignUpForm.tsx
 'use client'
 
 import { useState } from 'react'
@@ -82,9 +83,9 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30">
-      {/* Language Switcher */}
-      <div className="absolute right-4 top-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/30 dark:to-purple-950/30">
+      {/* Language Switcher - Z-Index élevé pour être cliquable */}
+      <div className="absolute right-4 top-4 z-50">
         <LanguageSwitcher lang={lang} />
       </div>
 
@@ -96,37 +97,43 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
             {/* Header */}
             <div className="flex flex-col space-y-2 text-center">
               <Link href={`/${lang}`} className="inline-flex items-center gap-3 self-center">
-                <Image 
-                  src="/logo.png"
-                  alt="NRBTalents"
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 transition-transform hover:scale-110"
-                />
-                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="relative">
+                  <Image 
+                    src="/logo.png"
+                    alt="NRBTalents"
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 transition-transform hover:scale-110"
+                  />
+                </div>
+                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                   NRBTalents
                 </span>
               </Link>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-3xl font-bold tracking-tight dark:text-white">
                 {dict.auth.welcome}
               </h1>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-muted-foreground dark:text-slate-400">
                 {dict.auth.subtitle}
               </p>
             </div>
 
-            <Card>
+            <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-lg dark:bg-slate-950/90 dark:backdrop-blur-sm">
               <CardContent className="pt-6">
                 {/* Role Selection */}
                 <div className="mb-6">
-                  <Label className="text-base font-semibold">
+                  <Label className="text-base font-semibold dark:text-slate-200">
                     {dict.onboarding.role.title}
                   </Label>
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <Button
                       type="button"
                       variant={role === 'freelance' ? 'default' : 'outline'}
-                      className={`h-16 ${role === 'freelance' ? 'bg-gradient-to-r from-blue-600 to-purple-600' : ''}`}
+                      className={`h-16 ${
+                        role === 'freelance' 
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 dark:from-blue-500 dark:to-purple-500' 
+                          : 'dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                      }`}
                       onClick={() => setRole('freelance')}
                     >
                       <Rocket className="mr-2 h-4 w-4" />
@@ -135,7 +142,11 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
                     <Button
                       type="button"
                       variant={role === 'client' ? 'default' : 'outline'}
-                      className={`h-16 ${role === 'client' ? 'bg-gradient-to-r from-green-600 to-emerald-600' : ''}`}
+                      className={`h-16 ${
+                        role === 'client' 
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 dark:from-green-500 dark:to-emerald-500' 
+                          : 'dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                      }`}
                       onClick={() => setRole('client')}
                     >
                       <Users className="mr-2 h-4 w-4" />
@@ -148,7 +159,7 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className="w-full bg-transparent border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-200"
                   onClick={handleGoogleSignUp}
                   disabled={googleLoading || loading}
                 >
@@ -176,10 +187,10 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
                 {/* Separator */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-slate-300 dark:border-slate-700" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
+                    <span className="bg-background px-2 text-muted-foreground dark:bg-slate-950 dark:text-slate-400">
                       {dict.auth.or}
                     </span>
                   </div>
@@ -188,37 +199,40 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
                 {/* Email Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">{dict.auth.name}</Label>
+                    <Label htmlFor="name" className="dark:text-slate-200">{dict.auth.name}</Label>
                     <Input 
                       id="name" 
                       name="name" 
                       required 
                       placeholder={dict.auth.name}
+                      className="border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">{dict.auth.email}</Label>
+                    <Label htmlFor="email" className="dark:text-slate-200">{dict.auth.email}</Label>
                     <Input 
                       id="email" 
                       name="email" 
                       type="email" 
                       required 
                       placeholder="email@example.com"
+                      className="border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">{dict.auth.password}</Label>
+                    <Label htmlFor="password" className="dark:text-slate-200">{dict.auth.password}</Label>
                     <Input 
                       id="password" 
                       name="password" 
                       type="password" 
                       required 
                       placeholder="••••••••"
+                      className="border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
                     />
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 dark:from-blue-500 dark:to-purple-500 dark:hover:from-blue-600 dark:hover:to-purple-600"
                     disabled={loading || googleLoading}
                   >
                     {loading ? dict.common.loading : dict.auth.register}
@@ -226,11 +240,11 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
                 </form>
 
                 {/* Sign In Link */}
-                <p className="mt-6 text-center text-sm text-muted-foreground">
+                <p className="mt-6 text-center text-sm text-muted-foreground dark:text-slate-400">
                   {dict.auth.hasAccount}{' '}
                   <Link 
                     href={`/${lang}/auth/signin`} 
-                    className="font-semibold text-blue-600 hover:underline"
+                    className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
                   >
                     {dict.auth.login}
                   </Link>
@@ -244,22 +258,22 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
         <div className="hidden lg:flex lg:flex-col lg:justify-center lg:p-8">
           <div className="mx-auto max-w-md space-y-8">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800">
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                 <Sparkles className="h-4 w-4" />
-                {role === 'freelance' 
+                {role === "freelance" 
                   ? dict.onboarding.role.freelance 
                   : dict.onboarding.role.client}
               </div>
-              <h2 className="text-4xl font-bold">
-                {role === 'freelance' 
-                  ? 'Libérez votre potentiel freelance' 
-                  : 'Trouvez les talents exceptionnels'
+              <h2 className="text-4xl font-bold tracking-tight dark:text-white">
+                {role === "freelance" 
+                  ? dict.onboarding.benefits?.freelance_title || "Libérez votre potentiel freelance"
+                  : dict.onboarding.benefits?.client_title || "Trouvez les talents exceptionnels"
                 }
               </h2>
-              <p className="text-lg text-muted-foreground">
-                {role === 'freelance'
-                  ? 'Rejoignez des milliers de freelances qui développent leur carrière sur NRBTalents'
-                  : 'Accédez à notre réseau de professionnels vérifiés et compétents'
+              <p className="text-lg text-muted-foreground dark:text-slate-400">
+                {role === "freelance"
+                  ? dict.onboarding.benefits?.freelance_desc || "Rejoignez des milliers de freelances qui développent leur carrière sur NRBTalents"
+                  : dict.onboarding.benefits?.client_desc || "Accédez à notre réseau de professionnels vérifiés et compétents"
                 }
               </p>
             </div>
@@ -267,8 +281,8 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
             <div className="space-y-4">
               {roleBenefits[role].map((benefit, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-muted-foreground">{benefit}</span>
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-muted-foreground dark:text-slate-400">{benefit}</span>
                 </div>
               ))}
             </div>
@@ -276,20 +290,20 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-8">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">50K+</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">50K+</div>
+                <div className="text-xs text-muted-foreground dark:text-slate-400">
                   {dict.onboarding.role.freelance}s
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">10K+</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">10K+</div>
+                <div className="text-xs text-muted-foreground dark:text-slate-400">
                   {dict.dashboard.stats.projects}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">95%</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">95%</div>
+                <div className="text-xs text-muted-foreground dark:text-slate-400">
                   {dict.dashboard.stats.rating}
                 </div>
               </div>

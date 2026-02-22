@@ -57,6 +57,7 @@ export type Dictionary = {
   onboarding: {
     title: string
     subtitle: string
+    benefits:any
     role: {
       title: string
       freelance: string

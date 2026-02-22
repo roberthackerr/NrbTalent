@@ -52,6 +52,12 @@
     }
   },
   "onboarding": {
+       "benefits": {
+      "freelance_title": "Alefaso ny fahaizanao freelance",
+      "freelance_desc": "Midira amin'ny freelances an'arivony mampandroso ny asany ao NRBTalents",
+      "client_title": "Tadiavo ny talenta miavaka",
+      "client_desc": "Midira amin'ny tambajotran'ny matihanina voamarina"
+    },
     "title": "Fenoy ny mombamomba anao",
     "subtitle": "Lazao anay bebe kokoa momba anao hahazoana fahafahana tsara kokoa",
     "role": {
