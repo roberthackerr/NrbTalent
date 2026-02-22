@@ -120,7 +120,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
                 Commencez votre aventure
               </h1>
               <p className="text-lg text-muted-foreground">
-                Rejoignez la révolution freelance
+                Rejoignez la révolution freelances
               </p>
             </div>
 
