@@ -1,7 +1,29 @@
-import 'server-only'
+
 
 // Types pour les dictionnaires
 export type Dictionary = {
+
+  portfolio: {
+    title: string
+    description: string
+    addProject: string
+    // ... etc
+    categories: {
+      website: string
+      mobile: string
+      design: string
+      ecommerce: string
+      api: string
+      tool: string
+      game: string
+      other: string
+    }
+    success: { removed: string; updated: string; added?: string }
+    errors: { remove: string; update: string; missingFields?: string; imageRequired?: string; upload?: string; save?: string; invalidImage?: string; fileTooLarge?: string }
+    // ... all other portfolio keys
+  }
+  experience: { /* ... */ }
+   onboardingPage:any
   signin: any
   common: {
     loading: string

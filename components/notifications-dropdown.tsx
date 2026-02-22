@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState, useEffect } from "react"
-import type { Notification } from "@/lib/models/user"
+import type { Notification } from "@/lib/models/user.ts.bp"
 
 export function NotificationsDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([])

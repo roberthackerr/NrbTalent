@@ -1,7 +1,7 @@
 import { openRouter, AI_MODELS, BlueprintGenerationOptions, AIModel } from '@/lib/openrouter'
 import { getDatabase } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
-import { User, Project } from '@/lib/models/user'
+import { User, Project } from '@/lib/models/user.ts.bp'
 
 export interface AIBlueprint {
   analysis: {

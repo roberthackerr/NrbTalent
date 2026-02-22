@@ -1,4 +1,4 @@
-import { User } from '@/lib/models/user'
+import { User } from '@/lib/models/user.ts.bp'
 import { any } from 'zod'
 
 export interface ProposalAssistantOptions {

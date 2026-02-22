@@ -1,77 +1,74 @@
-// app/onboarding/page.tsx
+// app/[lang]/onboarding/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, ArrowRight, ArrowLeft, Globe, Sparkles, Trophy, Target, Users } from 'lucide-react'
+import { CheckCircle, ArrowRight, ArrowLeft, Sparkles, Trophy, Target, Users, Camera, Zap, Briefcase } from 'lucide-react'
 import { AvatarStep } from '@/components/onboarding/AvatarStep'
 import { SkillsTab } from '@/components/settings/skills-tab'
 import { PortfolioTab } from '@/components/settings/portfolio-tab'
-import { onboardingDictionary } from '@/lib/dictionaries/onboarding-dictionary'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher'
 import { toast } from 'sonner'
+import type { Locale } from '@/lib/i18n/config'
+import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 
 type OnboardingStep = 'welcome' | 'avatar' | 'skills' | 'portfolio'
-type Language = 'en' | 'fr'
 
 export default function OnboardingPage() {
   const { data: session, update } = useSession()
   const router = useRouter()
-  const [language, setLanguage] = useState<Language>('en')
+  const params = useParams()
+  const lang = params.lang as Locale
+  
+  const [dict, setDict] = useState<any>(null)
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome')
   const [loading, setLoading] = useState(false)
   const [completedSteps, setCompletedSteps] = useState<OnboardingStep[]>([])
   const [isMounted, setIsMounted] = useState(false)
 
-  const dict = onboardingDictionary[language]
-
   useEffect(() => {
     setIsMounted(true)
     
+    // Charger le dictionnaire
+    getDictionarySafe(lang).then(setDict)
+    
     // Vérifier si l'utilisateur a déjà complété l'onboarding
     if (session?.user?.onboardingCompleted) {
-      router.push('/dashboard')
+      router.push(`/${lang}/dashboard`)
     }
-    
-    // Déterminer la langue préférée
-    const userLang = navigator.language.startsWith('fr') ? 'fr' : 'en'
-    setLanguage(userLang)
-  }, [session, router])
+  }, [session, router, lang])
 
   const steps: { 
     id: OnboardingStep; 
     title: string; 
     description: string; 
-    icon: any;
     color: string;
-  }[] = [
+  }[] = dict ? [
     {
       id: 'avatar',
-      title: dict.avatar.title,
-      description: dict.avatar.description,
-      icon: dict.Camera,
+      title: dict.onboardingPage.avatar.title,
+      description: dict.onboardingPage.avatar.description,
       color: 'from-blue-500 to-cyan-500'
     },
     {
       id: 'skills',
-      title: dict.skills.title,
-      description: dict.skills.description,
-      icon: dict.Zap,
+      title: dict.onboardingPage.skills.title,
+      description: dict.onboardingPage.skills.description,
       color: 'from-purple-500 to-pink-500'
     },
     {
       id: 'portfolio',
-      title: dict.portfolio.title,
-      description: dict.portfolio.description,
-      icon: dict.FolderOpen,
+      title: dict.onboardingPage.portfolio.title,
+      description: dict.onboardingPage.portfolio.description,
       color: 'from-orange-500 to-red-500'
     }
-  ]
+  ] : []
 
-  const progress = currentStep === 'welcome' 
+  const progress = !dict || currentStep === 'welcome' 
     ? 0 
     : ((steps.findIndex(step => step.id === currentStep) + 1) / (steps.length + 1)) * 100
 
@@ -102,7 +99,7 @@ export default function OnboardingPage() {
   const handleStepComplete = (step: OnboardingStep) => {
     if (!completedSteps.includes(step)) {
       setCompletedSteps(prev => [...prev, step])
-      toast.success(language === 'en' ? 'Step completed!' : 'Étape terminée !')
+      toast.success(dict?.onboardingPage.success || 'Step completed!')
     }
   }
 
@@ -115,36 +112,31 @@ export default function OnboardingPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          section:"onboardingCompleted",
+          section: "onboardingCompleted",
           data: { onboardingCompleted: true }
         })
       })
 
       if (response.ok) {
         await update()
-        toast.success(language === 'en' 
-          ? 'Profile setup complete!' 
-          : 'Configuration du profil terminée !')
+        toast.success(dict?.onboardingPage.success || 'Profile setup complete!')
         
-        // Rediriger après un court délai
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push(`/${lang}/dashboard`)
         }, 1500)
       } else {
         throw new Error('Failed to update profile')
       }
     } catch (error) {
       console.error('Error completing onboarding:', error)
-      toast.error(language === 'en' 
-        ? 'Failed to complete onboarding' 
-        : 'Échec de la complétion de l\'onboarding')
+      toast.error(dict?.onboardingPage.error || 'Failed to complete onboarding')
     } finally {
       setLoading(false)
     }
   }
 
   const renderStepContent = () => {
-    if (!isMounted) return null
+    if (!dict || !isMounted) return null
 
     switch (currentStep) {
       case 'welcome':
@@ -158,35 +150,29 @@ export default function OnboardingPage() {
             </div>
             
             <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-              {dict.welcomeTitle}
+              {dict.onboardingPage.welcomeTitle}
             </h2>
             
             <p className="text-gray-600 dark:text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-              {dict.welcomeDescription}
+              {dict.onboardingPage.welcomeDescription}
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {[
                 {
                   icon: <Trophy className="w-8 h-8 text-yellow-500" />,
-                  title: language === 'en' ? 'Showcase Expertise' : 'Montrez votre expertise',
-                  description: language === 'en' 
-                    ? 'Highlight your skills and experience' 
-                    : 'Mettez en valeur vos compétences et votre expérience'
+                  title: lang === 'en' ? 'Showcase Expertise' : lang === 'fr' ? 'Montrez votre expertise' : 'Asehoy ny fahaizanao',
+                  description: lang === 'en' ? 'Highlight your skills and experience' : lang === 'fr' ? 'Mettez en valeur vos compétences' : 'Asongadino ny fahaizanao sy ny traikefanao'
                 },
                 {
                   icon: <Target className="w-8 h-8 text-blue-500" />,
-                  title: language === 'en' ? 'Attract Clients' : 'Attirez des clients',
-                  description: language === 'en' 
-                    ? 'Get discovered by the right clients' 
-                    : 'Soyez découvert par les bons clients'
+                  title: lang === 'en' ? 'Attract Clients' : lang === 'fr' ? 'Attirez des clients' : 'Hisarihana mpanjifa',
+                  description: lang === 'en' ? 'Get discovered by the right clients' : lang === 'fr' ? 'Soyez découvert par les bons clients' : 'Hita amin\'ny mpanjifa mety'
                 },
                 {
                   icon: <Users className="w-8 h-8 text-purple-500" />,
-                  title: language === 'en' ? 'Build Trust' : 'Établissez la confiance',
-                  description: language === 'en' 
-                    ? 'Professional profile increases credibility' 
-                    : 'Un profil professionnel augmente votre crédibilité'
+                  title: lang === 'en' ? 'Build Trust' : lang === 'fr' ? 'Établissez la confiance' : 'Manangana fahatokisana',
+                  description: lang === 'en' ? 'Professional profile increases credibility' : lang === 'fr' ? 'Un profil professionnel augmente votre crédibilité' : 'Ny mombamomba matihanina dia mampitombo ny fahatokisana'
                 }
               ].map((item, index) => (
                 <div key={index} className="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -202,7 +188,7 @@ export default function OnboardingPage() {
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity shadow-lg"
               size="lg"
             >
-              {dict.startOnboarding}
+              {dict.onboardingPage.startOnboarding}
             </Button>
           </div>
         )
@@ -213,12 +199,13 @@ export default function OnboardingPage() {
             <AvatarStep 
               onComplete={() => handleStepComplete('avatar')}
               onSkip={handleNext}
-              language={language}
+              dict={dict.onboardingPage.avatar}
+              lang={lang}
             />
             
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                💡 {dict.tips.avatar}
+                💡 {dict.onboardingPage.tips.avatar}
               </p>
             </div>
           </div>
@@ -229,21 +216,23 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <div className="mb-6">
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-                {dict.skills.title}
+                {dict.onboardingPage.skills.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {dict.skills.description}
+                {dict.onboardingPage.skills.description}
               </p>
             </div>
             
             <SkillsTab 
-              user={session?.user} 
+              user={session?.user}
+              dict={dict.onboardingPage.skills}
+              lang={lang}
               onUpdate={() => handleStepComplete('skills')}
             />
             
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                💡 {dict.tips.skills}
+                💡 {dict.onboardingPage.tips.skills}
               </p>
             </div>
           </div>
@@ -254,21 +243,23 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <div className="mb-6">
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-                {dict.portfolio.title}
+                {dict.onboardingPage.portfolio.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {dict.portfolio.description}
+                {dict.onboardingPage.portfolio.description}
               </p>
             </div>
             
-            <PortfolioTab 
-              user={session?.user}
-              onUpdate={() => handleStepComplete('portfolio')}
-            />
+           <PortfolioTab 
+  user={session?.user}
+  dict={dict}
+  lang={lang}
+  onUpdate={() => handleStepComplete('portfolio')}
+/>
             
             <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-4 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                💡 {dict.tips.portfolio}
+                💡 {dict.onboardingPage.tips.portfolio}
               </p>
             </div>
           </div>
@@ -279,13 +270,13 @@ export default function OnboardingPage() {
     }
   }
 
-  if (!isMounted) {
+  if (!isMounted || !dict) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">
-            {dict.loading}
+            {dict?.onboardingPage?.loading || 'Loading...'}
           </p>
         </div>
       </div>
@@ -295,29 +286,19 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8">
       <div className="container max-w-5xl mx-auto px-4">
-        {/* Sélecteur de langue */}
+        {/* Language Switcher */}
         <div className="flex justify-end mb-6">
-          <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
-            <Globe className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <select 
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as Language)}
-              className="bg-transparent border-none text-sm focus:outline-none focus:ring-0 text-gray-800 dark:text-gray-200"
-            >
-              <option value="en">English</option>
-              <option value="fr">Français</option>
-            </select>
-          </div>
+          <LanguageSwitcher lang={lang} />
         </div>
 
         {/* En-tête */}
         {currentStep !== 'welcome' && (
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-              {dict.pageTitle}
+              {dict.onboardingPage.pageTitle}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {dict.pageSubtitle}
+              {dict.onboardingPage.pageSubtitle}
             </p>
           </div>
         )}
@@ -327,29 +308,29 @@ export default function OnboardingPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {dict.progress}
+                {dict.onboardingPage.progress}
               </span>
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {dict.step} {steps.findIndex(step => step.id === currentStep) + 1} {dict.of} {steps.length}
+                {dict.onboardingPage.step} {steps.findIndex(step => step.id === currentStep) + 1} {dict.onboardingPage.of} {steps.length}
               </span>
             </div>
             <Progress value={progress} className="h-2" />
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <span>{Math.round(progress)}% {dict.completed}</span>
+              <span>{Math.round(progress)}% {dict.onboardingPage.completed}</span>
               <span>
-                {completedSteps.length} {dict.of} {steps.length} {dict.completed}
+                {completedSteps.length} {dict.onboardingPage.of} {steps.length} {dict.onboardingPage.completed}
               </span>
             </div>
           </div>
         )}
 
         {/* Étapes (sauf pour la page d'accueil) */}
-        {currentStep !== 'welcome' && (
+        {currentStep !== 'welcome' && steps.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {steps.map((step) => {
               const isCompleted = completedSteps.includes(step.id)
               const isCurrent = currentStep === step.id
-              const StepIcon = step.icon
+              const StepIcon = step.id === 'avatar' ? Camera : step.id === 'skills' ? Zap : Briefcase
 
               return (
                 <button
@@ -408,18 +389,14 @@ export default function OnboardingPage() {
             {currentStep !== 'welcome' && (
               <>
                 <CardTitle className="flex items-center gap-3 text-2xl">
-                  {(() => {
-                    const step = steps.find(s => s.id === currentStep)
-                    const Icon = step?.icon
-                    return (
-                      <>
-                        <div className={`p-2 rounded-lg bg-gradient-to-r ${step?.color} text-white`}>
-                          <Icon className="h-6 w-6" />
-                        </div>
-                        {step?.title}
-                      </>
-                    )
-                  })()}
+                  <div className={`p-2 rounded-lg bg-gradient-to-r ${
+                    steps.find(s => s.id === currentStep)?.color
+                  } text-white`}>
+                    {currentStep === 'avatar' && <Camera className="h-6 w-6" />}
+                    {currentStep === 'skills' && <Zap className="h-6 w-6" />}
+                    {currentStep === 'portfolio' && <Briefcase className="h-6 w-6" />}
+                  </div>
+                  {steps.find(s => s.id === currentStep)?.title}
                 </CardTitle>
                 <CardDescription className="text-base">
                   {steps.find(step => step.id === currentStep)?.description}
@@ -442,7 +419,7 @@ export default function OnboardingPage() {
               className="flex items-center gap-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <ArrowLeft className="h-4 w-4" />
-              {dict.previous}
+              {dict.onboardingPage.previous}
             </Button>
 
             <Button
@@ -457,16 +434,16 @@ export default function OnboardingPage() {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {language === 'en' ? 'Processing...' : 'Traitement...'}
+                  {dict.onboardingPage.saving}
                 </>
               ) : currentStep === 'portfolio' ? (
                 <>
-                  {dict.finish}
+                  {dict.onboardingPage.finish}
                   <CheckCircle className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  {dict.next}
+                  {dict.onboardingPage.next}
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
@@ -481,7 +458,7 @@ export default function OnboardingPage() {
               onClick={handleNext}
               className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
             >
-              {dict.skip}
+              {dict.onboardingPage.skip}
             </button>
           </div>
         )}

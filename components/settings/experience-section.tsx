@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Building, Calendar, MapPin, Plus, Edit, Trash2, Check, X, Briefcase } from "lucide-react"
+import { Building, Calendar, MapPin, Plus, Edit, Trash2, X, Briefcase } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -23,16 +23,18 @@ interface Experience {
   current: boolean
   description: string
   technologies: string[]
-  achievement:string
+  achievement: string
 }
 
 interface ExperienceSectionProps {
   experiences: Experience[]
   onUpdate: () => void
   loading: boolean
+  dict: any
+  lang: string
 }
 
-export function ExperienceSection({ experiences, onUpdate, loading }: ExperienceSectionProps) {
+export function ExperienceSection({ experiences, onUpdate, loading, dict, lang }: ExperienceSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingExperience, setEditingExperience] = useState<Experience | null>(null)
   const [formData, setFormData] = useState<Omit<Experience, "id">>({
@@ -44,7 +46,7 @@ export function ExperienceSection({ experiences, onUpdate, loading }: Experience
     current: false,
     description: "",
     technologies: [],
-    achievement:""
+    achievement: ""
   })
   const [newTechnology, setNewTechnology] = useState("")
 
@@ -58,7 +60,7 @@ export function ExperienceSection({ experiences, onUpdate, loading }: Experience
       current: false,
       description: "",
       technologies: [],
-      achievement:""
+      achievement: ""
     })
     setNewTechnology("")
     setEditingExperience(null)
@@ -79,7 +81,7 @@ export function ExperienceSection({ experiences, onUpdate, loading }: Experience
       current: experience.current,
       description: experience.description,
       technologies: experience.technologies,
-      achievement:experience.achievement
+      achievement: experience.achievement
     })
     setEditingExperience(experience)
     setIsDialogOpen(true)
@@ -102,54 +104,54 @@ export function ExperienceSection({ experiences, onUpdate, loading }: Experience
     }))
   }
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  
-  if (!formData.company || !formData.position || !formData.startDate) {
-    toast.error("Veuillez remplir les champs obligatoires")
-    return
-  }
-
-  try {
-    const experienceData = {
-      company: formData.company,
-      position: formData.position,
-      location: formData.location,
-      startDate: formData.startDate,
-      endDate: formData.current ? undefined : formData.endDate,
-      current: formData.current,
-      description: formData.description,
-      technologies: formData.technologies,
-      achievement:formData.achievement
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.company || !formData.position || !formData.startDate) {
+      toast.error(dict.errors?.missingFields || "Veuillez remplir les champs obligatoires")
+      return
     }
 
-    const response = await fetch('/api/users/profile', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        section: 'experience',
-        data: editingExperience 
-          ? { ...experienceData, id: editingExperience.id }
-          : experienceData
+    try {
+      const experienceData = {
+        company: formData.company,
+        position: formData.position,
+        location: formData.location,
+        startDate: formData.startDate,
+        endDate: formData.current ? undefined : formData.endDate,
+        current: formData.current,
+        description: formData.description,
+        technologies: formData.technologies,
+        achievement: formData.achievement
+      }
+
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          section: 'experience',
+          data: editingExperience 
+            ? { ...experienceData, id: editingExperience.id }
+            : experienceData
+        })
       })
-    })
 
-    if (response.ok) {
-      toast.success(editingExperience ? "Expérience mise à jour!" : "Expérience ajoutée!")
-      setIsDialogOpen(false)
-      resetForm()
-      onUpdate()
-    } else {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to save experience')
+      if (response.ok) {
+        toast.success(editingExperience ? dict.success?.updated : dict.success?.added)
+        setIsDialogOpen(false)
+        resetForm()
+        onUpdate()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || dict.errors?.save || 'Failed to save experience')
+      }
+    } catch (error) {
+      console.error('Error saving experience:', error)
+      toast.error(error instanceof Error ? error.message : dict.errors?.save || "Erreur lors de la sauvegarde")
     }
-  } catch (error) {
-    console.error('Error saving experience:', error)
-    toast.error(error instanceof Error ? error.message : "Erreur lors de la sauvegarde")
   }
-}
 
   const deleteExperience = async (experienceId: string) => {
     try {
@@ -165,24 +167,26 @@ const handleSubmit = async (e: React.FormEvent) => {
       })
 
       if (response.ok) {
-        toast.success("Expérience supprimée!")
+        toast.success(dict.success?.removed || "Expérience supprimée!")
         onUpdate()
       } else {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to delete experience')
+        throw new Error(error.error || dict.errors?.remove || 'Failed to delete experience')
       }
     } catch (error) {
       console.error('Error deleting experience:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression")
+      toast.error(error instanceof Error ? error.message : dict.errors?.remove || "Erreur lors de la suppression")
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long'
-    })
-  }
+const formatDate = (dateString: string) => {
+  // mg has no native locale support, fallback to fr-FR
+  const locale = lang === 'en' ? 'en-US' : 'fr-FR'
+  return new Date(dateString).toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'long'
+  })
+}
 
   const getDuration = (startDate: string, endDate?: string, current?: boolean) => {
     const start = new Date(startDate)
@@ -193,11 +197,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     const remainingMonths = months % 12
     
     if (years === 0) {
-      return `${remainingMonths} mois`
+      return `${remainingMonths} ${dict.months || 'mois'}`
     } else if (remainingMonths === 0) {
-      return `${years} an${years > 1 ? 's' : ''}`
+      return `${years} ${years > 1 ? dict.years : dict.year}`
     } else {
-      return `${years} an${years > 1 ? 's' : ''} ${remainingMonths} mois`
+      return `${years} ${years > 1 ? dict.years : dict.year} ${remainingMonths} ${dict.months || 'mois'}`
     }
   }
 
@@ -209,26 +213,26 @@ const handleSubmit = async (e: React.FormEvent) => {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5 text-blue-500" />
-              Expériences Professionnelles
+              {dict.title || "Expériences Professionnelles"}
             </CardTitle>
             <CardDescription>
-              Ajoutez votre parcours professionnel pour renforcer votre crédibilité
+              {dict.description || "Ajoutez votre parcours professionnel pour renforcer votre crédibilité"}
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openAddDialog} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter une expérience
+                {dict.addExperience || "Ajouter une expérience"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingExperience ? "Modifier l'expérience" : "Nouvelle expérience"}
+                  {editingExperience ? dict.editTitle || "Modifier l'expérience" : dict.addTitle || "Nouvelle expérience"}
                 </DialogTitle>
                 <DialogDescription>
-                  Renseignez vos informations professionnelles
+                  {dict.formDescription || "Renseignez vos informations professionnelles"}
                 </DialogDescription>
               </DialogHeader>
               
@@ -236,26 +240,26 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-3">
                     <Label htmlFor="company" className="text-sm font-medium">
-                      Entreprise *
+                      {dict.company || "Entreprise"} *
                     </Label>
                     <Input
                       id="company"
                       value={formData.company}
                       onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                      placeholder="Nom de l'entreprise"
+                      placeholder={dict.companyPlaceholder || "Nom de l'entreprise"}
                       required
                     />
                   </div>
                   
                   <div className="space-y-3">
                     <Label htmlFor="position" className="text-sm font-medium">
-                      Poste *
+                      {dict.position || "Poste"} *
                     </Label>
                     <Input
                       id="position"
                       value={formData.position}
                       onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-                      placeholder="Votre poste"
+                      placeholder={dict.positionPlaceholder || "Votre poste"}
                       required
                     />
                   </div>
@@ -264,13 +268,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="space-y-3">
                   <Label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    Localisation
+                    {dict.location || "Localisation"}
                   </Label>
                   <Input
                     id="location"
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="Ville, Pays"
+                    placeholder={dict.locationPlaceholder || "Ville, Pays"}
                   />
                 </div>
 
@@ -278,7 +282,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <div className="space-y-3">
                     <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Date de début *
+                      {dict.startDate || "Date de début"} *
                     </Label>
                     <Input
                       id="startDate"
@@ -291,7 +295,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   
                   <div className="space-y-3">
                     <Label htmlFor="endDate" className="text-sm font-medium">
-                      Date de fin
+                      {dict.endDate || "Date de fin"}
                     </Label>
                     <Input
                       id="endDate"
@@ -306,7 +310,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, current: checked }))}
                       />
                       <Label htmlFor="current" className="text-sm">
-                        Poste actuel
+                        {dict.currentPosition || "Poste actuel"}
                       </Label>
                     </div>
                   </div>
@@ -314,31 +318,31 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 <div className="space-y-3">
                   <Label htmlFor="description" className="text-sm font-medium">
-                    Description
+                    {dict.description || "Description"}
                   </Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Décrivez vos responsabilités et réalisations..."
+                    placeholder={dict.descriptionPlaceholder || "Décrivez vos responsabilités et réalisations..."}
                     rows={4}
                     maxLength={1000}
                   />
                   <p className="text-xs text-slate-500">
-                    {formData.description.length}/1000 caractères
+                    {formData.description.length}/1000 {dict.characters || "caractères"}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <Label htmlFor="technologies" className="text-sm font-medium">
-                    Technologies utilisées
+                    {dict.technologiesUsed || "Technologies utilisées"}
                   </Label>
                   <div className="flex gap-2">
                     <Input
                       id="technologies"
                       value={newTechnology}
                       onChange={(e) => setNewTechnology(e.target.value)}
-                      placeholder="Ajouter une technologie"
+                      placeholder={dict.addTechnology || "Ajouter une technologie"}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
@@ -368,24 +372,26 @@ const handleSubmit = async (e: React.FormEvent) => {
                     </div>
                   )}
                 </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="position" className="text-sm font-medium">
-                       Réalisation
-                    </Label>
-                    <Input
-                      id="position"
-                      value={formData.achievement}
-                      onChange={(e) => setFormData(prev => ({ ...prev, achievement: e.target.value }))}
-                      placeholder="Votre réalisation"
-                      required
-                    />
-                  </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="achievement" className="text-sm font-medium">
+                    {dict.achievement || "Réalisation"} *
+                  </Label>
+                  <Input
+                    id="achievement"
+                    value={formData.achievement}
+                    onChange={(e) => setFormData(prev => ({ ...prev, achievement: e.target.value }))}
+                    placeholder={dict.achievementPlaceholder || "Votre réalisation principale"}
+                    required
+                  />
+                </div>
+
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Annuler
+                    {dict.cancel || "Annuler"}
                   </Button>
                   <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                    {editingExperience ? "Mettre à jour" : "Ajouter l'expérience"}
+                    {editingExperience ? dict.update || "Mettre à jour" : dict.add || "Ajouter"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -426,7 +432,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <div className="flex items-center gap-2">
                         {experience.current && (
                           <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
-                            Actuel
+                            {dict.current || "Actuel"}
                           </Badge>
                         )}
                         <Button
@@ -451,7 +457,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {formatDate(experience.startDate)} - {experience.current ? "Présent" : formatDate(experience.endDate!)}
+                          {formatDate(experience.startDate)} - {experience.current ? dict.present || "Présent" : formatDate(experience.endDate!)}
                         </span>
                       </div>
                       <span>•</span>
@@ -475,6 +481,14 @@ const handleSubmit = async (e: React.FormEvent) => {
                         ))}
                       </div>
                     )}
+                    
+                    {experience.achievement && (
+                      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                          🏆 {experience.achievement}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -486,14 +500,14 @@ const handleSubmit = async (e: React.FormEvent) => {
           <CardContent className="text-center py-12">
             <Building className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              Aucune expérience professionnelle
+              {dict.noExperiences || "Aucune expérience professionnelle"}
             </h3>
             <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm mx-auto">
-              Ajoutez votre parcours professionnel pour montrer votre expertise et renforcer votre crédibilité auprès des clients.
+              {dict.noExperiencesDescription || "Ajoutez votre parcours professionnel pour montrer votre expertise et renforcer votre crédibilité auprès des clients."}
             </p>
             <Button onClick={openAddDialog} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter votre première expérience
+              {dict.addFirstExperience || "Ajouter votre première expérience"}
             </Button>
           </CardContent>
         </Card>
@@ -503,7 +517,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       {experiences.length > 0 && (
         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
-            <CardTitle>Statistiques</CardTitle>
+            <CardTitle>{dict.statsTitle || "Statistiques"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-4">
@@ -511,19 +525,19 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {experiences.length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Expériences</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.experiences || "Expériences"}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {experiences.filter(exp => exp.current).length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Postes actuels</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.currentPositions || "Postes actuels"}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {new Set(experiences.flatMap(exp => exp.technologies)).size}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Technologies</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.technologies || "Technologies"}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
@@ -534,7 +548,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     return acc + months
                   }, 0) / 12 * 10) / 10}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Années totales</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.totalYears || "Années totales"}</div>
               </div>
             </div>
           </CardContent>

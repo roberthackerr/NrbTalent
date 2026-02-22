@@ -12,9 +12,11 @@ import { toast } from 'sonner'
 interface AvatarStepProps {
   onComplete: () => void
   onSkip: () => void
+  dict: any // Dictionnaire pour cette étape
+  lang: string
 }
 
-export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
+export function AvatarStep({ onComplete, onSkip, dict, lang }: AvatarStepProps) {
   const { data: session, update } = useSession()
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
@@ -25,12 +27,12 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
     const file = event.target.files?.[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
-        toast.error('Veuillez sélectionner une image valide')
+        toast.error(dict.errors?.invalidImage || 'Veuillez sélectionner une image valide')
         return
       }
       
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('L\'image ne doit pas dépasser 5MB')
+        toast.error(dict.errors?.fileTooLarge || 'L\'image ne doit pas dépasser 5MB')
         return
       }
 
@@ -64,14 +66,14 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
           }
         })
         
-        toast.success('Photo de profil mise à jour avec succès!')
+        toast.success(dict.success || 'Photo de profil mise à jour avec succès!')
         onComplete()
       } else {
         throw new Error('Erreur lors du téléchargement')
       }
     } catch (error) {
       console.error('Erreur upload:', error)
-      toast.error('Erreur lors du téléchargement de l\'image')
+      toast.error(dict.errors?.upload || 'Erreur lors du téléchargement de l\'image')
     } finally {
       setUploading(false)
     }
@@ -91,9 +93,9 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
         {/* Zone de téléchargement */}
         <Card>
           <CardHeader>
-            <CardTitle>Ajouter une photo</CardTitle>
+            <CardTitle>{dict.title}</CardTitle>
             <CardDescription>
-              Téléchargez une photo pour personnaliser votre profil
+              {dict.description}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -137,10 +139,10 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
                   </div>
                   <div>
                     <p className="text-slate-700 dark:text-slate-300 font-medium mb-1">
-                      Cliquez pour ajouter une photo
+                      {dict.clickToUpload}
                     </p>
                     <p className="text-sm text-slate-500 dark:text-slate-500">
-                      PNG, JPG jusqu'à 5MB
+                      {dict.requirements}
                     </p>
                   </div>
                 </div>
@@ -156,17 +158,17 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
                 {uploading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Téléchargement...
+                    {dict.uploading}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Confirmer
+                    {dict.confirm}
                   </>
                 )}
               </Button>
               <Button variant="outline" onClick={onSkip}>
-                Passer
+                {dict.skip}
               </Button>
             </div>
           </CardContent>
@@ -177,27 +179,17 @@ export function AvatarStep({ onComplete, onSkip }: AvatarStepProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              Conseils pour une bonne photo
+              {dict.tipsTitle}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Visage bien visible et éclairé</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Fond neutre et professionnel</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Format carré recommandé</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                <span>Sourire toujours apprécié 😊</span>
-              </li>
+              {dict.tips?.map((tip: string, index: number) => (
+                <li key={index} className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
+                  <span>{tip}</span>
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>

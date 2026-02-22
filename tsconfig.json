@@ -39,7 +39,7 @@
     "lib/websocket-server.js",
     "app/messages/page.text",
     ".next/dev/types/**/*.ts"
-  ],
+, "lib/models/user.ts.bp"  ],
   "exclude": [
     "node_modules"
   ]

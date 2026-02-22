@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Image, Plus, Edit, Trash2, ExternalLink, Star, X, FolderOpen, CheckCircle } from "lucide-react"
+import { Plus, Edit, Trash2, ExternalLink, Star, X, FolderOpen, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -30,9 +30,12 @@ interface PortfolioSectionProps {
   items: PortfolioItem[]
   onUpdate: () => void
   loading: boolean
+  dict: any
+  lang: string
 }
 
-const portfolioCategories = [
+// ✅ Catégories par défaut
+const defaultCategories = [
   "Site Web",
   "Application Mobile",
   "Design UI/UX",
@@ -43,7 +46,39 @@ const portfolioCategories = [
   "Autre"
 ]
 
-export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionProps) {
+// ✅ Version ultra-robuste de getPortfolioCategories
+const getPortfolioCategories = (dict: any) => {
+  // Si dict est undefined ou null, utiliser les valeurs par défaut
+  if (!dict) {
+    return defaultCategories
+  }
+
+  // Récupérer les catégories du dictionnaire si elles existent
+  const categories = dict.categories || {}
+  
+  return [
+    categories.website || dict.website || defaultCategories[0],
+    categories.mobile || dict.mobile || defaultCategories[1],
+    categories.design || dict.design || defaultCategories[2],
+    categories.ecommerce || dict.ecommerce || defaultCategories[3],
+    categories.api || dict.api || defaultCategories[4],
+    categories.tool || dict.tool || defaultCategories[5],
+    categories.game || dict.game || defaultCategories[6],
+    categories.other || dict.other || defaultCategories[7]
+  ]
+}
+
+export function PortfolioSection({ items, onUpdate, loading, dict, lang }: PortfolioSectionProps) {
+  // ✅ DEBUG - À GARDER TEMPORAIREMENT POUR VÉRIFICATION
+  console.log('=== PORTFOLIO SECTION DEBUG ===')
+  console.log('dict reçu:', dict)
+  console.log('dict type:', typeof dict)
+  console.log('dict is undefined?', dict === undefined)
+  console.log('================================')
+
+  // ✅ Valeur par défaut si dict est undefined
+  const safeDict = dict || {}
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null)
   const [formData, setFormData] = useState<Omit<PortfolioItem, "id">>({
@@ -59,6 +94,8 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
   const [imagePreview, setImagePreview] = useState("")
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  const portfolioCategories = getPortfolioCategories(safeDict)
 
   const resetForm = () => {
     setFormData({
@@ -121,12 +158,12 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
     const file = files[0]
     
     if (!file.type.startsWith('image/')) {
-      toast.error("Veuillez sélectionner une image valide")
+      toast.error(safeDict.errors?.invalidImage || "Please select a valid image")
       return
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("L'image doit faire moins de 5MB")
+      toast.error(safeDict.errors?.fileTooLarge || "Image must be less than 5MB")
       return
     }
 
@@ -154,7 +191,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
 
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(error.error || 'Échec de l\'upload de l\'image')
+      throw new Error(error.error || safeDict.errors?.upload || 'Failed to upload image')
     }
 
     const data = await response.json()
@@ -165,17 +202,17 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
     e.preventDefault()
 
     if (!formData.title || !formData.description || !formData.category) {
-      toast.error("Veuillez remplir les champs obligatoires")
+      toast.error(safeDict.errors?.missingFields || "Please fill in all required fields")
       return
     }
 
     if (editingItem && !imageFile && !formData.image) {
-      toast.error("Une image est requise")
+      toast.error(safeDict.errors?.imageRequired || "An image is required")
       return
     }
 
     if (!editingItem && !imageFile) {
-      toast.error("Veuillez sélectionner une image")
+      toast.error(safeDict.errors?.imageRequired || "Please select an image")
       return
     }
 
@@ -212,36 +249,31 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to save portfolio item')
+        throw new Error(error.error || safeDict.errors?.save || 'Failed to save portfolio item')
       }
 
-      const message = editingItem ? "Projet mis à jour!" : "Projet ajouté avec succès!"
-      toast.success(message)
+      toast.success(editingItem ? safeDict.success?.updated : safeDict.success?.added)
       
       setIsDialogOpen(false)
       resetForm()
-      
       await onUpdate()
 
     } catch (error) {
       console.error('Error saving portfolio item:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la sauvegarde")
+      toast.error(error instanceof Error ? error.message : safeDict.errors?.save || "Error saving")
     } finally {
       setUploading(false)
     }
   }
 
-  // Trier les projets : featured d'abord, puis par date (plus récent en bas)
   const sortedItems = [...items].sort((a, b) => {
     if (a.featured && !b.featured) return -1
     if (!a.featured && b.featured) return 1
-    
     const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
     const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
     return dateA - dateB
   })
 
-  // Identifier les projets récents (ajoutés dans les dernières 24h)
   const now = new Date().getTime()
   const oneDayAgo = now - (24 * 60 * 60 * 1000)
   const isRecentlyAdded = (item: PortfolioItem) => {
@@ -261,39 +293,39 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
           <div>
             <CardTitle className="flex items-center gap-2">
               <FolderOpen className="h-5 w-5 text-purple-500" />
-              Portfolio
+              {safeDict.title || "Portfolio"}
             </CardTitle>
             <CardDescription>
-              Montrez vos meilleurs projets pour impressionner les clients
+              {safeDict.description || "Showcase your best projects to impress clients"}
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openAddDialog} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter un projet
+                {safeDict.addProject || "Add a project"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingItem ? "Modifier le projet" : "Nouveau projet"}
+                  {editingItem ? safeDict.editTitle || "Edit project" : safeDict.addTitle || "New project"}
                 </DialogTitle>
                 <DialogDescription>
-                  Ajoutez les détails de votre projet portfolio
+                  {safeDict.formDescription || "Add details of your portfolio project"}
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-3">
                   <Label htmlFor="title" className="text-sm font-medium">
-                    Titre du projet *
+                    {safeDict.projectTitle || "Project title"} *
                   </Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Nom de votre projet"
+                    placeholder={safeDict.projectTitle || "Project name"}
                     required
                     maxLength={100}
                   />
@@ -301,7 +333,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
 
                 <div className="space-y-3">
                   <Label htmlFor="category" className="text-sm font-medium">
-                    Catégorie *
+                    {safeDict.category || "Category"} *
                   </Label>
                   <select
                     id="category"
@@ -310,7 +342,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                     className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-300"
                     required
                   >
-                    <option value="">Sélectionner une catégorie</option>
+                    <option value="">{safeDict.selectCategory || "Select a category"}</option>
                     {portfolioCategories.map(category => (
                       <option key={category} value={category}>{category}</option>
                     ))}
@@ -319,25 +351,25 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
 
                 <div className="space-y-3">
                   <Label htmlFor="description" className="text-sm font-medium">
-                    Description *
+                    {safeDict.projectDescription || "Description"} *
                   </Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Décrivez votre projet, les défis relevés, les fonctionnalités..."
+                    placeholder={safeDict.descriptionPlaceholder || "Describe your project, challenges overcome, features..."}
                     rows={4}
                     required
                     maxLength={500}
                   />
                   <p className="text-xs text-slate-500">
-                    {formData.description.length}/500 caractères
+                    {formData.description.length}/500 {safeDict.characters || "characters"}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <Label htmlFor="image" className="text-sm font-medium">
-                    Image du projet *
+                    {safeDict.projectImage || "Project image"} *
                   </Label>
                   <div className="space-y-4">
                     {imagePreview && (
@@ -373,11 +405,11 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                       required={!editingItem}
                     />
                     <p className="text-xs text-slate-500">
-                      PNG, JPG jusqu'à 5MB. Format recommandé : 16:9
+                      {safeDict.imageRequirements || "PNG, JPG up to 5MB. Recommended format: 16:9"}
                     </p>
                     {editingItem && !imageFile && (
                       <p className="text-xs text-blue-600">
-                        L'image actuelle sera conservée si aucune nouvelle image n'est sélectionnée
+                        {safeDict.imageKeepMessage || "Current image will be kept if no new image is selected"}
                       </p>
                     )}
                   </div>
@@ -385,27 +417,27 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
 
                 <div className="space-y-3">
                   <Label htmlFor="url" className="text-sm font-medium">
-                    Lien vers le projet
+                    {safeDict.projectUrl || "Project URL"}
                   </Label>
                   <Input
                     id="url"
                     type="url"
                     value={formData.url}
                     onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                    placeholder="https://votre-projet.com"
+                    placeholder="https://your-project.com"
                   />
                 </div>
 
                 <div className="space-y-3">
                   <Label htmlFor="technologies" className="text-sm font-medium">
-                    Technologies utilisées
+                    {safeDict.technologiesUsed || "Technologies used"}
                   </Label>
                   <div className="flex gap-2">
                     <Input
                       id="technologies"
                       value={newTechnology}
                       onChange={(e) => setNewTechnology(e.target.value)}
-                      placeholder="Ajouter une technologie"
+                      placeholder={safeDict.addTechnology || "Add a technology"}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
@@ -442,7 +474,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
                   />
                   <Label htmlFor="featured" className="text-sm font-medium">
-                    Mettre en vedette
+                    {safeDict.featured || "Feature this project"}
                   </Label>
                 </div>
 
@@ -453,7 +485,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                     onClick={() => setIsDialogOpen(false)}
                     disabled={uploading}
                   >
-                    Annuler
+                    {safeDict.cancel || "Cancel"}
                   </Button>
                   <Button 
                     type="submit" 
@@ -463,10 +495,10 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                     {uploading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                        {editingItem ? "Mise à jour..." : "Ajout..."}
+                        {safeDict.saving || "Saving..."}
                       </>
                     ) : (
-                      editingItem ? "Mettre à jour" : "Ajouter le projet"
+                      editingItem ? safeDict.update || "Update" : safeDict.add || "Add"
                     )}
                   </Button>
                 </DialogFooter>
@@ -482,10 +514,10 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-500" />
-              Projets en Vedette
+              {safeDict.featuredTitle || "Featured Projects"}
             </CardTitle>
             <CardDescription>
-              Ces projets seront mis en avant sur votre profil
+              {safeDict.featuredDescription || "These projects will be highlighted on your profile"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -497,6 +529,8 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                   onEdit={openEditDialog}
                   onUpdate={onUpdate}
                   isNew={isRecentlyAdded(item)}
+                  dict={safeDict}
+                  lang={lang}
                 />
               ))}
             </div>
@@ -507,9 +541,9 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
       {/* Tous les autres projets */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader>
-          <CardTitle>Tous les Projets</CardTitle>
+          <CardTitle>{safeDict.allProjectsTitle || "All Projects"}</CardTitle>
           <CardDescription>
-            {items.length} projet{items.length > 1 ? 's' : ''} au total
+            {items.length} {safeDict.projectCount || "project(s) total"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -523,6 +557,8 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                   onUpdate={onUpdate}
                   isNew={isRecentlyAdded(item)}
                   fullWidth
+                  dict={safeDict}
+                  lang={lang}
                 />
               ))}
             </div>
@@ -530,14 +566,14 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
             <div className="text-center py-12">
               <FolderOpen className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
               <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Aucun projet portfolio
+                {safeDict.noProjects || "No portfolio projects"}
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm mx-auto">
-                Montrez votre travail pour impressionner les clients et augmentez vos chances d'être embauché.
+                {safeDict.noProjectsDescription || "Showcase your work to impress clients and increase your chances of getting hired."}
               </p>
               <Button onClick={openAddDialog} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter votre premier projet
+                {safeDict.addFirstProject || "Add your first project"}
               </Button>
             </div>
           ) : null}
@@ -548,7 +584,7 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
       {items.length > 0 && (
         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
-            <CardTitle>Statistiques</CardTitle>
+            <CardTitle>{safeDict.statsTitle || "Statistics"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-4">
@@ -556,25 +592,25 @@ export function PortfolioSection({ items, onUpdate, loading }: PortfolioSectionP
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {items.length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Projets</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{safeDict.projects || "Projects"}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                   {featuredItems.length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">En vedette</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{safeDict.featured || "Featured"}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {new Set(items.flatMap(item => item.technologies)).size}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Technologies</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{safeDict.technologies || "Technologies"}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {items.filter(item => item.url).length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Avec lien</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{safeDict.withLink || "With link"}</div>
               </div>
             </div>
           </CardContent>
@@ -590,21 +626,25 @@ function PortfolioCard({
   onEdit,
   onUpdate,
   isNew = false,
-  fullWidth = false
+  fullWidth = false,
+  dict,
+  lang
 }: {
   item: PortfolioItem
   onEdit: (item: PortfolioItem) => void
   onUpdate: () => void
   isNew?: boolean
   fullWidth?: boolean
+  dict: any
+  lang: string
 }) {
+  const safeDict = dict || {}
+
   const deletePortfolioItem = async (itemId: string) => {
     try {
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           section: 'portfolio',
           data: { id: itemId, _delete: true }
@@ -612,15 +652,15 @@ function PortfolioCard({
       })
 
       if (response.ok) {
-        toast.success("Projet supprimé!")
+        toast.success(safeDict.success?.removed || "Project deleted!")
         onUpdate()
       } else {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to delete portfolio item')
+        throw new Error(error.error || safeDict.errors?.remove || 'Failed to delete')
       }
     } catch (error) {
       console.error('Error deleting portfolio item:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression")
+      toast.error(error instanceof Error ? error.message : safeDict.errors?.remove || "Error deleting")
     }
   }
 
@@ -628,9 +668,7 @@ function PortfolioCard({
     try {
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           section: 'portfolio',
           data: { ...item, featured: !item.featured }
@@ -638,15 +676,15 @@ function PortfolioCard({
       })
 
       if (response.ok) {
-        toast.success("Projet mis à jour!")
+        toast.success(safeDict.success?.updated || "Project updated!")
         onUpdate()
       } else {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to update portfolio item')
+        throw new Error(error.error || safeDict.errors?.update || 'Failed to update')
       }
     } catch (error) {
       console.error('Error updating portfolio item:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour")
+      toast.error(error instanceof Error ? error.message : safeDict.errors?.update || "Error updating")
     }
   }
 
@@ -665,13 +703,13 @@ function PortfolioCard({
           {isNew && (
             <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
               <CheckCircle className="h-3 w-3 mr-1 fill-current" />
-              Nouveau
+              {safeDict.new || "New"}
             </Badge>
           )}
           {item.featured && (
             <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white border-0">
               <Star className="h-3 w-3 mr-1 fill-current" />
-              Vedette
+              {safeDict.featured || "Featured"}
             </Badge>
           )}
           <Badge variant="outline" className="bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300">
@@ -737,13 +775,13 @@ function PortfolioCard({
             <Button variant="ghost" size="sm" asChild>
               <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
                 <ExternalLink className="h-3 w-3" />
-                <span className="text-xs">Voir le projet</span>
+                <span className="text-xs">{safeDict.viewProject || "View project"}</span>
               </a>
             </Button>
           )}
           {item.createdAt && (
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Ajouté le {new Date(item.createdAt).toLocaleDateString('fr-FR')}
+              {safeDict.addedOn || "Added on"} {new Date(item.createdAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
             </span>
           )}
         </div>

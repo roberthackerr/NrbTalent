@@ -1,4 +1,5 @@
-"use client"
+// components/settings/skills-tab.tsx
+'use client'
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +14,9 @@ import { cn } from "@/lib/utils"
 
 interface SkillsTabProps {
   user: any
+  dict: any
+  lang: string
+  onUpdate?: () => void
 }
 
 interface Skill {
@@ -24,31 +28,12 @@ interface Skill {
   featured: boolean
 }
 
-const skillCategories = [
-  "Développement Web",
-  "Développement Mobile",
-  "Design UI/UX",
-  "DevOps",
-  "Data Science",
-  "Marketing Digital",
-  "Rédaction",
-  "Traduction",
-  "Consulting",
-  "Autre"
-]
-
-const popularSkills = [
-  "React", "TypeScript", "Node.js", "Python", "Next.js", "Vue.js", "Angular",
-  "PHP", "Laravel", "Symfony", "Java", "Spring Boot", "C#", ".NET",
-  "Swift", "Kotlin", "Flutter", "React Native", "Docker", "Kubernetes",
-  "AWS", "Azure", "Google Cloud", "MongoDB", "PostgreSQL", "MySQL",
-  "Redis", "GraphQL", "REST API", "Tailwind CSS", "Figma", "Adobe XD",
-  "Photoshop", "Illustrator", "SEO", "Marketing", "Content Writing"
-]
-
-export function SkillsTab({ user }: SkillsTabProps) {
+export function SkillsTab({ user, dict, lang, onUpdate }: SkillsTabProps) {
   const [loading, setLoading] = useState(false)
   const [skills, setSkills] = useState<Skill[]>([])
+  const [popularSkills, setPopularSkills] = useState<string[]>([])
+  const [skillCategories, setSkillCategories] = useState<string[]>([])
+  
   const [newSkill, setNewSkill] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [skillLevel, setSkillLevel] = useState<Skill["level"]>("intermediate")
@@ -58,6 +43,8 @@ export function SkillsTab({ user }: SkillsTabProps) {
 
   useEffect(() => {
     fetchSkills()
+    fetchPopularSkills()
+    fetchSkillCategories()
   }, [])
 
   const fetchSkills = async () => {
@@ -69,19 +56,92 @@ export function SkillsTab({ user }: SkillsTabProps) {
       }
     } catch (error) {
       console.error('Error fetching skills:', error)
-      toast.error("Erreur lors du chargement des compétences")
+      toast.error(dict.errors?.fetch || "Erreur lors du chargement des compétences")
     }
   }
 
-  const filteredSkills = popularSkills.filter(skill =>
-    skill.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const fetchPopularSkills = async () => {
+    try {
+      const response = await fetch('/api/skills/popular')
+      if (response.ok) {
+        const data = await response.json()
+        setPopularSkills(data.skills || [])
+      } else {
+        // Fallback skills if API fails
+        setPopularSkills([
+          "React", "TypeScript", "Node.js", "Python", "Next.js",
+          "Vue.js", "Angular", "PHP", "Laravel", "Symfony",
+          "Java", "Spring Boot", "C#", ".NET", "Swift",
+          "Kotlin", "Flutter", "React Native", "Docker", "Kubernetes",
+          "AWS", "Azure", "Google Cloud", "MongoDB", "PostgreSQL",
+          "MySQL", "Redis", "GraphQL", "REST API", "Tailwind CSS",
+          "Figma", "Adobe XD", "Photoshop", "Illustrator", "SEO",
+          "Marketing Digital", "Content Writing", "UI/UX Design", "DevOps"
+        ])
+      }
+    } catch (error) {
+      console.error('Error fetching popular skills:', error)
+      // Fallback skills
+      setPopularSkills([
+        "React", "TypeScript", "Node.js", "Python", "Next.js",
+        "Vue.js", "Angular", "PHP", "Laravel", "Symfony",
+        "Java", "Spring Boot", "C#", ".NET", "Swift",
+        "Kotlin", "Flutter", "React Native", "Docker", "Kubernetes"
+      ])
+    }
+  }
+
+  const fetchSkillCategories = async () => {
+    try {
+      const response = await fetch('/api/skills/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setSkillCategories(data.categories || [])
+      } else {
+        // Fallback categories
+        setSkillCategories([
+          "Développement Web",
+          "Développement Mobile",
+          "Design UI/UX",
+          "DevOps",
+          "Data Science",
+          "Marketing Digital",
+          "Rédaction",
+          "Traduction",
+          "Consulting",
+          "Autre"
+        ])
+      }
+    } catch (error) {
+      console.error('Error fetching skill categories:', error)
+      // Fallback categories
+      setSkillCategories([
+        "Développement Web",
+        "Développement Mobile",
+        "Design UI/UX",
+        "DevOps",
+        "Data Science",
+        "Marketing Digital",
+        "Rédaction",
+        "Traduction",
+        "Consulting",
+        "Autre"
+      ])
+    }
+  }
+
+  // ✅ Vérification que popularSkills est un tableau
+  const filteredSkills = Array.isArray(popularSkills) 
+    ? popularSkills.filter((skill: string) =>
+        skill.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : []
 
   const addSkill = async () => {
     const skillToAdd = showCustomInput ? newSkill : (newSkill || searchTerm)
     
     if (!skillToAdd.trim() || !selectedCategory) {
-      toast.error("Veuillez saisir une compétence et sélectionner une catégorie")
+      toast.error(dict.errors?.missingFields || "Veuillez saisir une compétence et sélectionner une catégorie")
       return
     }
 
@@ -90,7 +150,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
     )
 
     if (skillExists) {
-      toast.error("Cette compétence existe déjà")
+      toast.error(dict.errors?.alreadyExists || "Cette compétence existe déjà")
       return
     }
 
@@ -127,14 +187,15 @@ export function SkillsTab({ user }: SkillsTabProps) {
         setSkillLevel("intermediate")
         setYearsOfExperience(1)
         setShowCustomInput(false)
-        toast.success("Compétence ajoutée avec succès!")
+        toast.success(dict.success?.added || "Compétence ajoutée avec succès!")
+        if (onUpdate) onUpdate()
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Failed to add skill')
       }
     } catch (error) {
       console.error('Error adding skill:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de l'ajout de la compétence")
+      toast.error(dict.errors?.add || "Erreur lors de l'ajout de la compétence")
     } finally {
       setLoading(false)
     }
@@ -158,14 +219,15 @@ export function SkillsTab({ user }: SkillsTabProps) {
 
       if (response.ok) {
         setSkills(updatedSkills)
-        toast.success("Compétence supprimée avec succès!")
+        toast.success(dict.success?.removed || "Compétence supprimée avec succès!")
+        if (onUpdate) onUpdate()
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Failed to remove skill')
       }
     } catch (error) {
       console.error('Error removing skill:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression de la compétence")
+      toast.error(dict.errors?.remove || "Erreur lors de la suppression")
     } finally {
       setLoading(false)
     }
@@ -193,14 +255,15 @@ export function SkillsTab({ user }: SkillsTabProps) {
 
       if (response.ok) {
         setSkills(updatedSkills)
-        toast.success("Compétence mise à jour!")
+        toast.success(dict.success?.updated || "Compétence mise à jour!")
+        if (onUpdate) onUpdate()
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Failed to update skill')
       }
     } catch (error) {
       console.error('Error updating skill:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour")
+      toast.error(dict.errors?.update || "Erreur lors de la mise à jour")
     } finally {
       setLoading(false)
     }
@@ -216,12 +279,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
   }
 
   const getLevelText = (level: Skill["level"]) => {
-    switch (level) {
-      case "beginner": return "Débutant"
-      case "intermediate": return "Intermédiaire"
-      case "advanced": return "Avancé"
-      case "expert": return "Expert"
-    }
+    return dict.levels?.[level] || level
   }
 
   const featuredSkills = skills.filter(skill => skill.featured)
@@ -234,17 +292,17 @@ export function SkillsTab({ user }: SkillsTabProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-yellow-500" />
-            Ajouter une Compétence
+            {dict.addTitle}
           </CardTitle>
           <CardDescription>
-            Ajoutez vos compétences pour être trouvé par les clients
+            {dict.addDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
               <Label htmlFor="skill-select" className="text-sm font-medium">
-                Compétence
+                {dict.title}
               </Label>
               
               {showCustomInput ? (
@@ -252,7 +310,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
                   <Input
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
-                    placeholder="Entrez votre compétence"
+                    placeholder={dict.title}
                     className="border-slate-200 dark:border-slate-700"
                   />
                   <Button
@@ -262,19 +320,19 @@ export function SkillsTab({ user }: SkillsTabProps) {
                     onClick={() => setShowCustomInput(false)}
                     className="text-xs h-7"
                   >
-                    ← Choisir dans la liste
+                    ← {dict.back || "Back"}
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <Select value={newSkill} onValueChange={setNewSkill}>
                     <SelectTrigger className="border-slate-200 dark:border-slate-700">
-                      <SelectValue placeholder="Sélectionner une compétence" />
+                      <SelectValue placeholder={dict.searchSkills} />
                     </SelectTrigger>
                     <SelectContent>
                       <div className="p-2">
                         <Input
-                          placeholder="Rechercher..."
+                          placeholder={dict.searchSkills}
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="mb-2"
@@ -295,7 +353,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
                           onClick={() => setShowCustomInput(true)}
                           className="w-full justify-start text-xs h-8"
                         >
-                          + Ajouter une compétence personnalisée
+                          + {dict.addSkill}
                         </Button>
                       </div>
                     </SelectContent>
@@ -306,11 +364,11 @@ export function SkillsTab({ user }: SkillsTabProps) {
 
             <div className="space-y-3">
               <Label htmlFor="category" className="text-sm font-medium">
-                Catégorie
+                {dict.proficiency}
               </Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="border-slate-200 dark:border-slate-700">
-                  <SelectValue placeholder="Sélectionner une catégorie" />
+                  <SelectValue placeholder={dict.proficiency} />
                 </SelectTrigger>
                 <SelectContent>
                   {skillCategories.map((category) => (
@@ -326,24 +384,24 @@ export function SkillsTab({ user }: SkillsTabProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
               <Label htmlFor="level" className="text-sm font-medium">
-                Niveau
+                {dict.proficiency}
               </Label>
               <Select value={skillLevel} onValueChange={(value: Skill["level"]) => setSkillLevel(value)}>
                 <SelectTrigger className="border-slate-200 dark:border-slate-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="beginner">Débutant</SelectItem>
-                  <SelectItem value="intermediate">Intermédiaire</SelectItem>
-                  <SelectItem value="advanced">Avancé</SelectItem>
-                  <SelectItem value="expert">Expert</SelectItem>
+                  <SelectItem value="beginner">{dict.levels?.beginner}</SelectItem>
+                  <SelectItem value="intermediate">{dict.levels?.intermediate}</SelectItem>
+                  <SelectItem value="advanced">{dict.levels?.advanced}</SelectItem>
+                  <SelectItem value="expert">{dict.levels?.expert}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-3">
               <Label htmlFor="years" className="text-sm font-medium">
-                Années d'expérience
+                {dict.yearsOfExperience}
               </Label>
               <Input
                 id="years"
@@ -363,22 +421,21 @@ export function SkillsTab({ user }: SkillsTabProps) {
             className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25"
           >
             <Plus className="h-4 w-4 mr-2" />
-            {loading ? "Ajout..." : "Ajouter la compétence"}
+            {loading ? dict.saving : dict.addSkill}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Le reste du code reste inchangé */}
       {/* Compétences en vedette */}
       {featuredSkills.length > 0 && (
         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-500" />
-              Compétences en Vedette
+              {dict.featuredTitle}
             </CardTitle>
             <CardDescription>
-              Ces compétences seront mises en avant sur votre profil
+              {dict.featuredDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -395,7 +452,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
                     {getLevelText(skill.level)}
                   </Badge>
                   <span className="text-sm text-yellow-600 dark:text-yellow-400">
-                    {skill.yearsOfExperience} an{skill.yearsOfExperience > 1 ? 's' : ''}
+                    {skill.yearsOfExperience} {skill.yearsOfExperience > 1 ? 'ans' : 'an'}
                   </span>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
@@ -425,9 +482,9 @@ export function SkillsTab({ user }: SkillsTabProps) {
       {/* Toutes les compétences */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader>
-          <CardTitle>Mes Compétences</CardTitle>
+          <CardTitle>{dict.allSkillsTitle}</CardTitle>
           <CardDescription>
-            {skills.length} compétence{skills.length > 1 ? 's' : ''} au total
+            {skills.length} {dict.skillsCount}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -452,7 +509,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
                         <Badge variant="outline" className={cn("text-xs", getLevelColor(skill.level))}>
                           {getLevelText(skill.level)}
                         </Badge>
-                        <span>{skill.yearsOfExperience} an{skill.yearsOfExperience > 1 ? 's' : ''} d'expérience</span>
+                        <span>{skill.yearsOfExperience} {skill.yearsOfExperience > 1 ? 'ans' : 'an'}</span>
                       </div>
                     </div>
                   </div>
@@ -465,7 +522,7 @@ export function SkillsTab({ user }: SkillsTabProps) {
                       className="h-8"
                     >
                       <Star className="h-4 w-4 mr-1" />
-                      Vedette
+                      {dict.featuredLabel}
                     </Button>
                     <Button
                       variant="outline"
@@ -483,23 +540,23 @@ export function SkillsTab({ user }: SkillsTabProps) {
             <div className="text-center py-8">
               <Zap className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
               <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Aucune compétence ajoutée
+                {dict.addTitle}
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mb-4">
-                Ajoutez vos compétences pour montrer votre expertise aux clients
+                {dict.addDescription}
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Statistiques des compétences */}
+      {/* Statistiques */}
       {skills.length > 0 && (
         <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-500" />
-              Statistiques
+              {dict.statsTitle}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -508,19 +565,19 @@ export function SkillsTab({ user }: SkillsTabProps) {
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {skills.length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Compétences</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.skillsLabel}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {featuredSkills.length}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">En vedette</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.featuredLabel}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {Math.round(skills.reduce((acc, skill) => acc + skill.yearsOfExperience, 0) / skills.length * 10) / 10}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Moyenne d'expérience</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">{dict.avgExperienceLabel}</div>
               </div>
             </div>
           </CardContent>

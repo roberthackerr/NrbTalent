@@ -1,15 +1,106 @@
 {
-      "signin": {
+  "portfolio": {
+    "success": {
+      "removed": "Project deleted!",
+      "updated": "Project updated!"
+    },
+    "errors": {
+      "remove": "Error deleting",
+      "update": "Error updating"
+    },
+        "categories": {
+      "website": "Website",
+      "mobile": "Mobile App",
+      "design": "UI/UX Design",
+      "ecommerce": "E-commerce",
+      "api": "API",
+      "tool": "Tool",
+      "game": "Game",
+      "other": "Other"
+    },
+    "title": "Portfolio",
+    "description": "Showcase your best projects to impress clients",
+    "addProject": "Add a project",
+    "editTitle": "Edit project",
+    "addTitle": "New project",
+    "formDescription": "Add details of your portfolio project",
+    "projectTitle": "Project title",
+    "category": "Category",
+    "selectCategory": "Select a category",
+    "projectDescription": "Description",
+    "descriptionPlaceholder": "Describe your project, challenges overcome, features...",
+    "characters": "characters",
+    "projectImage": "Project image",
+    "imageRequirements": "PNG, JPG up to 5MB. Recommended format: 16:9",
+    "imageKeepMessage": "Current image will be kept if no new image is selected",
+    "projectUrl": "Project URL",
+    "technologiesUsed": "Technologies used",
+    "addTechnology": "Add technology",
+    "featured": "Feature this project",
+    "featuredTitle": "Featured Projects",
+    "featuredDescription": "These projects will be highlighted on your profile",
+    "allProjectsTitle": "All Projects",
+    "projectCount": "project(s) total",
+    "noProjects": "No portfolio projects",
+    "noProjectsDescription": "Showcase your work to impress clients and increase your chances of getting hired.",
+    "addFirstProject": "Add your first project",
+    "statsTitle": "Statistics",
+    "projects": "Projects",
+    "withLink": "With link",
+    "new": "New",
+    "viewProject": "View project",
+    "addedOn": "Added on"
+  },
+  "experience": {
+    "title": "Professional Experience",
+    "description": "Add your professional background to strengthen your credibility",
+    "addExperience": "Add experience",
+    "editTitle": "Edit experience",
+    "addTitle": "New experience",
+    "formDescription": "Enter your professional information",
+    "company": "Company",
+    "companyPlaceholder": "Company name",
+    "position": "Position",
+    "positionPlaceholder": "Your position",
+    "location": "Location",
+    "locationPlaceholder": "City, Country",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "currentPosition": "Current position",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your responsibilities and achievements...",
+    "technologiesUsed": "Technologies used",
+    "achievement": "Achievement",
+    "achievementPlaceholder": "Your main achievement",
+    "current": "Current",
+    "present": "Present",
+    "noExperiences": "No professional experience",
+    "noExperiencesDescription": "Add your professional background to showcase your expertise and build credibility with clients.",
+    "addFirstExperience": "Add your first experience",
+    "statsTitle": "Statistics",
+    "experiences": "Experiences",
+    "currentPositions": "Current positions",
+    "totalYears": "Total years",
+    "year": "year",
+    "years": "years",
+    "months": "months"
+  },
+
+
+  
+  "signin": {
     "benefits": {
       "title": "Welcome to your space",
-      "subtitle": "Access your account to manage your projects and collaborations"
-    ,      "items": [
+      "subtitle": "Access your account to manage your projects and collaborations",
+      "items": [
         "Access your personal space",
         "Manage your ongoing projects",
         "Communicate with your clients",
         "Track your earnings in real-time"
-      ]}
+      ]
+    }
   },
+
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -21,6 +112,7 @@
     "next": "Next",
     "skip": "Skip"
   },
+
   "navigation": {
     "home": "Home",
     "dashboard": "Dashboard",
@@ -32,6 +124,7 @@
     "signup": "Sign Up",
     "signout": "Sign Out"
   },
+
   "auth": {
     "welcome": "Welcome to NRBTalents",
     "subtitle": "The platform connecting talents and opportunities",
@@ -62,10 +155,144 @@
       "login": "Login successful!"
     }
   },
+
+  "onboardingPage": {
+    "pageTitle": "Complete Your Profile",
+    "pageSubtitle": "A few steps to showcase your expertise to clients",
+    "welcomeTitle": "Welcome to Your Freelance Journey!",
+    "welcomeDescription": "Let's set up your profile to start attracting clients",
+    "step": "Step",
+    "of": "of",
+    "completed": "completed",
+    "progress": "Progress",
+    "next": "Next",
+    "previous": "Previous",
+    "skip": "Skip for now",
+    "finish": "Finish Setup",
+    "startOnboarding": "Start Onboarding",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "success": "Success!",
+    "error": "Error",
+    
+    "avatar": {
+      "title": "Profile Photo",
+      "description": "Add a photo to personalize your profile",
+      "instructions": "Upload a professional photo that shows your face clearly",
+      "cameraTip": "Take a photo with good lighting",
+      "upload": "Upload Photo",
+      "takePhoto": "Take Photo",
+      "skipPhoto": "Skip photo for now",
+      "requirements": "Image requirements: Max 5MB, JPG, PNG or GIF",
+      "clickToUpload": "Click to add a photo",
+      "uploading": "Uploading...",
+      "confirm": "Confirm",
+      "tipsTitle": "Tips for a good photo",
+      "tips": [
+        "Face clearly visible and well-lit",
+        "Neutral and professional background",
+        "Square format recommended",
+        "Smile always appreciated 😊"
+      ],
+      "errors": {
+        "invalidImage": "Please select a valid image",
+        "fileTooLarge": "Image must not exceed 5MB",
+        "upload": "Error uploading image"
+      }
+    },
+
+    "skills": {
+      "title": "Technical Skills",
+      "description": "List your technologies and areas of expertise",
+      "searchSkills": "Search skills...",
+      "popularSkills": "Popular Skills",
+      "yourSkills": "Your Skills",
+      "proficiency": "Proficiency Level",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "expert": "Expert",
+      "yearsOfExperience": "Years of Experience",
+      "addSkill": "Add Skill",
+      "addTitle": "Add a Skill",
+      "addDescription": "Add your skills to be found by clients",
+      "featuredTitle": "Featured Skills",
+      "featuredDescription": "These skills will be highlighted on your profile",
+      "allSkillsTitle": "My Skills",
+      "skillsCount": "skill(s) total",
+      "statsTitle": "Statistics",
+      "skillsLabel": "Skills",
+      "featuredLabel": "Featured",
+      "avgExperienceLabel": "Avg. Experience",
+      "levels": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "expert": "Expert"
+      },
+      "categories": [
+        "Web Development",
+        "Mobile Development",
+        "UI/UX Design",
+        "DevOps",
+        "Data Science",
+        "Digital Marketing",
+        "Writing",
+        "Translation",
+        "Consulting",
+        "Other"
+      ],
+      "success": {
+        "added": "Skill added successfully!",
+        "removed": "Skill removed successfully!",
+        "updated": "Skill updated!"
+      },
+      "errors": {
+        "fetch": "Error loading skills",
+        "missingFields": "Please enter a skill and select a category",
+        "alreadyExists": "This skill already exists",
+        "add": "Error adding skill",
+        "remove": "Error removing skill",
+        "update": "Error updating skill"
+      }
+    },
+
+    "portfolio": {
+      "title": "Portfolio",
+      "description": "Present your best projects",
+      "addProject": "Add Project",
+      "projectTitle": "Project Title",
+      "projectDescription": "Project Description",
+      "technologiesUsed": "Technologies Used",
+      "projectUrl": "Project URL",
+      "category": "Category",
+      "featured": "Featured Project",
+      "uploadImages": "Upload Project Images",
+      "viewProject": "View Project",
+      "errors": {
+        "fetch": "Error loading projects",
+        "add": "Error adding project",
+        "remove": "Error removing project",
+        "update": "Error updating project"
+      },
+      "success": {
+        "added": "Project added successfully!",
+        "removed": "Project removed successfully!",
+        "updated": "Project updated!"
+      }
+    },
+
+    "tips": {
+      "avatar": "A professional photo increases trust by 40%",
+      "skills": "List 5-10 key skills for best results",
+      "portfolio": "Showcase 3-5 of your best projects"
+    }
+  },
+
   "onboarding": {
-    "title": "Complete your profile",
+    "title": "Complete Your Profile",
     "subtitle": "Tell us more about yourself for better opportunities",
-        "benefits": {
+    "benefits": {
       "freelance_title": "Unlock your freelance potential",
       "freelance_desc": "Join thousands of freelancers building their careers on NRBTalents",
       "client_title": "Find exceptional talent",
@@ -97,6 +324,7 @@
     "bio": "Biography",
     "complete": "Complete onboarding"
   },
+
   "dashboard": {
     "welcome": "Hello, {{name}}",
     "stats": {
@@ -106,6 +334,7 @@
       "responseTime": "Response time"
     }
   },
+
   "footer": {
     "rights": "All rights reserved",
     "terms": "Terms of use",

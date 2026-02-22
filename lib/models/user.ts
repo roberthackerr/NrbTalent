@@ -1,431 +1,495 @@
-import type { ObjectId } from "mongodb"
+// lib/models/user.ts
 
-export type UserRole = "freelance" | "client" | null
 
-export interface Badge {
-  type: "top_rated" | "rising_talent" | "expert" | "mentor" | "team_player" | "fast_delivery" | "premium"
-  earnedAt: Date
-  level?: number
-  expiresAt?: Date
-}
+// ============================================
+// USER MODEL - MongoDB Collection Structure
+// ============================================
 
-export interface Availability {
-  status: "available" | "busy" | "unavailable" | "away"
-  hoursPerWeek?: number
-  nextAvailable?: Date
-  responseTime?: string
-}
+import { ObjectId } from "mongodb"
 
-export interface Education {
+// ============================================
+// ENUMS & TYPES
+// ============================================
+
+/**
+ * User role enumeration
+ * - freelance: Can receive job offers and complete projects
+ * - client: Can post projects and hire freelancers
+ * - admin: Has full platform access
+ */
+export type UserRole = "freelance" | "client" | "admin"
+
+/**
+ * Skill proficiency levels
+ */
+export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert"
+
+/**
+ * User availability status
+ */
+export type AvailabilityStatus = "available" | "busy" | "unavailable"
+
+// ============================================
+// SKILL INTERFACE
+// ============================================
+
+/**
+ * Skill object structure
+ * Embedded in User document
+ */
+export interface Skill {
+  /** Unique skill identifier */
   id: string
-  school: string
-  degree: string
-  field: string
-  startDate: Date
-  endDate?: Date
-  current: boolean
-  description?: string
-  grade?: string
-}
-
-export interface Experience {
-  id: string
-  company: string
-  position: string
-  location?: string
-  startDate: Date
-  endDate?: Date
-  current: boolean
-  description: string
-  technologies: string[]
-  achievement: string
-}
-
-export interface PortfolioItem {
-  id: string
-  title: string
-  description: string
-  url?: string
-  image: string
-  category: string
-  technologies: string[]
-  featured: boolean
-  client?: string
-  duration?: string
-  budget?: number
-  createdAt: Date
-}
-
-export interface Review {
-  _id?: ObjectId
-  projectId: ObjectId
-  reviewerId: ObjectId
-  reviewerName: string
-  reviewerAvatar?: string
-  reviewedId: ObjectId
-  rating: number
-  comment: string
-  wouldRecommend: boolean
-  strengths?: string[]
-  createdAt: Date
-}
-
-export interface Certification {
+  /** Skill name (e.g., "React", "TypeScript") */
   name: string
-  issuer: string
-  earnedAt: Date
-  certificateUrl?: string
-  credentialId?: string
-  expiresAt?: Date
-  skills: string[]
+  /** Skill category (e.g., "Web Development", "Mobile") */
+  category: string
+  /** Proficiency level */
+  level: SkillLevel
+  /** Years of experience with this skill */
+  yearsOfExperience: number
+  /** Whether this skill is featured on profile */
+  featured: boolean
 }
 
-export interface UserPreferences {
-  emailNotifications: {
-    newMessages: boolean
-    projectInvites: boolean
-    applicationUpdates: boolean
-    paymentNotifications: boolean
-    newsletter: boolean
-  }
-  pushNotifications: {
-    newMessages: boolean
-    projectMatches: boolean
-    deadlineReminders: boolean
-  }
-  privacy: {
-    profileVisible: boolean
-    earningsVisible: boolean
-    onlineStatus: boolean
-    searchVisibility: boolean
-  }
-  communication: {
-    language: string
-    timezone: string
-    responseTime: string
-  }
+// ============================================
+// PORTFOLIO INTERFACE
+// ============================================
+
+/**
+ * Portfolio project structure
+ * Embedded in User document
+ */
+export interface Portfolio {
+  /** Unique project identifier */
+  id: string
+  /** Project title */
+  title: string
+  /** Project description */
+  description: string
+  /** Project image URL */
+  image: string
+  /** Optional project URL (live demo, GitHub, etc.) */
+  url?: string
+  /** Technologies used in the project */
+  technologies: string[]
+  /** Project category */
+  category: string
+  /** Whether this project is featured */
+  featured: boolean
+  /** Creation timestamp */
+  createdAt: Date
+  /** Last update timestamp */
+  updatedAt?: Date
 }
 
-export interface UserStatistics {
-  completedProjects: number
-  successRate: number
-  onTimeDelivery: number
-  clientSatisfaction: number
-  responseRate: number
-  avgResponseTime: number // in hours
-  totalHoursWorked: number
-  repeatClientRate: number
-  earnings: {
-    total: number
-    thisMonth: number
-    lastMonth: number
-  }
-  profileViews: number
-  proposalAcceptanceRate: number
+// ============================================
+// EXPERIENCE INTERFACE
+// ============================================
+
+/**
+ * Work experience structure
+ * Embedded in User document
+ */
+export interface Experience {
+  /** Unique experience identifier */
+  id: string
+  /** Company name */
+  company: string
+  /** Job position */
+  position: string
+  /** Work location (city, country) */
+  location?: string
+  /** Start date (YYYY-MM format) */
+  startDate: string
+  /** End date (YYYY-MM format) - undefined if current position */
+  endDate?: string
+  /** Whether this is the current position */
+  current: boolean
+  /** Job description */
+  description: string
+  /** Technologies used in this position */
+  technologies: string[]
+  /** Key achievement or accomplishment */
+  achievement: string
+  /** Creation timestamp */
+  createdAt?: Date
+  /** Last update timestamp */
+  updatedAt?: Date
 }
 
+// ============================================
+// EDUCATION INTERFACE
+// ============================================
+
+/**
+ * Education structure
+ * Embedded in User document
+ */
+export interface Education {
+  /** Unique education identifier */
+  id: string
+  /** Institution name */
+  institution: string
+  /** Degree obtained */
+  degree: string
+  /** Field of study */
+  fieldOfStudy: string
+  /** Start date */
+  startDate: string
+  /** End date */
+  endDate?: string
+  /** Whether currently studying */
+  current: boolean
+  /** Description */
+  description?: string
+  /** Creation timestamp */
+  createdAt?: Date
+}
+
+// ============================================
+// SOCIAL LINKS INTERFACE
+// ============================================
+
+/**
+ * Social media links structure
+ */
 export interface SocialLinks {
-  website?: string
-  linkedin?: string
+  /** GitHub profile URL */
   github?: string
+  /** LinkedIn profile URL */
+  linkedin?: string
+  /** Twitter profile URL */
   twitter?: string
-  behance?: string
+  /** Portfolio website URL */
+  website?: string
+  /** Dribbble profile URL */
   dribbble?: string
+  /** Behance profile URL */
+  behance?: string
+  /** Stack Overflow profile URL */
+  stackoverflow?: string
+  /** Medium blog URL */
+  medium?: string
 }
 
+// ============================================
+// USER PREFERENCES INTERFACE
+// ============================================
+
+/**
+ * User preferences structure
+ */
+export interface UserPreferences {
+  /** Email notification preferences */
+  emailNotifications: boolean
+  /** Newsletter subscription */
+  newsletter: boolean
+  /** Language preference */
+  language: 'fr' | 'en' | 'mg'
+  /** Theme preference */
+  theme: 'light' | 'dark' | 'system'
+  /** Project alerts */
+  projectAlerts: boolean
+  /** Message notifications */
+  messageNotifications: boolean
+}
+
+// ============================================
+// MAIN USER INTERFACE
+// ============================================
+
+/**
+ * Main User document structure for MongoDB
+ * This represents the complete user profile
+ */
 export interface User {
-  onboardingCompleted: boolean,
-  _id?: ObjectId
+  // ========== SYSTEM FIELDS ==========
+  /** MongoDB ObjectId (automatically generated) */
+  _id: ObjectId
+  /** Creation timestamp (automatically set) */
+  createdAt: Date
+  /** Last update timestamp (automatically updated) */
+  updatedAt: Date
+
+  // ========== BASIC INFORMATION ==========
+  /** User's full name or username */
+  name: string
+  /** Unique email address (used for login) */
+  email: string
+  /** Hashed password (empty for OAuth users) */
+  password?: string
+  /** Email verification status */
+  emailVerified?: Date | null
+  /** User role - determines platform permissions */
+  role: UserRole
+  /** Profile picture URL */
+  avatar?: string
+  /** Short biography */
+  bio?: string
+  /** User's location */
+  location?: string
+  /** Phone number (optional) */
+  phone?: string
+  /** Date of birth (optional) */
+  dateOfBirth?: Date
+
+  // ========== PROFESSIONAL INFORMATION ==========
+  /** Current job title */
+  jobTitle?: string
+  /** Hourly rate in the default currency */
+  hourlyRate?: number
+  /** Preferred currency (USD, EUR, MGA, etc.) */
+  currency?: string
+  /** List of professional skills */
+  skills: Skill[]
+  /** Languages spoken with proficiency levels */
+  languages?: Array<{
+    name: string
+    level: 'basic' | 'conversational' | 'fluent' | 'native'
+  }>
+  /** Current availability status */
+  availability: AvailabilityStatus
+  /** Years of professional experience */
+  totalExperience?: number
+
+  // ========== PORTFOLIO & WORK ==========
+  /** List of portfolio projects */
+  portfolio: Portfolio[]
+  /** List of work experiences */
+  experience: Experience[]
+  /** List of educational background */
+  education?: Education[]
+  /** Professional certifications */
+  certifications?: Array<{
+    name: string
+    issuer: string
+    date: Date
+    url?: string
+  }>
+  /** Uploaded CV/resume URL */
+  resume?: string
+
+  // ========== SOCIAL & LINKS ==========
+  /** Social media profiles */
+  socialLinks?: SocialLinks
+
+  // ========== STATISTICS & METRICS ==========
+  /** Average rating from clients */
+  rating?: number
+  /** Number of completed projects */
+  completedProjects: number
+  /** Total earnings across all projects */
+  totalEarnings: number
+  /** Average response time in hours */
+  responseTime?: number
+  /** Profile view count */
+  profileViews?: number
+  /** Number of times hired */
+  hireCount?: number
+
+  // ========== BADGES & ACHIEVEMENTS ==========
+  /** List of earned badges */
+  badges?: Array<{
+    id: string
+    name: string
+    icon: string
+    earnedAt: Date
+  }>
+
+  // ========== VERIFICATION & STATUS ==========
+  /** Whether email is verified */
+  verified: boolean
+  /** Whether identity is verified */
+  identityVerified?: boolean
+  /** Whether phone is verified */
+  phoneVerified?: boolean
+  /** Whether profile is complete */
+  onboardingCompleted: boolean
+  /** Account status (active, suspended, banned) */
+  status?: 'active' | 'suspended' | 'banned'
+  /** Last login timestamp */
+  lastLogin?: Date
+
+  // ========== PREFERENCES ==========
+  /** User preferences */
+  preferences?: UserPreferences
+
+  // ========== PAYMENT INFORMATION ==========
+  /** Stripe customer ID (for payments) */
+  stripeCustomerId?: string
+  /** Stripe account ID (for payouts) */
+  stripeAccountId?: string
+  /** Default payment method */
+  defaultPaymentMethod?: string
+
+  // ========== NOTIFICATIONS ==========
+  /** List of notifications */
+  notifications?: Array<{
+    id: string
+    type: string
+    message: string
+    read: boolean
+    createdAt: Date
+    link?: string
+  }>
+  /** Unread notifications count */
+  unreadNotifications?: number
+
+  // ========== SECURITY ==========
+  /** Two-factor authentication enabled */
+  twoFactorEnabled?: boolean
+  /** Two-factor authentication secret */
+  twoFactorSecret?: string
+  /** Backup codes for 2FA */
+  backupCodes?: string[]
+  /** Login attempts for rate limiting */
+  loginAttempts?: number
+  /** Lock until timestamp (for failed attempts) */
+  lockUntil?: Date
+}
+
+// ============================================
+// USER CREATION DTO (Data Transfer Object)
+// ============================================
+
+/**
+ * Data required to create a new user
+ * Used in registration endpoint
+ */
+export interface CreateUserDTO {
   name: string
   email: string
-  password: string
+  password?: string
+  role?: UserRole
+  avatar?: string
+}
+
+// ============================================
+// USER UPDATE DTO
+// ============================================
+
+/**
+ * Data allowed for user updates
+ * Used in PATCH /api/users/profile
+ */
+export interface UpdateUserDTO {
+  name?: string
+  avatar?: string
+  bio?: string
+  location?: string
+  phone?: string
+  jobTitle?: string
+  hourlyRate?: number
+  currency?: string
+  skills?: Skill[]
+  languages?: User['languages']
+  availability?: AvailabilityStatus
+  socialLinks?: SocialLinks
+  preferences?: Partial<UserPreferences>
+  onboardingCompleted?: boolean
+}
+
+// ============================================
+// USER RESPONSE DTO (Safe for client)
+// ============================================
+
+/**
+ * User data sent to client (excludes sensitive information)
+ */
+export interface UserResponseDTO {
+  id: string
+  name: string
+  email: string
   role: UserRole
   avatar?: string
-  coverImage?: string
   bio?: string
-  title?: string
-  skills: string[]
-  hourlyRate?: number
   location?: string
-  timezone?: string
-  languages: string[]
-  socialLinks?: SocialLinks
-  portfolio?: PortfolioItem[]
+  jobTitle?: string
+  hourlyRate?: number
+  currency?: string
+  skills: Skill[]
+  languages?: User['languages']
+  availability: AvailabilityStatus
+  portfolio: Portfolio[]
+  experience: Experience[]
   education?: Education[]
-  experience?: Experience[]
-  certifications?: Certification[]
-  reviews?: Review[]
-  badges?: Badge[]
-  availability?: Availability
-  preferences?: UserPreferences
-  statistics?: UserStatistics
-  enrolledCourses?: ObjectId[]
-  savedProjects?: ObjectId[]
-  following?: ObjectId[]
-  followers?: ObjectId[]
-  verified?: boolean
-  emailVerified?: boolean | Date        // true ou Date de vérification
-  emailVerificationToken?: string       // Token temporaire pour vérification
-  emailVerificationExpires?: Date       // Expiration du token (24h)
-  verificationAttempts?: number   
-  phoneVerified?: boolean
-  phone?: string
-  phoneVerificationToken?: string
-  phoneVerificationExpires?: Date
-  phoneVerificationAttempts?: number
+  socialLinks?: SocialLinks
+  rating?: number
+  completedProjects: number
+  totalEarnings: number
+  responseTime?: number
+  badges?: User['badges']
+  verified: boolean
   identityVerified?: boolean
-  completionScore?: number
-  isActive?: boolean
-  lastLoginAt?: Date
+  onboardingCompleted: boolean
+  preferences?: UserPreferences
   createdAt: Date
   updatedAt: Date
-
-   teams?: ObjectId[];  // ← Array of team IDs user belongs to
-  teamPreferences?: {
-    openToTeams: boolean;
-    preferredRoles: string[];
-    maxTeamSize: number;
-    workStyle: "sync" | "async" | "mixed";
-  };
-     bankAccount?: {
-    iban: string;
-    bic: string;
-    accountHolder: string;
-    bankName: string;
-    verified: boolean;
-    verifiedAt?: Date;
-  };
-  
-  // Infos fiscales
-  taxInfo?: {
-    siren?: string;          // Pour auto-entrepreneur
-    siret?: string;
-    vatNumber?: string;      // TVA intracommunautaire
-    legalForm?: string;      // 'auto-entrepreneur', 'sarl', 'ei', etc.
-    address?: string;
-  };
-  
-  // Paiements reçus
-  paymentsReceived?: {
-    totalEarnings: number;
-    pendingAmount: number;
-    availableAmount: number;
-    transactions: Array<{
-      projectId: ObjectId;
-      amount: number;
-      date: Date;
-      status: 'pending' | 'paid' | 'processing';
-      transferId?: string;
-    }>;
-  };
-  
-  // Paramètres de paiement
-  paymentSettings?: {
-    paymentMethod: 'bank_transfer' | 'paypal' | 'wise';
-    minimumPayout: number;     // Ex: 50€ minimum pour retirer
-    payoutSchedule: 'weekly' | 'bi-weekly' | 'monthly' | 'manual';
-    automaticPayout: boolean;
-    lastPayoutDate?: Date;
-    nextPayoutDate?: Date;
-  };
-  // Nouveaux champs pour Stripe
-  stripeCustomerId?: string;
-  stripeAccountId?: string; // Pour les freelances avec Stripe Connect
-  paymentMethods?: Array<{
-    id: string;
-    brand: string;
-    last4: string;
-    exp_month: number;
-    exp_year: number;
-    isDefault: boolean;
-    addedAt: Date;
-  }>;
-  billingAddress?: {
-    line1: string;
-    line2?: string;
-    city: string;
-    postal_code: string;
-    country: string;
-  };
-  
-  // Métriques de paiement
-  paymentStats?: {
-    totalSpent: number;
-    totalProjects: number;
-    successfulPayments: number;
-    failedPayments: number;
-    lastPaymentDate?: Date;
-  };
 }
-// lib/models/user.ts - AJOUTER À LA FIN DU FICHIER
 
-export interface Review {
-  _id?: ObjectId
-  // Relations
-  reviewerId: ObjectId        // Qui note
-  reviewedId: ObjectId        // Qui est noté
-  contractId: ObjectId        // Contrat associé
-  projectId?: ObjectId        // Projet associé
-  projectTitle?: string       // Titre du projet
-  
-  // Contenu
-  rating: number              // 1-5
-  comment: string
-  strengths: string[]         // Points forts
-  wouldRecommend: boolean     // Recommandation
-  
-  // Vérifications
-  verified: boolean           // Vrai si collaboration vérifiée
-  verifiedAt?: Date           // Date de vérification
-  verifiedBy?: 'system' | 'admin' | 'auto'
-  
-  // Métadonnées
-  helpfulCount: number        // Nombre de "utile"
-  flags?: {
-    reported: boolean
-    reportedBy?: ObjectId[]
-    hidden: boolean
-    reason?: string
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Convert a User document to a safe response DTO
+ * Removes sensitive data and converts ObjectId to string
+ */
+export function toUserResponseDTO(user: User): UserResponseDTO {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    avatar: user.avatar,
+    bio: user.bio,
+    location: user.location,
+    jobTitle: user.jobTitle,
+    hourlyRate: user.hourlyRate,
+    currency: user.currency,
+    skills: user.skills || [],
+    languages: user.languages,
+    availability: user.availability || 'available',
+    portfolio: user.portfolio || [],
+    experience: user.experience || [],
+    education: user.education,
+    socialLinks: user.socialLinks,
+    rating: user.rating,
+    completedProjects: user.completedProjects || 0,
+    totalEarnings: user.totalEarnings || 0,
+    responseTime: user.responseTime,
+    badges: user.badges,
+    verified: user.verified || false,
+    identityVerified: user.identityVerified,
+    onboardingCompleted: user.onboardingCompleted || false,
+    preferences: user.preferences,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
   }
+}
+
+/**
+ * Create a new user object with default values
+ */
+export function createNewUser(data: CreateUserDTO): Omit<User, '_id'> {
+  const now = new Date()
   
-  // Réponse
-  response?: {
-    content: string
-    createdAt: Date
-    updatedAt: Date
-    updatedBy?: ObjectId
+  return {
+    name: data.name,
+    email: data.email,
+    password: data.password,
+    role: data.role || 'freelance',
+    avatar: data.avatar || '',
+    skills: [],
+    portfolio: [],
+    experience: [],
+    availability: 'available',
+    completedProjects: 0,
+    totalEarnings: 0,
+    verified: false,
+    onboardingCompleted: false,
+    createdAt: now,
+    updatedAt: now
   }
-  
-  // Informations affichage
-  reviewerName?: string
-  reviewerAvatar?: string
-  reviewerRole?: 'client' | 'freelancer'
-  reviewedRole?: 'client' | 'freelancer'
-  
-  createdAt: Date
-  updatedAt: Date
-}
-export interface Project {
-  aiGenerated: any
-  _id?: ObjectId
-  clientId: ObjectId
-  title: string
-  description: string
-  category: string
-  subcategory?: string
-  freelancerId: number
-  budget: {
-    min: number
-    max: number
-    type: "fixed" | "hourly"
-    currency: string // ← Devise principale du projet
-    originalCurrency?: string // ← NOUVEAU: Devise originale (si conversion)
-    exchangeRate?: number // ← NOUVEAU: Taux de change utilisé
-    convertedAt?: Date // ← NOUVEAU: Date de conversion
-  }
-  skills: string[]
-  deadline?: Date
-  status: "draft" | "open" | "in-progress" | "completed" | "cancelled" | "paused"
-  visibility: "public" | "private"
-  applications: ObjectId[]
-  selectedFreelanceId?: ObjectId
-  contractId?: ObjectId
-  milestones: {
-    title: string
-    amount: number
-    dueDate: Date
-    status: "pending" | "completed" | "paid"
-    currency?: string // ← Optionnel: devise spécifique pour chaque milestone
-  }[]
-  attachments: {
-    name: string
-    url: string
-    type: string
-  }[]
-  tags: string[]
-  createdAt: Date
-  updatedAt: Date
-}
-
-export interface Application {
-  _id?: ObjectId
-  freelancerId: ObjectId
-  projectId: ObjectId
-  coverLetter: string
-  proposedBudget: number
-  estimatedDuration: string
-  attachments: {
-    name: string
-    url: string
-    type: string
-  }[]
-  status: "pending" | "accepted" | "rejected" | "withdrawn"
-  clientViewed: boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-export interface Conversation {
-  _id?: ObjectId
-  participants: ObjectId[]
-  lastMessage: string
-  lastMessageAt: Date
-  unreadCount: number
-  projectId?: ObjectId
-  createdAt: Date
-  updatedAt: Date
-}
-
-export interface Message {
-  _id?: ObjectId
-  conversationId: ObjectId
-  senderId: ObjectId
-  content: string
-  type: "text" | "file" | "image" | "system"
-  attachments: {
-    name: string
-    url: string
-    type: string
-    size: number
-  }[]
-  read: boolean
-  readAt?: Date
-  createdAt: Date
-}
-
-export interface Notification {
-  _id?: ObjectId
-  userId: ObjectId
-  type: "new_application" | "application_accepted" | "application_rejected" | "new_message" | "payment_received" | "project_invite" | "milestone_completed" | "review_received" | "system_alert"
-  title: string
-  message: string
-  data?: any
-  projectId?: ObjectId
-  read: boolean
-  createdAt: Date
-}
-
-export interface Contract {
-  _id?: ObjectId
-  projectId: ObjectId
-  clientId: ObjectId
-  freelancerId: ObjectId
-  title: string
-  description: string
-  terms: string
-  budget: number
-  type: "fixed" | "hourly"
-  duration: string
-  milestones: {
-    title: string
-    amount: number
-    dueDate: Date
-    status: "pending" | "completed" | "paid"
-  }[]
-  status: "draft" | "active" | "completed" | "cancelled" | "disputed"
-  startDate: Date
-  endDate?: Date
-  paymentMethod: string
-  createdAt: Date
-  updatedAt: Date
 }

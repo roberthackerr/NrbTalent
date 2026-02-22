@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import { getDatabase } from "./mongodb"
 import bcrypt from "bcryptjs"
-import type { User as MongoUser } from "./models/user"
+import type { User as MongoUser } from "./models/user.ts.bp"
 import { ObjectId } from "mongodb"
 
 // ==================== TYPE EXTENSIONS ====================
