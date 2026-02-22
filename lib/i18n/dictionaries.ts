@@ -2,6 +2,7 @@ import 'server-only'
 
 // Types pour les dictionnaires
 export type Dictionary = {
+  signin: any
   common: {
     loading: string
     error: string

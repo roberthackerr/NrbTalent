@@ -1,4 +1,15 @@
 {
+      "signin": {
+    "benefits": {
+      "title": "Welcome to your space",
+      "subtitle": "Access your account to manage your projects and collaborations"
+    ,      "items": [
+        "Access your personal space",
+        "Manage your ongoing projects",
+        "Communicate with your clients",
+        "Track your earnings in real-time"
+      ]}
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

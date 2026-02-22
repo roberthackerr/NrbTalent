@@ -1,4 +1,18 @@
 {
+
+  "signin": {
+    "benefits": {
+      "title": "Tonga soa eto amin'ny faritra misy anao",
+      "subtitle": "Midira amin'ny kaontinao hitantana ny tetikasanao sy ny fiaraha-miasa"
+   ,
+        "items": [
+        "Midira ao amin'ny faritra manokana anao",
+        "Tantano ny tetikasa misy",
+        "Mifandraisa amin'ny mpanjifanao",
+        "Araho ny fidiram-bolanao amin'ny fotoana tena izy"
+      ] }
+  },
+    
   "common": {
     "loading": "Amplasiana...",
     "error": "Hadisoana",
