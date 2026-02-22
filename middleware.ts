@@ -1,10 +1,44 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from 'next/server'
-
+import { locales, defaultLocale } from '@/lib/i18n/config'
 
 export const config = {
   matcher: ["/dashboard/:path*",'/api/ws/:path*'],
+}
+
+
+// Middleware pour la langue
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Ignorer les routes API et les fichiers statiques
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Vérifier si le chemin commence par une locale supportée
+  const pathnameHasLocale = locales.some(
+    locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+
+  // Rediriger vers la locale par défaut si pas de locale
+  if (!pathnameHasLocale) {
+    // Détecter la langue du navigateur
+    const acceptLanguage = request.headers.get('accept-language')
+    const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
+    const locale = locales.includes(browserLocale as any) ? browserLocale : defaultLocale
+    
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname}`, request.url)
+    )
+  }
+
+  return NextResponse.next()
 }
 export default withAuth(
   function middleware(req) {

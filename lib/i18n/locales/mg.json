@@ -1,0 +1,97 @@
+{
+  "common": {
+    "loading": "Amplasiana...",
+    "error": "Hadisoana",
+    "save": "Tehirizo",
+    "cancel": "Avelao",
+    "delete": "Fafao",
+    "edit": "Ovay",
+    "back": "Miverena",
+    "next": "Manaraka",
+    "skip": "Tsidiho"
+  },
+  "navigation": {
+    "home": "Fandraisana",
+    "dashboard": "Takelaka",
+    "profile": "Momba anao",
+    "projects": "Tetikasa",
+    "messages": "Hafatra",
+    "settings": "Fandrindrana",
+    "signin": "Hiditra",
+    "signup": "Hisoratra",
+    "signout": "Hiala"
+  },
+  "auth": {
+    "welcome": "Tonga soa eto NRBTalents",
+    "subtitle": "Ny sehatra mampifandray ny talenta sy ny fahafahana",
+    "email": "Mailaka",
+    "password": "Tenimiafina",
+    "confirmPassword": "Hamafiso ny tenimiafina",
+    "name": "Anarana",
+    "login": "Hiditra",
+    "register": "Hamorona kaonty",
+    "google": "Hanohy amin'ny Google",
+    "noAccount": "Mbola tsy manana kaonty?",
+    "hasAccount": "Efa manana kaonty?",
+    "forgotPassword": "Hadino ny tenimiafina?",
+    "or": "Sady",
+    "errors": {
+      "emailRequired": "Ilaina ny mailaka",
+      "emailInvalid": "Mailaka tsy mety",
+      "passwordRequired": "Ilaina ny tenimiafina",
+      "passwordMin": "Ny tenimiafina dia tsy maintsy 8 litera farafahakeliny",
+      "passwordsNotMatch": "Tsy mifanaraka ny tenimiafina",
+      "nameRequired": "Ilaina ny anarana",
+      "userExists": "Efa misy ny kaonty miaraka amin'ity mailaka ity",
+      "invalidCredentials": "Mailaka na tenimiafina diso",
+      "googleAccount": "Ity kaonty ity dia mampiasa Google. Midira amin'ny Google."
+    },
+    "success": {
+      "signup": "Voaforona soa aman-tsara ny kaonty!",
+      "login": "Tafiditra soa aman-tsara!"
+    }
+  },
+  "onboarding": {
+    "title": "Fenoy ny mombamomba anao",
+    "subtitle": "Lazao anay bebe kokoa momba anao hahazoana fahafahana tsara kokoa",
+    "role": {
+      "title": "Izaho dia:",
+      "freelance": "Mitady asa",
+      "client": "Mitady talenta",
+      "benefits": {
+        "freelance": [
+          "Mahita tetikasa mifanaraka amin'ny fahaizanao",
+          "Manangana ny lazanao",
+          "Mahazo fandoavam-bola azo antoka",
+          "AI Matching mba hahitana tetikasa mifanaraka"
+        ],
+        "client": [
+          "Mahita talenta an'arivony manana fahaizana",
+          "Mahita ny talenta mety",
+          "Mitantana tetikasa mora foana",
+          "Fandoavam-bola azo antoka"
+        ]
+      }
+    },
+    "skills": "Ny fahaizanao",
+    "hourlyRate": "Tahan'ny ora",
+    "location": "Toerana",
+    "languages": "Fiteny",
+    "bio": "Tantaram-piainana",
+    "complete": "Hamita ny onboarding"
+  },
+  "dashboard": {
+    "welcome": "Salama, {{name}}",
+    "stats": {
+      "projects": "Tetikasa vita",
+      "earnings": "Fidiram-bola",
+      "rating": "Fahafaham-po",
+      "responseTime": "Fotoana valiny"
+    }
+  },
+  "footer": {
+    "rights": "Zo rehetra voatokana",
+    "terms": "Fepetra fampiasana",
+    "privacy": "Politika momba ny fiainana manokana"
+  }
+}
