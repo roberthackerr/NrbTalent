@@ -176,28 +176,27 @@ export function PortfolioSection({ items, onUpdate, loading, dict, lang }: Portf
     setImageFile(file)
   }
 
-  const uploadImage = async (file: File, portfolioId?: string): Promise<string> => {
-    const uploadFormData = new FormData()
-    uploadFormData.append("image", file)
-    
-    if (portfolioId) {
-      uploadFormData.append("portfolioId", portfolioId)
-    }
-
-    const response = await fetch('/api/users/upload-portfolio-image', {
-      method: 'POST',
-      body: uploadFormData,
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || safeDict.errors?.upload || 'Failed to upload image')
-    }
-
-    const data = await response.json()
-    return data.imageUrl
+const uploadImage = async (file: File, portfolioId?: string): Promise<string> => {
+  const uploadFormData = new FormData()
+  uploadFormData.append("image", file)
+  
+  if (portfolioId) {
+    uploadFormData.append("portfolioId", portfolioId)
   }
 
+  const response = await fetch('/api/users/upload-portfolio-image', {
+    method: 'POST',
+    body: uploadFormData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Upload failed')
+  }
+
+  const data = await response.json()
+  return data.imageUrl // Retourne l'URL Cloudinary
+}
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 

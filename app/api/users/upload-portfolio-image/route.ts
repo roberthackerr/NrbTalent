@@ -4,114 +4,242 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
-import { writeFile, mkdir } from "fs/promises"
-import { join } from "path"
-import { existsSync } from "fs"
+import cloudinary from "@/lib/cloudinary/config"
+import { v4 as uuidv4 } from "uuid"
 
-// ❌ ANCIENNE SYNTAXE (dépréciée)
-// export const config = {
-//   api: {
-//     bodyParser: false,
-//   },
-// }
+export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
-// ✅ NOUVELLE SYNTAXE (Next.js 13/14)
-export const dynamic = 'force-dynamic' // Optionnel, pour éviter la mise en cache
-export const maxDuration = 30 // Optionnel, durée max en secondes
+// Messages d'erreur multilingues
+const errorMessages = {
+  fr: {
+    unauthorized: "Non autorisé",
+    noFile: "Aucun fichier fourni",
+    invalidType: "Type de fichier non supporté. Utilisez JPEG, PNG, GIF ou WebP",
+    tooLarge: "L'image doit faire moins de 5MB",
+    uploadFailed: "Échec de l'upload de l'image",
+    serverError: "Erreur interne du serveur"
+  },
+  en: {
+    unauthorized: "Unauthorized",
+    noFile: "No file provided",
+    invalidType: "Unsupported file type. Use JPEG, PNG, GIF or WebP",
+    tooLarge: "Image must be less than 5MB",
+    uploadFailed: "Failed to upload image",
+    serverError: "Internal server error"
+  },
+  mg: {
+    unauthorized: "Tsy nahazo alalana",
+    noFile: "Tsy misy rakitra nampidirina",
+    invalidType: "Tsy mety ny karazana rakitra. Mampiasà JPEG, PNG, GIF na WebP",
+    tooLarge: "Tsy mihoatra ny 5MB ny sary",
+    uploadFailed: "Tsy nahomby ny fampidirana sary",
+    serverError: "Hadisoana anatiny"
+  }
+}
+
+// Détecter la langue
+function getLanguageFromRequest(request: NextRequest): 'fr' | 'en' | 'mg' {
+  const acceptLanguage = request.headers.get('accept-language')
+  if (acceptLanguage?.startsWith('fr')) return 'fr'
+  if (acceptLanguage?.startsWith('mg')) return 'mg'
+  return 'en'
+}
+
+// Types de fichiers autorisés
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export async function POST(request: NextRequest) {
   try {
+    // Détecter la langue
+    const lang = getLanguageFromRequest(request)
+    const messages = errorMessages[lang]
+
+    // Vérifier l'authentification
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+      return NextResponse.json(
+        { error: messages.unauthorized }, 
+        { status: 401 }
+      )
     }
 
-    // Dans Next.js 14, le bodyParser est désactivé par défaut pour FormData
-    // Pas besoin de le configurer manuellement
+    // Récupérer les données du formulaire
     const formData = await request.formData()
     const file = formData.get("image") as File
     const portfolioId = formData.get("portfolioId") as string
 
     if (!file) {
-      return NextResponse.json({ error: "Aucun fichier fourni" }, { status: 400 })
+      return NextResponse.json(
+        { error: messages.noFile }, 
+        { status: 400 }
+      )
     }
 
     // Validation du type de fichier
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
-    if (!allowedTypes.includes(file.type)) {
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Type de fichier non supporté. Utilisez JPEG, PNG, GIF ou WebP" },
+        { error: messages.invalidType },
         { status: 400 }
       )
     }
 
-    // Validation de la taille (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
+    // Validation de la taille
+    if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "L'image doit faire moins de 5MB" },
+        { error: messages.tooLarge },
         { status: 400 }
       )
     }
-
-    // Créer un nom de fichier unique
-    const timestamp = Date.now()
-    const fileName = `${session.user.id}_${portfolioId || timestamp}_${file.name.replace(/\s+/g, '_')}`
-    const fileExtension = file.name.split('.').pop()
-    const finalFileName = `${fileName}.${fileExtension}`
 
     // Convertir le fichier en buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Définir le chemin de sauvegarde
-    const uploadDir = join(process.cwd(), "public", "uploads", "portfolio")
-    
-    // Créer le dossier s'il n'existe pas
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
+    // Convertir en base64 pour Cloudinary
+    const base64Image = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    const filePath = join(uploadDir, finalFileName)
+    console.log('🔄 Uploading portfolio image to Cloudinary...', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      portfolioId: portfolioId || 'new'
+    })
 
-    // Sauvegarder le fichier
-    await writeFile(filePath, buffer)
+    // Déterminer le dossier et le nom
+    const folder = `nrbtalents/portfolio/${session.user.id}`
+    const publicId = portfolioId || uuidv4()
 
-    // Créer l'URL publique
-    const imageUrl = `/uploads/portfolio/${finalFileName}`
+    // Upload vers Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(
+        base64Image,
+        {
+          public_id: publicId,
+          folder: folder,
+          transformation: [
+            { width: 1200, height: 800, crop: 'fill', gravity: 'auto' },
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' }
+          ],
+          tags: ['portfolio', session.user.id, portfolioId ? 'update' : 'new'],
+          context: {
+            userId: session.user.id,
+            email: session.user.email || '',
+            originalName: file.name,
+            uploadedAt: new Date().toISOString(),
+            portfolioId: portfolioId || 'new'
+          }
+        },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      )
+    })
 
-    // Si un portfolioId est fourni, mettre à jour l'image dans la base de données
+    console.log('✅ Portfolio image uploaded to Cloudinary:', (uploadResult as any).secure_url)
+
+    // Mettre à jour la base de données MongoDB si un portfolioId est fourni
     if (portfolioId) {
       const db = await getDatabase()
       const userId = new ObjectId((session.user as any).id)
 
-      await db.collection("users").updateOne(
-        { 
-          _id: userId,
-          "portfolio.id": portfolioId 
-        },
-        {
-          $set: {
-            "portfolio.$.image": imageUrl,
-            "portfolio.$.updatedAt": new Date(),
-            updatedAt: new Date()
+      // Vérifier si l'élément de portfolio existe
+      const existingItem = await db.collection("users").findOne({
+        _id: userId,
+        "portfolio.id": portfolioId
+      })
+
+      if (existingItem) {
+        // Mettre à jour l'image du portfolio existant
+        await db.collection("users").updateOne(
+          { 
+            _id: userId,
+            "portfolio.id": portfolioId 
+          },
+          {
+            $set: {
+              "portfolio.$.image": (uploadResult as any).secure_url,
+              "portfolio.$.updatedAt": new Date(),
+              updatedAt: new Date()
+            }
           }
-        }
-      )
+        )
+        console.log('✅ Portfolio item updated in database')
+      } else {
+        console.log('⚠️ Portfolio item not found, skipping database update')
+      }
     }
 
     return NextResponse.json({
       success: true,
-      imageUrl,
-      fileName: finalFileName,
-      message: "Image uploadée avec succès"
+      imageUrl: (uploadResult as any).secure_url,
+      publicId: (uploadResult as any).public_id,
+      message: lang === 'fr' ? 'Image uploadée avec succès' : 
+               lang === 'mg' ? 'Vita soa aman-tsara ny fampidirana sary' : 
+               'Image uploaded successfully'
+    })
+
+  } catch (error: any) {
+    console.error("❌ Erreur lors de l'upload de l'image:", {
+      message: error.message,
+      name: error.name,
+      http_code: error.http_code
+    })
+
+    const lang = getLanguageFromRequest(request)
+    const messages = errorMessages[lang]
+
+    return NextResponse.json(
+      { 
+        error: messages.uploadFailed,
+        details: error.message,
+        code: error.http_code || 'UNKNOWN'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// ✅ NOUVEAU: Endpoint pour supprimer une image du portfolio
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    const lang = getLanguageFromRequest(request)
+    const messages = errorMessages[lang]
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: messages.unauthorized }, 
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const publicId = searchParams.get('publicId')
+
+    if (!publicId) {
+      return NextResponse.json(
+        { error: "Public ID requis" }, 
+        { status: 400 }
+      )
+    }
+
+    // Supprimer l'image de Cloudinary
+    await cloudinary.uploader.destroy(publicId)
+
+    return NextResponse.json({
+      success: true,
+      message: "Image supprimée avec succès"
     })
 
   } catch (error) {
-    console.error("Erreur lors de l'upload de l'image:", error)
+    console.error("❌ Erreur lors de la suppression:", error)
     return NextResponse.json(
-      { error: "Erreur lors de l'upload de l'image" ,z:error},
+      { error: "Erreur lors de la suppression" },
       { status: 500 }
     )
   }

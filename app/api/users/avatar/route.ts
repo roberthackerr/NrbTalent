@@ -4,8 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
-import { storage } from "@/lib/firebase/config"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import cloudinary from "@/lib/cloudinary/config"
 import { v4 as uuidv4 } from "uuid"
 
 // Configuration
@@ -50,7 +49,6 @@ function getLanguageFromRequest(request: Request): 'fr' | 'en' | 'mg' {
 
 export async function POST(request: Request) {
   try {
-    // Détecter la langue
     const lang = getLanguageFromRequest(request)
     const messages = errorMessages[lang]
 
@@ -74,7 +72,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Valider le type de fichier
+    // Valider le type
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: messages.invalidType }, 
@@ -94,30 +92,46 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Générer un nom de fichier unique
-    const fileExtension = file.name.split('.').pop() || 'jpg'
-    const fileName = `avatars/${session.user.id}/${uuidv4()}.${fileExtension}`
-    
-    // Référence Firebase Storage
-    const storageRef = ref(storage, fileName)
+    // Convertir en base64 pour Cloudinary
+    const base64Image = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    // Upload vers Firebase Storage
-    await uploadBytes(storageRef, buffer, {
-      contentType: file.type,
-      customMetadata: {
-        userId: session.user.id,
-        originalName: file.name,
-        uploadedAt: new Date().toISOString()
-      }
+    console.log('🔄 Uploading to Cloudinary...', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
     })
 
-    // Récupérer l'URL de téléchargement
-    const downloadUrl = await getDownloadURL(storageRef)
+    // Upload vers Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(
+        base64Image,
+        {
+          public_id: `avatars/${session.user.id}/${uuidv4()}`,
+          folder: 'nrbtalents/avatars',
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto' },
+            { fetch_format: 'auto' }
+          ],
+          tags: ['avatar', session.user.id],
+          context: {
+            userId: session.user.id,
+            email: session.user.email || '',
+            uploadedAt: new Date().toISOString()
+          }
+        },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      )
+    })
 
-    // Mettre à jour la base de données MongoDB avec l'URL Firebase
+    console.log('✅ Upload successful:', (uploadResult as any).secure_url)
+
+    // Mettre à jour MongoDB
     const db = await getDatabase()
     
-    // Trouver l'utilisateur (par ID ou email)
     let userId
     try {
       userId = new ObjectId((session.user as any).id)
@@ -134,47 +148,53 @@ export async function POST(request: Request) {
       userId = userByEmail._id
     }
 
+    // Supprimer l'ancien avatar si existant
+    const user = await db.collection("users").findOne({ _id: userId })
+    if (user?.avatar && user.avatar.includes('cloudinary')) {
+      try {
+        const publicId = user.avatar.split('/').pop()?.split('.')[0]
+        if (publicId) {
+          await cloudinary.uploader.destroy(`nrbtalents/avatars/${publicId}`)
+          console.log('✅ Old avatar deleted from Cloudinary')
+        }
+      } catch (deleteError) {
+        console.log('⚠️ Could not delete old avatar:', deleteError)
+      }
+    }
+
     await db.collection("users").updateOne(
       { _id: userId },
       { 
         $set: { 
-          avatar: downloadUrl,
+          avatar: (uploadResult as any).secure_url,
           updatedAt: new Date()
         } 
       }
     )
 
-    // Retourner l'URL de l'avatar
     return NextResponse.json({ 
-      avatarUrl: downloadUrl,
+      avatarUrl: (uploadResult as any).secure_url,
+      publicId: (uploadResult as any).public_id,
       message: lang === 'fr' ? 'Avatar mis à jour avec succès' : 
                lang === 'mg' ? 'Vita soa aman-tsara ny fanovana sary' : 
                'Avatar updated successfully'
     })
 
   } catch (error: any) {
-    console.error('❌ Error uploading avatar to Firebase:', error)
-    
+    console.error('❌ Cloudinary Upload Error:', {
+      message: error.message,
+      name: error.name,
+      http_code: error.http_code
+    })
+
     const lang = getLanguageFromRequest(request)
     const messages = errorMessages[lang]
 
-    // Gérer les erreurs Firebase spécifiques
-    if (error.code === 'storage/unauthorized') {
-      return NextResponse.json(
-        { error: "Firebase: Unauthorized", details: error.message }, 
-        { status: 403 }
-      )
-    }
-    
-    if (error.code === 'storage/quota-exceeded') {
-      return NextResponse.json(
-        { error: "Storage quota exceeded", details: error.message }, 
-        { status: 507 }
-      )
-    }
-
     return NextResponse.json(
-      { error: messages.serverError, details: error.message }, 
+      { 
+        error: messages.uploadFailed,
+        details: error.message
+      }, 
       { status: 500 }
     )
   }
