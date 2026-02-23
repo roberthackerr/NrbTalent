@@ -1,4 +1,37 @@
 {
+   "roleSelection": {
+    "chooseRole": "Choisissez votre rôle",
+    "confirmRole": "Confirmez votre rôle",
+    "welcome": "Bienvenue {{name}} !",
+    "subtitle": "Choisissez comment vous voulez utiliser la plateforme",
+    "currentRole": "Votre rôle actuel est : {{role}}",
+    "freelance": "Freelance",
+    "client": "Client",
+    "freelanceDesc": "Je cherche des projets et veux développer mon activité",
+    "clientDesc": "Je cherche des talents pour mes projets",
+    "freelanceBenefits": [
+      "Trouvez des projets qui vous correspondent",
+      "Développez votre portfolio",
+      "Recevez des paiements sécurisés"
+    ],
+    "clientBenefits": [
+      "Accédez à des milliers de freelances",
+      "Trouvez le talent parfait",
+      "Gérez vos projets facilement"
+    ],
+    "confirm": "Confirmer",
+    "start": "Commencer",
+    "updating": "Mise à jour...",
+    "redirecting": "Redirection...",
+    "errors": {
+      "selectRole": "Veuillez sélectionner un rôle",
+      "update": "Erreur lors de la mise à jour"
+    },
+    "success": {
+      "freelance": "Bienvenue en tant que freelance !",
+      "client": "Bienvenue en tant que client !"
+    }
+  },
  "portfolio": {
     "success": {
       "removed": "Projet supprimé!",
