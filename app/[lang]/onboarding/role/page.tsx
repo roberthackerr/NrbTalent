@@ -84,13 +84,13 @@ export default function RoleSelectionPage() {
         role: selectedRole,
         onboardingRoleCompleted: true,
       })
-
+      router.push(`/${lang}/onboarding`)
       // Attendre que la session soit mise à jour
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       // Vérifier la session
       const newSession = await getSession()
-
+      
       if ((newSession?.user as any)?.onboardingRoleCompleted) {
         toast.success(
           selectedRole === "freelance" 
