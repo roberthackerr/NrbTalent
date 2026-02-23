@@ -62,10 +62,11 @@ export function AvatarStep({ onComplete, onSkip, dict, lang }: AvatarStepProps) 
           ...session,
           user: {
             ...session.user,
-            image: data.avatarUrl
+             image: data.avatarUrl,
+           avatar: data.avatarUrl
           }
         })
-        
+        await new Promise(resolve => setTimeout(resolve, 500))
         toast.success(dict.success || 'Photo de profil mise à jour avec succès!')
         onComplete()
       } else {
@@ -73,7 +74,7 @@ export function AvatarStep({ onComplete, onSkip, dict, lang }: AvatarStepProps) 
       }
     } catch (error) {
       console.error('Erreur upload:', error)
-      toast.error(dict.errors?.upload || 'Erreur lors du téléchargement de l\'image')
+      toast.error(dict.errors?.upload + error || 'Erreur lors du téléchargement de l\'image')
     } finally {
       setUploading(false)
     }
