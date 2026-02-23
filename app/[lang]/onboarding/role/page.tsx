@@ -94,7 +94,7 @@ export default function RoleSelectionPage() {
       const finalSession = await getSession()
       console.log("🎯 Session finale:", finalSession)
 
-      if ((finalSession?.user as any)?.onboardingCompleted) {
+      if ((finalSession?.user as any)?.onboardingRoleCompleted) {
         toast.success(`Bienvenue en tant que ${selectedRole === "freelance" ? "freelance" : "client"} !`)
         
         // Redirection avec timeout pour être sûr
@@ -150,7 +150,7 @@ export default function RoleSelectionPage() {
   }
 
   const currentRole = (session.user as any)?.role
-  const onboardingCompleted = (session.user as any)?.onboardingCompleted
+  const onboardingRoleCompleted = (session.user as any)?.onboardingRoleCompleted
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -180,7 +180,7 @@ export default function RoleSelectionPage() {
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-xs text-yellow-800">
                 <strong>Debug:</strong> Role: {currentRole || "non défini"} | 
-                Onboarding: {onboardingCompleted ? "complété" : "non complété"} |
+                Onboarding: {onboardingRoleCompleted ? "complété" : "non complété"} |
                 <Button 
                   variant="link" 
                   className="h-auto p-0 ml-2 text-xs"
