@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       { 
         $set: { 
           role: role,
-          onboardingCompleted: onboardingCompleted,
+          onboardingRoleCompleted: onboardingCompleted,
           updatedAt: new Date()
         } 
       }

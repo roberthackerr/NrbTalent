@@ -18,6 +18,7 @@ declare module "next-auth" {
       image?: string | null
       role: "freelance" | "client" | "admin"
       onboardingCompleted: boolean
+      onboardingRoleCompleted:boolean
       avatar?: string | null
     }
   }
@@ -106,7 +107,7 @@ export const authOptions: NextAuthOptions = {
             email: existingUser.email,
             image: existingUser.avatar,
             role: existingUser.role,
-            onboardingCompleted: existingUser.onboardingCompleted || false,
+            onboardingCompleted: existingUser.onboardingRoleCompleted || false,
             avatar: existingUser.avatar
           }
         } catch (error) {

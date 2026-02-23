@@ -23,7 +23,7 @@ export default function RoleSelectionPage() {
       return
     }
 
-    const onboardingCompleted = (session.user as any)?.onboardingCompleted
+    const onboardingRoleCompleted = (session.user as any)?.onboardingRoleCompleted
     
     console.log("🔍 Vérification onboarding:", {
       onboardingCompleted,
@@ -32,7 +32,7 @@ export default function RoleSelectionPage() {
     })
 
     // Si l'onboarding est complété, rediriger vers la home
-    if (onboardingCompleted) {
+    if (onboardingRoleCompleted) {
       console.log("✅ Onboarding complété, redirection vers /")
       router.push("/")
     }

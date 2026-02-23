@@ -204,6 +204,7 @@ export interface UserPreferences {
  * This represents the complete user profile
  */
 export interface User {
+  onboardingRoleCompleted?:boolean
   // ========== SYSTEM FIELDS ==========
   /** MongoDB ObjectId (automatically generated) */
   _id: ObjectId
