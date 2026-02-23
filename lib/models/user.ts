@@ -204,6 +204,7 @@ export interface UserPreferences {
  * This represents the complete user profile
  */
 export interface User {
+
   onboardingRoleCompleted?:boolean
   // ========== SYSTEM FIELDS ==========
   /** MongoDB ObjectId (automatically generated) */
@@ -335,9 +336,9 @@ export interface User {
     link?: string
   }>
   /** Unread notifications count */
-  unreadNotifications?: number
-
-  // ========== SECURITY ==========
+  unreadNotifications: number
+// Google = vérifié
+   // ========== SECURITY ==========
   /** Two-factor authentication enabled */
   twoFactorEnabled?: boolean
   /** Two-factor authentication secret */

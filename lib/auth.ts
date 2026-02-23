@@ -27,6 +27,7 @@ declare module "next-auth" {
     id: string
     role: "freelance" | "client" | "admin"
     onboardingCompleted: boolean
+    onboardingRoleCompleted:boolean
     avatar?: string | null
   }
 }
@@ -36,6 +37,7 @@ declare module "next-auth/jwt" {
     id: string
     role: "freelance" | "client" | "admin"
     onboardingCompleted: boolean
+    onboardingRoleCompleted:boolean
     email: string
     name?: string | null
     avatar?: string | null
@@ -107,7 +109,8 @@ export const authOptions: NextAuthOptions = {
             email: existingUser.email,
             image: existingUser.avatar,
             role: existingUser.role,
-            onboardingCompleted: existingUser.onboardingRoleCompleted || false,
+            onboardingRoleCompleted:existingUser.onboardingRoleCompleted || false,
+            onboardingCompleted: existingUser.onboardingCompleted || false,
             avatar: existingUser.avatar
           }
         } catch (error) {
@@ -220,6 +223,7 @@ export const authOptions: NextAuthOptions = {
           // Stocker toutes les informations utilisateur dans le token
           token.id = user.id
           token.role = user.role as "freelance" | "client" | "admin"
+          token.onboardingRoleCompleted = user.onboardingRoleCompleted ?? false
           token.onboardingCompleted = user.onboardingCompleted ?? false
           token.email = user.email!
           token.name = user.name

@@ -11,7 +11,7 @@ import { User, Building, Rocket, CheckCircle2, Loader2, RefreshCw } from "lucide
 export default function RoleSelectionPage() {
   const [loading, setLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<"freelance" | "client" | null>(null)
-  const { data: session, status, update } = useSession()
+  const { data: session, status, update} = useSession()
   const router = useRouter()
 
   // Vérifier l'état de l'onboarding
@@ -25,12 +25,7 @@ export default function RoleSelectionPage() {
 
     const onboardingRoleCompleted = (session.user as any)?.onboardingRoleCompleted
     
-    console.log("🔍 Vérification onboarding:", {
-      onboardingCompleted,
-      role: (session.user as any)?.role,
-      status
-    })
-
+ 
     // Si l'onboarding est complété, rediriger vers la home
     if (onboardingRoleCompleted) {
       console.log("✅ Onboarding complété, redirection vers /")
@@ -66,7 +61,7 @@ export default function RoleSelectionPage() {
         },
         body: JSON.stringify({
           role: selectedRole,
-          onboardingCompleted: true,
+          onboardingRoleCompleted: true,
         }),
       })
 
@@ -84,7 +79,7 @@ export default function RoleSelectionPage() {
       // Méthode 1: update avec les nouvelles données
       await update({
         role: selectedRole,
-        onboardingCompleted: true,
+        onboardingRoleCompleted: true,
       })
 
       // Méthode 2: Recharger la session depuis le serveur

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
 
-    const { role, onboardingCompleted = true } = await request.json()
+    const { role, onboardingRoleCompleted = true } = await request.json()
 
     if (!role || (role !== "freelance" && role !== "client")) {
       return NextResponse.json({ error: "Rôle invalide" }, { status: 400 })
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       { 
         $set: { 
           role: role,
-          onboardingRoleCompleted: onboardingCompleted,
+          onboardingRoleCompleted: onboardingRoleCompleted,
           updatedAt: new Date()
         } 
       }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       success: true,
       message: "Profil mis à jour avec succès",
       role: role,
-      onboardingCompleted: onboardingCompleted
+      onboardingRoleCompleted: onboardingRoleCompleted
     })
 
   } catch (error) {
