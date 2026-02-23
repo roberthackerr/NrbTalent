@@ -1,37 +1,47 @@
-"use client"
+// app/[lang]/onboarding/role/page.tsx
+'use client'
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useSession, getSession, signOut } from "next-auth/react"
+import { useRouter, useParams } from "next/navigation"
+import { useSession, getSession } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { User, Building, Rocket, CheckCircle2, Loader2, RefreshCw } from "lucide-react"
+import { User, Building, Rocket, CheckCircle2, Loader2 } from "lucide-react"
+import LanguageSwitcher from "@/components/common/LanguageSwitcher"
+import type { Locale } from '@/lib/i18n/config'
+import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 
 export default function RoleSelectionPage() {
   const [loading, setLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<"freelance" | "client" | null>(null)
-  const { data: session, status, update} = useSession()
+  const [dict, setDict] = useState<any>(null)
+  const { data: session, status, update } = useSession()
   const router = useRouter()
+  const params = useParams()
+  const lang = params.lang as Locale
+
+  // Charger le dictionnaire
+  useEffect(() => {
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
 
   // Vérifier l'état de l'onboarding
   useEffect(() => {
     if (status === "loading") return
 
     if (!session) {
-      router.push("/auth/signin")
+      router.push(`/${lang}/auth/signin`)
       return
     }
 
     const onboardingRoleCompleted = (session.user as any)?.onboardingRoleCompleted
-    
- 
-    // Si l'onboarding est complété, rediriger vers la home
+
     if (onboardingRoleCompleted) {
-      console.log("✅ Onboarding complété, redirection vers /")
-      router.push("/")
+      console.log("✅ Onboarding role completed, redirection vers /onboarding")
+      router.push(`/${lang}/onboarding`)
     }
-  }, [session, status, router])
+  }, [session, status, router, lang])
 
   // Sélectionner automatiquement le rôle actuel
   useEffect(() => {
@@ -45,16 +55,14 @@ export default function RoleSelectionPage() {
 
   const handleRoleSelection = async () => {
     if (!selectedRole) {
-      toast.error("Veuillez sélectionner un rôle")
+      toast.error(dict?.roleSelection?.errors?.selectRole || "Please select a role")
       return
     }
 
     setLoading(true)
     try {
-      console.log("🔄 Début mise à jour du rôle:", selectedRole)
-
-      // 1. Mettre à jour dans la base de données
-      const response = await fetch("/api/users/update-role", {
+      // Appeler l'API avec le paramètre de langue
+      const response = await fetch(`/api/users/update-role?lang=${lang}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,74 +73,50 @@ export default function RoleSelectionPage() {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Erreur lors de la mise à jour")
+        throw new Error(data.error || "Error updating role")
       }
 
-      const result = await response.json()
-      console.log("✅ API response:", result)
-
-      // 2. FORCER la mise à jour de la session avec reload
-      console.log("🔄 Mise à jour de la session...")
-      
-      // Méthode 1: update avec les nouvelles données
+      // Mettre à jour la session
       await update({
         role: selectedRole,
         onboardingRoleCompleted: true,
       })
 
-      // Méthode 2: Recharger la session depuis le serveur
-      console.log("🔄 Rechargement de la session...")
-      const newSession = await getSession()
-      console.log("✅ Nouvelle session:", newSession)
-
-      // Méthode 3: Petit délai pour laisser NextAuth se synchroniser
+      // Attendre que la session soit mise à jour
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // Méthode 4: Vérifier que la session est bien mise à jour
-      const finalSession = await getSession()
-      console.log("🎯 Session finale:", finalSession)
+      // Vérifier la session
+      const newSession = await getSession()
 
-      if ((finalSession?.user as any)?.onboardingRoleCompleted) {
-        toast.success(`Bienvenue en tant que ${selectedRole === "freelance" ? "freelance" : "client"} !`)
+      if ((newSession?.user as any)?.onboardingRoleCompleted) {
+        toast.success(
+          selectedRole === "freelance" 
+            ? dict?.roleSelection?.success?.freelance || "Welcome as a freelancer!"
+            : dict?.roleSelection?.success?.client || "Welcome as a client!"
+        )
         
-        // Redirection avec timeout pour être sûr
-        setTimeout(() => {
-          router.push("/onboarding")
-        }, 500)
+        router.push(`/${lang}/onboarding`)
       } else {
-        // Si la session n'est pas mise à jour, forcer un rechargement complet
-        console.warn("Session non mise à jour, rechargement de la page")
         window.location.reload()
       }
 
     } catch (error) {
       console.error("❌ Erreur:", error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour")
-      
-      // En cas d'erreur, recharger la session
-      await getSession()
+      toast.error(error instanceof Error ? error.message : dict?.roleSelection?.errors?.update || "Error updating role")
     } finally {
       setLoading(false)
     }
   }
 
-  // Fonction de débogage pour forcer le rafraîchissement
-  const handleForceRefresh = async () => {
-    console.log("🔄 Forcer le rafraîchissement de la session")
-    await getSession()
-    const newSession = await getSession()
-    console.log("🔄 Session après refresh:", newSession)
-    toast.info("Session rafraîchie")
-  }
-
-  if (status === "loading") {
+  if (status === "loading" || !dict) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-lg text-muted-foreground">Chargement de votre session...</p>
+          <p className="text-lg text-muted-foreground">{dict?.common?.loading || "Loading..."}</p>
         </div>
       </div>
     )
@@ -143,58 +127,45 @@ export default function RoleSelectionPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-muted-foreground">Redirection vers la connexion...</p>
+          <p className="text-muted-foreground">{dict?.roleSelection?.redirecting || "Redirecting..."}</p>
         </div>
       </div>
     )
   }
 
   const currentRole = (session.user as any)?.role
-  const onboardingRoleCompleted = (session.user as any)?.onboardingRoleCompleted
+  const roleDict = dict.roleSelection
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher lang={lang} />
+      </div>
+
       <div className="w-full max-w-2xl">
         
-        {/* En-tête avec état de debug */}
+        {/* En-tête */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-blue-200 mb-6">
             <Rocket className="h-4 w-4 text-blue-600" />
             <span className="text-sm font-medium text-blue-700">
-              {currentRole ? "Confirmez votre rôle" : "Choisissez votre rôle"}
+              {currentRole ? roleDict?.confirmRole : roleDict?.chooseRole}
             </span>
           </div>
           
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Bienvenue {session.user?.name || "sur NRBTalents"} !
+            {roleDict?.welcome?.replace('{{name}}', session.user?.name || '')}
           </h1>
           <p className="text-xl text-muted-foreground">
             {currentRole 
-              ? `Votre rôle actuel est : ${currentRole === "freelance" ? "Freelance" : "Client"}`
-              : "Choisissez comment vous voulez utiliser la plateforme"
+              ? roleDict?.currentRole?.replace('{{role}}', currentRole === "freelance" ? roleDict?.freelance : roleDict?.client)
+              : roleDict?.subtitle
             }
           </p>
-
-          {/* Debug info */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800">
-                <strong>Debug:</strong> Role: {currentRole || "non défini"} | 
-                Onboarding: {onboardingRoleCompleted ? "complété" : "non complété"} |
-                <Button 
-                  variant="link" 
-                  className="h-auto p-0 ml-2 text-xs"
-                  onClick={handleForceRefresh}
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Rafraîchir
-                </Button>
-              </p>
-            </div>
-          )}
         </div>
 
-        {/* Le reste de votre JSX reste identique */}
+        {/* Cartes de sélection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Carte Freelance */}
           <Card 
@@ -216,29 +187,23 @@ export default function RoleSelectionPage() {
                 }`} />
               </div>
               <CardTitle className="flex items-center justify-center gap-2">
-                Je suis Freelance
+                {roleDict?.freelance}
                 {(selectedRole === "freelance" || currentRole === "freelance") && (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 )}
               </CardTitle>
               <CardDescription className="text-base">
-                Je cherche des projets et veux développer mon activité
+                {roleDict?.freelanceDesc}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 text-sm">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Trouvez des projets qui vous correspondent</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Développez votre portfolio</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Recevez des paiements sécurisés</span>
-                </li>
+                {roleDict?.freelanceBenefits?.map((benefit: string, index: number) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">{benefit}</span>
+                  </li>
+                ))}
               </ul>
             </CardContent>
           </Card>
@@ -263,29 +228,23 @@ export default function RoleSelectionPage() {
                 }`} />
               </div>
               <CardTitle className="flex items-center justify-center gap-2">
-                Je suis Client
+                {roleDict?.client}
                 {(selectedRole === "client" || currentRole === "client") && (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 )}
               </CardTitle>
               <CardDescription className="text-base">
-                Je cherche des talents pour mes projets
+                {roleDict?.clientDesc}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 text-sm">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Accédez à des milliers de freelances</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Trouvez le talent parfait</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Gérez vos projets facilement</span>
-                </li>
+                {roleDict?.clientBenefits?.map((benefit: string, index: number) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">{benefit}</span>
+                  </li>
+                ))}
               </ul>
             </CardContent>
           </Card>
@@ -301,12 +260,15 @@ export default function RoleSelectionPage() {
             {loading ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                Mise à jour en cours...
+                {roleDict?.updating}
               </>
             ) : (
               <>
                 <Rocket className="h-5 w-5 mr-2" />
-                {currentRole ? `Confirmer comme ${selectedRole === "freelance" ? "Freelance" : "Client"}` : `Commencer en tant que ${selectedRole === "freelance" ? "Freelance" : "Client"}`}
+                {currentRole 
+                  ? roleDict?.confirm + " " + (selectedRole === "freelance" ? roleDict?.freelance : roleDict?.client)
+                  : roleDict?.start + " " + (selectedRole === "freelance" ? roleDict?.freelance : roleDict?.client)
+                }
               </>
             )}
           </Button>

@@ -82,7 +82,9 @@ export const authOptions: NextAuthOptions = {
               avatar: profile.picture || "",
               verified: true, // Google = vérifié
               emailVerified: new Date(),
-              lastLogin: new Date()
+              lastLogin: new Date(),
+              onboardingRoleCompleted: false, // ✅ AJOUTÉ
+              onboardingCompleted: false
             }
 
             await usersCollection.insertOne(newUser)

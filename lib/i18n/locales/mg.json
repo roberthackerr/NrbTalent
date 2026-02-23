@@ -1,5 +1,37 @@
 {
-
+ "roleSelection": {
+    "chooseRole": "Fidio ny anjara asanao",
+    "confirmRole": "Hamafiso ny anjara asanao",
+    "welcome": "Tonga soa {{name}} !",
+    "subtitle": "Fidio ny fomba hampiasanao ny sehatra",
+    "currentRole": "Ny anjara asanao ankehitriny dia: {{role}}",
+    "freelance": "Freelance",
+    "client": "Mpanjifa",
+    "freelanceDesc": "Mitady tetikasa aho ary te-hampandroso ny asako",
+    "clientDesc": "Mitady talenta ho an'ny tetikasako aho",
+    "freelanceBenefits": [
+      "Mahita tetikasa mifanaraka amin'ny fahaizanao",
+      "Manangana ny portfolio-nao",
+      "Mahazo fandoavam-bola azo antoka"
+    ],
+    "clientBenefits": [
+      "Mahita freelances an'arivony",
+      "Mahita ny talenta mety",
+      "Mitantana tetikasa mora foana"
+    ],
+    "confirm": "Hamafiso",
+    "start": "Hanomboka",
+    "updating": "Fanavaozana...",
+    "redirecting": "Famindrana...",
+    "errors": {
+      "selectRole": "Fidio ny anjara asanao",
+      "update": "Hadisoana nandritra ny fanavaozana ny anjara asana"
+    },
+    "success": {
+      "freelance": "Tonga soa ho freelance!",
+      "client": "Tonga soa ho mpanjifa!"
+    }
+  },
   "portfolio": {
     "title": "Portfolio",
     "description": "Asehoy ny tetikasanao tsara indrindra mba hahaliana ny mpanjifa",

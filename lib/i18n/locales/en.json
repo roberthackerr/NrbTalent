@@ -1,4 +1,37 @@
 {
+   "roleSelection": {
+    "chooseRole": "Choose your role",
+    "confirmRole": "Confirm your role",
+    "welcome": "Welcome {{name}} !",
+    "subtitle": "Choose how you want to use the platform",
+    "currentRole": "Your current role is: {{role}}",
+    "freelance": "Freelance",
+    "client": "Client",
+    "freelanceDesc": "I'm looking for projects and want to grow my business",
+    "clientDesc": "I'm looking for talent for my projects",
+    "freelanceBenefits": [
+      "Find projects that match your skills",
+      "Build your portfolio",
+      "Receive secure payments"
+    ],
+    "clientBenefits": [
+      "Access thousands of freelancers",
+      "Find the perfect talent",
+      "Manage your projects easily"
+    ],
+    "confirm": "Confirm",
+    "start": "Start",
+    "updating": "Updating...",
+    "redirecting": "Redirecting...",
+    "errors": {
+      "selectRole": "Please select a role",
+      "update": "Error updating role"
+    },
+    "success": {
+      "freelance": "Welcome as a freelancer!",
+      "client": "Welcome as a client!"
+    }
+  },
   "portfolio": {
     "success": {
       "removed": "Project deleted!",
