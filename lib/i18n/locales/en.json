@@ -1,8 +1,8 @@
 {
-   "roleSelection": {
+  "roleSelection": {
     "chooseRole": "Choose your role",
     "confirmRole": "Confirm your role",
-    "welcome": "Welcome {{name}} !",
+    "welcome": "Welcome {{name}}!",
     "subtitle": "Choose how you want to use the platform",
     "currentRole": "Your current role is: {{role}}",
     "freelance": "Freelance",
@@ -32,6 +32,7 @@
       "client": "Welcome as a client!"
     }
   },
+
   "portfolio": {
     "success": {
       "removed": "Project deleted!",
@@ -41,7 +42,7 @@
       "remove": "Error deleting",
       "update": "Error updating"
     },
-        "categories": {
+    "categories": {
       "website": "Website",
       "mobile": "Mobile App",
       "design": "UI/UX Design",
@@ -84,6 +85,7 @@
     "viewProject": "View project",
     "addedOn": "Added on"
   },
+
   "experience": {
     "title": "Professional Experience",
     "description": "Add your professional background to strengthen your credibility",
@@ -119,8 +121,6 @@
     "months": "months"
   },
 
-
-  
   "signin": {
     "benefits": {
       "title": "Welcome to your space",
@@ -135,6 +135,8 @@
   },
 
   "common": {
+    "sending": "Sending...",
+    "contact": "Contact support",
     "loading": "Loading...",
     "error": "Error",
     "save": "Save",
@@ -159,6 +161,16 @@
   },
 
   "auth": {
+    "checkEmail": "Check your email",
+    "emailSent": "We've sent a password reset link to",
+    "checkSpam": "Please check your spam folder if you don't see it in your inbox.",
+    "backToSignin": "Back to Sign In",
+    "tryDifferentEmail": "Try a different email",
+    "resetInstructions": "Enter your email address and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "emailPrivacy": "We'll never share your email with anyone else.",
+    "needHelp": "Need help?",
+    
     "welcome": "Welcome to NRBTalents",
     "subtitle": "The platform connecting talents and opportunities",
     "email": "Email",
@@ -185,7 +197,8 @@
     },
     "success": {
       "signup": "Account created successfully!",
-      "login": "Login successful!"
+      "login": "Login successful!",
+      "emailSent": "Reset link sent successfully!"
     }
   },
 
@@ -293,7 +306,7 @@
     "portfolio": {
       "title": "Portfolio",
       "description": "Present your best projects",
-      "addProject": "Add Project",
+      "addProject": "Add a project",
       "projectTitle": "Project Title",
       "projectDescription": "Project Description",
       "technologiesUsed": "Technologies Used",

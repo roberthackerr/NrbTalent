@@ -1,13 +1,13 @@
 {
- "roleSelection": {
+  "roleSelection": {
     "chooseRole": "Fidio ny anjara asanao",
     "confirmRole": "Hamafiso ny anjara asanao",
-    "welcome": "Tonga soa {{name}} !",
+    "welcome": "Tonga soa {{name}}!",
     "subtitle": "Fidio ny fomba hampiasanao ny sehatra",
     "currentRole": "Ny anjara asanao ankehitriny dia: {{role}}",
     "freelance": "Freelance",
     "client": "Mpanjifa",
-    "freelanceDesc": "Mitady tetikasa aho ary te-hampandroso ny asako",
+    "freelanceDesc": "Mitady tetikasa aho ary te hampandroso ny asako",
     "clientDesc": "Mitady talenta ho an'ny tetikasako aho",
     "freelanceBenefits": [
       "Mahita tetikasa mifanaraka amin'ny fahaizanao",
@@ -25,20 +25,39 @@
     "redirecting": "Famindrana...",
     "errors": {
       "selectRole": "Fidio ny anjara asanao",
-      "update": "Hadisoana nandritra ny fanavaozana ny anjara asana"
+      "update": "Hadisoana nandritra ny fanavaozana"
     },
     "success": {
       "freelance": "Tonga soa ho freelance!",
       "client": "Tonga soa ho mpanjifa!"
     }
   },
+
   "portfolio": {
+    "success": {
+      "removed": "Voafafa ny tetikasa!",
+      "updated": "Nohavaozina ny tetikasa!"
+    },
+    "errors": {
+      "remove": "Hadisoana nandritra ny fanafafana",
+      "update": "Hadisoana nandritra ny fanavaozana"
+    },
+    "categories": {
+      "website": "Tranonkala",
+      "mobile": "Application finday",
+      "design": "Dizaina UI/UX",
+      "ecommerce": "E-commerce",
+      "api": "API",
+      "tool": "Fitaovana",
+      "game": "Lalao",
+      "other": "Hafa"
+    },
     "title": "Portfolio",
-    "description": "Asehoy ny tetikasanao tsara indrindra mba hahaliana ny mpanjifa",
+    "description": "Asehoy ny tetikasanao tsara indrindra",
     "addProject": "Hanampy tetikasa",
     "editTitle": "Hanova tetikasa",
     "addTitle": "Tetikasa vaovao",
-    "formDescription": "Ampio ny antsipirihan'ny tetikasanao portfolio",
+    "formDescription": "Ampio ny antsipirihan'ny tetikasanao",
     "projectTitle": "Lohan'ny tetikasa",
     "category": "Sokajy",
     "selectCategory": "Fidio sokajy",
@@ -64,40 +83,44 @@
     "withLink": "Misy rohy",
     "new": "Vaovao",
     "viewProject": "Hijery tetikasa",
-    "addedOn": "Nampiana tamin'ny",
-    "cancel": "Avelao",
-    "update": "Havaozy",
-    "add": "Ampio",
-    "saving": "Tehirizina...",
-    "characters": "litera",
-    "categories": {
-      "website": "Tranonkala",
-      "mobile": "Application finday",
-      "design": "Dizaina UI/UX",
-      "ecommerce": "E-commerce",
-      "api": "API",
-      "tool": "Fitaovana",
-      "game": "Lalao",
-      "other": "Hafa"
-    },
-    "success": {
-      "added": "Tetikasa nampiana soa aman-tsara!",
-      "removed": "Tetikasa nesorina soa aman-tsara!",
-      "updated": "Tetikasa nohavaozina!"
-    },
-    "errors": {
-      "fetch": "Hadisoana nandritra ny fampidirana tetikasa",
-      "add": "Hadisoana nandritra ny fanampiana tetikasa",
-      "remove": "Hadisoana nandritra ny fanesorana tetikasa",
-      "update": "Hadisoana nandritra ny fanavaozana tetikasa",
-      "invalidImage": "Fidio sary mety",
-      "fileTooLarge": "Tsy mihoatra ny 5MB ny sary",
-      "imageRequired": "Ilaina ny sary",
-      "missingFields": "Misy tsy ampy",
-      "save": "Hadisoana nandritra ny fitahirizana",
-      "upload": "Hadisoana nandritra ny fampidirana sary"
-    }
+    "addedOn": "Nampiana tamin'ny"
   },
+
+  "experience": {
+    "title": "Traikefa matihanina",
+    "description": "Ampio ny traikefanao matihanina mba hanamafisana ny fahatokisana",
+    "addExperience": "Hanampy traikefa",
+    "editTitle": "Hanova traikefa",
+    "addTitle": "Traikefa vaovao",
+    "formDescription": "Ampio ny mombamomba ny traikefanao matihanina",
+    "company": "Orinasa",
+    "companyPlaceholder": "Anaran'ny orinasa",
+    "position": "Toerana",
+    "positionPlaceholder": "Ny toerana niasanao",
+    "location": "Toerana",
+    "locationPlaceholder": "Tanàna, Firenena",
+    "startDate": "Daty nanombohana",
+    "endDate": "Daty nifaranana",
+    "currentPosition": "Toerana ankehitriny",
+    "description": "Famaritana",
+    "descriptionPlaceholder": "Lazao ny andraikitrao sy ny zava-bita nataonao...",
+    "technologiesUsed": "Teknolojia nampiasaina",
+    "achievement": "Zava-bita",
+    "achievementPlaceholder": "Ny zava-bitanao lehibe",
+    "current": "Ankehitriny",
+    "present": "Ankehitriny",
+    "noExperiences": "Tsy misy traikefa matihanina",
+    "noExperiencesDescription": "Ampio ny traikefanao matihanina mba hanehoana ny fahaizanao sy hanamafisana ny fahatokisan'ny mpanjifa.",
+    "addFirstExperience": "Hanampy traikefa voalohany",
+    "statsTitle": "Statistika",
+    "experiences": "Traikefa",
+    "currentPositions": "Toerana ankehitriny",
+    "totalYears": "Taona niainana",
+    "year": "taona",
+    "years": "taona",
+    "months": "volana"
+  },
+
   "signin": {
     "benefits": {
       "title": "Tonga soa eto amin'ny faritra misy anao",
@@ -112,6 +135,8 @@
   },
 
   "common": {
+    "sending": "Amplasiana...",
+    "contact": "Mifandraisa amin'ny fanampiana",
     "loading": "Amplasiana...",
     "error": "Hadisoana",
     "save": "Tehirizo",
@@ -120,9 +145,7 @@
     "edit": "Ovay",
     "back": "Miverena",
     "next": "Manaraka",
-    "skip": "Tsidiho",
-    "success": "Vita soa aman-tsara!",
-    "confirm": "Hamafiso"
+    "skip": "Tsidiho"
   },
 
   "navigation": {
@@ -138,6 +161,16 @@
   },
 
   "auth": {
+    "checkEmail": "Jereo ny mailakao",
+    "emailSent": "Nandefa rohy famerenana tenimiafina izahay tany amin'ny",
+    "checkSpam": "Jereo ny lahatahiry spam raha tsy hitanao ao amin'ny boîte de réception.",
+    "backToSignin": "Miverina any amin'ny fidirana",
+    "tryDifferentEmail": "Mampiasà mailaka hafa",
+    "resetInstructions": "Ampidiro ny adiresy mailakao ary handefa rohy hamerenana ny tenimiafina izahay.",
+    "sendResetLink": "Mandefa rohy",
+    "emailPrivacy": "Tsy hozarainay amin'olon-kafa ny mailakao.",
+    "needHelp": "Mila fanampiana?",
+    
     "welcome": "Tonga soa eto NRBTalents",
     "subtitle": "Ny sehatra mampifandray ny talenta sy ny fahafahana",
     "email": "Mailaka",
@@ -164,7 +197,8 @@
     },
     "success": {
       "signup": "Voaforona soa aman-tsara ny kaonty!",
-      "login": "Tafiditra soa aman-tsara!"
+      "login": "Tafiditra soa aman-tsara!",
+      "emailSent": "Vita soa aman-tsara ny fandefasana rohy!"
     }
   },
 
@@ -273,61 +307,24 @@
       "title": "Portfolio",
       "description": "Asehoy ny tetikasanao tsara indrindra",
       "addProject": "Hanampy tetikasa",
-      "editTitle": "Hanova tetikasa",
-      "addTitle": "Tetikasa vaovao",
-      "formDescription": "Ampio ny antsipirihan'ny tetikasanao",
       "projectTitle": "Lohan'ny tetikasa",
-      "category": "Sokajy",
-      "selectCategory": "Fidio sokajy",
-      "projectDescription": "Famaritana",
-      "descriptionPlaceholder": "Lazao ny tetikasanao, ny fanamby nosarahanao, ny endri-javatra...",
-      "characters": "litera",
-      "projectImage": "Sarin'ny tetikasa",
-      "imageRequirements": "PNG, JPG hatramin'ny 5MB. Endrika natokana: 16:9",
-      "imageKeepMessage": "Hotehirizina ny sary raha tsy misy vaovao fidirina",
-      "projectUrl": "URL ny tetikasa",
+      "projectDescription": "Famaritana ny tetikasa",
       "technologiesUsed": "Teknolojia nampiasaina",
-      "addTechnology": "Hanampy teknolojia",
-      "featured": "Hasongadina ity tetikasa ity",
-      "featuredTitle": "Tetikasa nasongadina",
-      "featuredDescription": "Ireo tetikasa ireo dia hasongadina eo amin'ny mombamomba anao",
-      "allProjectsTitle": "Tetikasa rehetra",
-      "projectCount": "tetikasa",
-      "noProjects": "Tsy misy tetikasa portfolio",
-      "noProjectsDescription": "Asehoy ny asanao mba hahaliana ny mpanjifa ary hampitombo ny vahao ho karama.",
-      "addFirstProject": "Hanampy tetikasa voalohany",
-      "statsTitle": "Statistika",
-      "projects": "Tetikasa",
-      "withLink": "Misy rohy",
-      "new": "Vaovao",
+      "projectUrl": "URL ny tetikasa",
+      "category": "Sokajy",
+      "featured": "Tetikasa nasongadina",
+      "uploadImages": "Hampiditra sarin'ny tetikasa",
       "viewProject": "Hijery tetikasa",
-      "addedOn": "Nampiana tamin'ny",
-      "categories": {
-        "website": "Tranonkala",
-        "mobile": "Application finday",
-        "design": "Dizaina UI/UX",
-        "ecommerce": "E-commerce",
-        "api": "API",
-        "tool": "Fitaovana",
-        "game": "Lalao",
-        "other": "Hafa"
+      "errors": {
+        "fetch": "Hadisoana nandritra ny fampidirana tetikasa",
+        "add": "Hadisoana nandritra ny fanampiana tetikasa",
+        "remove": "Hadisoana nandritra ny fanesorana tetikasa",
+        "update": "Hadisoana nandritra ny fanavaozana tetikasa"
       },
       "success": {
         "added": "Tetikasa nampiana soa aman-tsara!",
         "removed": "Tetikasa nesorina soa aman-tsara!",
         "updated": "Tetikasa nohavaozina!"
-      },
-      "errors": {
-        "fetch": "Hadisoana nandritra ny fampidirana tetikasa",
-        "add": "Hadisoana nandritra ny fanampiana tetikasa",
-        "remove": "Hadisoana nandritra ny fanesorana tetikasa",
-        "update": "Hadisoana nandritra ny fanavaozana tetikasa",
-        "invalidImage": "Fidio sary mety",
-        "fileTooLarge": "Tsy mihoatra ny 5MB ny sary",
-        "imageRequired": "Ilaina ny sary",
-        "missingFields": "Misy tsy ampy",
-        "save": "Hadisoana nandritra ny fitahirizana",
-        "upload": "Hadisoana nandritra ny fampidirana sary"
       }
     },
 
@@ -335,55 +332,6 @@
       "avatar": "Ny sary matihanina dia mampitombo ny fahatokisana 40%",
       "skills": "Lisiro fahaiza-manao 5-10 mba hahazoana vokatra tsara indrindra",
       "portfolio": "Asehoy tetikasa 3-5 tsara indrindra"
-    }
-  },
-
-  "experience": {
-    "title": "Traikefa matihanina",
-    "description": "Ampio ny traikefanao matihanina mba hanamafisana ny fahatokisana",
-    "addExperience": "Hanampy traikefa",
-    "editTitle": "Hanova traikefa",
-    "addTitle": "Traikefa vaovao",
-    "formDescription": "Ampio ny mombamomba ny traikefanao matihanina",
-    "company": "Orinasa",
-    "companyPlaceholder": "Anaran'ny orinasa",
-    "position": "Toerana",
-    "positionPlaceholder": "Ny toerana niasanao",
-    "location": "Toerana",
-    "locationPlaceholder": "Tanàna, Firenena",
-    "startDate": "Daty nanombohana",
-    "endDate": "Daty nifaranana",
-    "currentPosition": "Toerana ankehitriny",
-    "description": "Famaritana",
-    "descriptionPlaceholder": "Lazao ny andraikitrao sy ny zava-bita nataonao...",
-    "technologiesUsed": "Teknolojia nampiasaina",
-    "achievement": "Zava-bita",
-    "achievementPlaceholder": "Ny zava-bitanao lehibe",
-    "current": "Ankehitriny",
-    "present": "Ankehitriny",
-    "noExperiences": "Tsy misy traikefa matihanina",
-    "noExperiencesDescription": "Ampio ny traikefanao matihanina mba hanehoana ny fahaizanao sy hanamafisana ny fahatokisan'ny mpanjifa.",
-    "addFirstExperience": "Hanampy traikefa voalohany",
-    "statsTitle": "Statistika",
-    "experiences": "Traikefa",
-    "currentPositions": "Toerana ankehitriny",
-    "totalYears": "Taona niainana",
-    "year": "taona",
-    "years": "taona",
-    "months": "volana",
-    "success": {
-      "added": "Traikefa nampiana soa aman-tsara!",
-      "removed": "Traikefa nesorina soa aman-tsara!",
-      "updated": "Traikefa nohavaozina!"
-    },
-    "errors": {
-      "fetch": "Hadisoana nandritra ny fampidirana traikefa",
-      "missingFields": "Ampidiro ny saha ilaina",
-      "alreadyExists": "Efa misy ity traikefa ity",
-      "add": "Hadisoana nandritra ny fanampiana traikefa",
-      "remove": "Hadisoana nandritra ny fanesorana traikefa",
-      "update": "Hadisoana nandritra ny fanavaozana traikefa",
-      "save": "Hadisoana nandritra ny fitahirizana"
     }
   },
 

@@ -1,4 +1,6 @@
 {
+
+
    "roleSelection": {
     "chooseRole": "Choisissez votre rôle",
     "confirmRole": "Confirmez votre rôle",
@@ -133,6 +135,8 @@
   },
 
   "common": {
+    "sending": "Envoi en cours...",
+    "contact": "Contacter le support",
     "loading": "Chargement...",
     "error": "Erreur",
     "save": "Enregistrer",
@@ -157,6 +161,17 @@
   },
 
   "auth": {
+      "checkEmail": "Vérifiez votre email",
+    "emailSent": "Nous avons envoyé un lien de réinitialisation à",
+    "checkSpam": "Vérifiez votre dossier spam si vous ne le voyez pas dans votre boîte de réception.",
+    "backToSignin": "Retour à la connexion",
+    "tryDifferentEmail": "Utiliser un autre email",
+    "resetInstructions": "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "sendResetLink": "Envoyer le lien de réinitialisation",
+    "emailPrivacy": "Nous ne partagerons jamais votre email avec d'autres personnes.",
+    "needHelp": "Besoin d'aide ?",
+
+      
     "welcome": "Bienvenue sur NRBTalents",
     "subtitle": "La plateforme qui connecte talents et opportunités",
     "email": "Email",
@@ -183,7 +198,8 @@
     },
     "success": {
       "signup": "Compte créé avec succès !",
-      "login": "Connexion réussie !"
+      "login": "Connexion réussie !",
+      "emailSent": "Lien de réinitialisation envoyé avec succès !"
     }
   },
 
