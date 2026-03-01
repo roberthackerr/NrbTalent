@@ -96,7 +96,7 @@ export const authOptions: NextAuthOptions = {
               { 
                 $set: { 
                   name: profile.name,
-                  avatar: profile.picture || existingUser.avatar,
+                  avatar:  existingUser.avatar,
                   lastLogin: new Date(),
                   updatedAt: new Date()
                 }
