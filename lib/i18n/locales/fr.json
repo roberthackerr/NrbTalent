@@ -171,7 +171,16 @@
     "emailPrivacy": "Nous ne partagerons jamais votre email avec d'autres personnes.",
     "needHelp": "Besoin d'aide ?",
 
-      
+        "resetPassword": "Réinitialiser votre mot de passe",
+    "resetPasswordInstructions": "Saisissez votre nouveau mot de passe ci-dessous. Assurez-vous qu'il contient au moins 8 caractères.",
+    "newPassword": "Nouveau mot de passe",
+    "passwordRequirements": "Le mot de passe doit contenir au moins 8 caractères et inclure un mélange de lettres et de chiffres.",
+    "resetPasswordButton": "Réinitialiser le mot de passe",
+    "invalidToken": "Lien invalide ou expiré",
+    "invalidTokenMessage": "Ce lien de réinitialisation est invalide ou a expiré. Veuillez en demander un nouveau.",
+    "requestNewLink": "Demander un nouveau lien",
+    "passwordReset": "Mot de passe réinitialisé avec succès !",
+    "resetSuccessMessage": "Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion...",
     "welcome": "Bienvenue sur NRBTalents",
     "subtitle": "La plateforme qui connecte talents et opportunités",
     "email": "Email",
@@ -199,7 +208,8 @@
     "success": {
       "signup": "Compte créé avec succès !",
       "login": "Connexion réussie !",
-      "emailSent": "Lien de réinitialisation envoyé avec succès !"
+      "emailSent": "Lien de réinitialisation envoyé avec succès !",
+      "resetSuccess": "Mot de passe réinitialisé avec succès !"
     }
   },
 

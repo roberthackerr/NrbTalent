@@ -170,13 +170,22 @@
     "sendResetLink": "Mandefa rohy",
     "emailPrivacy": "Tsy hozarainay amin'olon-kafa ny mailakao.",
     "needHelp": "Mila fanampiana?",
-    
+     "resetPassword": "Hanova ny tenimiafinao",
+    "resetPasswordInstructions": "Ampidiro ny tenimiafina vaovao eto ambany. Ataovy azo antoka fa farafahakeliny 8 ny isan'ny litera.",
+    "newPassword": "Tenimiafina vaovao",
+    "confirmPassword": "Hamafiso ny tenimiafina",
+    "passwordRequirements": "Ny tenimiafina dia tsy maintsy misy litera 8 farafahakeliny ary misy litera sy isa mifangaro.",
+    "resetPasswordButton": "Hanova ny tenimiafina",
+    "invalidToken": "Rohy tsy mety na efa lany daty",
+    "invalidTokenMessage": "Ity rohy fanovana tenimiafina ity dia tsy mety na efa lany daty. Mangataha rohy vaovao azafady.",
+    "requestNewLink": "Mangataka rohy vaovao",
+    "passwordReset": "Soa! Novana soamantsara ny tenimiafinao",
+    "resetSuccessMessage": "Efa novana soamantsara ny tenimiafinao. Hahazoana redirect any amin'ny pejy fidirana ianao...",
     "welcome": "Tonga soa eto NRBTalents",
     "subtitle": "Ny sehatra mampifandray ny talenta sy ny fahafahana",
     "email": "Mailaka",
     "password": "Tenimiafina",
-    "confirmPassword": "Hamafiso ny tenimiafina",
-    "name": "Anarana",
+      "name": "Anarana",
     "login": "Hiditra",
     "register": "Hamorona kaonty",
     "google": "Hanohy amin'ny Google",
@@ -198,7 +207,8 @@
     "success": {
       "signup": "Voaforona soa aman-tsara ny kaonty!",
       "login": "Tafiditra soa aman-tsara!",
-      "emailSent": "Vita soa aman-tsara ny fandefasana rohy!"
+      "emailSent": "Vita soa aman-tsara ny fandefasana rohy!",
+       "resetSuccess": "Soa! Novana soamantsara ny tenimiafinao!"
     }
   },
 

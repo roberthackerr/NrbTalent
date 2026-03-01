@@ -161,6 +161,16 @@
   },
 
   "auth": {
+          "resetPassword": "Reset your password",
+    "resetPasswordInstructions": "Enter your new password below. Make sure it's at least 8 characters long.",
+    "newPassword": "New Password",
+    "passwordRequirements": "Password must be at least 8 characters long and include a mix of letters and numbers.",
+    "resetPasswordButton": "Reset Password",
+    "invalidToken": "Invalid or expired link",
+    "invalidTokenMessage": "This password reset link is invalid or has expired. Please request a new one.",
+    "requestNewLink": "Request New Link",
+    "passwordReset": "Password reset successful!",
+    "resetSuccessMessage": "Your password has been reset successfully. You will be redirected to login...",
     "checkEmail": "Check your email",
     "emailSent": "We've sent a password reset link to",
     "checkSpam": "Please check your spam folder if you don't see it in your inbox.",
@@ -185,6 +195,7 @@
     "forgotPassword": "Forgot password?",
     "or": "Or",
     "errors": {
+
       "emailRequired": "Email is required",
       "emailInvalid": "Invalid email",
       "passwordRequired": "Password is required",
@@ -196,6 +207,7 @@
       "googleAccount": "This account uses Google. Sign in with Google."
     },
     "success": {
+       "resetSuccess": "Password reset successfully!",
       "signup": "Account created successfully!",
       "login": "Login successful!",
       "emailSent": "Reset link sent successfully!"

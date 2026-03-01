@@ -39,7 +39,7 @@
     "lib/websocket-server.js",
     "app/messages/page.text",
     ".next/dev/types/**/*.ts"
-, "lib/models/user.ts.bp", "lib/firebase/config.ts.bp", "types/next-auth.d.ts.b", "lib/auth.ts.bp0", "lib/auth.ts.B.0", "lib/models/user.ts.bp.0"  ],
+, "lib/models/user.ts.bp", "lib/firebase/config.ts.bp", "types/next-auth.d.ts.b", "lib/auth.ts.bp0", "lib/auth.ts.B.0", "lib/models/user.ts.bp.0", "app/test/email/page.tsx.b"  ],
   "exclude": [
     "node_modules"
   ]
