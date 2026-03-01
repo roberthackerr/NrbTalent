@@ -1,3 +1,4 @@
+// app/api/auth/register/route.ts - Version corrigée
 import { NextRequest, NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
 import bcrypt from "bcryptjs"
@@ -40,11 +41,21 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
       emailVerified: null,
-      verificationToken,
-      verificationTokenExpiry: tokenExpiry,
+      // ✅ On ne stocke PLUS le token dans l'utilisateur
     }
 
     await usersCollection.insertOne(newUser)
+
+    // ✅ On stocke le token dans la collection dédiée
+    await db.collection("verificationTokens").insertOne({
+      userId: newUser._id,
+      email: newUser.email,
+      token: verificationToken,
+      type: 'email_verification',
+      expiresAt: tokenExpiry,
+      createdAt: new Date(),
+      lang: lang || "fr"
+    })
 
     await sendVerificationEmail(newUser.email, verificationToken, lang || "fr")
 

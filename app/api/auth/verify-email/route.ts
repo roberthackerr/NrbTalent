@@ -57,13 +57,33 @@ export async function GET(request: Request) {
 
     const db = await getDatabase()
 
+    // ✅ SOLUTION: Ajouter une marge de 5 minutes pour éviter les problèmes de fuseau horaire
+    const now = new Date()
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000)
+    
+    console.log("🔍 Vérification token:", {
+      token: token.substring(0, 10) + "...",
+      now: now.toISOString(),
+      fiveMinutesAgo: fiveMinutesAgo.toISOString()
+    })
+
     const verificationToken = await db.collection("verificationTokens").findOne({
       token,
       type: 'email_verification',
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: fiveMinutesAgo } // 👈 MARGE DE 5 MINUTES
     })
 
     if (!verificationToken) {
+      // Vérifier si le token existe mais est expiré (pour debug)
+      const expiredToken = await db.collection("verificationTokens").findOne({ token })
+      if (expiredToken) {
+        console.log("⏰ Token expiré:", {
+          expiresAt: expiredToken.expiresAt,
+          now: now,
+          diffMinutes: (new Date(expiredToken.expiresAt).getTime() - now.getTime()) / 1000 / 60
+        })
+      }
+      
       return NextResponse.json({ error: t.invalidToken }, { status: 400 })
     }
 
@@ -81,7 +101,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ 
         message: t.alreadyVerified,
         redirectTo: `/${lang}/onboarding`,
-        email: user.email // 👈 On retourne juste l'email
+        email: user.email
       })
     }
 
@@ -122,7 +142,7 @@ export async function GET(request: Request) {
       success: true,
       message: t.success,
       redirectTo: `/${lang}/onboarding`,
-      email: user.email // 👈 On retourne juste l'email pour la connexion
+      email: user.email
     })
 
   } catch (error) {
