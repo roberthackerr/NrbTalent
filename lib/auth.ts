@@ -5,8 +5,10 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import { getDatabase } from "./mongodb"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { User, CreateUserDTO, toUserResponseDTO, createNewUser } from "./models/user"
 import { ObjectId } from "mongodb"
+import { sendVerificationEmail } from "./email-service"
 
 // ==================== TYPE EXTENSIONS ====================
 declare module "next-auth" {
@@ -18,17 +20,19 @@ declare module "next-auth" {
       image?: string | null
       role: "freelance" | "client" | "admin"
       onboardingCompleted: boolean
-      onboardingRoleCompleted:boolean
+      onboardingRoleCompleted: boolean
       avatar?: string | null
+      emailVerified?: boolean | null
     }
   }
-  
+
   interface User {
     id: string
     role: "freelance" | "client" | "admin"
     onboardingCompleted: boolean
-    onboardingRoleCompleted:boolean
+    onboardingRoleCompleted: boolean
     avatar?: string | null
+    emailVerified?: boolean | null
   }
 }
 
@@ -37,10 +41,11 @@ declare module "next-auth/jwt" {
     id: string
     role: "freelance" | "client" | "admin"
     onboardingCompleted: boolean
-    onboardingRoleCompleted:boolean
+    onboardingRoleCompleted: boolean
     email: string
     name?: string | null
     avatar?: string | null
+    emailVerified?: boolean | null
   }
 }
 
@@ -61,74 +66,71 @@ export const authOptions: NextAuthOptions = {
         try {
           const db = await getDatabase()
           const usersCollection = db.collection<User>("users")
-          
-          // Vérifier si l'utilisateur existe déjà
-          let existingUser = await usersCollection.findOne({ 
-            email: profile.email 
+
+          let existingUser = await usersCollection.findOne({
+            email: profile.email,
           })
 
           if (!existingUser) {
-            // Créer un nouvel utilisateur avec createNewUser helper
             const newUserData: CreateUserDTO = {
               name: profile.name,
               email: profile.email,
-              role: "freelance", // Rôle par défaut
-              avatar: profile.picture
+              role: "freelance",
+              avatar: profile.picture,
             }
 
             const newUser = {
               ...createNewUser(newUserData),
               _id: new ObjectId(),
               avatar: profile.picture || "",
-              verified: true, // Google = vérifié
-              emailVerified: new Date(),
+              verified: true,
+              emailVerified: new Date(), // Google = vérifié d'office
               lastLogin: new Date(),
-              onboardingRoleCompleted: false, // ✅ AJOUTÉ
-              onboardingCompleted: false
+              onboardingRoleCompleted: false,
+              onboardingCompleted: false,
             }
 
             await usersCollection.insertOne(newUser)
             existingUser = newUser
           } else {
-            // Mettre à jour les informations existantes
             await usersCollection.updateOne(
               { _id: existingUser._id },
-              { 
-                $set: { 
+              {
+                $set: {
                   name: profile.name,
-                  avatar:  existingUser.avatar,
+                  avatar: existingUser.avatar,
                   lastLogin: new Date(),
-                  updatedAt: new Date()
-                }
+                  updatedAt: new Date(),
+                },
               }
             )
           }
 
-          // Retourner l'utilisateur formaté pour NextAuth
           return {
             id: existingUser._id.toString(),
             name: existingUser.name,
             email: existingUser.email,
             image: existingUser.avatar,
             role: existingUser.role,
-            onboardingRoleCompleted:existingUser.onboardingRoleCompleted || false,
+            onboardingRoleCompleted: existingUser.onboardingRoleCompleted || false,
             onboardingCompleted: existingUser.onboardingCompleted || false,
-            avatar: existingUser.avatar
+            avatar: existingUser.avatar,
+            emailVerified: !!existingUser.emailVerified,
           }
         } catch (error) {
           console.error("Google profile error:", error)
           throw error
         }
-      }
+      },
     }),
-    
+
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        name: { label: "Name", type: "text" },
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        role: { label: "Role", type: "text" },
+        lang: { label: "Language", type: "text" },
+        isVerifiedFlow: { label: "Verified Flow", type: "text" }, // 👈 NOUVEAU CHAMP
       },
       async authorize(credentials) {
         try {
@@ -138,59 +140,84 @@ export const authOptions: NextAuthOptions = {
 
           const db = await getDatabase()
           const usersCollection = db.collection<User>("users")
-          
-          // Vérifier si l'utilisateur existe
+
           const existingUser = await usersCollection.findOne({
             email: credentials.email,
           })
 
-          // ===== INSCRIPTION =====
-          if (credentials.name) {
-            if (existingUser) {
-              throw new Error("Un compte existe déjà avec cet email")
-            }
-
-            // Utiliser le helper createNewUser
-            const newUserData: CreateUserDTO = {
-              name: credentials.name,
-              email: credentials.email,
-              password: credentials.password,
-              role: (credentials.role as "freelance" | "client") || "freelance"
-            }
-
-            const hashedPassword = await bcrypt.hash(credentials.password, 12)
-            
-            const newUser = {
-              ...createNewUser(newUserData),
-              _id: new ObjectId(),
-              password: hashedPassword,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            }
-
-            await usersCollection.insertOne(newUser)
-
-            return {
-              id: newUser._id.toString(),
-              email: newUser.email,
-              name: newUser.name,
-              role: newUser.role,
-              onboardingCompleted: false,
-              avatar: newUser.avatar
-            }
-          }
-
-          // ===== CONNEXION =====
+          // ===== CONNEXION UNIQUEMENT =====
           if (!existingUser) {
             throw new Error("Aucun utilisateur trouvé avec cet email")
           }
 
-          // Vérifier si le compte utilise Google
-          if (!existingUser.password) {
-            throw new Error("Ce compte utilise Google. Connectez-vous avec Google.")
+          // ✅ CAS SPÉCIAL: Vérification d'email (après clic sur lien)
+          if (credentials.isVerifiedFlow === 'true' && credentials.password === 'VERIFIED_BY_EMAIL') {
+            // Vérifier que l'email est bien vérifié
+            if (!existingUser.emailVerified) {
+              throw new Error("EMAIL_NOT_VERIFIED")
+            }
+
+            // Connecter l'utilisateur
+            return {
+              id: existingUser._id.toString(),
+              email: existingUser.email,
+              name: existingUser.name,
+              role: existingUser.role,
+              onboardingRoleCompleted: existingUser.onboardingRoleCompleted || false,
+              onboardingCompleted: existingUser.onboardingCompleted || false,
+              avatar: existingUser.avatar,
+              emailVerified: true,
+            }
           }
 
-          const isValid = await bcrypt.compare(credentials.password, existingUser.password)
+          // ✅ CAS NORMAL: Connexion standard
+          // Vérification de l'email
+          if (!existingUser.emailVerified) {
+            // Vérifier si le token existe et n'est pas expiré
+            if (
+              !existingUser.verificationToken ||
+              !existingUser.verificationTokenExpiry ||
+              existingUser.verificationTokenExpiry < new Date()
+            ) {
+              // Générer un nouveau token
+              const newToken = crypto.randomBytes(32).toString("hex")
+              const newExpiry = new Date(Date.now() + 24 * 3600000)
+
+              await usersCollection.updateOne(
+                { _id: existingUser._id },
+                {
+                  $set: {
+                    verificationToken: newToken,
+                    verificationTokenExpiry: newExpiry,
+                  },
+                }
+              )
+
+              try {
+                await sendVerificationEmail(
+                  existingUser.email,
+                  newToken,
+                  credentials.lang || "fr"
+                )
+              } catch (emailError) {
+                console.error("Erreur renvoi email vérification:", emailError)
+              }
+            }
+
+            throw new Error("EMAIL_NOT_VERIFIED")
+          }
+
+          // Vérifier si le compte utilise Google
+          if (!existingUser.password) {
+            throw new Error(
+              "Ce compte utilise Google. Connectez-vous avec Google."
+            )
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            existingUser.password
+          )
 
           if (!isValid) {
             throw new Error("Mot de passe incorrect")
@@ -207,8 +234,10 @@ export const authOptions: NextAuthOptions = {
             email: existingUser.email,
             name: existingUser.name,
             role: existingUser.role,
-            avatar: existingUser.avatar,
+            onboardingRoleCompleted: existingUser.onboardingRoleCompleted || false,
             onboardingCompleted: existingUser.onboardingCompleted || false,
+            avatar: existingUser.avatar,
+            emailVerified: true,
           }
         } catch (error) {
           console.error("Authorize error:", error)
@@ -222,7 +251,6 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       try {
         if (user) {
-          // Stocker toutes les informations utilisateur dans le token
           token.id = user.id
           token.role = user.role as "freelance" | "client" | "admin"
           token.onboardingRoleCompleted = user.onboardingRoleCompleted ?? false
@@ -230,23 +258,24 @@ export const authOptions: NextAuthOptions = {
           token.email = user.email!
           token.name = user.name
           token.avatar = user.avatar
+          token.emailVerified = user.emailVerified ?? false
         }
 
-        // Mise à jour du token si nécessaire
         if (trigger === "update" && session) {
           const db = await getDatabase()
           const dbUser = await db.collection<User>("users").findOne({
             email: token.email,
           })
-          
+
           if (dbUser) {
             token.id = dbUser._id.toString()
             token.role = dbUser.role
             token.onboardingCompleted = dbUser.onboardingCompleted ?? false
+            token.onboardingRoleCompleted = dbUser.onboardingRoleCompleted ?? false
             token.name = dbUser.name
             token.avatar = dbUser.avatar
-            
-            // Mise à jour depuis la session
+            token.emailVerified = !!dbUser.emailVerified
+
             if (session.role) token.role = session.role as typeof token.role
             if (session.onboardingCompleted !== undefined) {
               token.onboardingCompleted = session.onboardingCompleted
@@ -256,35 +285,35 @@ export const authOptions: NextAuthOptions = {
       } catch (error) {
         console.error("JWT callback error:", error)
       }
-      
+
       return token
     },
-    
+
     async session({ session, token }) {
       try {
         if (session.user) {
-          // Peupler la session avec les données du token
           session.user.id = token.id
           session.user.role = token.role || "freelance"
           session.user.onboardingCompleted = token.onboardingCompleted || false
+          session.user.onboardingRoleCompleted = token.onboardingRoleCompleted || false
           session.user.email = token.email
           session.user.name = token.name
           session.user.image = token.avatar || null
           session.user.avatar = token.avatar || null
+          session.user.emailVerified = token.emailVerified || false
         }
       } catch (error) {
         console.error("Session callback error:", error)
       }
-      
+
       return session
     },
   },
 
   pages: {
     signIn: "/auth/signin",
-    signUp: "/auth/signup",
     error: "/auth/error",
-    newUser: "/onboarding", // Redirige les nouveaux utilisateurs vers onboarding
+    newUser: "/onboarding",
   },
 
   session: {
@@ -298,26 +327,21 @@ export const authOptions: NextAuthOptions = {
 
 // ==================== UTILITAIRES ====================
 
-/**
- * Récupère l'utilisateur courant avec toutes ses informations
- */
 export async function getCurrentUser() {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return null
     }
-    
-    // Récupérer les données complètes depuis la DB
+
     const db = await getDatabase()
-    const user = await db.collection<User>("users").findOne({ 
-      email: session.user.email 
+    const user = await db.collection<User>("users").findOne({
+      email: session.user.email,
     })
-    
+
     if (!user) return null
-    
-    // Retourner le DTO sécurisé
+
     return toUserResponseDTO(user)
   } catch (error) {
     console.error("Error getting current user:", error)
@@ -325,23 +349,20 @@ export async function getCurrentUser() {
   }
 }
 
-/**
- * Récupère l'ObjectId de l'utilisateur courant
- */
 export async function getCurrentUserObjectId(): Promise<ObjectId | null> {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.email) {
       return null
     }
-    
+
     const db = await getDatabase()
     const user = await db.collection<User>("users").findOne(
       { email: session.user.email },
-      { projection: { _id: 1 } } // Ne récupérer que l'ID
+      { projection: { _id: 1 } }
     )
-    
+
     return user?._id || null
   } catch (error) {
     console.error("Error getting current user ObjectId:", error)
@@ -349,9 +370,6 @@ export async function getCurrentUserObjectId(): Promise<ObjectId | null> {
   }
 }
 
-/**
- * Récupère l'ID de l'utilisateur courant (string)
- */
 export async function getCurrentUserId(): Promise<string | null> {
   try {
     const objectId = await getCurrentUserObjectId()
@@ -362,48 +380,64 @@ export async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
-/**
- * Vérifie si l'utilisateur est authentifié
- */
 export async function isAuthenticated(): Promise<boolean> {
   const session = await getServerSession(authOptions)
   return !!session?.user
 }
 
-/**
- * Vérifie si l'utilisateur a complété l'onboarding
- */
 export async function hasCompletedOnboarding(): Promise<boolean> {
   const session = await getServerSession(authOptions)
   return session?.user?.onboardingCompleted || false
 }
 
-/**
- * Récupère le rôle de l'utilisateur courant
- */
+export async function isEmailVerified(): Promise<boolean> {
+  const session = await getServerSession(authOptions)
+  return session?.user?.emailVerified || false
+}
+
 export async function getCurrentUserRole(): Promise<string | null> {
   const session = await getServerSession(authOptions)
   return session?.user?.role || null
 }
 
-/**
- * Mise à jour de la session côté client
- */
-export async function updateSession(data: Partial<Session['user']>) {
+export async function updateSession(data: Partial<Session["user"]>) {
   try {
-    const response = await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    
+
     if (!response.ok) {
-      throw new Error('Failed to update session')
+      throw new Error("Failed to update session")
     }
-    
+
     return await response.json()
   } catch (error) {
-    console.error('Error updating session:', error)
+    console.error("Error updating session:", error)
     return null
+  }
+}
+
+export async function markEmailAsVerified(email: string) {
+  try {
+    const db = await getDatabase()
+    await db.collection<User>("users").updateOne(
+      { email },
+      {
+        $set: {
+          emailVerified: new Date(),
+          updatedAt: new Date(),
+        },
+        $unset: {
+          verificationToken: "",
+          verificationTokenExpiry: "",
+        },
+      }
+    )
+    return true
+  } catch (error) {
+    console.error("Error marking email as verified:", error)
+    return false
   }
 }

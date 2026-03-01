@@ -1,6 +1,5 @@
 // lib/models/user.ts
 
-
 // ============================================
 // USER MODEL - MongoDB Collection Structure
 // ============================================
@@ -186,7 +185,7 @@ export interface UserPreferences {
   /** Newsletter subscription */
   newsletter: boolean
   /** Language preference */
-  language: 'fr' | 'en' | 'mg'
+  language: 'fr' | 'en' | 'es' | 'mg' // 👈 AJOUTÉ 'es'
   /** Theme preference */
   theme: 'light' | 'dark' | 'system'
   /** Project alerts */
@@ -204,8 +203,8 @@ export interface UserPreferences {
  * This represents the complete user profile
  */
 export interface User {
+  onboardingRoleCompleted?: boolean
 
-  onboardingRoleCompleted?:boolean
   // ========== SYSTEM FIELDS ==========
   /** MongoDB ObjectId (automatically generated) */
   _id: ObjectId
@@ -223,6 +222,10 @@ export interface User {
   password?: string
   /** Email verification status */
   emailVerified?: Date | null
+  /** Email verification token (for unverified users) */
+  verificationToken?: string // 👈 AJOUTÉ
+  /** Email verification token expiry */
+  verificationTokenExpiry?: Date // 👈 AJOUTÉ
   /** User role - determines platform permissions */
   role: UserRole
   /** Profile picture URL */
@@ -300,7 +303,7 @@ export interface User {
   }>
 
   // ========== VERIFICATION & STATUS ==========
-  /** Whether email is verified */
+  /** Whether email is verified (legacy field) */
   verified: boolean
   /** Whether identity is verified */
   identityVerified?: boolean
@@ -337,8 +340,8 @@ export interface User {
   }>
   /** Unread notifications count */
   unreadNotifications: number
-// Google = vérifié
-   // ========== SECURITY ==========
+
+  // ========== SECURITY ==========
   /** Two-factor authentication enabled */
   twoFactorEnabled?: boolean
   /** Two-factor authentication secret */
@@ -365,6 +368,7 @@ export interface CreateUserDTO {
   password?: string
   role?: UserRole
   avatar?: string
+  lang?: string // 👈 AJOUTÉ pour la langue
 }
 
 // ============================================
@@ -423,11 +427,39 @@ export interface UserResponseDTO {
   responseTime?: number
   badges?: User['badges']
   verified: boolean
+  emailVerified?: boolean // 👈 AJOUTÉ
   identityVerified?: boolean
   onboardingCompleted: boolean
   preferences?: UserPreferences
   createdAt: Date
   updatedAt: Date
+}
+
+// ============================================
+// TOKEN VERIFICATION INTERFACE
+// ============================================
+
+/**
+ * Email verification token structure
+ * Stored in separate collection or embedded
+ */
+export interface VerificationToken {
+  /** Unique token identifier */
+  _id: ObjectId
+  /** User ID */
+  userId: ObjectId
+  /** User email */
+  email: string
+  /** Verification token */
+  token: string
+  /** Token type (email_verification, password_reset, etc.) */
+  type: 'email_verification' | 'password_reset'
+  /** Expiry date */
+  expiresAt: Date
+  /** Creation date */
+  createdAt: Date
+  /** Language preference for emails */
+  lang?: string // 👈 AJOUTÉ
 }
 
 // ============================================
@@ -463,6 +495,7 @@ export function toUserResponseDTO(user: User): UserResponseDTO {
     responseTime: user.responseTime,
     badges: user.badges,
     verified: user.verified || false,
+    emailVerified: !!user.emailVerified, // 👈 AJOUTÉ
     identityVerified: user.identityVerified,
     onboardingCompleted: user.onboardingCompleted || false,
     preferences: user.preferences,
@@ -490,8 +523,36 @@ export function createNewUser(data: CreateUserDTO): Omit<User, '_id'> {
     completedProjects: 0,
     totalEarnings: 0,
     verified: false,
+    emailVerified: null, // 👈 AJOUTÉ (pas vérifié)
     onboardingCompleted: false,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    unreadNotifications: 0 // 👈 AJOUTÉ valeur par défaut
   }
+}
+
+/**
+ * Generate a verification token
+ */
+export function generateVerificationToken(userId: ObjectId, email: string, lang: string = 'fr'): Omit<VerificationToken, '_id'> {
+  const crypto = require('crypto')
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + 24 * 3600000) // 24 heures
+  
+  return {
+    userId,
+    email,
+    token,
+    type: 'email_verification',
+    expiresAt,
+    createdAt: new Date(),
+    lang
+  }
+}
+
+/**
+ * Check if a verification token is valid
+ */
+export function isTokenValid(token: VerificationToken): boolean {
+  return token.expiresAt > new Date()
 }

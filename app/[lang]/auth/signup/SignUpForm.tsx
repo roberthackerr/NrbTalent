@@ -33,42 +33,47 @@ export default function SignUpForm({ dict, lang, initialRole }: Props) {
     client: dict.onboarding.role.benefits.client
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
+ // Dans SignUpForm.tsx - handleSubmit
 
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get('name') as string
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
+async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault()
+  setLoading(true)
 
-    try {
-      const result = await signIn('credentials', {
-        name,
-        email,
-        password,
-        role,
-        redirect: false,
-      })
+  const formData = new FormData(e.currentTarget)
+  const name = formData.get('name') as string
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
 
-      if (result?.error) {
-        const errorMessages: Record<string, string> = {
-          'Email already exists': dict.auth.errors.userExists,
-          'Email and password required': dict.auth.errors.emailRequired,
-        }
-        toast.error(errorMessages[result.error] || result.error)
+  try {
+    // ✅ Inscription via API Route dédiée
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role, lang }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      if (data.error === 'EMAIL_EXISTS') {
+        toast.error(dict.auth.errors.userExists)
       } else {
-        toast.success(dict.auth.success.signup)
-        router.push(`/${lang}/onboarding`)
-        router.refresh()
+        toast.error(dict.common.error)
       }
-    } catch (error: any) {
-      toast.error(error.message || dict.common.error)
-    } finally {
-      setLoading(false)
+      return
     }
-  }
 
+    // ✅ Succès : redirection vers la page de vérification
+    sessionStorage.setItem('pendingVerificationEmail', email)
+    router.push(`/${lang}/auth/verify-email-prompt`)
+
+  } catch (error: any) {
+    console.error("❌ Register error:", error)
+    toast.error(dict.common.error)
+  } finally {
+    setLoading(false)
+  }
+}
   async function handleGoogleSignUp() {
     setGoogleLoading(true)
     try {

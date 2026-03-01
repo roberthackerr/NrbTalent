@@ -44,9 +44,17 @@ export default function SignInForm({ dict, lang }: Props) {
         email,
         password,
         redirect: false,
+         lang
       })
 
       if (result?.error) {
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+    // Rediriger vers la page de vérification
+    sessionStorage.setItem('pendingVerificationEmail', email)
+    router.push(`/${lang}/auth/verify-email-prompt`)
+  } else {
+    toast.error(dict.auth.errors.invalidCredentials)
+  }
         const errorMessages: Record<string, string> = {
           'No user found with this email': dict.auth.errors.invalidCredentials,
           'Invalid password': dict.auth.errors.invalidCredentials,
