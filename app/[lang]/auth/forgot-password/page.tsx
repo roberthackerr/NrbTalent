@@ -32,35 +32,39 @@ export default function ForgotPasswordPage() {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
+ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault()
+  setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const emailValue = formData.get("email") as string
-    setEmail(emailValue)
+  const formData = new FormData(e.currentTarget)
+  const emailValue = formData.get("email") as string
+  setEmail(emailValue)
 
-    try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailValue }),
-      })
+  try {
+    const response = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // 👇 AJOUTEZ LANG ICI
+      body: JSON.stringify({ 
+        email: emailValue,
+        lang: lang  // Passage de la langue à l'API
+      }),
+    })
 
-      if (response.ok) {
-        setEmailSent(true)
-        toast.success(dict?.auth?.success?.emailSent || "Password reset link sent to your email")
-      } else {
-        const error = await response.json()
-        toast.error(error.error || dict?.common?.error || "Something went wrong")
-      }
-    } catch (error) {
-      toast.error(dict?.common?.error || "Something went wrong")
-    } finally {
-      setLoading(false)
+    if (response.ok) {
+      setEmailSent(true)
+      toast.success(dict?.auth?.success?.emailSent || "Password reset link sent to your email")
+    } else {
+      const error = await response.json()
+      // Même en cas d'erreur, on montre un message générique pour la sécurité
+      toast.info(dict?.auth?.emailSentGeneric || "If an account exists, you'll receive an email")
     }
+  } catch (error) {
+    toast.error(dict?.common?.error || "Something went wrong")
+  } finally {
+    setLoading(false)
   }
-
+}
   if (!isMounted || !dict) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/30 dark:to-purple-950/30">

@@ -8,7 +8,7 @@ declare module "next-auth" {
       name?: string | null
       email?: string | null
       image?: string | null
-      role: "freelancer" | "client" | "admin" | "freelance"
+      role: "client" | "admin" | "freelance"
       // Vos champs personnalisés
       skills?: {
         id: string
@@ -59,7 +59,7 @@ declare module "next-auth" {
     name?: string | null
     email?: string | null
     image?: string | null
-    role: "freelancer" | "client" | "admin"
+    role: "freelance" | "client" | "admin"
     skills?: any[]
     experience?: any[]
     title?: string
@@ -71,7 +71,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string
-    role: "freelancer" | "client" | "admin"
+    role: "freelance" | "client" | "admin"
     skills?: any[]
     experience?: any[]
     // ... autres champs
