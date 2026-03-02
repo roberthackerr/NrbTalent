@@ -135,6 +135,8 @@
   },
 
   "common": {
+        "verifying": "Vérification...",
+    "resendIn": "Renvoyer dans",
     "sending": "Envoi en cours...",
     "contact": "Contacter le support",
     "loading": "Chargement...",
@@ -161,6 +163,9 @@
   },
 
   "auth": {
+        "codeExpiresIn": "Le code expire dans 10 minutes",
+      "enterValidCode": "Veuillez entrer un code valide à 6 chiffres",
+    "invalidCode": "Code invalide",
     "verifyYourEmail": "Vérifiez votre email",
     "verificationEmailSentto": "Un email de vérification a été envoyé à",
     "openEmailPrompt": "Ouvrez votre boîte de réception",

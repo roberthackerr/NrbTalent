@@ -135,6 +135,8 @@
   },
 
   "common": {
+      "verifying": "Fanamarinana...",
+    "resendIn": "Handefa indray afaka",
     "sending": "Amplasiana...",
     "contact": "Mifandraisa amin'ny fanampiana",
     "loading": "Amplasiana...",
@@ -161,6 +163,9 @@
   },
 
   "auth": {
+      "codeExpiresIn": "Hifoka ao anatin'ny 10 minitra ity code ity",
+    "enterValidCode": "Ampidiro code 6 isa mety azafady",
+    "invalidCode": "Code tsy mety",
         "verifyYourEmail": "Hamarinina ny mailakao",
     "verificationEmailSentto": "Nisy mailaka fanamarinana nalefa tany amin'ny",
     "openEmailPrompt": "Sokafy ny boaty mailakao",

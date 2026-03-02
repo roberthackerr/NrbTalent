@@ -302,64 +302,66 @@ export async function sendPasswordResetEmail(
 export async function sendVerificationEmail(
   email: string, 
   token: string,
-  code?: string, // 👈 NOUVEAU paramètre optionnel
+  code?: string,
   lang: string = 'fr'
 ): Promise<EmailResponse> {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const verificationUrl = `${baseUrl}/${lang}/auth/verify-email?token=${token}`
   
-  // Contenu multilingue
   const c = verificationContent[lang] || verificationContent['fr']
   
-  // Version HTML avec les deux options
+  // Design avec code en grand et bien visible
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <!-- Header -->
+      <!-- Header avec dégradé -->
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
         <h1 style="margin: 0; font-size: 28px;">${c.title}</h1>
       </div>
       
-      <!-- Content -->
       <div style="padding: 40px;">
-        <h2 style="color: #333;">${c.subtitle}</h2>
-        <p style="color: #666; line-height: 1.6;">${c.message}</p>
+        <h2 style="color: #333; text-align: center;">${c.subtitle}</h2>
+        <p style="color: #666; line-height: 1.6; text-align: center;">${c.message}</p>
         
-        <!-- OPTION 1: Lien de vérification -->
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h3 style="color: #4a5568; margin-top: 0; font-size: 16px;">🔗 Option 1: Cliquez sur le lien</h3>
-          <div style="text-align: center; margin: 20px 0;">
-            <a href="${verificationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              ${c.button}
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px; margin-bottom: 0;">
-            <small>${c.linkText}</small>
-          </p>
-          <code style="background: #e5e7eb; padding: 8px 12px; border-radius: 4px; font-size: 12px; display: block; word-break: break-all; margin-top: 10px;">
-            ${verificationUrl}
-          </code>
-        </div>
-        
-        <!-- OPTION 2: Code de vérification (si fourni) -->
         ${code ? `
-        <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-top: 20px;">
-          <h3 style="color: #0369a1; margin-top: 0; font-size: 16px;">🔢 Option 2: Utilisez ce code</h3>
-          <div style="text-align: center; margin: 20px 0;">
-            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; display: inline-block;">
-              <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #0369a1; font-family: monospace;">
+        <!-- CODE DE VÉRIFICATION - Mise en avant -->
+        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e6f0fa 100%); padding: 30px; border-radius: 16px; margin: 30px 0; border: 2px solid #667eea; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);">
+          <h2 style="color: #0369a1; margin: 0 0 10px 0; font-size: 20px; text-align: center; text-transform: uppercase; letter-spacing: 2px;">
+            ⚡ CODE DE VÉRIFICATION ⚡
+          </h2>
+          <div style="text-align: center; margin: 25px 0;">
+            <div style="background: white; padding: 20px 30px; border-radius: 16px; display: inline-block; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 3px solid #667eea;">
+              <span style="font-size: 54px; font-weight: 900; letter-spacing: 12px; color: #0369a1; font-family: 'Courier New', monospace; background: #f0f9ff; padding: 10px 20px; border-radius: 12px;">
                 ${code}
               </span>
             </div>
           </div>
-          <p style="color: #666; font-size: 14px; text-align: center;">
-            ⏰ Ce code expire dans <strong>10 minutes</strong>
+          <p style="color: #0369a1; font-size: 16px; text-align: center; font-weight: bold; margin: 15px 0 0 0;">
+            ⏱️ Expire dans 10 minutes
           </p>
+        </div>
+        
+        <!-- Séparateur "OU" -->
+        <div style="text-align: center; margin: 20px 0; position: relative;">
+          <span style="background: #e5e7eb; padding: 8px 20px; border-radius: 30px; color: #4b5563; font-weight: bold; font-size: 14px;">
+            OU
+          </span>
         </div>
         ` : ''}
         
-        <!-- Footer -->
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-          <p style="color: #666; font-size: 12px;">
+        <!-- OPTION LIEN (toujours disponible) -->
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
+          <h3 style="color: #4a5568; margin: 0 0 15px 0;">🔗 Cliquez sur le lien ci-dessous</h3>
+          <a href="${verificationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 14px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 10px 0;">
+            ${c.button}
+          </a>
+          <p style="color: #666; font-size: 13px; margin: 15px 0 0 0;">
+            <small>Ce lien expirera dans 24 heures</small>
+          </p>
+        </div>
+        
+        <!-- Footer identique -->
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="color: #999; font-size: 12px;">
             ${c.expire}<br>
             ${c.ignore}
           </p>
@@ -368,11 +370,11 @@ export async function sendVerificationEmail(
     </div>
   `
 
-  // Version texte avec les deux options
+  // Version texte améliorée
   let text = (verificationTextContent[lang] || verificationTextContent['fr']).replace('{url}', verificationUrl)
   
   if (code) {
-    text += `\n\n🔢 OU utilisez ce code: ${code}\n   Ce code expire dans 10 minutes.`
+    text = `🔐 CODE DE VÉRIFICATION : ${code}\n\nCe code expire dans 10 minutes.\n\n---\n\n${text}`
   }
 
   return await sendEmail({

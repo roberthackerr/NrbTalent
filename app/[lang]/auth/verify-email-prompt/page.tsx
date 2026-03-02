@@ -16,7 +16,6 @@ import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import { toast } from 'sonner'
 import { signIn } from 'next-auth/react'
 
-
 export default function VerifyEmailPromptPage() {
   const params = useParams()
   const router = useRouter()
@@ -27,7 +26,7 @@ export default function VerifyEmailPromptPage() {
   const [verifyLoading, setVerifyLoading] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
   const [verifySuccess, setVerifySuccess] = useState(false)
-  const [activeTab, setActiveTab] = useState('link')
+  const [activeTab, setActiveTab] = useState('code') // 👈 CODE en premier par défaut
   const [dict, setDict] = useState<any>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [countdown, setCountdown] = useState(60)
@@ -45,13 +44,13 @@ export default function VerifyEmailPromptPage() {
 
   // Gestionnaire pour le code à 6 chiffres
   const handleCodeChange = (index: number, value: string) => {
-    if (value.length > 1) return // Empêcher plus d'un caractère
+    if (value.length > 1) return
     
     const newCode = [...code]
     newCode[index] = value
     setCode(newCode)
 
-    // Auto-focus sur le prochain input
+    // Auto-focus
     if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`)
       nextInput?.focus()
@@ -90,7 +89,7 @@ export default function VerifyEmailPromptPage() {
         // Connexion automatique
         await signIn('credentials', {
           email,
-          password: 'VERIFIED_BY_CODE',
+          password: 'VERIFIED_BY_CODE', // 👈 CORRIGÉ (était VERIFIED_BY_EMAL)
           isVerifiedFlow: 'true',
           lang,
           redirect: false,
@@ -118,7 +117,6 @@ export default function VerifyEmailPromptPage() {
     setCanResend(false)
     setCountdown(60)
 
-    // Compte à rebours
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -141,10 +139,8 @@ export default function VerifyEmailPromptPage() {
         setResendSuccess(true)
         setTimeout(() => setResendSuccess(false), 3000)
         
-        // Générer un nouveau code (optionnel)
         const data = await response.json()
         if (data.code) {
-          // Si l'API renvoie un code (pour développement)
           console.log("📱 Nouveau code:", data.code)
         }
       }
@@ -182,7 +178,7 @@ export default function VerifyEmailPromptPage() {
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
-                <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <KeyRound className="h-8 w-8 text-blue-600 dark:text-blue-400" /> {/* 👈 Changé en KeyRound */}
               </div>
             </div>
             <CardTitle className="text-2xl font-bold">
@@ -201,52 +197,20 @@ export default function VerifyEmailPromptPage() {
               </p>
             </div>
 
-            {/* Tabs: Lien ou Code */}
-            <Tabs defaultValue="link" className="w-full" onValueChange={setActiveTab}>
+            {/* Tabs: Code en premier, Lien en second */}
+            <Tabs defaultValue="code" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="link">
-                  <Mail className="w-4 h-4 mr-2" />
-                  {dict?.auth?.verificationLink || "Lien"}
-                </TabsTrigger>
                 <TabsTrigger value="code">
                   <KeyRound className="w-4 h-4 mr-2" />
                   {dict?.auth?.verificationCode || "Code"}
                 </TabsTrigger>
+                <TabsTrigger value="link">
+                  <Mail className="w-4 h-4 mr-2" />
+                  {dict?.auth?.verificationLink || "Lien"}
+                </TabsTrigger>
               </TabsList>
 
-              {/* Onglet Lien */}
-              <TabsContent value="link" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">1</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">
-                      {dict?.auth?.openEmailPrompt || "Ouvrez votre boîte de réception"}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">2</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">
-                      {dict?.auth?.clickLinkPrompt || "Cliquez sur le lien de vérification dans l'email"}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">3</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">
-                      {dict?.auth?.startJourney || "Commencez votre aventure sur NRBTalents!"}
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Onglet Code */}
+              {/* Onglet CODE (en premier) */}
               <TabsContent value="code" className="space-y-4 mt-4">
                 <div className="text-center space-y-4">
                   <p className="text-sm text-muted-foreground dark:text-slate-400">
@@ -293,6 +257,48 @@ export default function VerifyEmailPromptPage() {
                       {dict?.auth?.emailVerified || "Email vérifié!"}
                     </p>
                   )}
+
+                  {/* Expiration info */}
+                  <p className="text-xs text-muted-foreground dark:text-slate-500">
+                    ⏰ {dict?.auth?.codeExpiresIn || "Le code expire dans 10 minutes"}
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Onglet LIEN (en second) */}
+              <TabsContent value="link" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">1</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">
+                      {dict?.auth?.openEmailPrompt || "Ouvrez votre boîte de réception"}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">2</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">
+                      {dict?.auth?.clickLinkPrompt || "Cliquez sur le lien de vérification dans l'email"}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">3</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">
+                      {dict?.auth?.startJourney || "Commencez votre aventure sur NRBTalents!"}
+                    </p>
+                  </div>
+
+                  {/* Expiration info */}
+                  <p className="text-xs text-muted-foreground dark:text-slate-500 text-center">
+                    ⏰ {dict?.auth?.linkExpiresIn || "Le lien expire dans 24 heures"}
+                  </p>
                 </div>
               </TabsContent>
             </Tabs>
