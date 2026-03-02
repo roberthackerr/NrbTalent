@@ -77,7 +77,11 @@ const verificationContent: Record<string, any> = {
     button: "Vérifier mon email",
     linkText: "Ou copiez et collez ce lien dans votre navigateur :",
     expire: "Ce lien expirera dans 24 heures.",
-    ignore: "Si vous n'avez pas créé de compte, vous pouvez ignorer cet email."
+    ignore: "Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.",
+       linkOption: "Option 1: Cliquez sur le lien",
+    codeOption: "Option 2: Utilisez ce code",
+    codeExpires: "Ce code expire dans 10 minutes"
+
   },
   'en': {
     title: "Verify your email",
@@ -86,7 +90,10 @@ const verificationContent: Record<string, any> = {
     button: "Verify Email",
     linkText: "Or copy and paste this link in your browser:",
     expire: "This link will expire in 24 hours.",
-    ignore: "If you didn't create an account, you can ignore this email."
+    ignore: "If you didn't create an account, you can ignore this email.",
+     linkOption: "Option 1: Click the link",
+    codeOption: "Option 2: Use this code",
+    codeExpires: "This code expires in 10 minutes"
   },
   'es': {
     title: "Verifica tu email",
@@ -95,7 +102,10 @@ const verificationContent: Record<string, any> = {
     button: "Verificar Email",
     linkText: "O copia y pega este enlace en tu navegador:",
     expire: "Este enlace expirará en 24 horas.",
-    ignore: "Si no creaste una cuenta, puedes ignorar este email."
+    ignore: "Si no creaste una cuenta, puedes ignorar este email.",
+        linkOption: "Opción 1: Haz clic en el enlace",
+    codeOption: "Opción 2: Usa este código",
+    codeExpires: "Este código expira en 10 minutos"
   },
   'mg': {
     title: "Hamarinina ny mailakao",
@@ -104,7 +114,10 @@ const verificationContent: Record<string, any> = {
     button: "Hamarinina ny mailaka",
     linkText: "Na dikao ity rohy ity ary apetaho amin'ny navigateur anao:",
     expire: "Hifoka ao anatin'ny 24 ora ity rohy ity.",
-    ignore: "Raha tsy namorona kaonty ianao dia tsy miraharaha ity mailaka ity."
+    ignore: "Raha tsy namorona kaonty ianao dia tsy miraharaha ity mailaka ity.",
+       linkOption: "Safidy 1: Kitiho ny rohy",
+    codeOption: "Safidy 2: Ampiasao ity code ity",
+    codeExpires: "Hifoka ao anatin'ny 10 minitra ity code ity"
   }
 }
 
@@ -283,34 +296,68 @@ export async function sendPasswordResetEmail(
 
 /**
  * Envoie un email de vérification (multilingue)
+/**
+ * Envoie un email de vérification (multilingue) avec lien ET code
  */
 export async function sendVerificationEmail(
   email: string, 
   token: string,
+  code?: string, // 👈 NOUVEAU paramètre optionnel
   lang: string = 'fr'
 ): Promise<EmailResponse> {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const verificationUrl = `${baseUrl}/${lang}/auth/verify-email?token=${token}`
   
-  // Contenu HTML multilingue
+  // Contenu multilingue
   const c = verificationContent[lang] || verificationContent['fr']
+  
+  // Version HTML avec les deux options
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <!-- Header -->
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
         <h1 style="margin: 0; font-size: 28px;">${c.title}</h1>
       </div>
+      
+      <!-- Content -->
       <div style="padding: 40px;">
         <h2 style="color: #333;">${c.subtitle}</h2>
         <p style="color: #666; line-height: 1.6;">${c.message}</p>
-        <div style="text-align: center; margin: 40px 0;">
-          <a href="${verificationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-            ${c.button}
-          </a>
+        
+        <!-- OPTION 1: Lien de vérification -->
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="color: #4a5568; margin-top: 0; font-size: 16px;">🔗 Option 1: Cliquez sur le lien</h3>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${verificationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              ${c.button}
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px; margin-bottom: 0;">
+            <small>${c.linkText}</small>
+          </p>
+          <code style="background: #e5e7eb; padding: 8px 12px; border-radius: 4px; font-size: 12px; display: block; word-break: break-all; margin-top: 10px;">
+            ${verificationUrl}
+          </code>
         </div>
-        <p style="color: #666; font-size: 14px;">${c.linkText}</p>
-        <code style="background: #f5f5f5; padding: 5px 10px; border-radius: 3px; font-size: 12px; display: block; word-break: break-all;">
-          ${verificationUrl}
-        </code>
+        
+        <!-- OPTION 2: Code de vérification (si fourni) -->
+        ${code ? `
+        <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-top: 20px;">
+          <h3 style="color: #0369a1; margin-top: 0; font-size: 16px;">🔢 Option 2: Utilisez ce code</h3>
+          <div style="text-align: center; margin: 20px 0;">
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; display: inline-block;">
+              <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #0369a1; font-family: monospace;">
+                ${code}
+              </span>
+            </div>
+          </div>
+          <p style="color: #666; font-size: 14px; text-align: center;">
+            ⏰ Ce code expire dans <strong>10 minutes</strong>
+          </p>
+        </div>
+        ` : ''}
+        
+        <!-- Footer -->
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
           <p style="color: #666; font-size: 12px;">
             ${c.expire}<br>
@@ -321,7 +368,12 @@ export async function sendVerificationEmail(
     </div>
   `
 
-  const text = (verificationTextContent[lang] || verificationTextContent['fr']).replace('{url}', verificationUrl)
+  // Version texte avec les deux options
+  let text = (verificationTextContent[lang] || verificationTextContent['fr']).replace('{url}', verificationUrl)
+  
+  if (code) {
+    text += `\n\n🔢 OU utilisez ce code: ${code}\n   Ce code expire dans 10 minutes.`
+  }
 
   return await sendEmail({
     to: email,

@@ -315,7 +315,8 @@ export interface User {
   status?: 'active' | 'suspended' | 'banned'
   /** Last login timestamp */
   lastLogin?: Date
-
+    verificationCode?:any
+verificationCodeExpiry?: any
   // ========== PREFERENCES ==========
   /** User preferences */
   preferences?: UserPreferences
@@ -369,6 +370,7 @@ export interface CreateUserDTO {
   role?: UserRole
   avatar?: string
   lang?: string // 👈 AJOUTÉ pour la langue
+
 }
 
 // ============================================

@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
     const verificationToken = crypto.randomBytes(32).toString("hex")
     const tokenExpiry = new Date(Date.now() + 24 * 3600000)
+const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+const codeExpiry = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
 
     const newUserData: CreateUserDTO = {
       name,
@@ -41,6 +43,8 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
       emailVerified: null,
+            verificationCode,
+verificationCodeExpiry: codeExpiry,
       // ✅ On ne stocke PLUS le token dans l'utilisateur
     }
 
@@ -57,7 +61,13 @@ export async function POST(req: NextRequest) {
       lang: lang || "fr"
     })
 
-    await sendVerificationEmail(newUser.email, verificationToken, lang || "fr")
+      await sendVerificationEmail(
+      newUser.email, 
+      verificationToken, 
+      verificationCode, // 👈 Passer le code
+      lang || "fr"
+    )
+
 
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (error) {
