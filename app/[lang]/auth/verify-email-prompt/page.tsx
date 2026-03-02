@@ -89,7 +89,7 @@ export default function VerifyEmailPromptPage() {
         // Connexion automatique
         await signIn('credentials', {
           email,
-          password: 'VERIFIED_BY_CODE', // 👈 CORRIGÉ (était VERIFIED_BY_EMAL)
+          password: 'VERIFIED_BY_EMAIL', 
           isVerifiedFlow: 'true',
           lang,
           redirect: false,
