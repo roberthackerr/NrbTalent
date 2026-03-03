@@ -1,4 +1,4 @@
-// /components/home/group-posts-feed.tsx - Version corrigée
+// components/home/group-posts-feed.tsx
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -13,12 +13,13 @@ import {
   MessageSquare, Users, Globe, Users as UsersIcon, 
   ArrowRight, Loader2, TrendingUp as TrendingUpIcon,
   Filter, Search, Calendar, Briefcase, Heart, Bookmark, 
-  Share2, Eye, Clock, MoreVertical, AlertCircle
+  Share2, Eye, Clock, MoreVertical, AlertCircle, ChevronDown
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Post {
   _id: string
@@ -64,7 +65,21 @@ interface Post {
   metrics?: any
 }
 
-export function GroupPostsFeed() {
+interface GroupPostsFeedProps {
+  limit?: number
+  showFilters?: boolean
+  className?: string
+  onPostClick?: (postId: string) => void
+}
+
+type ReactionType = 'like' | 'love' | 'insightful' | 'helpful' | 'celebrate'
+
+export function GroupPostsFeed({ 
+  limit = 10, 
+  showFilters = true,
+  className = '',
+  onPostClick
+}: GroupPostsFeedProps) {
   const { data: session } = useSession()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,7 +89,7 @@ export function GroupPostsFeed() {
   const [selectedPostForComments, setSelectedPostForComments] = useState<string | null>(null)
   const [reactingPosts, setReactingPosts] = useState<Set<string>>(new Set())
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set())
-  const [userReactions, setUserReactions] = useState<Record<string, string>>({})
+  const [userReactions, setUserReactions] = useState<Record<string, ReactionType>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [stats, setStats] = useState({
     totalGroups: 0,
@@ -82,64 +97,82 @@ export function GroupPostsFeed() {
   })
 
   const fetchPosts = useCallback(async (resetPage = true) => {
-    if (!session?.user) return
+    if (!session?.user) {
+      setLoading(false)
+      return
+    }
     
     const currentPage = resetPage ? 1 : page
     
     setLoading(true)
     try {
-      let url = `/api/group-posts/feed?page=${currentPage}&limit=10`
+      // Construction de l'URL avec les paramètres
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: limit.toString()
+      })
       
       if (activeTab !== 'all') {
-        url += `&type=${activeTab === 'events' ? 'event' : 'job'}`
+        params.append('type', activeTab === 'events' ? 'event' : 'job')
       }
       
-      const response = await fetch(url)
-      if (response.ok) {
-        const data = await response.json()
-        
-        if (resetPage || currentPage === 1) {
-          setPosts(data.posts || [])
-        } else {
-          setPosts(prev => [...prev, ...(data.posts || [])])
-        }
-        
-        setHasMore(data.pagination?.hasMore || false)
-        
-        // Mettre à jour les stats
-        const groupsMap = new Map()
-        data.posts?.forEach((post: Post) => {
-          if (post.group) {
-            groupsMap.set(post.group._id, post.group)
-          }
-        })
-        
-        setStats({
-          totalGroups: groupsMap.size,
-          totalPosts: data.pagination?.total || 0
-        })
-        
-      } else {
-        console.error('Error fetching posts:', response.status)
-        toast.error('Erreur lors du chargement des publications')
+      if (searchQuery) {
+        params.append('search', searchQuery)
       }
+      
+      const url = `/api/group-posts/feed?${params.toString()}`
+      console.log('📡 Fetching feed from:', url)
+      
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      if (resetPage || currentPage === 1) {
+        setPosts(data.posts || [])
+      } else {
+        setPosts(prev => [...prev, ...(data.posts || [])])
+      }
+      
+      setHasMore(data.pagination?.hasMore || false)
+      
+      // Mettre à jour les stats
+      const groupsMap = new Map()
+      data.posts?.forEach((post: Post) => {
+        if (post.group) {
+          groupsMap.set(post.group._id, post.group)
+        }
+      })
+      
+      setStats({
+        totalGroups: groupsMap.size,
+        totalPosts: data.pagination?.total || 0
+      })
+      
     } catch (error) {
-      console.error('Error fetching posts:', error)
+      console.error('❌ Error fetching posts:', error)
       toast.error('Erreur lors du chargement des publications')
     } finally {
       setLoading(false)
     }
-  }, [session, page, activeTab])
+  }, [session, page, activeTab, searchQuery, limit])
 
+  // Chargement initial et changement de filtre
   useEffect(() => {
-    fetchPosts(true)
-  }, [fetchPosts, activeTab])
+    if (session?.user) {
+      setPage(1)
+      fetchPosts(true)
+    }
+  }, [activeTab, searchQuery, session])
 
+  // Debounce pour la recherche
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchQuery) {
-        // Implémentez la recherche ici si nécessaire
-      } else {
+      if (session?.user) {
+        setPage(1)
         fetchPosts(true)
       }
     }, 500)
@@ -147,7 +180,7 @@ export function GroupPostsFeed() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
-  const handleReaction = async (postId: string, reaction: any) => {
+  const handleReaction = async (postId: string, reaction: ReactionType) => {
     if (reactingPosts.has(postId) || !session?.user) return
     
     setReactingPosts(prev => new Set(prev).add(postId))
@@ -164,7 +197,7 @@ export function GroupPostsFeed() {
         
         setPosts(prev => prev.map(post => {
           if (post._id === postId) {
-            const currentCount = post.reactionCounts?.[reaction as keyof typeof post.reactionCounts] || 0
+            const currentCount = post.reactionCounts?.[reaction] || 0
             
             if (data.action === 'removed') {
               setUserReactions(prev => {
@@ -189,11 +222,11 @@ export function GroupPostsFeed() {
               let newReactionCounts = { ...post.reactionCounts }
               
               if (previousReaction && previousReaction !== reaction) {
-                const previousCount = newReactionCounts[previousReaction as keyof typeof newReactionCounts] || 0
-                newReactionCounts[previousReaction as keyof typeof newReactionCounts] = Math.max(0, previousCount - 1)
+                const previousCount = newReactionCounts[previousReaction] || 0
+                newReactionCounts[previousReaction] = Math.max(0, previousCount - 1)
               }
               
-              newReactionCounts[reaction as keyof typeof newReactionCounts] = currentCount + 1
+              newReactionCounts[reaction] = currentCount + 1
               
               return {
                 ...post,
@@ -265,12 +298,10 @@ export function GroupPostsFeed() {
           url: shareUrl
         })
         
-        // Mettre à jour le compteur de partage
         await fetch(`/api/posts/${postId}/share`, {
           method: 'POST'
         })
         
-        // Mettre à jour localement
         setPosts(prev => prev.map(p => 
           p._id === postId 
             ? { ...p, shareCount: (p.shareCount || 0) + 1 } 
@@ -302,15 +333,26 @@ export function GroupPostsFeed() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-32" />
           </div>
-          <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="flex gap-3">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-28" />
+          </div>
         </div>
         {[...Array(3)].map((_, i) => (
           <Card key={i} className="animate-pulse overflow-hidden">
             <CardContent className="p-6">
-              <div className="h-64 bg-gray-200 rounded"></div>
+              <div className="flex gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1 space-y-3">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -384,7 +426,7 @@ export function GroupPostsFeed() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${className}`}>
       {/* En-tête avec stats */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
@@ -408,8 +450,9 @@ export function GroupPostsFeed() {
             size="sm"
             onClick={handleRefresh}
             className="gap-2"
+            disabled={loading}
           >
-            <Loader2 className="h-4 w-4" />
+            <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Actualiser
           </Button>
           <Button size="sm" asChild className="gap-2">
@@ -422,27 +465,29 @@ export function GroupPostsFeed() {
       </div>
 
       {/* Filtres */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Rechercher dans les publications..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      {showFilters && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Rechercher dans les publications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Tabs value={activeTab} onValueChange={(v: any) => {
+            setActiveTab(v)
+            setPage(1)
+          }}>
+            <TabsList>
+              <TabsTrigger value="all">Tous</TabsTrigger>
+              <TabsTrigger value="events">Événements</TabsTrigger>
+              <TabsTrigger value="jobs">Offres</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <Tabs value={activeTab} onValueChange={(v: any) => {
-          setActiveTab(v)
-          setPage(1)
-        }}>
-          <TabsList>
-            <TabsTrigger value="all">Tous</TabsTrigger>
-            <TabsTrigger value="events">Événements</TabsTrigger>
-            <TabsTrigger value="jobs">Offres</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      )}
 
       <Separator />
 
@@ -480,7 +525,13 @@ export function GroupPostsFeed() {
             onSave={handleSavePost}
             onShare={handleShare}
             onReaction={handleReaction}
-            onComment={() => setSelectedPostForComments(post._id)}
+            onComment={() => {
+              if (onPostClick) {
+                onPostClick(post._id)
+              } else {
+                setSelectedPostForComments(post._id)
+              }
+            }}
           />
         ))}
       </div>
@@ -509,29 +560,32 @@ export function GroupPostsFeed() {
         </DialogContent>
       </Dialog>
 
-      {/* Bouton Voir plus */}
+      {/* Pagination */}
       {hasMore && (
         <div className="flex justify-center pt-6">
           <Button
             variant="outline"
             onClick={handleLoadMore}
             disabled={loading}
-            className="gap-3"
+            className="gap-3 px-8 py-6 rounded-xl border-2 hover:border-primary"
           >
             {loading ? (
               <>
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 <span>Chargement...</span>
               </>
             ) : (
-              <span>Voir plus de publications</span>
+              <>
+                <span>Voir plus de publications</span>
+                <ChevronDown className="h-4 w-4" />
+              </>
             )}
           </Button>
         </div>
       )}
 
       {/* Aucun résultat de recherche */}
-      {posts.length === 0 && searchQuery && (
+      {posts.length === 0 && searchQuery && !loading && (
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">Aucun résultat</h3>
