@@ -302,6 +302,7 @@ async function fetchProjects(db: any, page: number, limit: number, category?: st
   return { items: projects, total }
 }
 
+// Dans la fonction fetchGigs, modifiez le mapping des images
 async function fetchGigs(db: any, page: number, limit: number, category?: string, search?: string) {
   const filter: any = { status: "active" }
 
@@ -328,7 +329,7 @@ async function fetchGigs(db: any, page: number, limit: number, category?: string
       {
         $lookup: {
           from: "users",
-          localField: "sellerId",
+          localField: "createdBy",
           foreignField: "_id",
           as: "seller"
         }
@@ -344,7 +345,14 @@ async function fetchGigs(db: any, page: number, limit: number, category?: string
           deliveryTime: 1,
           revisions: 1,
           tags: 1,
-          images: 1,
+          // ✅ CORRECTION ICI : extraire les URLs des images
+          images: {
+            $map: {
+              input: "$images",
+              as: "img",
+              in: "$$img.url"
+            }
+          },
           createdAt: 1,
           updatedAt: 1,
           featured: 1,
