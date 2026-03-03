@@ -204,28 +204,33 @@ export default function HomePage() {
         if (response.ok) {
           const data = await response.json()
           const unifiedPosts: UnifiedPost[] = [
-            ...(data.groupPosts?.map((post: any) => ({
-              id: post._id,
-              type: "group_post" as const,
-              createdAt: post.createdAt,
-              title: post.title,
-              content: post.content,
-              author: {
-                id: post.author._id,
-                name: post.author.name,
-                avatar: post.author.avatar,
-                title: post.author.title,
-                company: post.author.company,
-              },
-              groupName: post.group.name,
-              groupAvatar: post.group.avatar,
-              reactionCounts: post.reactionCounts,
-              comments: post.commentCount,
-              shares: post.shareCount,
-              views: post.viewCount,
-              tags: post.tags,
-              images: post.images,
-            })) || []),
+          ...(data.groupPosts?.map((post: any) => ({
+    id: post._id,
+    type: "group_post" as const,
+    createdAt: post.createdAt,
+    title: post.title,
+    content: post.content,
+    // ✅ Fallback sécurisé
+    author: post.author ? {
+      id: post.author._id || post.group?._id,
+      name: post.author.name || post.group?.name || 'Membre',
+      avatar: post.author.avatar || post.group?.avatar,
+      title: post.author.title,
+      company: post.author.company,
+    } : {
+      id: post.group?._id || 'unknown',
+      name: post.group?.name || 'Membre',
+      avatar: post.group?.avatar,
+    },
+    groupName: post.group?.name,
+    groupAvatar: post.group?.avatar,
+    reactionCounts: post.reactionCounts || { like: 0, love: 0, insightful: 0 },
+    comments: post.commentCount || 0,
+    shares: post.shareCount || 0,
+    views: post.viewCount || 0,
+    tags: post.tags || [],
+    images: post.images || [],
+  })) || []),
             ...(data.projects?.map((project: any) => ({
               id: project._id,
               type: "project" as const,

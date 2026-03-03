@@ -178,7 +178,7 @@ async function fetchGroupPosts(db: any, userId: ObjectId, page: number, limit: n
   const skip = (page - 1) * limit
 
   // Récupérer les posts avec les infos auteur et groupe
-  const posts = await db.collection("group_posts")
+   const posts = await db.collection("group_posts")
     .aggregate([
       { $match: filter },
       { $sort: { createdAt: -1, isPinned: -1 } },
@@ -192,7 +192,12 @@ async function fetchGroupPosts(db: any, userId: ObjectId, page: number, limit: n
           as: "author"
         }
       },
-      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
+      { 
+        $unwind: { 
+          path: "$author", 
+          preserveNullAndEmptyArrays: true // ✅ Important pour garder les posts même sans auteur
+        } 
+      },
       {
         $lookup: {
           from: "groups",
@@ -214,14 +219,19 @@ async function fetchGroupPosts(db: any, userId: ObjectId, page: number, limit: n
           updatedAt: 1,
           isPinned: 1,
           isFeatured: 1,
-          "author._id": 1,
-          "author.name": 1,
-          "author.avatar": 1,
-          "author.title": 1,
-          "group._id": 1,
-          "group.name": 1,
-          "group.avatar": 1,
-          "group.slug": 1,
+          // ✅ Toujours inclure author même si null
+          author: {
+            _id: { $ifNull: ["$author._id", null] },
+            name: { $ifNull: ["$author.name", "Ancien membre"] },
+            avatar: "$author.avatar",
+            title: "$author.title",
+          },
+          group: {
+            _id: "$group._id",
+            name: "$group.name",
+            slug: "$group.slug",
+            avatar: "$group.avatar",
+          },
           reactionCounts: 1,
           commentCount: 1,
           shareCount: 1,
@@ -230,7 +240,6 @@ async function fetchGroupPosts(db: any, userId: ObjectId, page: number, limit: n
       }
     ])
     .toArray()
-
   const total = await db.collection("group_posts").countDocuments(filter)
 
   return { items: posts, total }
