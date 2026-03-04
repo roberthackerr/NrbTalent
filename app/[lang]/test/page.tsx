@@ -5,7 +5,7 @@ export default function TestPage() {
 
     return (
         <div>
-            <GroupPosts groupId={"69315cdbf040f23b76df0459"} isMember={true} />
+            <GroupPosts groupId={"6932a75d94ab43ca53a749d9"} isMember={true} />
         </div>
     )
 }
