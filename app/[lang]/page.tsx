@@ -36,6 +36,7 @@ import {
   RefreshCw,
   CheckCircle2,
   ArrowLeft,
+  Eye,
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -712,7 +713,7 @@ function FeedCard({
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
             >
-              <Ey className="w-4 h-4" />
+              <Eye className="w-4 h-4" />
               <span className="text-xs">{post.views}</span>
             </button>
           )}
