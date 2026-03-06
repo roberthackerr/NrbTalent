@@ -366,13 +366,13 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Categories */}
-                <div className="mb-3">
+                {/* Categories <div className="mb-3">
                   <CategoryFilters
                     selectedCategory={selectedCat}
                     onCategoryChange={c => { setSelectedCat(c); setPage(1) }}
                     dict={dict} />
-                </div>
+                </div>*/}
+                
 
                 {/* Tabs (mobile / tablet only — desktop uses sidebar) */}
                 <div className="flex gap-1.5 overflow-x-auto scrollbar-hide xl:hidden">
