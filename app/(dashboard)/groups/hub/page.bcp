@@ -1,0 +1,228 @@
+// /app/(dashboard)/groups/hub/page.tsx
+'use client'
+
+import Link from 'next/link'
+import { 
+  Globe, 
+  Users, 
+  TrendingUp, 
+  Plus, 
+  Calendar, 
+  Briefcase, 
+  FileText, 
+  Settings, 
+  Bell, 
+  BarChart,
+  MessageSquare,
+  Award,
+  Star,
+  Target,
+  Zap,
+  MapPin,
+  BookOpen,
+  Heart,
+  Shield,
+  HelpCircle,
+  ExternalLink
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+export default function GroupsHubPage() {
+  const sections = [
+    {
+      title: "Navigation Principale",
+      items: [
+        { icon: Globe, label: "Explorer tous les groupes", href: "/groups", badge: "124 groupes" },
+        { icon: Users, label: "Mes groupes", href: "/groups/my-groups", badge: "Rejoins" },
+        { icon: TrendingUp, label: "Groupes recommandés", href: "/groups/recommended", badge: "Personnalisé" },
+        { icon: Plus, label: "Créer un groupe", href: "/groups/create", badge: "Nouveau" },
+      ]
+    },
+    {
+      title: "Contenu des Groupes",
+      items: [
+        { icon: MessageSquare, label: "Posts & Discussions", href: "/groups/posts", badge: "Actif" },
+        { icon: Calendar, label: "Événements", href: "/groups/events", badge: "12 à venir" },
+        { icon: Briefcase, label: "Offres d'emploi", href: "/groups/jobs", badge: "45 offres" },
+        { icon: FileText, label: "Ressources partagées", href: "/groups/resources", badge: "Fichiers" },
+      ]
+    },
+    {
+      title: "Gestion & Administration",
+      items: [
+        { icon: Settings, label: "Paramètres des groupes", href: "/groups/settings", badge: "Admin" },
+        { icon: Bell, label: "Notifications des groupes", href: "/groups/notifications", badge: "Alertes" },
+        { icon: BarChart, label: "Analytiques des groupes", href: "/groups/analytics", badge: "Stats" },
+        { icon: Shield, label: "Modération", href: "/groups/moderation", badge: "Admin" },
+      ]
+    },
+    {
+      title: "Catégories Spécialisées",
+      items: [
+        { icon: Zap, label: "Groupes par compétences", href: "/groups/category/skill", badge: "Tech" },
+        { icon: MapPin, label: "Groupes géographiques", href: "/groups/category/location", badge: "Local" },
+        { icon: Briefcase, label: "Groupes professionnels", href: "/groups/category/professional", badge: "Carrière" },
+        { icon: BookOpen, label: "Groupes d'apprentissage", href: "/groups/category/learning", badge: "Éducation" },
+      ]
+    }
+  ]
+
+  const quickActions = [
+    { icon: Heart, label: "Groupes suivis", href: "/groups/following", count: 8 },
+    { icon: Star, label: "Groupes favoris", href: "/groups/favorites", count: 12 },
+    { icon: Award, label: "Badges gagnés", href: "/groups/badges", count: 5 },
+    { icon: Target, label: "Objectifs", href: "/groups/goals", count: 3 },
+  ]
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Hero */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <Globe className="h-8 w-8" />
+              </div>
+              <Badge className="bg-white/20 text-white border-white/30">
+                Hub Communautaire
+              </Badge>
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Centre de commande des <span className="text-yellow-300">communautés</span>
+            </h1>
+            
+            <p className="text-xl opacity-90 mb-8">
+              Accédez à toutes les fonctionnalités de notre plateforme communautaire.
+              Gérez vos groupes, découvrez du contenu et connectez-vous avec votre réseau.
+            </p>
+            
+            <div className="flex flex-wrap gap-4">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-white/90">
+                <Plus className="h-5 w-5 mr-2" />
+                Créer un groupe
+              </Button>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                <Users className="h-5 w-5 mr-2" />
+                Explorer les communautés
+              </Button>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                <HelpCircle className="h-5 w-5 mr-2" />
+                Aide & Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {quickActions.map((action) => {
+            const Icon = action.icon
+            return (
+              <Link key={action.label} href={action.href}>
+                <Card className="hover:shadow-lg transition-shadow border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                          <Icon className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">{action.label}</div>
+                          <div className="text-2xl font-bold mt-1">{action.count}</div>
+                        </div>
+                      </div>
+                      <ExternalLink className="h-5 w-5 text-slate-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Main Navigation Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {sections.map((section) => (
+            <Card key={section.title} className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-blue-100 to-blue-50">
+                    <section.items[0].icon.className && 
+                      <section.items[0].icon className="h-5 w-5 text-blue-600" />
+                    }
+                  </div>
+                  {section.title}
+                </CardTitle>
+                <CardDescription>
+                  Accédez à toutes les fonctionnalités de cette catégorie
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {section.items.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <Link key={item.label} href={item.href}>
+                        <div className="flex items-center justify-between p-4 rounded-lg hover:bg-slate-50 transition-colors group">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-md bg-slate-100 group-hover:bg-blue-100 transition-colors">
+                              <Icon className="h-5 w-5 text-slate-600 group-hover:text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{item.label}</div>
+                              <div className="text-sm text-slate-500">Cliquez pour accéder</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary" className="bg-slate-100">
+                              {item.badge}
+                            </Badge>
+                            <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-blue-500" />
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Help Section */}
+        <Card className="mt-8 border-0 shadow-lg bg-gradient-to-r from-blue-50 to-purple-50">
+          <CardContent className="p-8">
+            <div className="text-center">
+              <HelpCircle className="h-16 w-16 text-blue-600 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold mb-4">Besoin d'aide ?</h3>
+              <p className="text-slate-600 mb-6 max-w-2xl mx-auto">
+                Notre équipe de support est là pour vous aider à tirer le meilleur parti 
+                de notre plateforme communautaire.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documentation
+                </Button>
+                <Button variant="outline" className="border-purple-200 text-purple-600 hover:bg-purple-50">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Support communautaire
+                </Button>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+                  Contacter le support
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

@@ -1,7 +1,6 @@
-// app/[lang]/page.tsx
 'use client'
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
@@ -14,76 +13,43 @@ import { Testimonials } from "@/components/home/testimonials"
 import { Footer } from "@/components/footer"
 import { CalendarPopup } from "@/components/home/calendar-popup"
 import { IDEPopup } from "@/components/home/ide-popup"
+import { PostView } from "@/components/groups/GroupPosts/PostView"
+import { GigsShowcase } from "@/components/home/gigs-showcase"
+import { ProjectsGrid } from "@/components/home/projects-grid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { PostView } from "@/components/groups/GroupPosts/PostView"
 import {
   Search,
   Sparkles,
-  Briefcase,
   MessageSquare,
   Clock,
-  Calendar,
-  MapPin,
-  Star,
-  Zap,
-  DollarSign,
-  Heart,
-  Bookmark,
-  MoreVertical,
+  ArrowLeft,
   TrendingUp,
   RefreshCw,
   CheckCircle2,
-  ArrowLeft,
   Eye,
+  Heart,
+  Bookmark,
+  MoreVertical,
+  Zap,
+  DollarSign,
+  Star,
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getDictionarySafe } from "@/lib/i18n/dictionaries"
 import type { Locale } from "@/lib/i18n/config"
 
-interface UnifiedPost {
-  id: string
-  type: "group_post" | "project" | "gig" | "ai_match"
-  createdAt: string
-  title?: string
-  description?: string
-  content?: string
-  author?: {
-    id: string
-    name: string
-    avatar?: string
-    title?: string
-    rating?: number
-  }
-  likes?: number
-  comments?: number
-  shares?: number
-  views?: number
-  budget?: {
-    min: number
-    max: number
-    currency: string
-    type: "fixed" | "hourly"
-  }
-  skills?: string[]
-  deadline?: string
-  location?: string
-  remote?: boolean
-  price?: number
-  deliveryTime?: number
-  images?: string[]
-  matchScore?: number
-  matchReason?: string
-  groupId?: string // 👈 Ajouté pour les posts de groupe
-  groupName?: string
-  groupAvatar?: string
-  reactionCounts?: {
-    like: number
-    love: number
-    insightful: number
-  }
+// ─── Types ────────────────────────────────────────────────────
+type FeedTab = "all" | "posts" | "projects" | "gigs"
+
+interface FeedData {
+  groupPosts: any[]
+  projects: any[]
+  gigs: any[]
+  aiMatches: any[]
+  hasMore: boolean
 }
 
 // ─── Main Page ─────────────────────────────────────────────────
@@ -94,30 +60,36 @@ export default function HomePage() {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [feed, setFeed] = useState<UnifiedPost[]>([])
+  const [activeTab, setActiveTab] = useState<FeedTab>("all")
+  const [feedData, setFeedData] = useState<FeedData>({
+    groupPosts: [],
+    projects: [],
+    gigs: [],
+    aiMatches: [],
+    hasMore: true,
+  })
   const [loading, setLoading] = useState(true)
   const [showCalendarPopup, setShowCalendarPopup] = useState(false)
   const [showIDEPopup, setShowIDEPopup] = useState(false)
   const [dict, setDict] = useState<any>(null)
   const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  
-  // 👇 État pour la vue détaillée du post de groupe
+
+  // Vue détaillée d'un post de groupe
   const [selectedGroupPost, setSelectedGroupPost] = useState<{
     postId: string
     groupId: string
   } | null>(null)
 
+  // ── Dictionnaire i18n ──
   useEffect(() => {
     let mounted = true
     getDictionarySafe(lang).then((data) => {
       if (mounted) setDict(data)
     })
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [lang])
 
+  // ── Popups ──
   useEffect(() => {
     if (!session?.user) return
     const timer1 = setTimeout(() => {
@@ -132,19 +104,18 @@ export default function HomePage() {
         localStorage.setItem("hasSeenIDEPopup", "true")
       }
     }, 10000)
-    return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
-    }
+    return () => { clearTimeout(timer1); clearTimeout(timer2) }
   }, [session])
 
+  // ── Chargement du feed ──
   const loadFeed = useCallback(
     async (reset = false) => {
       if (!dict) return
       setLoading(true)
       try {
+        const currentPage = reset ? 1 : page
         const urlParams = new URLSearchParams({
-          page: reset ? "1" : page.toString(),
+          page: currentPage.toString(),
           limit: "20",
           category: selectedCategory !== "all" ? selectedCategory : "",
           search: searchQuery,
@@ -152,111 +123,23 @@ export default function HomePage() {
         const response = await fetch(`/api/feed/unified?${urlParams}`)
         if (response.ok) {
           const data = await response.json()
-          
-          // Construction du feed unifié
-          const unifiedPosts: UnifiedPost[] = [
-            // Posts de groupe
-            ...(data.groupPosts?.map((post: any) => ({
-              id: post._id,
-              type: "group_post" as const,
-              createdAt: post.createdAt,
-              title: post.title,
-              content: post.content,
-              groupId: post.group?._id,
-              groupName: post.group?.name,
-              groupAvatar: post.group?.avatar,
-              author: post.author ? {
-                id: post.author._id || post.group?._id,
-                name: post.author.name || post.group?.name || 'Membre',
-                avatar: post.author.avatar || post.group?.avatar,
-                title: post.author.title,
-              } : {
-                id: post.group?._id || 'unknown',
-                name: post.group?.name || 'Membre',
-                avatar: post.group?.avatar,
-              },
-              reactionCounts: post.reactionCounts || { like: 0, love: 0, insightful: 0 },
-              comments: post.commentCount || 0,
-              shares: post.shareCount || 0,
-              views: post.viewCount || 0,
-              images: post.images || [],
-            })) || []),
-            
-            // Projets
-            ...(data.projects?.map((project: any) => ({
-              id: project._id,
-              type: "project" as const,
-              createdAt: project.createdAt,
-              title: project.title,
-              description: project.description,
-              author: {
-                id: project.client?._id,
-                name: project.client?.name || "Client",
-                avatar: project.client?.avatar,
-                rating: project.client?.rating,
-              },
-              budget: project.budget,
-              skills: project.skills,
-              deadline: project.deadline,
-              location: project.location?.city || project.location?.country,
-              remote: project.location?.type === "remote",
-              views: project.views,
-              comments: project.applicationCount,
-            })) || []),
-            
-            // Gigs
-            ...(data.gigs?.map((gig: any) => ({
-              id: gig._id,
-              type: "gig" as const,
-              createdAt: gig.createdAt,
-              title: gig.title,
-              description: gig.description,
-              author: {
-                id: gig.seller?._id || gig.createdBy?._id,
-                name: gig.seller?.name || gig.createdBy?.name || "Freelance",
-                avatar: gig.seller?.avatar || gig.createdBy?.avatar,
-                rating: gig.rating,
-                title: gig.seller?.title,
-              },
-              price: gig.price,
-              deliveryTime: gig.deliveryTime,
-              skills: gig.tags,
-              images: gig.images,
-              likes: gig.likes,
-              views: gig.views,
-            })) || []),
-            
-            // Matchs IA
-            ...(session?.user && data.aiMatches
-              ? data.aiMatches.map((match: any) => ({
-                  id: match._id,
-                  type: "ai_match" as const,
-                  createdAt: match.createdAt || new Date().toISOString(),
-                  title: match.project?.title || match.gig?.title,
-                  description: match.project?.description || match.gig?.description,
-                  matchScore: match.score,
-                  matchReason: match.reason,
-                  budget: match.project?.budget,
-                  price: match.gig?.price,
-                  skills: match.matchedSkills,
-                  author: match.client ? {
-                    id: match.client._id,
-                    name: match.client.name,
-                    avatar: match.client.avatar,
-                    rating: match.client.rating,
-                  } : undefined,
-                }))
-              : []),
-          ]
-          
-          // Tri par date
-          unifiedPosts.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-          
-          setFeed((prev) => (reset ? unifiedPosts : [...prev, ...unifiedPosts]))
-          setHasMore(data.hasMore)
-          if (!reset) setPage((prev) => prev + 1)
+          setFeedData((prev) => ({
+            groupPosts: reset
+              ? (data.groupPosts || [])
+              : [...prev.groupPosts, ...(data.groupPosts || [])],
+            projects: reset
+              ? (data.projects || [])
+              : [...prev.projects, ...(data.projects || [])],
+            gigs: reset
+              ? (data.gigs || [])
+              : [...prev.gigs, ...(data.gigs || [])],
+            aiMatches: reset
+              ? (data.aiMatches || [])
+              : [...prev.aiMatches, ...(data.aiMatches || [])],
+            hasMore: data.hasMore,
+          }))
+          if (!reset) setPage((p) => p + 1)
+          else setPage(2)
         }
       } catch (error) {
         console.error("Error loading feed:", error)
@@ -265,25 +148,28 @@ export default function HomePage() {
         setLoading(false)
       }
     },
-    [page, selectedCategory, searchQuery, session, dict]
+    [page, selectedCategory, searchQuery, dict]
   )
 
+  // Reload quand filtres changent
   useEffect(() => {
-    if (dict) {
-      setPage(1)
-      loadFeed(true)
-    }
+    if (dict) loadFeed(true)
   }, [selectedCategory, searchQuery, dict])
 
+  // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-        if (!loading && hasMore) loadFeed()
+      if (
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 600 &&
+        !loading &&
+        feedData.hasMore
+      ) {
+        loadFeed()
       }
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [loading, hasMore, loadFeed])
+  }, [loading, feedData.hasMore, loadFeed])
 
   const handleRefresh = () => {
     setPage(1)
@@ -291,12 +177,7 @@ export default function HomePage() {
     toast.success(dict?.common?.refreshed || "Feed actualisé")
   }
 
-  // 👇 Retour au feed
-  const handleBackToFeed = () => {
-    setSelectedGroupPost(null)
-  }
-
-  // 👇 Si un post de groupe est sélectionné, afficher PostView
+  // ── Vue détaillée d'un post de groupe ──
   if (selectedGroupPost) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0f]">
@@ -305,19 +186,18 @@ export default function HomePage() {
           <div className="container mx-auto px-4 py-8 max-w-4xl">
             <Button
               variant="ghost"
-              onClick={handleBackToFeed}
+              onClick={() => setSelectedGroupPost(null)}
               className="mb-6 gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <ArrowLeft className="h-4 w-4" />
               Retour au fil d'actualité
             </Button>
-
             <PostView
               postId={selectedGroupPost.postId}
               groupId={selectedGroupPost.groupId}
               isMember={true}
               userRole={session?.user?.role as string}
-              onBack={handleBackToFeed}
+              onBack={() => setSelectedGroupPost(null)}
             />
           </div>
         </main>
@@ -326,6 +206,7 @@ export default function HomePage() {
     )
   }
 
+  // ── Loading initial ──
   if (!dict) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
@@ -343,6 +224,10 @@ export default function HomePage() {
       </div>
     )
   }
+
+  // Compteurs par onglet
+  const totalPosts =
+    feedData.groupPosts.length + feedData.projects.length + feedData.gigs.length
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0f]">
@@ -367,9 +252,11 @@ export default function HomePage() {
         {/* ── Feed Layout ── */}
         <div className="container mx-auto px-4 py-10 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
-            {/* ── Left: Feed ── */}
+
+            {/* ── Colonne principale ── */}
             <div className="min-w-0">
-              {/* Feed Header */}
+
+              {/* En-tête du feed */}
               <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
@@ -379,7 +266,7 @@ export default function HomePage() {
                     {dict?.feed?.title || "Fil d'actualité"}
                   </h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 ml-10">
-                    {feed.length} {dict?.feed?.posts || "publications"}
+                    {totalPosts} {dict?.feed?.posts || "publications"}
                   </p>
                 </div>
 
@@ -404,8 +291,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Category filters */}
-              <div className="mb-6">
+              {/* Filtres de catégorie */}
+              <div className="mb-4">
                 <CategoryFilters
                   selectedCategory={selectedCategory}
                   onCategoryChange={(cat) => {
@@ -416,59 +303,152 @@ export default function HomePage() {
                 />
               </div>
 
-              {/* Cards */}
-              <div className="space-y-4">
-                {feed.map((post, i) => (
-                  <FeedCard
-                    key={post.id}
-                    post={post}
-                    index={i}
-                    onGroupPostClick={(postId, groupId) => 
-                      setSelectedGroupPost({ postId, groupId })
-                    }
-                  />
+              {/* ── Onglets de type de contenu ── */}
+              <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
+                {(
+                  [
+                    { key: "all", label: "Tout", count: totalPosts, icon: "🌐" },
+                    { key: "posts", label: "Publications", count: feedData.groupPosts.length, icon: "📝" },
+                    { key: "projects", label: "Projets", count: feedData.projects.length, icon: "💼" },
+                    { key: "gigs", label: "Services", count: feedData.gigs.length, icon: "⚡" },
+                  ] as { key: FeedTab; label: string; count: number; icon: string }[]
+                ).map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200",
+                      activeTab === tab.key
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    )}
+                  >
+                    <span>{tab.icon}</span>
+                    {tab.label}
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs",
+                        activeTab === tab.key
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                      )}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
                 ))}
-
-                {loading && (
-                  <div className="flex items-center justify-center py-10">
-                    <div className="flex gap-1.5">
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"
-                          style={{ animationDelay: `${i * 0.15}s` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {!hasMore && feed.length > 0 && (
-                  <div className="text-center py-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800/60 text-sm text-slate-500 dark:text-slate-400">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      {dict?.feed?.noMorePosts || "Vous avez tout vu"}
-                    </div>
-                  </div>
-                )}
-
-                {!loading && feed.length === 0 && (
-                  <div className="text-center py-20">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800/60 mb-5">
-                      <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      {dict?.feed?.noPosts || "Aucune publication"}
-                    </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-500 max-w-xs mx-auto">
-                      {dict?.feed?.noPostsDesc || "Modifiez vos filtres ou explorez d'autres catégories"}
-                    </p>
-                  </div>
-                )}
               </div>
+
+              {/* ── Contenu selon l'onglet actif ── */}
+
+              {/* Publications de groupe */}
+              {(activeTab === "all" || activeTab === "posts") && feedData.groupPosts.length > 0 && (
+                <section className="mb-10">
+                  {activeTab === "all" && (
+                    <SectionHeader
+                      icon="📝"
+                      title="Publications de groupe"
+                      count={feedData.groupPosts.length}
+                    />
+                  )}
+                  <div className="space-y-4">
+                    {feedData.groupPosts.map((post, i) => (
+                      <GroupPostCard
+                        key={post._id}
+                        post={post}
+                        index={i}
+                        onClick={() =>
+                          setSelectedGroupPost({
+                            postId: post._id,
+                            groupId: post.group?._id || post.groupId,
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Projets — composant ProjectsGrid existant */}
+              {(activeTab === "all" || activeTab === "projects") && (
+                <section className="mb-10">
+                  {activeTab === "all" && feedData.projects.length > 0 && (
+                    <SectionHeader
+                      icon="💼"
+                      title="Projets ouverts"
+                      count={feedData.projects.length}
+                    />
+                  )}
+                  <ProjectsGrid
+                    projects={feedData.projects}
+                    loading={loading && feedData.projects.length === 0}
+                    searchQuery={searchQuery}
+                    onRefresh={handleRefresh}
+                  />
+                </section>
+              )}
+
+              {/* Gigs — composant GigsShowcase existant */}
+              {(activeTab === "all" || activeTab === "gigs") && (
+                <section className="mb-10">
+                  {activeTab === "all" && feedData.gigs.length > 0 && (
+                    <SectionHeader
+                      icon="⚡"
+                      title="Services disponibles"
+                      count={feedData.gigs.length}
+                    />
+                  )}
+                  <GigsShowcase
+                    gigs={feedData.gigs}
+                    loading={loading && feedData.gigs.length === 0}
+                    searchQuery={searchQuery}
+                    showCreateButton={false}
+                  />
+                </section>
+              )}
+
+              {/* Loader infini */}
+              {loading && (
+                <div className="flex items-center justify-center py-10">
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fin du feed */}
+              {!feedData.hasMore && totalPosts > 0 && (
+                <div className="text-center py-10">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800/60 text-sm text-slate-500 dark:text-slate-400">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    {dict?.feed?.noMorePosts || "Vous avez tout vu"}
+                  </div>
+                </div>
+              )}
+
+              {/* Aucun contenu */}
+              {!loading && totalPosts === 0 && (
+                <div className="text-center py-20">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800/60 mb-5">
+                    <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    {dict?.feed?.noPosts || "Aucune publication"}
+                  </h3>
+                  <p className="text-sm text-slate-500 max-w-xs mx-auto">
+                    {dict?.feed?.noPostsDesc || "Modifiez vos filtres ou explorez d'autres catégories"}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* ── Right: Sidebar ── */}
+            {/* ── Sidebar droite ── */}
             <aside className="hidden lg:flex flex-col gap-5">
               <TrendingSkills dict={dict} />
             </aside>
@@ -494,19 +474,45 @@ export default function HomePage() {
   )
 }
 
-// ─── Feed Card simplifiée ─────────────────────────────────────
-function FeedCard({ 
-  post, 
-  index, 
-  onGroupPostClick 
-}: { 
-  post: UnifiedPost
+// ─── Section Header ───────────────────────────────────────────
+function SectionHeader({
+  icon,
+  title,
+  count,
+}: {
+  icon: string
+  title: string
+  count: number
+}) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <span className="text-xl">{icon}</span>
+      <h3 className="font-bold text-slate-900 dark:text-white text-lg">{title}</h3>
+      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
+        {count}
+      </span>
+      <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800 ml-2" />
+    </div>
+  )
+}
+
+// ─── Group Post Card ──────────────────────────────────────────
+// Card légère pour les posts de groupe dans le feed.
+// Au clic → PostView (composant existant) avec likes/commentaires.
+function GroupPostCard({
+  post,
+  index,
+  onClick,
+}: {
+  post: any
   index: number
-  onGroupPostClick: (postId: string, groupId: string) => void
+  onClick: () => void
 }) {
   const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.likes || post.reactionCounts?.like || 0)
+  const [likeCount, setLikeCount] = useState(
+    post.reactionCounts?.like || 0
+  )
 
   const formatTime = (date: string) => {
     const diffMs = Date.now() - new Date(date).getTime()
@@ -531,70 +537,37 @@ function FeedCard({
     setSaved(!saved)
   }
 
-  const handleCardClick = () => {
-    if (post.type === 'group_post' && post.groupId) {
-      onGroupPostClick(post.id, post.groupId)
-    }
-  }
-
-  // Style selon le type
-  const getTypeStyle = () => {
-    switch(post.type) {
-      case 'group_post':
-        return 'border-violet-200 hover:border-violet-300 dark:border-violet-800/40 dark:hover:border-violet-700 cursor-pointer'
-      case 'project':
-        return 'border-blue-200 dark:border-blue-800/40'
-      case 'gig':
-        return 'border-amber-200 dark:border-amber-800/40'
-      case 'ai_match':
-        return 'border-emerald-200 dark:border-emerald-800/40'
-      default:
-        return ''
-    }
-  }
-
   return (
     <div
       className={cn(
-        "bg-white dark:bg-slate-900/80 rounded-2xl border shadow-sm p-5",
-        "hover:shadow-lg transition-all duration-300",
-        getTypeStyle()
+        "bg-white dark:bg-slate-900/80 rounded-2xl border shadow-sm p-5 cursor-pointer",
+        "border-violet-200 hover:border-violet-300 dark:border-violet-800/40 dark:hover:border-violet-700",
+        "hover:shadow-lg transition-all duration-300"
       )}
       style={{ animationDelay: `${index * 40}ms` }}
-      onClick={handleCardClick}
+      onClick={onClick}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
         <Avatar className="h-10 w-10 ring-2 ring-white dark:ring-slate-800">
-          <AvatarImage src={post.author?.avatar || post.groupAvatar} />
-          <AvatarFallback className="bg-gradient-to-br from-slate-400 to-slate-600 text-white">
-            {(post.author?.name || post.groupName || 'U').charAt(0)}
+          <AvatarImage src={post.author?.avatar || post.group?.avatar} />
+          <AvatarFallback className="bg-gradient-to-br from-violet-400 to-violet-600 text-white">
+            {(post.author?.name || post.group?.name || "U").charAt(0)}
           </AvatarFallback>
         </Avatar>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-              {post.author?.name || post.groupName}
+              {post.author?.name || post.group?.name}
             </span>
-            {post.author?.rating && (
-              <div className="flex items-center gap-0.5">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span className="text-xs text-slate-500">{post.author.rating}</span>
-              </div>
-            )}
             <span className="text-xs text-slate-400 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {formatTime(post.createdAt)}
             </span>
           </div>
-          
-          {/* Type badge */}
-          <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-            {post.type === 'group_post' && '📝 Publication'}
-            {post.type === 'project' && '💼 Projet'}
-            {post.type === 'gig' && '⚡ Service'}
-            {post.type === 'ai_match' && '🤖 Match IA'}
+          <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400">
+            📝 Publication
           </span>
         </div>
 
@@ -608,12 +581,12 @@ function FeedCard({
         </Button>
       </div>
 
-      {/* Group name pour les posts de groupe */}
-      {post.type === 'group_post' && post.groupName && (
+      {/* Groupe */}
+      {post.group?.name && (
         <div className="mb-3">
           <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2.5 py-1 rounded-lg">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-            {post.groupName}
+            {post.group.name}
           </span>
         </div>
       )}
@@ -626,16 +599,16 @@ function FeedCard({
       )}
 
       {/* Contenu */}
-      {(post.content || post.description) && (
+      {post.content && (
         <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 mb-3">
-          {post.content || post.description}
+          {post.content}
         </p>
       )}
 
       {/* Images */}
       {post.images && post.images.length > 0 && (
         <div className="grid grid-cols-3 gap-1 mb-3 rounded-lg overflow-hidden">
-          {post.images.slice(0, 3).map((img, idx) => (
+          {post.images.slice(0, 3).map((img: string, idx: number) => (
             <div key={idx} className="aspect-square bg-slate-100 dark:bg-slate-800">
               <img src={img} alt="" className="w-full h-full object-cover" />
             </div>
@@ -643,53 +616,13 @@ function FeedCard({
         </div>
       )}
 
-      {/* Meta chips */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {post.type === "project" && post.budget && (
-          <>
-            <Chip color="emerald">
-              <DollarSign className="w-3 h-3" />
-              {post.budget.min}–{post.budget.max} {post.budget.currency}
-            </Chip>
-            {post.remote && (
-              <Chip color="violet">
-                <Zap className="w-3 h-3" />
-                Remote
-              </Chip>
-            )}
-          </>
-        )}
+      {/* Hint : cliquer pour voir les commentaires */}
+      <p className="text-xs text-violet-500 dark:text-violet-400 mb-3 flex items-center gap-1">
+        <MessageSquare className="w-3 h-3" />
+        Cliquer pour voir les commentaires et réactions
+      </p>
 
-        {post.type === "gig" && post.price && (
-          <Chip color="emerald">
-            <DollarSign className="w-3 h-3" />
-            {post.price} €
-          </Chip>
-        )}
-
-        {post.type === "ai_match" && post.matchScore && (
-          <Chip color="emerald">
-            <Sparkles className="w-3 h-3" />
-            {post.matchScore}% match
-          </Chip>
-        )}
-
-        {post.skills && post.skills.slice(0, 3).map((skill, idx) => (
-          <Chip key={idx} color="blue">
-            {skill}
-          </Chip>
-        ))}
-      </div>
-
-      {/* AI match reason */}
-      {post.type === "ai_match" && post.matchReason && (
-        <div className="mb-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-xs text-emerald-700 dark:text-emerald-300">
-          <Sparkles className="w-3 h-3 inline mr-1" />
-          {post.matchReason}
-        </div>
-      )}
-
-      {/* Action bar */}
+      {/* Barre d'actions */}
       <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <button
@@ -701,20 +634,20 @@ function FeedCard({
           </button>
 
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onClick() }}
             className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
           >
             <MessageSquare className="w-4 h-4" />
-            <span className="text-xs">{post.comments || 0}</span>
+            <span className="text-xs">{post.commentCount || 0}</span>
           </button>
 
-          {post.views !== undefined && (
+          {post.viewCount !== undefined && (
             <button
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
             >
               <Eye className="w-4 h-4" />
-              <span className="text-xs">{post.views}</span>
+              <span className="text-xs">{post.viewCount}</span>
             </button>
           )}
         </div>
@@ -727,20 +660,5 @@ function FeedCard({
         </button>
       </div>
     </div>
-  )
-}
-
-// ─── Chip helper ─────────────────────────────────────────────
-function Chip({ children, color }: { children: React.ReactNode; color: string }) {
-  const colors = {
-    emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300",
-    blue: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
-    violet: "bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300",
-    amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300",
-  }
-  return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", colors[color as keyof typeof colors])}>
-      {children}
-    </span>
   )
 }
