@@ -27,7 +27,7 @@ interface PostViewProps {
 
 export function PostView({ 
   postId, 
-  groupId, 
+  groupId: initialGroupId, 
   isMember = false, 
   userRole, 
   onBack,
@@ -47,25 +47,58 @@ export function PostView({
   const [isSaved, setIsSaved] = useState(false)
   const [userReaction, setUserReaction] = useState<ReactionType | undefined>()
   const [groupName, setGroupName] = useState<string>('')
+  const [resolvedGroupId, setResolvedGroupId] = useState<string>(initialGroupId)
+  const [resolvingGroup, setResolvingGroup] = useState(false)
 
   // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
+  // Fonction pour résoudre le groupId (ID MongoDB → slug)
+  const resolveGroupId = async (groupId: string): Promise<string> => {
+    // Si c'est déjà un slug (contient des lettres et tirets, pas que des hex)
+    if (!groupId.match(/^[0-9a-fA-F]{24}$/)) {
+      return groupId
+    }
+    
+    setResolvingGroup(true)
+    try {
+      const response = await fetch(`/api/groups/id-to-slug?groupId=${groupId}`)
+      if (response.ok) {
+        const data = await response.json()
+        return data.slug || groupId
+      }
+    } catch (error) {
+      console.error('Error resolving group slug:', error)
+    } finally {
+      setResolvingGroup(false)
+    }
+    return groupId
+  }
+
   // Charger le post spécifique
   useEffect(() => {
     const fetchPost = async () => {
+      if (!postId || !initialGroupId || !dict) return
+      
       setLoading(true)
       try {
-        const response = await fetch(`/api/groups/${groupId}/posts/${postId}`)
+        // Résoudre le groupId si c'est un ID MongoDB
+        const resolvedId = await resolveGroupId(initialGroupId)
+        setResolvedGroupId(resolvedId)
+        
+        const response = await fetch(`/api/groups/${resolvedId}/posts/${postId}`)
         
         if (!response.ok) {
-          throw new Error('Erreur lors du chargement du post')
+          if (response.status === 404) {
+            setPost(null)
+            return
+          }
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
         
         const data = await response.json()
-        
         setPost(data)
         
         // Récupérer le nom du groupe si disponible
@@ -82,16 +115,14 @@ export function PostView({
         }
       } catch (error) {
         console.error('Error fetching post:', error)
-        toast.error(dict?.errors?.loadPost || 'Erreur lors du chargement du post')
+        toast.error(dict?.common?.error || 'Erreur lors du chargement du post')
       } finally {
         setLoading(false)
       }
     }
 
-    if (postId && groupId && dict) {
-      fetchPost()
-    }
-  }, [postId, groupId, dict])
+    fetchPost()
+  }, [postId, initialGroupId, dict])
 
   const handleReaction = async (reaction: ReactionType) => {
     if (reacting || !isMember) return
@@ -99,7 +130,7 @@ export function PostView({
     setReacting(true)
     
     try {
-      const response = await fetch(`/api/groups/${groupId}/posts/${postId}/reactions`, {
+      const response = await fetch(`/api/groups/${resolvedGroupId}/posts/${postId}/reactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reaction })
@@ -120,7 +151,7 @@ export function PostView({
               }
             }
           })
-          toast.success(dict?.posts?.reactionRemoved || 'Réaction retirée')
+          toast.success(dict?.feed?.reactionRemoved || 'Réaction retirée')
         } else {
           setUserReaction(reaction)
           setPost(prev => {
@@ -133,12 +164,12 @@ export function PostView({
               }
             }
           })
-          toast.success(dict?.posts?.reactionAdded || 'Réaction ajoutée')
+          toast.success(dict?.feed?.reactionAdded || 'Réaction ajoutée')
         }
       }
     } catch (error) {
       console.error('Error reacting to post:', error)
-      toast.error(dict?.errors?.reactionError || 'Erreur lors de la réaction')
+      toast.error(dict?.common?.error || 'Erreur lors de la réaction')
     } finally {
       setReacting(false)
     }
@@ -146,7 +177,7 @@ export function PostView({
 
   const handleSavePost = async () => {
     try {
-      const response = await fetch(`/api/groups/${groupId}/posts/${postId}/save`, {
+      const response = await fetch(`/api/groups/${resolvedGroupId}/posts/${postId}/save`, {
         method: 'POST'
       })
 
@@ -155,48 +186,46 @@ export function PostView({
         setIsSaved(data.action === 'saved')
         toast.success(
           data.action === 'saved' 
-            ? (dict?.posts?.saved || 'Post sauvegardé !') 
-            : (dict?.posts?.unsaved || 'Post retiré des sauvegardes')
+            ? (dict?.feed?.saved || 'Post sauvegardé !') 
+            : (dict?.feed?.unsaved || 'Post retiré des sauvegardes')
         )
       }
     } catch (error) {
       console.error('Error saving post:', error)
-      toast.error(dict?.errors?.saveError || 'Erreur lors de la sauvegarde')
+      toast.error(dict?.common?.error || 'Erreur lors de la sauvegarde')
     }
   }
 
   const handleShare = async (platform?: string) => {
-    const shareUrl = `${window.location.origin}/${lang}/groups/${groupId}/posts/${postId}`
+    const shareUrl = `${window.location.origin}/${lang}/groups/${resolvedGroupId}/posts/${postId}`
     
     if (platform === 'copy') {
       await navigator.clipboard.writeText(shareUrl)
-      toast.success(dict?.posts?.linkCopied || 'Lien copié !')
+      toast.success(dict?.feed?.linkCopied || 'Lien copié !')
       return
     }
     
     if (navigator.share && !platform) {
       try {
         await navigator.share({
-          title: post?.title || dict?.posts?.shareTitle || 'Partager ce post',
+          title: post?.title || dict?.feed?.share || 'Partager ce post',
           text: post?.content,
           url: shareUrl
         })
         
-        await fetch(`/api/groups/${groupId}/posts/${postId}/share`, {
+        await fetch(`/api/groups/${resolvedGroupId}/posts/${postId}/share`, {
           method: 'POST'
         })
-        
-        toast.success(dict?.posts?.shared || 'Post partagé !')
       } catch (error) {
         console.error('Error sharing:', error)
       }
     } else {
       await navigator.clipboard.writeText(shareUrl)
-      toast.success(dict?.posts?.linkCopied || 'Lien copié dans le presse-papier !')
+      toast.success(dict?.feed?.linkCopied || 'Lien copié dans le presse-papier !')
     }
   }
 
-  if (!dict) {
+  if (!dict || resolvingGroup) {
     return (
       <Card className="animate-pulse overflow-hidden">
         <CardHeader className="space-y-3">
@@ -239,10 +268,10 @@ export function PostView({
           <MessageSquare className="h-10 w-10 text-red-600" />
         </div>
         <h3 className="text-2xl font-bold mb-3">
-          {dict?.posts?.notFound || 'Post introuvable'}
+          {dict?.feed?.noPosts || 'Post introuvable'}
         </h3>
         <p className="text-gray-600 mb-8 max-w-md mx-auto text-lg">
-          {dict?.posts?.notFoundMessage || "Le post que vous cherchez n'existe pas ou a été supprimé."}
+          {dict?.feed?.noPostsDesc || "Le post que vous cherchez n'existe pas ou a été supprimé."}
         </p>
         <Button 
           size="lg" 
@@ -267,12 +296,12 @@ export function PostView({
             className="gap-2"
           >
             <ChevronLeft className="h-4 w-4" />
-            {dict?.posts?.backToPosts || 'Retour aux posts'}
+            {dict?.feed?.backToPosts || 'Retour aux posts'}
           </Button>
         )}
         
         <GroupAccessButton
-          groupId={groupId}
+          groupId={resolvedGroupId}
           groupName={groupName}
           variant="outline"
           size="sm"
@@ -284,7 +313,7 @@ export function PostView({
       {/* Post */}
       <PostCard
         post={post}
-        groupId={groupId}
+        groupId={resolvedGroupId}
         isMember={isMember}
         userRole={userRole}
         isSaved={isSaved}
@@ -303,23 +332,38 @@ export function PostView({
         <div className="p-6 border-b bg-gradient-to-r from-gray-50 to-white">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-blue-600" />
-            {dict?.comments?.title || 'Commentaires'}
+            {dict?.feed?.comments || 'Commentaires'}
             {post.commentCount ? ` (${post.commentCount})` : ''}
           </h3>
         </div>
         
         <div className="p-6">
-          <CommentsSection 
-            postId={postId}
-            groupId={groupId}
-            isMember={isMember}
-            userId={session?.user?.id}
-            userRole={userRole}
-            autoScrollToNew={true}
-            scrollBehavior="smooth"
-            lang={lang}
-            dict={dict}
-          />
+          {!isMember ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">
+                {dict?.feed?.joinToComment || 'Rejoignez le groupe pour commenter'}
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push(`/${lang}/groups/${resolvedGroupId}/join`)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                {dict?.feed?.joinGroups || 'Rejoindre le groupe'}
+              </Button>
+            </div>
+          ) : (
+            <CommentsSection 
+              postId={postId}
+              groupId={resolvedGroupId}
+              isMember={isMember}
+              userId={session?.user?.id}
+              userRole={userRole}
+              autoScrollToNew={true}
+              scrollBehavior="smooth"
+              lang={lang}
+              dict={dict}
+            />
+          )}
         </div>
       </div>
     </div>
