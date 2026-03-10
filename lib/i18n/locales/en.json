@@ -1,5 +1,5 @@
 {
-   "home": {
+  "home": {
     "discover": "Discover opportunities",
     "projectsAvailable": "projects available",
     "services": "services",
@@ -63,7 +63,33 @@
     "save": "Save",
     "likes": "likes",
     "comments": "comments",
-    "shares": "shares"
+    "shares": "shares",
+    "noPosts": "Post not found",
+    "noPostsDesc": "The post you're looking for doesn't exist or has been deleted.",
+    "backToPosts": "Back to posts",
+    "saved": "Post saved!",
+    "unsaved": "Post removed from saved",
+    "linkCopied": "Link copied!",
+    "shared": "Post shared!",
+    "reactionAdded": "Reaction added",
+    "reactionRemoved": "Reaction removed",
+    "writeComment": "Write a comment...",
+    "publishComment": "Publish",
+    "noComments": "No comments yet. Be the first to comment!",
+    "loginToComment": "Log in to comment",
+    "joinToComment": "Join the group to comment",
+    "viewGroup": "View group",
+    "loadMoreComments": "Load more comments",
+    "replyingTo": "Replying to",
+    "cancelReply": "Cancel",
+    "editComment": "Edit",
+    "deleteComment": "Delete",
+    "commentDeleted": "Comment deleted",
+    "commentUpdated": "Comment updated",
+    "commentAdded": "Comment added",
+    "deleteConfirmation": "Are you sure you want to delete this comment?",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   
   "projects": {
@@ -342,7 +368,7 @@
   },
 
   "common": {
-        "verifying": "Verifying...",
+    "verifying": "Verifying...",
     "resendIn": "Resend in",
     "sending": "Sending...",
     "contact": "Contact support",
@@ -354,13 +380,9 @@
     "edit": "Edit",
     "back": "Back",
     "next": "Next",
-
     "refreshed": "Data refreshed",
     "refresh": "Refresh",
- 
     "success": "Success",
-
-
     "previous": "Previous",
     "close": "Close",
     "search": "Search",
@@ -390,16 +412,16 @@
   },
 
   "auth": { 
-      "codeExpiresIn": "The code expires in 10 minutes",
+    "codeExpiresIn": "The code expires in 10 minutes",
     "enterValidCode": "Please enter a valid 6-digit code",
     "invalidCode": "Invalid code",
-        "verifyYourEmail": "Verify your email",
+    "verifyYourEmail": "Verify your email",
     "verificationEmailSentto": "A verification email has been sent to",
     "openEmailPrompt": "Open your inbox",
     "clickLinkPrompt": "Click the verification link in the email",
     "startJourney": "Start your journey on NRBTalents!",
     "didntReceive": "Didn't receive the email?",
-  "emailVerification": "Email Verification",
+    "emailVerification": "Email Verification",
     "enterEmailForVerification": "Enter your email to receive a new verification link",
     "verifyingEmail": "Verifying your email address...",
     "verifying": "Verifying...",
@@ -417,7 +439,7 @@
     "emailRequired": "Please enter your email",
     "verificationError": "Verification error",
     "expiredLink": "Expired link",
-          "resetPassword": "Reset your password",
+    "resetPassword": "Reset your password",
     "resetPasswordInstructions": "Enter your new password below. Make sure it's at least 8 characters long.",
     "newPassword": "New Password",
     "passwordRequirements": "Password must be at least 8 characters long and include a mix of letters and numbers.",
@@ -451,7 +473,6 @@
     "forgotPassword": "Forgot password?",
     "or": "Or",
     "errors": {
-
       "emailRequired": "Email is required",
       "emailInvalid": "Invalid email",
       "passwordRequired": "Password is required",
@@ -463,7 +484,7 @@
       "googleAccount": "This account uses Google. Sign in with Google."
     },
     "success": {
-       "resetSuccess": "Password reset successfully!",
+      "resetSuccess": "Password reset successfully!",
       "signup": "Account created successfully!",
       "login": "Login successful!",
       "emailSent": "Reset link sent successfully!"
@@ -651,7 +672,7 @@
 
   "footer": {
     "rights": "All rights reserved",
-      "cookies": "Cookies",
+    "cookies": "Cookies",
     "about": "About",
     "contact": "Contact",
     "help": "Help",

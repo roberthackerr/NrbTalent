@@ -1,6 +1,4 @@
 {
-
-
   "home": {
     "discover": "Découvrez les opportunités",
     "projectsAvailable": "projets disponibles",
@@ -65,7 +63,33 @@
     "save": "Sauvegarder",
     "likes": "likes",
     "comments": "commentaires",
-    "shares": "partages"
+    "shares": "partages",
+    "noPosts": "Post introuvable",
+    "noPostsDesc": "Le post que vous cherchez n'existe pas ou a été supprimé.",
+    "backToPosts": "Retour aux posts",
+    "saved": "Post sauvegardé !",
+    "unsaved": "Post retiré des sauvegardes",
+    "linkCopied": "Lien copié !",
+    "shared": "Post partagé !",
+    "reactionAdded": "Réaction ajoutée",
+    "reactionRemoved": "Réaction retirée",
+    "writeComment": "Écrire un commentaire...",
+    "publishComment": "Publier",
+    "noComments": "Aucun commentaire pour le moment. Soyez le premier à commenter !",
+    "loginToComment": "Connectez-vous pour commenter",
+    "joinToComment": "Rejoignez le groupe pour commenter",
+    "viewGroup": "Voir le groupe",
+    "loadMoreComments": "Charger plus de commentaires",
+    "replyingTo": "Répondre à",
+    "cancelReply": "Annuler",
+    "editComment": "Modifier",
+    "deleteComment": "Supprimer",
+    "commentDeleted": "Commentaire supprimé",
+    "commentUpdated": "Commentaire mis à jour",
+    "commentAdded": "Commentaire ajouté",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
   },
   
   "projects": {
@@ -208,8 +232,7 @@
     "watchVideo": "Voir la vidéo"
   },
   
-  
-    "roleSelection": {
+  "roleSelection": {
     "chooseRole": "Choisissez votre rôle",
     "confirmRole": "Confirmez votre rôle",
     "welcome": "Bienvenue {{name}} !",
@@ -242,7 +265,8 @@
       "client": "Bienvenue en tant que client !"
     }
   },
- "portfolio": {
+  
+  "portfolio": {
     "success": {
       "removed": "Projet supprimé!",
       "updated": "Projet mis à jour!"
@@ -251,7 +275,7 @@
       "remove": "Erreur lors de la suppression",
       "update": "Erreur lors de la mise à jour"
     },
-   "categories": {
+    "categories": {
       "website": "Site Web",
       "mobile": "Application Mobile",
       "design": "Design UI/UX",
@@ -294,6 +318,7 @@
     "viewProject": "Voir le projet",
     "addedOn": "Ajouté le"
   },
+  
   "experience": {
     "title": "Expériences Professionnelles",
     "description": "Ajoutez votre parcours professionnel pour renforcer votre crédibilité",
@@ -358,7 +383,7 @@
     "readMore": "Lire la suite",
     "showMore": "Voir plus",
     "showLess": "Voir moins",
-        "verifying": "Vérification...",
+    "verifying": "Vérification...",
     "resendIn": "Renvoyer dans",
     "sending": "Envoi en cours...",
     "contact": "Contacter le support",
@@ -386,8 +411,8 @@
   },
 
   "auth": {
-        "codeExpiresIn": "Le code expire dans 10 minutes",
-      "enterValidCode": "Veuillez entrer un code valide à 6 chiffres",
+    "codeExpiresIn": "Le code expire dans 10 minutes",
+    "enterValidCode": "Veuillez entrer un code valide à 6 chiffres",
     "invalidCode": "Code invalide",
     "verifyYourEmail": "Vérifiez votre email",
     "verificationEmailSentto": "Un email de vérification a été envoyé à",
@@ -395,7 +420,7 @@
     "clickLinkPrompt": "Cliquez sur le lien de vérification dans l'email",
     "startJourney": "Commencez votre aventure sur NRBTalents!",
     "didntReceive": "Vous n'avez pas reçu l'email?",
-     "emailVerification": "Vérification d'Email",
+    "emailVerification": "Vérification d'Email",
     "enterEmailForVerification": "Entrez votre email pour recevoir un nouveau lien de vérification",
     "verifyingEmail": "Vérification de votre adresse email en cours...",
     "verifying": "Vérification en cours...",
@@ -413,7 +438,7 @@
     "emailRequired": "Veuillez entrer votre email",
     "verificationError": "Erreur de vérification",
     "expiredLink": "Lien expiré",
-      "checkEmail": "Vérifiez votre email",
+    "checkEmail": "Vérifiez votre email",
     "emailSent": "Nous avons envoyé un lien de réinitialisation à",
     "checkSpam": "Vérifiez votre dossier spam si vous ne le voyez pas dans votre boîte de réception.",
     "backToSignin": "Retour à la connexion",
@@ -422,8 +447,7 @@
     "sendResetLink": "Envoyer le lien de réinitialisation",
     "emailPrivacy": "Nous ne partagerons jamais votre email avec d'autres personnes.",
     "needHelp": "Besoin d'aide ?",
-
-        "resetPassword": "Réinitialiser votre mot de passe",
+    "resetPassword": "Réinitialiser votre mot de passe",
     "resetPasswordInstructions": "Saisissez votre nouveau mot de passe ci-dessous. Assurez-vous qu'il contient au moins 8 caractères.",
     "newPassword": "Nouveau mot de passe",
     "passwordRequirements": "Le mot de passe doit contenir au moins 8 caractères et inclure un mélange de lettres et de chiffres.",
@@ -646,7 +670,6 @@
 
   "footer": {
     "rights": "Tous droits réservés",
-  
     "cookies": "Cookies",
     "about": "À propos",
     "contact": "Contact",
