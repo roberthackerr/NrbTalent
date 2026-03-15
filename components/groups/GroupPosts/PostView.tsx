@@ -47,7 +47,7 @@ export function PostView({
   const [isSaved, setIsSaved] = useState(false)
   const [userReaction, setUserReaction] = useState<ReactionType | undefined>()
   const [groupName, setGroupName] = useState<string>('')
-  const [resolvedGroupId, setResolvedGroupId] = useState<string>(initialGroupId)
+  const [groupObjectId, setGroupObjectId] = useState<string>('')
   const [resolvingGroup, setResolvingGroup] = useState(false)
 
   // Charger le dictionnaire
@@ -55,26 +55,26 @@ export function PostView({
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
-  // Fonction pour résoudre le groupId (ID MongoDB → slug)
-  const resolveGroupId = async (groupId: string): Promise<string> => {
-    // Si c'est déjà un slug (contient des lettres et tirets, pas que des hex)
-    if (!groupId.match(/^[0-9a-fA-F]{24}$/)) {
-      return groupId
+  // Fonction pour obtenir l'ObjectId du groupe à partir du slug
+  const getGroupObjectId = async (slug: string): Promise<string> => {
+    // Si c'est déjà un ObjectId, on le garde
+    if (slug.match(/^[0-9a-fA-F]{24}$/)) {
+      return slug
     }
     
     setResolvingGroup(true)
     try {
-      const response = await fetch(`/api/groups/id-to-slug?groupId=${groupId}`)
+      const response = await fetch(`/api/groups/slug/${slug}`)
       if (response.ok) {
         const data = await response.json()
-        return data.slug || groupId
+        return data._id
       }
     } catch (error) {
-      console.error('Error resolving group slug:', error)
+      console.error('Error resolving group ObjectId:', error)
     } finally {
       setResolvingGroup(false)
     }
-    return groupId
+    return slug
   }
 
   // Charger le post spécifique
@@ -84,11 +84,12 @@ export function PostView({
       
       setLoading(true)
       try {
-        // Résoudre le groupId si c'est un ID MongoDB
-        const resolvedId = await resolveGroupId(initialGroupId)
-        setResolvedGroupId(resolvedId)
+        // ÉTAPE 1: Obtenir l'ObjectId du groupe à partir du slug
+        const objectId = await getGroupObjectId(initialGroupId)
+        setGroupObjectId(objectId)
         
-        const response = await fetch(`/api/groups/${resolvedId}/posts/${postId}`)
+        // ÉTAPE 2: Utiliser l'ObjectId pour l'appel API
+        const response = await fetch(`/api/groups/${objectId}/posts/${postId}`)
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -125,12 +126,12 @@ export function PostView({
   }, [postId, initialGroupId, dict])
 
   const handleReaction = async (reaction: ReactionType) => {
-    if (reacting || !isMember) return
+    if (reacting || !isMember || !groupObjectId) return
     
     setReacting(true)
     
     try {
-      const response = await fetch(`/api/groups/${resolvedGroupId}/posts/${postId}/reactions`, {
+      const response = await fetch(`/api/groups/${groupObjectId}/posts/${postId}/reactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reaction })
@@ -176,8 +177,10 @@ export function PostView({
   }
 
   const handleSavePost = async () => {
+    if (!groupObjectId) return
+    
     try {
-      const response = await fetch(`/api/groups/${resolvedGroupId}/posts/${postId}/save`, {
+      const response = await fetch(`/api/groups/${groupObjectId}/posts/${postId}/save`, {
         method: 'POST'
       })
 
@@ -197,7 +200,8 @@ export function PostView({
   }
 
   const handleShare = async (platform?: string) => {
-    const shareUrl = `${window.location.origin}/${lang}/groups/${resolvedGroupId}/posts/${postId}`
+    // Pour le partage, on utilise le slug pour l'URL publique
+    const shareUrl = `${window.location.origin}/${lang}/groups/${initialGroupId}/posts/${postId}`
     
     if (platform === 'copy') {
       await navigator.clipboard.writeText(shareUrl)
@@ -213,9 +217,11 @@ export function PostView({
           url: shareUrl
         })
         
-        await fetch(`/api/groups/${resolvedGroupId}/posts/${postId}/share`, {
-          method: 'POST'
-        })
+        if (groupObjectId) {
+          await fetch(`/api/groups/${groupObjectId}/posts/${postId}/share`, {
+            method: 'POST'
+          })
+        }
       } catch (error) {
         console.error('Error sharing:', error)
       }
@@ -301,7 +307,7 @@ export function PostView({
         )}
         
         <GroupAccessButton
-          groupId={resolvedGroupId}
+          groupId={initialGroupId} // On passe le slug pour l'affichage
           groupName={groupName}
           variant="outline"
           size="sm"
@@ -313,7 +319,7 @@ export function PostView({
       {/* Post */}
       <PostCard
         post={post}
-        groupId={resolvedGroupId}
+        groupId={initialGroupId} // On passe le slug pour les liens
         isMember={isMember}
         userRole={userRole}
         isSaved={isSaved}
@@ -345,7 +351,7 @@ export function PostView({
               </p>
               <Button 
                 variant="outline" 
-                onClick={() => router.push(`/${lang}/groups/${resolvedGroupId}/join`)}
+                onClick={() => router.push(`/${lang}/groups/${initialGroupId}`)}
               >
                 <Users className="h-4 w-4 mr-2" />
                 {dict?.feed?.joinGroups || 'Rejoindre le groupe'}
@@ -354,7 +360,7 @@ export function PostView({
           ) : (
             <CommentsSection 
               postId={postId}
-              groupId={resolvedGroupId}
+              groupId={initialGroupId} // On passe le slug
               isMember={isMember}
               userId={session?.user?.id}
               userRole={userRole}
