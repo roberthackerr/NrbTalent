@@ -7,6 +7,7 @@ import { PollDisplay } from '../Polls/PollDisplay'
 import { EventDisplay } from '../Events/EventDisplay'
 import { JobDisplay } from '../Jobs/JobDisplay'
 import { PostMetrics } from './PostMetrics'
+import { ReactionType } from '../utils/types'
 
 interface PostCardProps {
   post: Post
@@ -14,11 +15,11 @@ interface PostCardProps {
   isMember: boolean
   userRole?: string
   isSaved: boolean
-  userReaction?: string
+  userReaction?: ReactionType  // ← Changé de string à ReactionType
   isReacting: boolean
   onSave: (postId: string) => void
   onShare: (postId: string, platform?: string) => void
-  onReaction: (postId: string, reaction: any) => void
+  onReaction: (postId: string, reaction: ReactionType) => void  // ← Changé de any à ReactionType
   onComment: (postId: string) => void
   onEdit?: (postId: string) => void
   onDelete?: (postId: string) => void
@@ -99,7 +100,7 @@ export function PostCard({
         <PostMetrics metrics={post.metrics} />
       </CardContent>
       
-      {/* Footer avec actions sociales - CORRECTION ICI */}
+      {/* Footer avec actions sociales */}
       <CardFooter className="pt-4 border-t p-0">
         <div className="w-full px-6 pb-6">
           <PostActions
@@ -107,7 +108,7 @@ export function PostCard({
             reactionCounts={post.reactionCounts}
             commentCount={post.commentCount}
             shareCount={post.shareCount}
-            userReaction={userReaction as any}
+            userReaction={userReaction}
             onReaction={(reaction) => onReaction(post._id, reaction)}
             onComment={() => onComment(post._id)}
             onShare={(platform) => onShare(post._id, platform)}
