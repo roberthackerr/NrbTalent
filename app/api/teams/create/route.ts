@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
     if (!currentUser) {
       return NextResponse.json(
         { success: false, error: "Freelancer profile not found. Complete your profile first." },
-        { status: 404 }
+        { status: 404 },
+        { id: userId }
       );
     }
 
