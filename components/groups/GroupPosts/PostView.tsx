@@ -1,11 +1,11 @@
-// components/PostView.tsx
+// components/PostView.tsx - Version avec mapping des réactions
 'use client'
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
-import { MessageSquare, ChevronLeft, Users } from 'lucide-react'
+import { MessageSquare, ChevronLeft, Users, Heart, Sparkles, Lightbulb, HelpingHand, PartyPopper } from 'lucide-react'
 import { toast } from 'sonner'
 import { PostCard } from './PostCard/PostCard'
 import { CommentsSection } from './Comments/CommentsSection'
@@ -14,7 +14,9 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
-import { GroupAccessButton } from '@/components/groups/GroupAccessButton'
+
+// Mapping des types de réactions valides
+const VALID_REACTIONS: ReactionType[] = ['like', 'love', 'insightful', 'helpful', 'celebrate']
 
 interface PostViewProps {
   postId: string
@@ -49,7 +51,6 @@ export function PostView({
   const [groupName, setGroupName] = useState<string>('')
   const [groupObjectId, setGroupObjectId] = useState<string>('')
   const [resolvingGroup, setResolvingGroup] = useState(false)
-  const [reactions, setReactions] = useState<any[]>([])
 
   // Charger le dictionnaire
   useEffect(() => {
@@ -58,7 +59,6 @@ export function PostView({
 
   // Fonction pour obtenir l'ObjectId du groupe à partir du slug
   const getGroupObjectId = async (slug: string): Promise<string> => {
-    // Si c'est déjà un ObjectId, on le garde
     if (slug.match(/^[0-9a-fA-F]{24}$/)) {
       return slug
     }
@@ -85,11 +85,9 @@ export function PostView({
       
       setLoading(true)
       try {
-        // ÉTAPE 1: Obtenir l'ObjectId du groupe à partir du slug
         const objectId = await getGroupObjectId(initialGroupId)
         setGroupObjectId(objectId)
         
-        // ÉTAPE 2: Utiliser l'ObjectId pour l'appel API
         const response = await fetch(`/api/groups/${objectId}/posts/${postId}`)
         
         if (!response.ok) {
@@ -103,17 +101,12 @@ export function PostView({
         const data = await response.json()
         setPost(data)
         
-        // Récupérer le nom du groupe si disponible
         if (data.group?.name) {
           setGroupName(data.group.name)
         }
         
-        // Charger les réactions
-        await fetchReactions(objectId)
-        
-        if (data.userReaction) {
-          setUserReaction(data.userReaction)
-        }
+        // Charger la réaction de l'utilisateur
+        await fetchUserReaction(objectId)
         
         if (data.isSaved) {
           setIsSaved(true)
@@ -129,21 +122,27 @@ export function PostView({
     fetchPost()
   }, [postId, initialGroupId, dict])
 
-  // Fonction pour charger les réactions
-  const fetchReactions = async (groupId: string) => {
+  // Fonction pour charger la réaction de l'utilisateur
+  const fetchUserReaction = async (groupId: string) => {
     try {
       const response = await fetch(`/api/groups/${groupId}/posts/${postId}/reactions`)
       if (response.ok) {
         const data = await response.json()
-        setReactions(data.reactions || [])
         setUserReaction(data.userReaction)
       }
     } catch (error) {
-      console.error('Error fetching reactions:', error)
+      console.error('Error fetching user reaction:', error)
     }
   }
 
   const handleReaction = async (reaction: ReactionType) => {
+    // Vérifier que la réaction est valide
+    if (!VALID_REACTIONS.includes(reaction)) {
+      console.error('Invalid reaction type:', reaction)
+      toast.error('Type de réaction invalide')
+      return
+    }
+
     if (reacting || !isMember || !groupObjectId) {
       if (!isMember) {
         toast.error(dict?.feed?.joinToReact || 'Rejoignez le groupe pour réagir')
@@ -160,18 +159,27 @@ export function PostView({
         body: JSON.stringify({ reaction })
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        const data = await response.json()
-        
-        // Mettre à jour les réactions
-        await fetchReactions(groupObjectId)
-        
         if (data.action === 'removed') {
           setUserReaction(undefined)
           toast.success(dict?.feed?.reactionRemoved || 'Réaction retirée')
         } else {
           setUserReaction(reaction)
           toast.success(dict?.feed?.reactionAdded || 'Réaction ajoutée')
+        }
+        
+        // Mettre à jour le post avec les nouveaux compteurs
+        if (data.reactionCounts) {
+          setPost(prev => prev ? { ...prev, reactionCounts: data.reactionCounts } : null)
+        }
+      } else {
+        // Gérer l'erreur spécifique
+        if (data.error === "Type de réaction invalide") {
+          toast.error('Type de réaction non supporté')
+        } else {
+          toast.error(data.error || dict?.common?.error || 'Erreur lors de la réaction')
         }
       }
     } catch (error) {
@@ -206,7 +214,6 @@ export function PostView({
   }
 
   const handleShare = async (platform?: string) => {
-    // Pour le partage, on utilise le slug pour l'URL publique
     const shareUrl = `${window.location.origin}/${lang}/groups/${initialGroupId}/posts/${postId}`
     
     if (platform === 'copy') {
@@ -237,6 +244,65 @@ export function PostView({
       toast.success(dict?.feed?.linkCopied || 'Lien copié dans le presse-papier !')
     }
   }
+
+  // Composant pour les boutons de réaction
+  const ReactionButtons = () => (
+    <div className="flex gap-2 mt-4">
+      <Button
+        variant={userReaction === 'like' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => handleReaction('like')}
+        disabled={!isMember || reacting}
+        className="gap-2"
+      >
+        <Heart className={`h-4 w-4 ${userReaction === 'like' ? 'fill-current' : ''}`} />
+        Like
+      </Button>
+      
+      <Button
+        variant={userReaction === 'love' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => handleReaction('love')}
+        disabled={!isMember || reacting}
+        className="gap-2"
+      >
+        ❤️ Love
+      </Button>
+      
+      <Button
+        variant={userReaction === 'insightful' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => handleReaction('insightful')}
+        disabled={!isMember || reacting}
+        className="gap-2"
+      >
+        <Lightbulb className="h-4 w-4" />
+        Insightful
+      </Button>
+      
+      <Button
+        variant={userReaction === 'helpful' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => handleReaction('helpful')}
+        disabled={!isMember || reacting}
+        className="gap-2"
+      >
+        <HelpingHand className="h-4 w-4" />
+        Helpful
+      </Button>
+      
+      <Button
+        variant={userReaction === 'celebrate' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => handleReaction('celebrate')}
+        disabled={!isMember || reacting}
+        className="gap-2"
+      >
+        <PartyPopper className="h-4 w-4" />
+        Celebrate
+      </Button>
+    </div>
+  )
 
   if (!dict || resolvingGroup) {
     return (
@@ -300,7 +366,7 @@ export function PostView({
 
   return (
     <div className="space-y-6">
-      {/* Barre de navigation avec bouton retour et accès groupe */}
+      {/* Barre de navigation */}
       <div className="flex items-center justify-between gap-4">
         {onBack && (
           <Button
@@ -324,22 +390,40 @@ export function PostView({
         </Button>
       </div>
 
-      {/* Post */}
-      <PostCard
-        post={post}
-        groupId={initialGroupId}
-        isMember={isMember}
-        userRole={userRole}
-        isSaved={isSaved}
-        userReaction={userReaction}
-        isReacting={reacting}
-        onSave={handleSavePost}
-        onShare={handleShare}
-        onReaction={handleReaction}
-        expanded={true}
-        dict={dict}
-        lang={lang}
-      />
+      {/* Post avec boutons de réaction intégrés */}
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            {/* Avatar et infos auteur */}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <h2 className="text-xl font-bold mb-4">{post.title}</h2>
+          <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
+        </CardContent>
+        <CardFooter className="flex-col items-start gap-4 border-t pt-4">
+          {/* Statistiques des réactions */}
+          {post.reactionCounts && (
+            <div className="flex gap-4 text-sm text-gray-500">
+              {Object.entries(post.reactionCounts).map(([key, value]) => (
+                value > 0 && (
+                  <span key={key} className="flex items-center gap-1">
+                    {key === 'like' && <Heart className="h-4 w-4" />}
+                    {key === 'love' && '❤️'}
+                    {key === 'insightful' && <Lightbulb className="h-4 w-4" />}
+                    {key === 'helpful' && <HelpingHand className="h-4 w-4" />}
+                    {key === 'celebrate' && <PartyPopper className="h-4 w-4" />}
+                    {value}
+                  </span>
+                )
+              ))}
+            </div>
+          )}
+          
+          {/* Boutons de réaction */}
+          <ReactionButtons />
+        </CardFooter>
+      </Card>
 
       {/* Section commentaires */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
