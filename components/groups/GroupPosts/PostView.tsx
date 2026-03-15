@@ -36,6 +36,7 @@ export function PostView({
   const router = useRouter()
   const params = useParams()
   
+  // Déterminer la langue (priorité: prop > params > 'fr')
   const lang = propLang || (params?.lang as Locale) || 'fr'
   
   const [dict, setDict] = useState<any>(null)
@@ -48,11 +49,14 @@ export function PostView({
   const [resolvingGroup, setResolvingGroup] = useState(false)
   const [isReacting, setIsReacting] = useState(false)
 
+  // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
+  // Fonction pour obtenir l'ObjectId du groupe à partir du slug
   const getGroupObjectId = async (slug: string): Promise<string> => {
+    // Si c'est déjà un ObjectId, on le garde
     if (slug.match(/^[0-9a-fA-F]{24}$/)) {
       return slug
     }
@@ -72,15 +76,18 @@ export function PostView({
     return slug
   }
 
+  // Charger le post spécifique
   useEffect(() => {
     const fetchPost = async () => {
       if (!postId || !initialGroupId || !dict) return
       
       setLoading(true)
       try {
+        // ÉTAPE 1: Obtenir l'ObjectId du groupe à partir du slug
         const objectId = await getGroupObjectId(initialGroupId)
         setGroupObjectId(objectId)
         
+        // ÉTAPE 2: Utiliser l'ObjectId pour l'appel API
         const response = await fetch(`/api/groups/${objectId}/posts/${postId}`)
         
         if (!response.ok) {
@@ -94,10 +101,12 @@ export function PostView({
         const data = await response.json()
         setPost(data)
         
+        // Récupérer le nom du groupe si disponible
         if (data.group?.name) {
           setGroupName(data.group.name)
         }
         
+        // Récupérer la réaction de l'utilisateur
         await fetchUserReaction(objectId)
         
         if (data.isSaved) {
@@ -114,6 +123,7 @@ export function PostView({
     fetchPost()
   }, [postId, initialGroupId, dict])
 
+  // Fonction pour charger la réaction de l'utilisateur
   const fetchUserReaction = async (groupId: string) => {
     try {
       const response = await fetch(`/api/groups/${groupId}/posts/${postId}/reactions`)
@@ -126,7 +136,11 @@ export function PostView({
     }
   }
 
-  const handleReaction = async (reaction: ReactionType) => {
+  // ✅ CORRECTION ICI: Signature identique à GroupPosts (postId, reaction)
+  const handleReaction = async (clickedPostId: string, reaction: ReactionType) => {
+    // Vérifier que c'est le bon post
+    if (clickedPostId !== postId) return
+    
     if (!isMember || !groupObjectId) {
       toast.error(dict?.feed?.joinToReact || 'Rejoignez le groupe pour réagir')
       return
@@ -144,6 +158,7 @@ export function PostView({
       const data = await response.json()
 
       if (response.ok) {
+        // MISE À JOUR LOCALE (comme dans GroupPosts)
         setPost(prev => {
           if (!prev) return prev
           
@@ -186,7 +201,9 @@ export function PostView({
     }
   }
 
-  const handleSavePost = async () => {
+  // ✅ CORRECTION: handleSavePost doit accepter postId
+  const handleSavePost = async (clickedPostId: string) => {
+    if (clickedPostId !== postId) return
     if (!groupObjectId) return
     
     try {
@@ -209,7 +226,10 @@ export function PostView({
     }
   }
 
-  const handleShare = async (platform?: string) => {
+  // ✅ CORRECTION: handleShare doit accepter postId
+  const handleShare = async (clickedPostId: string, platform?: string) => {
+    if (clickedPostId !== postId) return
+    
     const shareUrl = `${window.location.origin}/${lang}/groups/${initialGroupId}/posts/${postId}`
     
     if (platform === 'copy') {
@@ -242,22 +262,75 @@ export function PostView({
   }
 
   if (!dict || resolvingGroup) {
-    return <LoadingSkeleton />
+    return (
+      <Card className="animate-pulse overflow-hidden">
+        <CardHeader className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-6 w-1/2" />
+        </CardContent>
+        <CardFooter>
+          <Skeleton className="h-10 w-full rounded-full" />
+        </CardFooter>
+      </Card>
+    )
   }
 
   if (loading) {
-    return <LoadingSkeleton />
+    return (
+      <Card className="animate-pulse overflow-hidden">
+        <CardHeader className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-6 w-1/2" />
+        </CardContent>
+        <CardFooter>
+          <Skeleton className="h-10 w-full rounded-full" />
+        </CardFooter>
+      </Card>
+    )
   }
 
   if (!post) {
-    return <NotFoundView dict={dict} onBack={onBack} router={router} />
+    return (
+      <div className="text-center py-16">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 rounded-full mb-6">
+          <MessageSquare className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-2xl font-bold mb-3">
+          {dict?.feed?.noPosts || 'Post introuvable'}
+        </h3>
+        <p className="text-gray-600 mb-8 max-w-md mx-auto text-lg">
+          {dict?.feed?.noPostsDesc || "Le post que vous cherchez n'existe pas ou a été supprimé."}
+        </p>
+        <Button 
+          size="lg" 
+          className="gap-3 px-8 py-6 rounded-xl text-lg"
+          onClick={onBack || (() => router.back())}
+        >
+          <ChevronLeft className="h-5 w-5" />
+          {dict?.common?.back || 'Retour'}
+        </Button>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
+      {/* Barre de navigation */}
       <div className="flex items-center justify-between gap-4">
         {onBack && (
-          <Button variant="ghost" onClick={onBack} className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="gap-2"
+          >
             <ChevronLeft className="h-4 w-4" />
             {dict?.feed?.backToPosts || 'Retour aux posts'}
           </Button>
@@ -274,6 +347,7 @@ export function PostView({
         </Button>
       </div>
 
+      {/* Post */}
       <PostCard
         post={post}
         groupId={initialGroupId}
@@ -282,65 +356,54 @@ export function PostView({
         isSaved={isSaved}
         userReaction={userReaction}
         isReacting={isReacting}
-        onSave={handleSavePost}
-        onShare={handleShare}
-        onReaction={handleReaction}
-        onComment={() => {}} // Optionnel
-      />
-
-      <CommentsSection 
-        postId={postId}
-        groupId={initialGroupId}
-        isMember={isMember}
-        userId={session?.user?.id}
-        userRole={userRole}
-        autoScrollToNew={true}
-        scrollBehavior="smooth"
-        lang={lang}
+        onSave={handleSavePost}      // ✅ Maintenant accepte (postId)
+        onShare={handleShare}         // ✅ Maintenant accepte (postId, platform?)
+        onReaction={handleReaction}   // ✅ Maintenant accepte (postId, reaction)
+        onComment={() => {}}          // Optionnel
+        expanded={true}
         dict={dict}
+        lang={lang}
       />
-    </div>
-  )
-}
 
-function LoadingSkeleton() {
-  return (
-    <Card className="animate-pulse overflow-hidden">
-      <CardHeader className="space-y-3">
-        <Skeleton className="h-10 w-full" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-6 w-1/2" />
-      </CardContent>
-      <CardFooter>
-        <Skeleton className="h-10 w-full rounded-full" />
-      </CardFooter>
-    </Card>
-  )
-}
-
-function NotFoundView({ dict, onBack, router }: any) {
-  return (
-    <div className="text-center py-16">
-      <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 rounded-full mb-6">
-        <MessageSquare className="h-10 w-10 text-red-600" />
+      {/* Section commentaires */}
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div className="p-6 border-b bg-gradient-to-r from-gray-50 to-white">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-blue-600" />
+            {dict?.feed?.comments || 'Commentaires'}
+            {post.commentCount ? ` (${post.commentCount})` : ''}
+          </h3>
+        </div>
+        
+        <div className="p-6">
+          {!isMember ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">
+                {dict?.feed?.joinToComment || 'Rejoignez le groupe pour commenter'}
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push(`/${lang}/groups/${initialGroupId}`)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                {dict?.feed?.joinGroups || 'Rejoindre le groupe'}
+              </Button>
+            </div>
+          ) : (
+            <CommentsSection 
+              postId={postId}
+              groupId={initialGroupId}
+              isMember={isMember}
+              userId={session?.user?.id}
+              userRole={userRole}
+              autoScrollToNew={true}
+              scrollBehavior="smooth"
+              lang={lang}
+              dict={dict}
+            />
+          )}
+        </div>
       </div>
-      <h3 className="text-2xl font-bold mb-3">
-        {dict?.feed?.noPosts || 'Post introuvable'}
-      </h3>
-      <p className="text-gray-600 mb-8 max-w-md mx-auto text-lg">
-        {dict?.feed?.noPostsDesc || "Le post que vous cherchez n'existe pas ou a été supprimé."}
-      </p>
-      <Button 
-        size="lg" 
-        className="gap-3 px-8 py-6 rounded-xl text-lg"
-        onClick={onBack || (() => router.back())}
-      >
-        <ChevronLeft className="h-5 w-5" />
-        {dict?.common?.back || 'Retour'}
-      </Button>
     </div>
   )
 }
