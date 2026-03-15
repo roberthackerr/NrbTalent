@@ -1,4 +1,4 @@
-// components/PostView.tsx
+// components/PostView.tsx - VERSION CORRIGÉE
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -14,7 +14,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
-import { GroupAccessButton } from '@/components/groups/GroupAccessButton'
 
 interface PostViewProps {
   postId: string
@@ -43,13 +42,12 @@ export function PostView({
   const [dict, setDict] = useState<any>(null)
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
-  const [reacting, setReacting] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [userReaction, setUserReaction] = useState<ReactionType | undefined>()
   const [groupName, setGroupName] = useState<string>('')
   const [groupObjectId, setGroupObjectId] = useState<string>('')
   const [resolvingGroup, setResolvingGroup] = useState(false)
-  const [reactions, setReactions] = useState<any[]>([])
+  const [isReacting, setIsReacting] = useState(false)
 
   // Charger le dictionnaire
   useEffect(() => {
@@ -108,12 +106,8 @@ export function PostView({
           setGroupName(data.group.name)
         }
         
-        // Charger les réactions
-        await fetchReactions(objectId)
-        
-        if (data.userReaction) {
-          setUserReaction(data.userReaction)
-        }
+        // Récupérer la réaction de l'utilisateur
+        await fetchUserReaction(objectId)
         
         if (data.isSaved) {
           setIsSaved(true)
@@ -129,29 +123,27 @@ export function PostView({
     fetchPost()
   }, [postId, initialGroupId, dict])
 
-  // Fonction pour charger les réactions
-  const fetchReactions = async (groupId: string) => {
+  // Fonction pour charger la réaction de l'utilisateur
+  const fetchUserReaction = async (groupId: string) => {
     try {
       const response = await fetch(`/api/groups/${groupId}/posts/${postId}/reactions`)
       if (response.ok) {
         const data = await response.json()
-        setReactions(data.reactions || [])
+        // IMPORTANT: data.userReaction doit être 'like', 'love', etc., pas un ID
         setUserReaction(data.userReaction)
       }
     } catch (error) {
-      console.error('Error fetching reactions:', error)
+      console.error('Error fetching user reaction:', error)
     }
   }
 
   const handleReaction = async (reaction: ReactionType) => {
-    if (reacting || !isMember || !groupObjectId) {
-      if (!isMember) {
-        toast.error(dict?.feed?.joinToReact || 'Rejoignez le groupe pour réagir')
-      }
+    if (!isMember || !groupObjectId) {
+      toast.error(dict?.feed?.joinToReact || 'Rejoignez le groupe pour réagir')
       return
     }
     
-    setReacting(true)
+    setIsReacting(true)
     
     try {
       const response = await fetch(`/api/groups/${groupObjectId}/posts/${postId}/reactions`, {
@@ -160,25 +152,49 @@ export function PostView({
         body: JSON.stringify({ reaction })
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        const data = await response.json()
-        
-        // Mettre à jour les réactions
-        await fetchReactions(groupObjectId)
-        
-        if (data.action === 'removed') {
-          setUserReaction(undefined)
-          toast.success(dict?.feed?.reactionRemoved || 'Réaction retirée')
-        } else {
-          setUserReaction(reaction)
-          toast.success(dict?.feed?.reactionAdded || 'Réaction ajoutée')
-        }
+        // MISE À JOUR LOCALE (comme dans GroupPosts)
+        setPost(prev => {
+          if (!prev) return prev
+          
+          const currentCount = prev.reactionCounts[reaction] || 0
+          
+          if (data.action === 'removed') {
+            setUserReaction(undefined)
+            return {
+              ...prev,
+              reactionCounts: {
+                ...prev.reactionCounts,
+                [reaction]: Math.max(0, currentCount - 1)
+              }
+            }
+          } else {
+            setUserReaction(reaction)
+            return {
+              ...prev,
+              reactionCounts: {
+                ...prev.reactionCounts,
+                [reaction]: currentCount + 1
+              }
+            }
+          }
+        })
+
+        toast.success(
+          data.action === 'removed' 
+            ? (dict?.feed?.reactionRemoved || 'Réaction retirée')
+            : (dict?.feed?.reactionAdded || 'Réaction ajoutée')
+        )
+      } else {
+        toast.error(data.error || dict?.common?.error || 'Erreur lors de la réaction')
       }
     } catch (error) {
       console.error('Error reacting to post:', error)
       toast.error(dict?.common?.error || 'Erreur lors de la réaction')
     } finally {
-      setReacting(false)
+      setIsReacting(false)
     }
   }
 
@@ -206,7 +222,6 @@ export function PostView({
   }
 
   const handleShare = async (platform?: string) => {
-    // Pour le partage, on utilise le slug pour l'URL publique
     const shareUrl = `${window.location.origin}/${lang}/groups/${initialGroupId}/posts/${postId}`
     
     if (platform === 'copy') {
@@ -300,7 +315,7 @@ export function PostView({
 
   return (
     <div className="space-y-6">
-      {/* Barre de navigation avec bouton retour et accès groupe */}
+      {/* Barre de navigation */}
       <div className="flex items-center justify-between gap-4">
         {onBack && (
           <Button
@@ -332,8 +347,8 @@ export function PostView({
         userRole={userRole}
         isSaved={isSaved}
         userReaction={userReaction}
-        isReacting={reacting}
-        onSave={handleSavePost}
+        isReacting={isReacting}
+        onSave={() => handleSavePost()}
         onShare={handleShare}
         onReaction={handleReaction}
         expanded={true}
