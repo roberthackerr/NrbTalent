@@ -49,6 +49,7 @@ export function PostView({
   const [groupName, setGroupName] = useState<string>('')
   const [groupObjectId, setGroupObjectId] = useState<string>('')
   const [resolvingGroup, setResolvingGroup] = useState(false)
+  const [reactions, setReactions] = useState<any[]>([])
 
   // Charger le dictionnaire
   useEffect(() => {
@@ -107,6 +108,9 @@ export function PostView({
           setGroupName(data.group.name)
         }
         
+        // Charger les réactions
+        await fetchReactions(objectId)
+        
         if (data.userReaction) {
           setUserReaction(data.userReaction)
         }
@@ -125,8 +129,27 @@ export function PostView({
     fetchPost()
   }, [postId, initialGroupId, dict])
 
+  // Fonction pour charger les réactions
+  const fetchReactions = async (groupId: string) => {
+    try {
+      const response = await fetch(`/api/groups/${groupId}/posts/${postId}/reactions`)
+      if (response.ok) {
+        const data = await response.json()
+        setReactions(data.reactions || [])
+        setUserReaction(data.userReaction)
+      }
+    } catch (error) {
+      console.error('Error fetching reactions:', error)
+    }
+  }
+
   const handleReaction = async (reaction: ReactionType) => {
-    if (reacting || !isMember || !groupObjectId) return
+    if (reacting || !isMember || !groupObjectId) {
+      if (!isMember) {
+        toast.error(dict?.feed?.joinToReact || 'Rejoignez le groupe pour réagir')
+      }
+      return
+    }
     
     setReacting(true)
     
@@ -140,31 +163,14 @@ export function PostView({
       if (response.ok) {
         const data = await response.json()
         
+        // Mettre à jour les réactions
+        await fetchReactions(groupObjectId)
+        
         if (data.action === 'removed') {
           setUserReaction(undefined)
-          setPost(prev => {
-            if (!prev) return prev
-            return {
-              ...prev,
-              reactionCounts: {
-                ...prev.reactionCounts,
-                [reaction]: Math.max(0, (prev.reactionCounts[reaction] || 0) - 1)
-              }
-            }
-          })
           toast.success(dict?.feed?.reactionRemoved || 'Réaction retirée')
         } else {
           setUserReaction(reaction)
-          setPost(prev => {
-            if (!prev) return prev
-            return {
-              ...prev,
-              reactionCounts: {
-                ...prev.reactionCounts,
-                [reaction]: (prev.reactionCounts[reaction] || 0) + 1
-              }
-            }
-          })
           toast.success(dict?.feed?.reactionAdded || 'Réaction ajoutée')
         }
       }
@@ -222,6 +228,7 @@ export function PostView({
             method: 'POST'
           })
         }
+        toast.success(dict?.feed?.shared || 'Post partagé !')
       } catch (error) {
         console.error('Error sharing:', error)
       }
@@ -306,20 +313,21 @@ export function PostView({
           </Button>
         )}
         
-        <GroupAccessButton
-          groupId={initialGroupId} // On passe le slug pour l'affichage
-          groupName={groupName}
+        <Button
+          onClick={() => router.push(`/${lang}/groups/${initialGroupId}`)}
           variant="outline"
           size="sm"
-          lang={lang}
-          className="ml-auto"
-        />
+          className="gap-2"
+        >
+          <Users className="h-4 w-4" />
+          {dict?.feed?.viewGroup || 'Voir le groupe'}
+        </Button>
       </div>
 
       {/* Post */}
       <PostCard
         post={post}
-        groupId={initialGroupId} // On passe le slug pour les liens
+        groupId={initialGroupId}
         isMember={isMember}
         userRole={userRole}
         isSaved={isSaved}
@@ -360,7 +368,7 @@ export function PostView({
           ) : (
             <CommentsSection 
               postId={postId}
-              groupId={initialGroupId} // On passe le slug
+              groupId={initialGroupId}
               isMember={isMember}
               userId={session?.user?.id}
               userRole={userRole}
