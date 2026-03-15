@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Get current user with skills
-    const currentUser = await db.collection<User>("users").findOne({
+    const currentUser = await db.collection<any>("users").findOne({
       _id: new ObjectId(userId),
       role: "freelance"
     });
