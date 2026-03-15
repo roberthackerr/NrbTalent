@@ -36,9 +36,6 @@ export function PostActions({
   const [showReactionSelector, setShowReactionSelector] = useState(false)
   const [reactionTimeout, setReactionTimeout] = useState<NodeJS.Timeout | null>(null)
 
-  // Liste des réactions valides
-  const validReactions: ReactionType[] = ['like', 'love', 'insightful', 'helpful', 'celebrate']
-
   const handleReactionWithSelector = () => {
     if (!isMember) return
     
@@ -56,25 +53,10 @@ export function PostActions({
   }
 
   const handleReactionSelect = (reaction: ReactionType) => {
-    // Vérifier que la réaction est valide
-    if (validReactions.includes(reaction)) {
-      onReaction(reaction)
-    } else {
-      console.error('Invalid reaction type:', reaction)
-    }
+    onReaction(reaction)
     setShowReactionSelector(false)
     if (reactionTimeout) {
       clearTimeout(reactionTimeout)
-    }
-  }
-
-  const handleReactionClick = () => {
-    if (userReaction) {
-      // Si l'utilisateur a déjà une réaction, on la retire
-      onReaction(userReaction)
-    } else {
-      // Sinon, on ajoute un like par défaut
-      onReaction('like')
     }
   }
 
@@ -91,9 +73,9 @@ export function PostActions({
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors cursor-default">
                     <div className="flex -space-x-1.5">
-                      <span className="text-base leading-none">
-                        {getTopReactions({ reactionCounts } as any)}
-                      </span>
+                      {getTopReactions({ reactionCounts } as any) && (
+                        <span className="text-base leading-none">{getTopReactions({ reactionCounts } as any)}</span>
+                      )}
                     </div>
                     <span className="text-sm font-medium text-gray-700">
                       {totalReactions.toLocaleString()}
@@ -166,7 +148,13 @@ export function PostActions({
             size="lg"
             className="w-full h-12 gap-2.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all duration-200 group relative overflow-hidden"
             onMouseEnter={handleReactionWithSelector}
-            onClick={handleReactionClick}
+            onClick={() => {
+              if (userReaction) {
+                onReaction(userReaction)
+              } else {
+                onReaction('like')
+              }
+            }}
             disabled={isReacting || !isMember}
           >
             <div className="flex items-center gap-2.5">
