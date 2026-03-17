@@ -682,5 +682,21 @@
     "developers": "Développeurs",
     "affiliate": "Programme d'affiliation",
     "followUs": "Suivez-nous"
+  },
+  "settings": {
+    "loading": "Chargement...",
+    "title": "Paramètres",
+    "subtitle": "Gérez les paramètres de votre compte et vos préférences",
+    "tabs": {
+      "general": "Général",
+      "skills": "Compétences",
+      "portfolio": "Portfolio",
+      "security": "Sécurité",
+      "verification": "Vérification",
+      "notifications": "Notifications",
+      "preferences": "Préférences",
+      "billing": "Facturation",
+      "account": "Compte"
+    }
   }
 }

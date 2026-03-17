@@ -424,5 +424,21 @@
     "rights": "Zo rehetra voatokana",
     "terms": "Fepetra fampiasana",
     "privacy": "Politika momba ny fiainana manokana"
+  },
+   "settings": {
+    "loading": "Amplasiana...",
+    "title": "Fikirana",
+    "subtitle": "Karibo ny fikiran'ny kaontinao sy ny safidinao",
+    "tabs": {
+      "general": "Ankapobeny",
+      "skills": "Fahaizana",
+      "portfolio": "Portfolio",
+      "security": "Fiarovana",
+      "verification": "Fanamarinana",
+      "notifications": "Fampandrenesana",
+      "preferences": "Safidy",
+      "billing": "Fandoavana",
+      "account": "Kaonty"
+    }
   }
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { DashboardSidebar } from "@/components/dashboard/sidebar"
+import { useParams } from 'next/navigation'
 import { SettingsSidebar } from "@/components/settings/sidebar"
 import { GeneralTab } from "@/components/settings/general-tab"
 import { SecurityTab } from "@/components/settings/security-tab"
@@ -12,49 +12,79 @@ import { PreferencesTab } from "@/components/settings/preferences-tab"
 import { BillingTab } from "@/components/settings/billing-tab"
 import { SkillsTab } from "@/components/settings/skills-tab"
 import { PortfolioTab } from "@/components/settings/portfolio-tab"
-import { AccountTab } from "@/components/settings/account-tab" // ← Nouvel import
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AccountTab } from "@/components/settings/account-tab"
+import type { Locale } from '@/lib/i18n/config'
+import { getDictionarySafe } from '@/lib/i18n/dictionaries'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { User, Lock, ShieldCheck, Bell, Globe, CreditCard, Briefcase, Zap, Trash2 } from "lucide-react"
 
 export default function SettingsPage() {
   const { data: session } = useSession()
   const user = session?.user as any
+  const params = useParams()
+  const lang = params.lang as Locale
+  
+  const [dict, setDict] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("general")
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
+
+  if (!isMounted || !dict) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            {dict?.settings?.loading || 'Loading...'}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const tabs = [
-    { id: "general", label: "Général", icon: User },
-    { id: "skills", label: "Compétences", icon: Zap },
-    { id: "portfolio", label: "Portfolio", icon: Briefcase },
-    { id: "security", label: "Sécurité", icon: Lock },
-    { id: "verification", label: "Vérification", icon: ShieldCheck },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "preferences", label: "Préférences", icon: Globe },
-    { id: "billing", label: "Facturation", icon: CreditCard },
-    { id: "account", label: "Compte", icon: Trash2 }, // ← Nouvel onglet
+    { id: "general", label: dict.settings.tabs.general, icon: User },
+    { id: "skills", label: dict.settings.tabs.skills, icon: Zap },
+    { id: "portfolio", label: dict.settings.tabs.portfolio, icon: Briefcase },
+    { id: "security", label: dict.settings.tabs.security, icon: Lock },
+    { id: "verification", label: dict.settings.tabs.verification, icon: ShieldCheck },
+    { id: "notifications", label: dict.settings.tabs.notifications, icon: Bell },
+    { id: "preferences", label: dict.settings.tabs.preferences, icon: Globe },
+    { id: "billing", label: dict.settings.tabs.billing, icon: CreditCard },
+    { id: "account", label: dict.settings.tabs.account, icon: Trash2 },
   ]
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20">
-      {/* <DashboardSidebar role={user?.role || "freelance"} /> */}
-
       <div className="flex-1 flex">
-        {/* Sidebar des paramètres */}
+        {/* Sidebar des paramètres - now receives dict and lang */}
         <SettingsSidebar 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
           tabs={tabs}
+          dict={dict}
+          lang={lang}
         />
 
         {/* Contenu principal */}
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto p-6 max-w-4xl">
+            {/* Language Switcher */}
+            <div className="flex justify-end mb-4">
+              <LanguageSwitcher lang={lang} />
+            </div>
+
             <div className="mb-8">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                Paramètres
+                {dict.settings.title}
               </h1>
               <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Gérez les paramètres de votre compte et vos préférences
+                {dict.settings.subtitle}
               </p>
             </div>
 
@@ -81,15 +111,15 @@ export default function SettingsPage() {
 
             {/* Contenu des onglets */}
             <div className="space-y-6">
-              {activeTab === "general" && <GeneralTab user={user} />}
-              {activeTab === "security" && <SecurityTab />}
-              {activeTab === "verification" && <VerificationTab user={user} />}
-              {activeTab === "notifications" && <NotificationsTab />}
-              {activeTab === "preferences" && <PreferencesTab />}
-              {activeTab === "billing" && <BillingTab />}
-              {activeTab === "skills" && <SkillsTab user={user} />}
-              {activeTab === "portfolio" && <PortfolioTab user={user} />}
-              {activeTab === "account" && <AccountTab />} {/* ← Nouvel onglet */}
+              {activeTab === "general" && <GeneralTab user={user} dict={dict} lang={lang} />}
+              {activeTab === "security" && <SecurityTab dict={dict} lang={lang} />}
+              {activeTab === "verification" && <VerificationTab user={user} dict={dict} lang={lang} />}
+              {activeTab === "notifications" && <NotificationsTab dict={dict} lang={lang} />}
+              {activeTab === "preferences" && <PreferencesTab dict={dict} lang={lang} />}
+              {activeTab === "billing" && <BillingTab dict={dict} lang={lang} />}
+              {activeTab === "skills" && <SkillsTab user={user} dict={dict} lang={lang} />}
+              {activeTab === "portfolio" && <PortfolioTab user={user} dict={dict} lang={lang} />}
+              {activeTab === "account" && <AccountTab dict={dict} lang={lang} />}
             </div>
           </div>
         </main>
