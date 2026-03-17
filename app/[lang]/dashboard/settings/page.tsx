@@ -117,7 +117,7 @@ export default function SettingsPage() {
               {activeTab === "notifications" && <NotificationsTab dict={dict} lang={lang} />}
               {activeTab === "preferences" && <PreferencesTab dict={dict} lang={lang} />}
               {activeTab === "billing" && <BillingTab dict={dict} lang={lang} />}
-              {activeTab === "skills" && <SkillsTab user={user} dict={dict} lang={lang} />}
+              {activeTab === "skills" && <SkillsTab user={user} dict={dict.onboardingPage.skills} lang={lang} />}
               {activeTab === "portfolio" && <PortfolioTab user={user} dict={dict} lang={lang} />}
               {activeTab === "account" && <AccountTab dict={dict} lang={lang} />}
             </div>
