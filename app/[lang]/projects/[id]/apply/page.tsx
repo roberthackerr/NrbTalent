@@ -51,7 +51,7 @@ interface ApplicationData {
     type: string
   }>
   applyMode: 'individual' | 'team'
-  teamId?: string
+  teamId?: string | null  // Add null to the type
 }
 
 interface ProjectData {
@@ -155,7 +155,7 @@ export default function ApplyPage() {
   const [showTeamDetails, setShowTeamDetails] = useState(false)
 
   // Vérification d'authentification
-  if (!session || (session.user?.role !== "freelance" && session.user?.role !== "freelancer")) {
+  if (!session || (session.user?.role !== "freelance" || session.user?.role !== "freelancer")) {
     return <AccessDenied />
   }
 
@@ -245,21 +245,32 @@ export default function ApplyPage() {
   }
 
   // Gérer le changement de mode d'application
-  const handleModeChange = async (mode: 'individual' | 'team') => {
-    setApplyMode(mode)
-    setFormData(prev => ({ ...prev, applyMode: mode }))
-    
-    if (mode === 'team' && selectedTeam) {
-      await loadTeamDetails(selectedTeam)
-    }
+// Gérer le changement de mode d'application
+const handleModeChange = async (mode: 'individual' | 'team') => {
+  setApplyMode(mode)
+  setFormData(prev => ({ 
+    ...prev, 
+    applyMode: mode,
+    // Clear teamId when switching to individual, ensure it's set when switching to team
+    teamId: mode === 'team' ? selectedTeam : undefined 
+  }))
+  
+  if (mode === 'team' && selectedTeam) {
+    await loadTeamDetails(selectedTeam)
   }
+}
 
   // Gérer le changement d'équipe sélectionnée
-  const handleTeamChange = async (teamId: string) => {
-    setSelectedTeam(teamId)
-    setFormData(prev => ({ ...prev, teamId }))
-    await loadTeamDetails(teamId)
-  }
+// Gérer le changement d'équipe sélectionnée
+const handleTeamChange = async (teamId: string) => {
+  setSelectedTeam(teamId)
+  setFormData(prev => ({ 
+    ...prev, 
+    teamId: teamId,  // Make sure this is set
+    applyMode: 'team' // Ensure mode is set to team
+  }))
+  await loadTeamDetails(teamId)
+}
 
   // Gérer les changements de formulaire
   const handleInputChange = (field: keyof ApplicationData, value: any) => {
@@ -421,52 +432,75 @@ ${freelancerData?.name || 'Your Name'}`,
   }
 
   // Soumettre l'application
-  const handleSubmit = async () => {
-    if (!validateStep(3) || !projectData) return
+  // Soumettre l'application
+const handleSubmit = async () => {
+  if (!validateStep(3) || !projectData) return
 
-    setIsProcessing(true)
-    try {
-      const response = await fetch(`/api/projects/${id}/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Application failed')
-      }
-
-      // Succès
-      toast({
-        title: 'Application Submitted!',
-        description: applyMode === 'team' 
-          ? `Your team application has been sent successfully. You can track it in your team dashboard.`
-          : `Your individual application has been sent successfully.`,
-      })
-      
-      // Rediriger
-      if (applyMode === 'team' && selectedTeam) {
-        router.push(`/teams/${selectedTeam}/applications`)
-      } else {
-        router.push(`/projects/${id}?message=application_success`)
-      }
-      
-    } catch (error) {
-      setErrors(prev => ({ ...prev, submit: (error as Error).message }))
-      toast({
-        title: 'Error',
-        description: (error as Error).message,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsProcessing(false)
+  setIsProcessing(true)
+  try {
+    // Prepare the request body
+    const requestBody: any = {
+      coverLetter: formData.coverLetter,
+      proposedBudget: formData.proposedBudget,
+      estimatedDuration: formData.estimatedDuration,
+      attachments: formData.attachments,
+      applyMode: applyMode
     }
-  }
 
+    // IMPORTANT: Add teamId if applying as team
+    if (applyMode === 'team') {
+      if (!selectedTeam) {
+        setErrors(prev => ({ ...prev, team: 'Please select a team' }))
+        setIsProcessing(false)
+        return
+      }
+      requestBody.teamId = selectedTeam
+    }
+
+    console.log('Submitting application:', requestBody) // Debug log
+
+    const response = await fetch(`/api/projects/${id}/apply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    const data = await response.json()
+    
+    if (!response.ok) {
+      console.error('Application error:', data) // Debug log
+      throw new Error(data.error || data.details?.[0]?.message || 'Application failed')
+    }
+
+    // Succès
+    toast({
+      title: 'Application Submitted!',
+      description: applyMode === 'team' 
+        ? `Your team application has been sent successfully. You can track it in your team dashboard.`
+        : `Your individual application has been sent successfully.`,
+    })
+    
+    // Rediriger
+    if (applyMode === 'team' && selectedTeam) {
+      router.push(`/teams/${selectedTeam}/applications`)
+    } else {
+      router.push(`/projects/${id}?message=application_success`)
+    }
+    
+  } catch (error) {
+    console.error('Submission error:', error)
+    setErrors(prev => ({ ...prev, submit: (error as Error).message }))
+    toast({
+      title: 'Error',
+      description: (error as Error).message,
+      variant: 'destructive',
+    })
+  } finally {
+    setIsProcessing(false)
+  }
+}
   // Calculer l'indicateur de budget
   const getBudgetIndicator = (budget: number) => {
     if (!projectData?.budget) return { position: 0, color: 'bg-gray-400', label: 'Loading...' }
@@ -696,12 +730,16 @@ ${freelancerData?.name || 'Your Name'}`,
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Select Team
                     </label>
-                    <div className="relative">
-                      <select
-                        value={selectedTeam || ''}
-                        onChange={(e) => handleTeamChange(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
-                      >
+<select
+  value={selectedTeam || ''}
+  onChange={(e) => {
+    const teamId = e.target.value;
+    setSelectedTeam(teamId);
+    setFormData(prev => ({ ...prev, teamId: teamId || null })); // Use null if empty
+    loadTeamDetails(teamId);
+  }}
+  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+>
                         {availableTeams.map((team) => (
                           <option key={team.id} value={team.id}>
                             {team.name} ({team.memberCount} members)
