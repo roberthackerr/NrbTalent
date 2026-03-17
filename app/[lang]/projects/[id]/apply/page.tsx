@@ -730,6 +730,7 @@ const handleSubmit = async () => {
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Select Team
                     </label>
+                    <div className="relative">
 <select
   value={selectedTeam || ''}
   onChange={(e) => {
