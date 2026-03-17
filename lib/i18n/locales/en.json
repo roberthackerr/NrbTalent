@@ -701,5 +701,21 @@
       "billing": "Billing",
       "account": "Account"
     }
+  },
+   "preferences": {
+    "language": "Interface Language",
+    "languageDescription": "Choose your preferred language for the interface",
+    "selectedLanguage": "Selected Language",
+    "originalLanguage": "Original Language (English)",
+    "translationActive": "Translation Active",
+    "originalContent": "Content displays in its original language",
+    "translatedTo": "Translated to",
+    "appearance": "Appearance",
+    "appearanceDescription": "Customize the interface appearance",
+    "light": "Light Mode",
+    "dark": "Dark Mode",
+    "system": "System",
+    "toggle": "Toggle",
+    "themePreference": "Theme Preference"
   }
 }

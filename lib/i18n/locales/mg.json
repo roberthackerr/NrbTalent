@@ -440,5 +440,20 @@
       "billing": "Fandoavana",
       "account": "Kaonty"
     }
+  },"preferences": {
+    "language": "Fitenin'ny interface",
+    "languageDescription": "Fidio ny fiteny tianao ho an'ny interface",
+    "selectedLanguage": "Fiteny voafidy",
+    "originalLanguage": "Fiteny tany am-boalohany (Français)",
+    "translationActive": "Dikan-teny mavitrika",
+    "originalContent": "Miseho amin'ny fiteniny tany am-boalohany ny votoatiny",
+    "translatedTo": "Adika amin'ny",
+    "appearance": "Endrika",
+    "appearanceDescription": "Manamboara ny endriky ny interface",
+    "light": "Mazava",
+    "dark": "Maizina",
+    "system": "Rafitra",
+    "toggle": "Ovay",
+    "themePreference": "Safidin'ny loko"
   }
 }

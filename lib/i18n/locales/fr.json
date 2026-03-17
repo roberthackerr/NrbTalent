@@ -698,5 +698,22 @@
       "billing": "Facturation",
       "account": "Compte"
     }
+  },
+  "preferences": {
+    "language": "Langue de l'interface",
+    "languageDescription": "Choisissez votre langue préférée pour l'interface",
+    "selectedLanguage": "Langue sélectionnée",
+    "originalLanguage": "Langue originale (Français)",
+    "translationActive": "Traduction active",
+    "originalContent": "Le contenu s'affiche dans sa langue d'origine",
+    "translatedTo": "Traduction en",
+    "appearance": "Apparence",
+    "appearanceDescription": "Personnalisez l'apparence de l'interface",
+    "light": "Mode Clair",
+    "dark": "Mode Sombre",
+    "system": "Système",
+    "toggle": "Basculer",
+    "themePreference": "Préférence de thème"
   }
+
 }

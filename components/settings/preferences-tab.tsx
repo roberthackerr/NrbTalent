@@ -7,52 +7,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Globe, Palette, Sun, Moon, Languages, Check } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
+import { useParams, usePathname, useRouter } from 'next/navigation'
+import type { Locale } from '@/lib/i18n/config'
+import { locales, localeNames, localeFlags } from '@/lib/i18n/config'
 
-// Configuration des langues disponibles
-const LANGUAGES = [
-  { code: 'fr', name: 'Français', nativeName: 'Français', flag: '🇫🇷' },
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
-]
+// Liste des langues disponibles (maintenant basée sur la config i18n)
+const LANGUAGES = locales.map(code => ({
+  code,
+  name: localeNames[code as Locale],
+  nativeName: localeNames[code as Locale],
+  flag: localeFlags[code as Locale]
+}))
 
-export function PreferencesTab() {
+interface PreferencesTabProps {
+  dict: any
+  lang: Locale
+}
+
+export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
   const { theme, setTheme, systemTheme } = useTheme()
+  const router = useRouter()
+  const pathname = usePathname()
+  const params = useParams()
+  
   const [mounted, setMounted] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState('fr')
+  const [selectedLanguage, setSelectedLanguage] = useState<Locale>(lang)
 
   useEffect(() => {
     setMounted(true)
-    
-    // Charger le script Google Translate
-    const loadGoogleTranslate = () => {
-      if (document.getElementById('google-translate-script')) return
-      
-      const script = document.createElement('script')
-      script.id = 'google-translate-script'
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-      script.async = true
-      document.head.appendChild(script)
-
-      window.googleTranslateElementInit = () => {
-        new (window as any).google.translate.TranslateElement({
-          pageLanguage: 'fr',
-          includedLanguages: LANGUAGES.map(lang => lang.code).join(','),
-          layout: (window as any).google.translate.TranslateElement.InlineLayout.HORIZONTAL,
-          autoDisplay: false,
-          multilanguagePage: true
-        }, 'google_translate_element')
-      }
-    }
-
-    loadGoogleTranslate()
-  }, [])
+    setSelectedLanguage(lang)
+  }, [lang])
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
@@ -65,31 +49,30 @@ export function PreferencesTab() {
   }
 
   const handleLanguageSelect = (langCode: string) => {
-    setSelectedLanguage(langCode)
+    const newLang = langCode as Locale
+    setSelectedLanguage(newLang)
     
-    // Déclencher la traduction Google
-    setTimeout(() => {
-      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement
-      if (select) {
-        select.value = langCode
-        select.dispatchEvent(new Event('change', { bubbles: true }))
-      }
-    }, 100)
+    // Changer la langue dans l'URL
+    const segments = pathname.split('/')
+    segments[1] = newLang
+    const newPathname = segments.join('/')
+    router.push(newPathname)
   }
 
-  const resetTranslation = () => {
-    setSelectedLanguage('fr')
-    // Réinitialiser à la langue originale
-    const select = document.querySelector('.goog-te-combo') as HTMLSelectElement
-    if (select) {
-      select.value = 'fr'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
-    }
+  const getThemeText = () => {
+    if (!mounted) return dict?.preferences?.light || "Mode Clair"
+    return theme === "dark" 
+      ? dict?.preferences?.dark || "Mode Sombre" 
+      : dict?.preferences?.light || "Mode Clair"
+  }
+
+  const getThemeDescription = () => {
+    return dict?.preferences?.toggle || "Basculer entre le mode clair et sombre"
   }
 
   return (
     <div className="space-y-6">
-      {/* Section Traduction */}
+      {/* Section Langue */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg">
@@ -97,31 +80,20 @@ export function PreferencesTab() {
               <Languages className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <div>Traduction de la page</div>
+              <div>{dict?.preferences?.language || "Langue de l'interface"}</div>
               <CardDescription className="text-sm mt-1">
-                Traduisez l'ensemble du contenu dans votre langue préférée
+                {dict?.preferences?.languageDescription || "Choisissez votre langue préférée pour l'interface"}
               </CardDescription>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Widget Google Translate masqué mais fonctionnel */}
-          <div className="hidden">
-            <div id="google_translate_element"></div>
-          </div>
-
           {/* Sélecteur de langue personnalisé */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Langue sélectionnée</Label>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetTranslation}
-                className="text-xs h-8"
-              >
-                Réinitialiser
-              </Button>
+              <Label className="text-sm font-medium">
+                {dict?.preferences?.selectedLanguage || "Langue sélectionnée"}
+              </Label>
             </div>
             
             {/* Grille des langues */}
@@ -146,9 +118,6 @@ export function PreferencesTab() {
                   <div className="text-xs font-medium leading-tight">
                     {language.nativeName}
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                    {language.name}
-                  </div>
                 </Button>
               ))}
             </div>
@@ -161,15 +130,25 @@ export function PreferencesTab() {
             }`} />
             <div className="flex-1">
               <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                {selectedLanguage === 'fr' ? 'Langue originale (Français)' : 'Traduction active'}
+                {selectedLanguage === 'fr' 
+                  ? (dict?.preferences?.originalLanguage || "Langue originale (Français)")
+                  : (dict?.preferences?.translationActive || "Traduction active")}
               </p>
               <p className="text-xs text-slate-600 dark:text-slate-400">
                 {selectedLanguage === 'fr' 
-                  ? 'Le contenu s\'affiche dans sa langue d\'origine' 
-                  : `Traduction en ${LANGUAGES.find(l => l.code === selectedLanguage)?.nativeName}`
+                  ? (dict?.preferences?.originalContent || "Le contenu s'affiche dans sa langue d'origine")
+                  : `${dict?.preferences?.translatedTo || "Traduction en"} ${LANGUAGES.find(l => l.code === selectedLanguage)?.nativeName}`
                 }
               </p>
             </div>
+          </div>
+
+          {/* Note sur la traduction */}
+          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <p className="text-xs text-amber-800 dark:text-amber-400">
+              <strong>Note:</strong> Le changement de langue affecte toute l'interface. 
+              Les projets et les messages des clients resteront dans leur langue d'origine.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -182,9 +161,9 @@ export function PreferencesTab() {
               <Palette className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <div>Apparence</div>
+              <div>{dict?.preferences?.appearance || "Apparence"}</div>
               <CardDescription className="text-sm mt-1">
-                Personnalisez l'apparence de l'interface
+                {dict?.preferences?.appearanceDescription || "Personnalisez l'apparence de l'interface"}
               </CardDescription>
             </div>
           </CardTitle>
@@ -198,10 +177,10 @@ export function PreferencesTab() {
               </div>
               <div>
                 <p className="font-medium text-slate-900 dark:text-slate-100">
-                  {theme === "dark" ? "Mode Sombre" : "Mode Clair"}
+                  {getThemeText()}
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Basculer entre le mode clair et sombre
+                  {getThemeDescription()}
                 </p>
               </div>
             </div>
@@ -211,14 +190,16 @@ export function PreferencesTab() {
               onClick={toggleTheme}
               className="shadow-sm"
             >
-              Basculer
+              {dict?.preferences?.toggle || "Basculer"}
             </Button>
           </div>
 
           {/* Sélecteur de thème avancé */}
           {mounted && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Préférence de thème</Label>
+              <Label className="text-sm font-medium">
+                {dict?.preferences?.themePreference || "Préférence de thème"}
+              </Label>
               <div className="grid grid-cols-3 gap-3">
                 <Button
                   variant={theme === "light" ? "default" : "outline"}
@@ -226,7 +207,7 @@ export function PreferencesTab() {
                   onClick={() => setTheme("light")}
                 >
                   <Sun className="h-4 w-4" />
-                  <span className="text-xs">Clair</span>
+                  <span className="text-xs">{dict?.preferences?.light || "Clair"}</span>
                 </Button>
                 <Button
                   variant={theme === "dark" ? "default" : "outline"}
@@ -234,7 +215,7 @@ export function PreferencesTab() {
                   onClick={() => setTheme("dark")}
                 >
                   <Moon className="h-4 w-4" />
-                  <span className="text-xs">Sombre</span>
+                  <span className="text-xs">{dict?.preferences?.dark || "Sombre"}</span>
                 </Button>
                 <Button
                   variant={theme === "system" ? "default" : "outline"}
@@ -242,69 +223,13 @@ export function PreferencesTab() {
                   onClick={() => setTheme("system")}
                 >
                   <Globe className="h-4 w-4" />
-                  <span className="text-xs">Système</span>
+                  <span className="text-xs">{dict?.preferences?.system || "Système"}</span>
                 </Button>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
-
-      <style jsx global>{`
-        /* Personnalisation du widget Google Translate */
-        .goog-te-banner-frame {
-          display: none !important;
-        }
-        .goog-te-menu-value {
-          display: none !important;
-        }
-        .goog-te-gadget {
-          font-size: 0 !important;
-        }
-        .goog-te-gadget .goog-te-combo {
-          margin: 0 !important;
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          background: white;
-          color: #374151;
-          font-size: 14px;
-        }
-        .dark .goog-te-gadget .goog-te-combo {
-          background: #1f2937;
-          border-color: #4b5563;
-          color: #f9fafb;
-        }
-        .goog-logo-link {
-          display: none !important;
-        }
-        .goog-te-gadget {
-          color: transparent !important;
-        }
-        
-        /* Styles pour le contenu traduit */
-        body {
-          top: 0 !important;
-        }
-        .goog-tooltip {
-          display: none !important;
-        }
-        .goog-tooltip:hover {
-          display: none !important;
-        }
-        .goog-text-highlight {
-          background-color: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-      `}</style>
     </div>
   )
-}
-
-// Déclaration pour TypeScript
-declare global {
-  interface Window {
-    googleTranslateElementInit: () => void;
-  }
 }
