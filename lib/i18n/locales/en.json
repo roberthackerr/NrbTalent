@@ -685,4 +685,21 @@
     "affiliate": "Affiliate program",
     "followUs": "Follow us"
   }
+  ,
+  "settings": {
+    "loading": "Loading...",
+    "title": "Settings",
+    "subtitle": "Manage your account settings and preferences",
+    "tabs": {
+      "general": "General",
+      "skills": "Skills",
+      "portfolio": "Portfolio",
+      "security": "Security",
+      "verification": "Verification",
+      "notifications": "Notifications",
+      "preferences": "Preferences",
+      "billing": "Billing",
+      "account": "Account"
+    }
+  }
 }
