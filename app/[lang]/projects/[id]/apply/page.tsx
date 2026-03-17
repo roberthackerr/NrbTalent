@@ -155,7 +155,7 @@ export default function ApplyPage() {
   const [showTeamDetails, setShowTeamDetails] = useState(false)
 
   // Vérification d'authentification
-  if (!session || (session.user?.role !== "freelance" || session.user?.role !== "freelancer")) {
+  if (!session || (session.user?.role !== "freelance" && session.user?.role !== "freelancer")) {
     return <AccessDenied />
   }
 
