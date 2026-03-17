@@ -644,15 +644,16 @@ export default function ProjectDetailsPage() {
                         className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-bold hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg mb-4 flex items-center justify-center gap-3"
                       >
                         <Users className="w-5 h-5" />
-                        Voir les propositions individuelles ({projectData.applicationCount})
+                        Voir les propositions  ({projectData.applicationCount})
                       </Link>
-                       <Link
+                      {IsProjectOwner &&  ( <Link
                         href={`/projects/${projectData._id}/applications`}
                         className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-bold hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg mb-4 flex items-center justify-center gap-3"
                       >
                         <Users className="w-5 h-5" />
-                        Voir les propositions d'équipes ({projectData.applicationCount})
-                      </Link>
+                        Voir les propositions d'équipes 
+                      </Link> )}
+             
                     <div className="text-center text-sm text-slate-600 dark:text-slate-400 mb-6">
                       {projectData.applicationCount} freelancer(s) ont déjà postulé
                     </div>
