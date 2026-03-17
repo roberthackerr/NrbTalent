@@ -95,6 +95,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { AIArchitectBadge, AIArchitectMiniBadge } from '@/components/projects/AIArchitectBadge'
+import { useSession } from 'next-auth/react'
 
 interface Project {
   _id: string
@@ -139,6 +141,7 @@ interface ProjectStats {
 }
 
 export default function ClientProjectsPage() {
+  const {data:session }=useSession()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -1249,6 +1252,9 @@ export default function ClientProjectsPage() {
                                     <Eye className="h-4 w-4" />
                                     Voir détails
                                   </Link>
+                                </DropdownMenuItem>
+                                     <DropdownMenuItem asChild>
+                                  <AIArchitectBadge projectId={project._id} clientId={session?.user?.id} /> 
                                 </DropdownMenuItem>
 
                                 {/* LIEN CLAIR VERS LES PROPOSITIONS */}
