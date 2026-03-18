@@ -1,8 +1,7 @@
-// app/[lang]/auth/2fa/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,18 +16,25 @@ import type { Locale } from '@/lib/i18n/config'
 export default function TwoFactorPage() {
   const router = useRouter()
   const params = useParams()
-  const searchParams = useSearchParams()
   const lang = params.lang as Locale
   
   const [dict, setDict] = useState<any>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isMounted, setIsMounted] = useState(false)
 
-  const email = sessionStorage.getItem('2fa_email') || ''
-  const password = sessionStorage.getItem('2fa_password')|| ''
-  const urlLang = sessionStorage.getItem('2fa_lang') || lang
+  // Nettoyer à la destruction du composant
+  useEffect(() => {
+    return () => {
+      // Nettoyage de sécurité quand le composant est démonté
+      sessionStorage.removeItem('2fa_email')
+      sessionStorage.removeItem('2fa_password')
+      sessionStorage.removeItem('2fa_lang')
+    }
+  }, [])
 
   useEffect(() => {
     setIsMounted(true)
@@ -36,10 +42,29 @@ export default function TwoFactorPage() {
   }, [lang])
 
   useEffect(() => {
-    if (!email || !password) {
+    // Récupérer les informations depuis le sessionStorage
+    const storedEmail = sessionStorage.getItem('2fa_email')
+    const storedPassword = sessionStorage.getItem('2fa_password')
+    const storedLang = sessionStorage.getItem('2fa_lang')
+
+    if (!storedEmail || !storedPassword) {
       router.push(`/${lang}/auth/signin`)
+      return
     }
-  }, [email, password, router, lang])
+
+    setEmail(storedEmail)
+    setPassword(storedPassword)
+    
+    // Note: On ne nettoie PAS ici pour permettre le rechargement de la page
+    // Le nettoyage sera fait après la soumission du formulaire
+  }, [lang, router])
+
+  const cleanupAndRedirect = (redirectTo: string) => {
+    sessionStorage.removeItem('2fa_email')
+    sessionStorage.removeItem('2fa_password')
+    sessionStorage.removeItem('2fa_lang')
+    router.push(redirectTo)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,29 +76,36 @@ export default function TwoFactorPage() {
         email,
         password,
         twoFactorToken: token,
-        lang: urlLang,
+        lang,
         redirect: false,
       })
 
       if (result?.error) {
-        if (result.error === '2FA_REQUIRED') {
-          setError(dict?.twoFactor?.codeRequired || 'Code 2FA requis')
-        } else if (result.error === 'Code 2FA invalide' || result.error.includes('invalide')) {
+        if (result.error === 'Code 2FA invalide') {
           setError(dict?.twoFactor?.invalidCode || 'Code invalide. Veuillez réessayer.')
           setToken('')
+          // On garde les données pour réessayer
         } else {
           setError(result.error)
+          // Pour les autres erreurs, on nettoie et on redirige
+          cleanupAndRedirect(`/${lang}/auth/signin`)
         }
       } else {
+        // ✅ SUCCÈS !
         toast.success(dict?.twoFactor?.success || 'Connexion réussie !')
-
-        router.push(`/${lang}`)
-                               sessionStorage.removeItem('2fa_email')  ;
-                        sessionStorage.removeItem('2fa_password')  ;
-                        sessionStorage.removeItem('2fa_lang')  ;
+        
+        // ✅ NETTOYAGE IMMÉDIAT après succès
+        sessionStorage.removeItem('2fa_email')
+        sessionStorage.removeItem('2fa_password')
+        sessionStorage.removeItem('2fa_lang')
+        
+        router.push(`/${lang}/dashboard`)
       }
     } catch (error) {
+      console.error('2FA error:', error)
       setError(dict?.twoFactor?.error || 'Une erreur est survenue')
+      // En cas d'erreur critique, on nettoie aussi
+      cleanupAndRedirect(`/${lang}/auth/signin`)
     } finally {
       setLoading(false)
     }
@@ -161,7 +193,7 @@ export default function TwoFactorPage() {
             <div className="text-center">
               <button
                 type="button"
-                onClick={() => router.push(`/${lang}/auth/signin`)}
+                onClick={() => cleanupAndRedirect(`/${lang}/auth/signin`)}
                 className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
               >
                 ← {dict?.twoFactor?.backToLogin || 'Retour à la connexion'}
