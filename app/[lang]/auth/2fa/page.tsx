@@ -66,10 +66,11 @@ export default function TwoFactorPage() {
         }
       } else {
         toast.success(dict?.twoFactor?.success || 'Connexion réussie !')
-                       sessionStorage.removeItem('2fa_email')  ;
+
+        router.push(`/${lang}`)
+                               sessionStorage.removeItem('2fa_email')  ;
                         sessionStorage.removeItem('2fa_password')  ;
                         sessionStorage.removeItem('2fa_lang')  ;
-        router.push(`/${lang}`)
       }
     } catch (error) {
       setError(dict?.twoFactor?.error || 'Une erreur est survenue')
