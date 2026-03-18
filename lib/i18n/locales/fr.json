@@ -714,6 +714,38 @@
     "system": "Système",
     "toggle": "Basculer",
     "themePreference": "Préférence de thème"
+  },
+    "hero": {
+    "badge": "Plateforme #1 pour les freelances en 2025",
+    "title": "Trouvez votre prochain",
+    "titleHighlight": "projet freelance",
+    "subtitle": "Connectez-vous avec les meilleurs talents et clients grâce à notre",
+    "subtitleHighlight": "intelligence artificielle avancée",
+    "searchPlaceholder": "Rechercher React, Design, Marketing, Développement...",
+    "searchButton": "Rechercher",
+    "stats": {
+      "projects": "Projets réalisés",
+      "projectsValue": "50K+",
+      "freelancers": "Freelances experts",
+      "freelancersValue": "15K+",
+      "satisfaction": "Taux de satisfaction",
+      "satisfactionValue": "98%",
+      "responseTime": "Temps moyen de réponse",
+      "responseTimeValue": "24h"
+    },
+    "actions": {
+      "startFree": "Commencer gratuitement",
+      "viewProjects": "Voir les projets",
+      "recommendedProjects": "Projets recommandés",
+      "createService": "Créer un service",
+      "postProject": "Publier un projet",
+      "findTalent": "Trouver un talent"
+    },
+    "calendar": {
+      "title": "Nouveau : Votre Calendrier Intelligent",
+      "description": "Gérez vos rendez-vous et projets en un seul endroit",
+      "button": "Découvrir"
+    }
   }
 
 }

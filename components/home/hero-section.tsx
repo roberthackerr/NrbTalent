@@ -4,14 +4,50 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar } from "lucide-react"
 import { useState } from "react"
+import { TeamAccessButton } from '@/components/ui/team-access-button';
 
 interface HeroSectionProps {
+  lang: 'fr' | 'en' | 'mg'
   user: any
   onSearch: (query: string) => void
-  onCalendarClick?: () => void // Nouveau prop pour le calendrier
+  onCalendarClick?: () => void
+  dict: {
+    hero: {
+      badge: string
+      title: string
+      titleHighlight: string
+      subtitle: string
+      subtitleHighlight: string
+      searchPlaceholder: string
+      searchButton: string
+      stats: {
+        projects: string
+        projectsValue: string
+        freelancers: string
+        freelancersValue: string
+        satisfaction: string
+        satisfactionValue: string
+        responseTime: string
+        responseTimeValue: string
+      }
+      actions: {
+        startFree: string
+        viewProjects: string
+        recommendedProjects: string
+        createService: string
+        postProject: string
+        findTalent: string
+      }
+      calendar: {
+        title: string
+        description: string
+        button: string
+      }
+    }
+  }
 }
 
-export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProps) {
+export function HeroSection({ lang, user, onSearch, onCalendarClick, dict }: HeroSectionProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
   const handleSearch = (e: React.FormEvent) => {
@@ -30,22 +66,22 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8">
             <Zap className="h-4 w-4 text-yellow-300" />
             <span className="text-sm font-medium text-white">
-              Plateforme #1 pour les freelances en 2025
+              {dict.hero.badge}
             </span>
           </div>
 
           {/* Titre principal */}
           <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Trouvez votre prochain
+            {dict.hero.title}
             <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-              projet freelance
+              {dict.hero.titleHighlight}
             </span>
           </h1>
 
           {/* Sous-titre */}
           <p className="text-xl lg:text-2xl text-blue-100 mb-8 leading-relaxed max-w-3xl mx-auto">
-            Connectez-vous avec les meilleurs talents et clients grâce à notre 
-            <span className="font-semibold text-white"> intelligence artificielle avancée</span>
+            {dict.hero.subtitle}
+            <span className="font-semibold text-white"> {dict.hero.subtitleHighlight}</span>
           </p>
 
           {/* Barre de recherche */}
@@ -54,7 +90,7 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 type="text"
-                placeholder="Rechercher React, Design, Marketing, Développement..."
+                placeholder={dict.hero.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-32 py-6 text-lg border-0 shadow-2xl rounded-2xl bg-white/95 backdrop-blur-sm focus:bg-white"
@@ -65,7 +101,7 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
               >
                 <Search className="h-4 w-4 mr-2" />
-                Rechercher
+                {dict.hero.searchButton}
               </Button>
             </div>
           </form>
@@ -73,20 +109,20 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
           {/* Stats rapides */}
           <div className="flex flex-wrap justify-center gap-8 mb-8">
             <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">50K+</div>
-              <div className="text-blue-200 text-sm">Projets réalisés</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white">{dict.hero.stats.projectsValue}</div>
+              <div className="text-blue-200 text-sm">{dict.hero.stats.projects}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">15K+</div>
-              <div className="text-blue-200 text-sm">Freelances experts</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white">{dict.hero.stats.freelancersValue}</div>
+              <div className="text-blue-200 text-sm">{dict.hero.stats.freelancers}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">98%</div>
-              <div className="text-blue-200 text-sm">Taux de satisfaction</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white">{dict.hero.stats.satisfactionValue}</div>
+              <div className="text-blue-200 text-sm">{dict.hero.stats.satisfaction}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">24h</div>
-              <div className="text-blue-200 text-sm">Temps moyen de réponse</div>
+              <div className="text-2xl lg:text-3xl font-bold text-white">{dict.hero.stats.responseTimeValue}</div>
+              <div className="text-blue-200 text-sm">{dict.hero.stats.responseTime}</div>
             </div>
           </div>
 
@@ -96,30 +132,30 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
               <>
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-2xl">
                   <Rocket className="h-5 w-5 mr-2" />
-                  Commencer gratuitement
+                  {dict.hero.actions.startFree}
                 </Button>
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold">
-                  Voir les projets
+                  {dict.hero.actions.viewProjects}
                 </Button>
               </>
             ) : user.role === "freelance" ? (
               <>
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-2xl">
                   <TrendingUp className="h-5 w-5 mr-2" />
-                  Projets recommandés
+                  {dict.hero.actions.recommendedProjects}
                 </Button>
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold">
-                  Créer un service
+                  {dict.hero.actions.createService}
                 </Button>
               </>
             ) : (
               <>
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-2xl">
                   <Shield className="h-5 w-5 mr-2" />
-                  Publier un projet
+                  {dict.hero.actions.postProject}
                 </Button>
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold">
-                  Trouver un talent
+                  {dict.hero.actions.findTalent}
                 </Button>
               </>
             )}
@@ -135,10 +171,10 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
                   </div>
                   <div className="text-left">
                     <p className="text-white font-semibold text-sm">
-                      Nouveau : Votre Calendrier Intelligent
+                      {dict.hero.calendar.title}
                     </p>
                     <p className="text-blue-200 text-xs">
-                      Gérez vos rendez-vous et projets en un seul endroit
+                      {dict.hero.calendar.description}
                     </p>
                   </div>
                 </div>
@@ -147,7 +183,7 @@ export function HeroSection({ user, onSearch, onCalendarClick }: HeroSectionProp
                   size="sm"
                   className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/25"
                 >
-                  Découvrir
+                  {dict.hero.calendar.button}
                 </Button>
               </div>
             </div>

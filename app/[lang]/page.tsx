@@ -296,9 +296,14 @@ export default function HomePage() {
       <Navigation />
       <main className="pt-16">
 
-        <HeroSection user={session?.user} onSearch={setSearchQuery}
-          onCalendarClick={() => setShowCalendar(true)} onIDEClick={() => setShowIDE(true)}
-          dict={dict} lang={lang} />
+            <HeroSection 
+        user={session?.user} 
+        onSearch={setSearchQuery}
+        onCalendarClick={() => setShowCalendar(true)} 
+        onIDEClick={() => setShowIDE(true)}
+        dict={dict} 
+        lang={lang} 
+      />
         <StatsOverview dict={dict} />
         <QuickActions user={session?.user} onIDEClick={() => setShowIDE(true)} dict={dict} />
 

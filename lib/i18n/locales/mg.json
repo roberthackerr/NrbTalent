@@ -455,5 +455,37 @@
     "system": "Rafitra",
     "toggle": "Ovay",
     "themePreference": "Safidin'ny loko"
+  },
+   "hero": {
+    "badge": "Plateforme #1 ho an'ny freelance amin'ny 2025",
+    "title": "Tadiavo ny manaraka",
+    "titleHighlight": "tetikasa freelance",
+    "subtitle": "Mifandraisa amin'ireo talenta sy mpanjifa tsara indrindra amin'ny alalan'ny",
+    "subtitleHighlight": "fahaiza-manao artifisialy mandroso",
+    "searchPlaceholder": "Karohy React, Design, Marketing, Développement...",
+    "searchButton": "Karohy",
+    "stats": {
+      "projects": "Tetikasa vita",
+      "projectsValue": "50K+",
+      "freelancers": "Freelance manam-pahaizana",
+      "freelancersValue": "15K+",
+      "satisfaction": "Tahan'ny fahafaham-po",
+      "satisfactionValue": "98%",
+      "responseTime": "Fotoana valiana antonony",
+      "responseTimeValue": "24h"
+    },
+    "actions": {
+      "startFree": "Manomboha maimaim-poana",
+      "viewProjects": "Hijery tetikasa",
+      "recommendedProjects": "Tetikasa atolotra",
+      "createService": "Mamorona serivisy",
+      "postProject": "Mametraka tetikasa",
+      "findTalent": "Mitady talenta"
+    },
+    "calendar": {
+      "title": "Vaovao : Ny Kalandrienao manan-tsaina",
+      "description": "Karibo ny fotoana sy tetikasanao amin'ny toerana iray",
+      "button": "Hahafantatra"
+    }
   }
 }

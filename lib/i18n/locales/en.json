@@ -717,5 +717,37 @@
     "system": "System",
     "toggle": "Toggle",
     "themePreference": "Theme Preference"
+  },
+  "hero": {
+    "badge": "#1 Freelance Platform in 2025",
+    "title": "Find your next",
+    "titleHighlight": "freelance project",
+    "subtitle": "Connect with the best talents and clients using our",
+    "subtitleHighlight": "advanced artificial intelligence",
+    "searchPlaceholder": "Search React, Design, Marketing, Development...",
+    "searchButton": "Search",
+    "stats": {
+      "projects": "Projects completed",
+      "projectsValue": "50K+",
+      "freelancers": "Expert freelancers",
+      "freelancersValue": "15K+",
+      "satisfaction": "Satisfaction rate",
+      "satisfactionValue": "98%",
+      "responseTime": "Avg. response time",
+      "responseTimeValue": "24h"
+    },
+    "actions": {
+      "startFree": "Start for free",
+      "viewProjects": "View projects",
+      "recommendedProjects": "Recommended projects",
+      "createService": "Create a service",
+      "postProject": "Post a project",
+      "findTalent": "Find talent"
+    },
+    "calendar": {
+      "title": "New: Your Smart Calendar",
+      "description": "Manage your appointments and projects in one place",
+      "button": "Discover"
+    }
   }
 }
