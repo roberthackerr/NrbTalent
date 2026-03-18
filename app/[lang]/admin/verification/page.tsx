@@ -202,65 +202,76 @@ export default function AdminVerificationPage() {
     }
   }
 
-  const viewDocument = (url: string) => {
-    window.open(url, '_blank')
-  }
 
- // Fonction pour nettoyer le nom du fichier
+ // Version la plus simple - ouvre dans un nouvel onglet et l'utilisateur peut télécharger
+const viewDocument = (url: string) => {
+  window.open(url, '_blank')
+}
+// Fonction pour nettoyer le nom du fichier
 const cleanFilename = (filename: string): string => {
-  // Enlever l'extension en double si elle existe
-  // Par exemple: "document.pdf.PDF" -> "document.pdf"
+  if (!filename) return 'document.pdf'
+  
+  // 1. Enlever les extensions en double (ex: "document.pdf.PDF" -> "document.pdf")
+  let clean = filename
   const parts = filename.split('.')
+  
   if (parts.length > 2) {
     // Si on a plus de 2 parties, garder la première et la dernière
     const extension = parts.pop() // Prend la dernière extension
     const baseName = parts.join('.') // Le reste
-    return `${baseName}.${extension}`
+    clean = `${baseName}.${extension}`
   }
-  return filename
+  
+  // 2. Remplacer les caractères problématiques par des underscores
+  clean = clean.replace(/[^a-zA-Z0-9.-]/g, '_')
+  
+  // 3. Enlever les underscores multiples
+  clean = clean.replace(/_+/g, '_')
+  
+  // 4. Enlever les tirets multiples
+  clean = clean.replace(/-+/g, '-')
+  
+  // 5. Enlever les points multiples
+  clean = clean.replace(/\.+/g, '.')
+  
+  // 6. Limiter la longueur (optionnel)
+  if (clean.length > 100) {
+    const ext = clean.split('.').pop() || 'pdf'
+    const name = clean.substring(0, 90)
+    clean = `${name}.${ext}`
+  }
+  
+  return clean
 }
 
-// Version améliorée de downloadDocument
+// Pour le téléchargement, on utilise une approche plus simple
 const downloadDocument = async (url: string, filename: string) => {
   try {
-    // Nettoyer le nom du fichier
+    // 1. Nettoyer le nom
     const cleanName = cleanFilename(filename)
-    console.log('Downloading:', { original: filename, cleaned: cleanName })
-
-    // Si c'est une URL Cloudinary
-    if (url.includes('cloudinary.com')) {
-      // Cloudinary permet de forcer le téléchargement avec un nom spécifique
-      // Format: fl_attachment: NomDuFichier
-      const encodedName = encodeURIComponent(cleanName)
-      const downloadUrl = url.replace('/upload/', `/upload/fl_attachment:${encodedName}/`)
-      
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = cleanName // Le nom souhaité
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      toast.success(`Téléchargement de ${cleanName}`)
-    } else {
-      // Pour les autres URLs
-      const response = await fetch(url)
-      const blob = await response.blob()
-      const blobUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = blobUrl
-      link.download = cleanName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(blobUrl)
-    }
+    
+    // 2. Fetch le fichier
+    const response = await fetch(url)
+    const blob = await response.blob()
+    
+    // 3. Créer un URL blob et télécharger
+    const blobUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = cleanName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(blobUrl)
+    
+    toast.success(`Téléchargement de ${cleanName}`)
   } catch (error) {
     console.error('Error downloading document:', error)
-    toast.error("Erreur lors du téléchargement")
+    toast.error("Erreur lors du téléchargement, ouverture dans un nouvel onglet...")
+    // Fallback
+    window.open(url, '_blank')
   }
 }
-
 
   const getStatusBadge = (status: string) => {
     switch (status) {
