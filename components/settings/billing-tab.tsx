@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CreditCard, Download, Plus, CheckCircle2, Trash2, AlertCircle, Shield, Lock } from "lucide-react"
+import { CreditCard, Download, Plus, CheckCircle2, Trash2, AlertCircle, Shield, Lock, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { AddPaymentMethod } from "@/components/payments/add-payment-method"
@@ -16,7 +16,7 @@ interface PaymentMethod {
   exp_month: number
   exp_year: number
   isDefault: boolean
-  addedAt: Date
+  addedAt: string | Date
   cardholderName?: string
 }
 
@@ -28,29 +28,48 @@ interface BillingTabProps {
 export function BillingTab({ dict, lang }: BillingTabProps) {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [loading, setLoading] = useState(true)
-  const [invoices] = useState([
-    { id: "INV-1234", date: "15 Jan 2024", amount: "$299.00", status: dict?.billing?.paid || "Payé" },
-    { id: "INV-1233", date: "15 Déc 2023", amount: "$299.00", status: dict?.billing?.paid || "Payé" },
-    { id: "INV-1232", date: "15 Nov 2023", amount: "$299.00", status: dict?.billing?.paid || "Payé" },
-  ])
+  const [invoices, setInvoices] = useState<any[]>([]) // À remplacer par vos vraies factures
+  const [loadingInvoices, setLoadingInvoices] = useState(false)
 
   useEffect(() => {
     fetchPaymentMethods()
+    fetchInvoices() // Si vous avez des factures à charger
   }, [])
 
   const fetchPaymentMethods = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/stripe/payment-methods')
       const data = await response.json()
       
       if (data.success) {
+        console.log('Cartes chargées:', data.paymentMethods) // Debug
         setPaymentMethods(data.paymentMethods || [])
+      } else {
+        throw new Error(data.error || 'Erreur de chargement')
       }
     } catch (error) {
       console.error('Erreur récupération cartes:', error)
       toast.error(dict?.billing?.errors?.fetch || "Erreur lors du chargement des cartes")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchInvoices = async () => {
+    // Si vous avez une API pour les factures
+    setLoadingInvoices(true)
+    try {
+      // const response = await fetch('/api/stripe/invoices')
+      // const data = await response.json()
+      // setInvoices(data.invoices || [])
+      
+      // Pour l'instant, on laisse vide
+      setInvoices([])
+    } catch (error) {
+      console.error('Erreur récupération factures:', error)
+    } finally {
+      setLoadingInvoices(false)
     }
   }
 
@@ -124,6 +143,14 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
     return brands[brand.toLowerCase()] || brand.toUpperCase()
   }
 
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Méthodes de paiement */}
@@ -139,10 +166,11 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-slate-600 dark:text-slate-400">
-                {dict?.common?.loading || "Chargement des cartes..."}
-              </p>
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-3 text-slate-600 dark:text-slate-400">
+                {dict?.common?.loading || "Chargement..."}
+              </span>
             </div>
           ) : paymentMethods.length > 0 ? (
             <div className="space-y-4">
@@ -155,8 +183,8 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
                     <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
                       <CreditCard className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p className="font-semibold text-slate-900 dark:text-slate-100">
                           {formatBrand(method.brand)} •••• {method.last4}
                         </p>
@@ -167,27 +195,27 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <span className="text-slate-600 dark:text-slate-400">
                           {method.cardholderName || dict?.billing?.cardholder || "Titulaire"}
                         </span>
-                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                        <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
                         <span className="text-slate-600 dark:text-slate-400">
                           {dict?.billing?.expires || "Expire le"} {formatExpiry(method.exp_month, method.exp_year)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                        {dict?.billing?.addedOn || "Ajoutée le"} {new Date(method.addedAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'fr-FR')}
+                        {dict?.billing?.addedOn || "Ajoutée le"} {formatDate(method.addedAt)}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-4">
                     {!method.isDefault && paymentMethods.length > 1 && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleSetDefault(method.id)}
-                        className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                        className="text-xs whitespace-nowrap"
                       >
                         {dict?.billing?.setDefault || "Définir par défaut"}
                       </Button>
@@ -219,21 +247,21 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 space-y-4">
-              <div className="w-16 h-16 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                <CreditCard className="h-8 w-8 text-slate-400" />
+            <div className="text-center py-12 space-y-4">
+              <div className="w-20 h-20 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                <CreditCard className="h-10 w-10 text-slate-400" />
               </div>
-              <div>
-                <h3 className="font-medium text-lg text-slate-900 dark:text-white">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-xl text-slate-900 dark:text-white">
                   {dict?.billing?.noCards || "Aucune carte enregistrée"}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  {dict?.billing?.noCardsDesc || "Ajoutez une carte pour pouvoir payer vos projets rapidement"}
+                <p className="text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
+                  {dict?.billing?.noCardsDesc || "Ajoutez une carte pour pouvoir payer vos projets rapidement et en toute sécurité"}
                 </p>
               </div>
               <AddPaymentMethod 
                 trigger={
-                  <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Button className="bg-blue-600 hover:bg-blue-700 mt-4">
                     <CreditCard className="h-4 w-4 mr-2" />
                     {dict?.billing?.addFirstCard || "Ajouter ma première carte"}
                   </Button>
@@ -246,62 +274,66 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
           )}
 
           {/* Lien vers la page de gestion complète */}
-          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-            <Link 
-              href={`/${lang}/dashboard/payment-methods`}
-              className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1"
-            >
-              {dict?.billing?.managePaymentMethods || "Gérer toutes mes méthodes de paiement"}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
+          {paymentMethods.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+              <Link 
+                href={`/${lang}/dashboard/payment-methods`}
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 justify-center sm:justify-start"
+              >
+                {dict?.billing?.managePaymentMethods || "Gérer toutes mes méthodes de paiement"}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Historique de facturation */}
-      <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
-        <CardHeader>
-          <CardTitle>{dict?.billing?.history || "Historique de Facturation"}</CardTitle>
-          <CardDescription>
-            {dict?.billing?.historyDesc || "Consultez et téléchargez vos factures"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {invoices.map((invoice) => (
-              <div
-                key={invoice.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-              >
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
-                    {invoice.id}
-                  </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {invoice.date}
-                  </p>
+      {invoices.length > 0 && (
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardHeader>
+            <CardTitle>{dict?.billing?.history || "Historique de Facturation"}</CardTitle>
+            <CardDescription>
+              {dict?.billing?.historyDesc || "Consultez et téléchargez vos factures"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {invoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                      {invoice.id}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {invoice.date}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      {invoice.amount}
+                    </p>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-300 dark:border-green-800">
+                      {invoice.status}
+                    </Badge>
+                    <Button variant="ghost" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      {dict?.billing?.download || "Télécharger"}
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
-                    {invoice.amount}
-                  </p>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-300 dark:border-green-800">
-                    {invoice.status}
-                  </Badge>
-                  <Button variant="ghost" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    {dict?.billing?.download || "Télécharger"}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Informations de sécurité */}
+      {/* Informations de sécurité - Toujours afficher */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardContent className="pt-6">
           <div className="space-y-4">
@@ -337,7 +369,7 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
                   {dict?.billing?.important || "Information importante"}
                 </h4>
                 <p className="text-sm text-amber-600 dark:text-amber-400">
-                  {dict?.billing?.importantDesc || "Vous devez configurer au moins une carte bancaire avant de pouvoir payer un projet. Les cartes sont validées avec une transaction de 1€ qui est immédiatement annulée."}
+                  {dict?.billing?.importantDesc || "Les cartes sont validées avec une transaction de 1€ qui est immédiatement annulée."}
                 </p>
               </div>
             </div>
