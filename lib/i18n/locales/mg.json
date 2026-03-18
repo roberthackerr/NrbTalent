@@ -1,4 +1,16 @@
 {
+  "twoFactor": {
+    "title": "Fanamarinana Roapolo",
+    "subtitle": "Ampidiro ny kaody 6 isa avy amin'ny app fanamarinanao",
+    "verificationCode": "Kaody fanamarinana",
+    "appHint": "Sokafy ny Google Authenticator, Authy na ny app 2FA anao",
+    "verifyAndLogin": "Hamarinina sy hiditra",
+    "backToLogin": "Hiverina any amin'ny fidirana",
+    "codeRequired": "Kaody 2FA ilaina",
+    "invalidCode": "Tsy mety ny kaody. Andramo indray azafady.",
+    "success": "Tafiditra soa aman-tsara!",
+    "error": "Nisy olana nitranga"
+  },
    "admin": {
     "verification": {
       "title": "Fanamarinana ny maha-izy",

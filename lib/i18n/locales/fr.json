@@ -1,4 +1,16 @@
 {
+  "twoFactor": {
+    "title": "Authentification à deux facteurs",
+    "subtitle": "Entrez le code à 6 chiffres de votre application d'authentification",
+    "verificationCode": "Code de vérification",
+    "appHint": "Ouvrez Google Authenticator, Authy ou votre application 2FA",
+    "verifyAndLogin": "Vérifier et se connecter",
+    "backToLogin": "Retour à la connexion",
+    "codeRequired": "Code 2FA requis",
+    "invalidCode": "Code invalide. Veuillez réessayer.",
+    "success": "Connexion réussie !",
+    "error": "Une erreur est survenue"
+  },
    "admin": {
     "verification": {
       "title": "Vérification d'Identité",

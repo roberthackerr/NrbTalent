@@ -49,8 +49,14 @@ export default function SignInForm({ dict, lang }: Props) {
 
       if (result?.error) {
              if (result.error === '2FA_REQUIRED') {
+                sessionStorage.setItem('2fa_email', email);
+  sessionStorage.setItem('2fa_password', password); // Optionnel, mais à manipuler avec précaution
+  sessionStorage.setItem('2fa_lang', lang);
+  
+  // Rediriger vers la page 2FA sans les paramètres URL
+  router.push(`/${lang}/auth/2fa`);
         // Rediriger vers la page 2FA avec les credentials
-        router.push(`/${lang}/auth/2fa?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&lang=${lang}`)
+      
       } 
         else if (result.error === 'EMAIL_NOT_VERIFIED') {
     // Rediriger vers la page de vérification
