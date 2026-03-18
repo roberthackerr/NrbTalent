@@ -368,7 +368,7 @@ export function SkillsTab({ user, dict, lang, onUpdate }: SkillsTabProps) {
               </Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="border-slate-200 dark:border-slate-700">
-                  <SelectValue placeholder={dict.proficiency} />
+                  <SelectValue placeholder={dict.category} />
                 </SelectTrigger>
                 <SelectContent>
                   {skillCategories.map((category) => (

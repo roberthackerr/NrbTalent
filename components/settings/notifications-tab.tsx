@@ -23,77 +23,84 @@ interface NotificationCategory {
   settings: NotificationSetting[]
 }
 
-// Default categories data
-const defaultCategories: NotificationCategory[] = [
-  {
-    category: "Email",
-    icon: Mail,
-    description: "Contrôlez les notifications par email",
-    settings: [
-      { id: "email-messages", label: "Nouveaux messages", description: "Recevoir des emails pour les nouveaux messages", enabled: true, channel: 'email' },
-      { id: "email-projects", label: "Mises à jour de projets", description: "Notifications sur l'état des projets", enabled: true, channel: 'email' },
-      { id: "email-applications", label: "Nouvelles candidatures", description: "Alertes pour les nouvelles candidatures", enabled: true, channel: 'email' },
-      { id: "email-offers", label: "Offres d'emploi", description: "Nouvelles offres correspondant à vos compétences", enabled: true, channel: 'email' },
-      { id: "email-payments", label: "Paiements", description: "Notifications sur les paiements et factures", enabled: true, channel: 'email' },
-      { id: "email-marketing", label: "Emails marketing", description: "Nouvelles fonctionnalités et conseils", enabled: false, channel: 'email' },
-    ]
-  },
-  {
-    category: "Push",
-    icon: Bell,
-    description: "Notifications push dans le navigateur",
-    settings: [
-      { id: "push-messages", label: "Messages", description: "Notifications push pour les messages", enabled: true, channel: 'push' },
-      { id: "push-projects", label: "Projets correspondants", description: "Nouveaux projets selon vos compétences", enabled: true, channel: 'push' },
-      { id: "push-deadlines", label: "Échéances", description: "Rappels pour les dates limites", enabled: true, channel: 'push' },
-      { id: "push-bids", label: "Mises à jour des soumissions", description: "Mises à jour sur vos soumissions", enabled: true, channel: 'push' },
-      { id: "push-reviews", label: "Avis", description: "Nouveaux avis et évaluations", enabled: true, channel: 'push' },
-    ]
-  },
-  {
-    category: "Sécurité",
-    icon: Shield,
-    description: "Alertes de sécurité et de compte",
-    settings: [
-      { id: "security-login", label: "Nouvelles connexions", description: "Alertes pour les nouvelles connexions", enabled: true, channel: 'email' },
-      { id: "security-password", label: "Changements de mot de passe", description: "Confirmation des changements de mot de passe", enabled: true, channel: 'email' },
-      { id: "security-2fa", label: "Authentification à deux facteurs", description: "Mises à jour de l'authentification 2FA", enabled: true, channel: 'email' },
-      { id: "security-verification", label: "Vérification de compte", description: "Mises à jour de vérification", enabled: true, channel: 'email' },
-    ]
-  },
-  {
-    category: "Paiements",
-    icon: DollarSign,
-    description: "Notifications financières",
-    settings: [
-      { id: "payment-invoices", label: "Factures", description: "Création et paiement des factures", enabled: true, channel: 'email' },
-      { id: "payment-withdrawals", label: "Retraits", description: "Demandes et confirmations de retrait", enabled: true, channel: 'email' },
-      { id: "payment-escrow", label: "Escrow", description: "Mises à jour des fonds en attente", enabled: true, channel: 'email' },
-      { id: "payment-disputes", label: "Litiges", description: "Alertes de litiges et résolutions", enabled: true, channel: 'email' },
-    ]
-  },
-  {
-    category: "Communauté",
-    icon: Users,
-    description: "Notifications sociales et de réseau",
-    settings: [
-      { id: "social-connections", label: "Connexions", description: "Nouvelles demandes de connexion", enabled: true, channel: 'in_app' },
-      { id: "social-follows", label: "Abonnements", description: "Nouveaux abonnés", enabled: true, channel: 'in_app' },
-      { id: "social-endorsements", label: "Recommandations", description: "Recommandations de compétences", enabled: true, channel: 'in_app' },
-      { id: "social-events", label: "Événements", description: "Événements et webinaires", enabled: false, channel: 'email' },
-    ]
-  }
-]
+interface NotificationsTabProps {
+  dict: any
+  lang: string
+}
 
-export function NotificationsTab() {
+export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [categories, setCategories] = useState<NotificationCategory[]>(defaultCategories)
+  const [categories, setCategories] = useState<NotificationCategory[]>([])
 
-  // Load preferences on component mount
+  // Initialize categories with dictionary values
   useEffect(() => {
+    if (!dict) return
+
+    const defaultCategories: NotificationCategory[] = [
+      {
+        category: dict?.notifications?.email || "Email",
+        icon: Mail,
+        description: dict?.notifications?.emailDesc || "Contrôlez les notifications par email",
+        settings: [
+          { id: "email-messages", label: dict?.notifications?.newMessages || "Nouveaux messages", description: dict?.notifications?.newMessagesDesc || "Recevoir des emails pour les nouveaux messages", enabled: true, channel: 'email' },
+          { id: "email-projects", label: dict?.notifications?.projectUpdates || "Mises à jour de projets", description: dict?.notifications?.projectUpdatesDesc || "Notifications sur l'état des projets", enabled: true, channel: 'email' },
+          { id: "email-applications", label: dict?.notifications?.newApplications || "Nouvelles candidatures", description: dict?.notifications?.newApplicationsDesc || "Alertes pour les nouvelles candidatures", enabled: true, channel: 'email' },
+          { id: "email-offers", label: dict?.notifications?.jobOffers || "Offres d'emploi", description: dict?.notifications?.jobOffersDesc || "Nouvelles offres correspondant à vos compétences", enabled: true, channel: 'email' },
+          { id: "email-payments", label: dict?.notifications?.payments || "Paiements", description: dict?.notifications?.paymentsDesc || "Notifications sur les paiements et factures", enabled: true, channel: 'email' },
+          { id: "email-marketing", label: dict?.notifications?.marketing || "Emails marketing", description: dict?.notifications?.marketingDesc || "Nouvelles fonctionnalités et conseils", enabled: false, channel: 'email' },
+        ]
+      },
+      {
+        category: dict?.notifications?.push || "Push",
+        icon: Bell,
+        description: dict?.notifications?.pushDesc || "Notifications push dans le navigateur",
+        settings: [
+          { id: "push-messages", label: dict?.notifications?.messages || "Messages", description: dict?.notifications?.messagesPushDesc || "Notifications push pour les messages", enabled: true, channel: 'push' },
+          { id: "push-projects", label: dict?.notifications?.matchingProjects || "Projets correspondants", description: dict?.notifications?.matchingProjectsDesc || "Nouveaux projets selon vos compétences", enabled: true, channel: 'push' },
+          { id: "push-deadlines", label: dict?.notifications?.deadlines || "Échéances", description: dict?.notifications?.deadlinesDesc || "Rappels pour les dates limites", enabled: true, channel: 'push' },
+          { id: "push-bids", label: dict?.notifications?.bidUpdates || "Mises à jour des soumissions", description: dict?.notifications?.bidUpdatesDesc || "Mises à jour sur vos soumissions", enabled: true, channel: 'push' },
+          { id: "push-reviews", label: dict?.notifications?.reviews || "Avis", description: dict?.notifications?.reviewsDesc || "Nouveaux avis et évaluations", enabled: true, channel: 'push' },
+        ]
+      },
+      {
+        category: dict?.notifications?.security || "Sécurité",
+        icon: Shield,
+        description: dict?.notifications?.securityDesc || "Alertes de sécurité et de compte",
+        settings: [
+          { id: "security-login", label: dict?.notifications?.newLogins || "Nouvelles connexions", description: dict?.notifications?.newLoginsDesc || "Alertes pour les nouvelles connexions", enabled: true, channel: 'email' },
+          { id: "security-password", label: dict?.notifications?.passwordChanges || "Changements de mot de passe", description: dict?.notifications?.passwordChangesDesc || "Confirmation des changements de mot de passe", enabled: true, channel: 'email' },
+          { id: "security-2fa", label: dict?.notifications?.twoFA || "Authentification à deux facteurs", description: dict?.notifications?.twoFADesc || "Mises à jour de l'authentification 2FA", enabled: true, channel: 'email' },
+          { id: "security-verification", label: dict?.notifications?.accountVerification || "Vérification de compte", description: dict?.notifications?.accountVerificationDesc || "Mises à jour de vérification", enabled: true, channel: 'email' },
+        ]
+      },
+      {
+        category: dict?.notifications?.payments || "Paiements",
+        icon: DollarSign,
+        description: dict?.notifications?.paymentsCategoryDesc || "Notifications financières",
+        settings: [
+          { id: "payment-invoices", label: dict?.notifications?.invoices || "Factures", description: dict?.notifications?.invoicesDesc || "Création et paiement des factures", enabled: true, channel: 'email' },
+          { id: "payment-withdrawals", label: dict?.notifications?.withdrawals || "Retraits", description: dict?.notifications?.withdrawalsDesc || "Demandes et confirmations de retrait", enabled: true, channel: 'email' },
+          { id: "payment-escrow", label: dict?.notifications?.escrow || "Escrow", description: dict?.notifications?.escrowDesc || "Mises à jour des fonds en attente", enabled: true, channel: 'email' },
+          { id: "payment-disputes", label: dict?.notifications?.disputes || "Litiges", description: dict?.notifications?.disputesDesc || "Alertes de litiges et résolutions", enabled: true, channel: 'email' },
+        ]
+      },
+      {
+        category: dict?.notifications?.community || "Communauté",
+        icon: Users,
+        description: dict?.notifications?.communityDesc || "Notifications sociales et de réseau",
+        settings: [
+          { id: "social-connections", label: dict?.notifications?.connections || "Connexions", description: dict?.notifications?.connectionsDesc || "Nouvelles demandes de connexion", enabled: true, channel: 'in_app' },
+          { id: "social-follows", label: dict?.notifications?.follows || "Abonnements", description: dict?.notifications?.followsDesc || "Nouveaux abonnés", enabled: true, channel: 'in_app' },
+          { id: "social-endorsements", label: dict?.notifications?.endorsements || "Recommandations", description: dict?.notifications?.endorsementsDesc || "Recommandations de compétences", enabled: true, channel: 'in_app' },
+          { id: "social-events", label: dict?.notifications?.events || "Événements", description: dict?.notifications?.eventsDesc || "Événements et webinaires", enabled: false, channel: 'email' },
+        ]
+      }
+    ]
+
+    setCategories(defaultCategories)
     loadPreferences()
-  }, [])
+  }, [dict])
 
   const loadPreferences = async () => {
     try {
@@ -105,37 +112,27 @@ export function NotificationsTab() {
       
       const data = await response.json()
       
-      // Check if data.preferences exists and is an array
       if (data.preferences && Array.isArray(data.preferences)) {
         updateCategoriesWithPreferences(data.preferences)
-      } else {
-        console.warn('No preferences found or invalid format:', data)
       }
     } catch (error) {
       console.error('Error loading preferences:', error)
       toast({
-        title: "Erreur de chargement",
-        description: "Impossible de charger les préférences. Utilisation des paramètres par défaut.",
+        title: dict?.common?.error || "Erreur de chargement",
+        description: dict?.notifications?.loadError || "Impossible de charger les préférences. Utilisation des paramètres par défaut.",
         variant: "destructive",
       })
     }
   }
 
   const updateCategoriesWithPreferences = (preferences: any[]) => {
-    if (!Array.isArray(preferences)) {
-      console.error('preferences is not an array:', preferences)
-      return
-    }
+    if (!Array.isArray(preferences)) return
 
     setCategories(prevCategories => 
       prevCategories.map(category => ({
         ...category,
         settings: category.settings.map(setting => {
-          // Safely find preference
-          const savedPref = Array.isArray(preferences) 
-            ? preferences.find(p => p && p.settingId === setting.id)
-            : null
-          
+          const savedPref = preferences.find(p => p && p.settingId === setting.id)
           return savedPref ? { ...setting, enabled: savedPref.enabled } : setting
         })
       }))
@@ -143,7 +140,6 @@ export function NotificationsTab() {
   }
 
   const handleToggle = async (settingId: string, enabled: boolean) => {
-    // Update local state immediately for better UX
     setCategories(prevCategories => 
       prevCategories.map(category => ({
         ...category,
@@ -153,7 +149,6 @@ export function NotificationsTab() {
       }))
     )
 
-    // Save to API
     try {
       const response = await fetch('/api/notifications/preferences', {
         method: 'POST',
@@ -171,18 +166,17 @@ export function NotificationsTab() {
       }
 
       toast({
-        title: "Préférence sauvegardée",
-        description: "Votre préférence de notification a été mise à jour.",
+        title: dict?.common?.success || "Préférence sauvegardée",
+        description: dict?.notifications?.saveSuccess || "Votre préférence de notification a été mise à jour.",
       })
     } catch (error) {
       console.error('Error saving preference:', error)
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder la préférence. Veuillez réessayer.",
+        title: dict?.common?.error || "Erreur",
+        description: dict?.notifications?.saveError || "Impossible de sauvegarder la préférence. Veuillez réessayer.",
         variant: "destructive",
       })
       
-      // Revert on error
       setCategories(prevCategories => 
         prevCategories.map(category => ({
           ...category,
@@ -197,7 +191,6 @@ export function NotificationsTab() {
   const handleSaveAll = async () => {
     setIsLoading(true)
     
-    // Collect all settings
     const allSettings = categories.flatMap(category => category.settings)
     
     try {
@@ -218,17 +211,15 @@ export function NotificationsTab() {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const data = await response.json()
-      
       toast({
-        title: "Préférences sauvegardées",
-        description: "Toutes vos préférences de notification ont été sauvegardées.",
+        title: dict?.common?.success || "Préférences sauvegardées",
+        description: dict?.notifications?.saveAllSuccess || "Toutes vos préférences de notification ont été sauvegardées.",
       })
     } catch (error) {
       console.error('Error saving preferences:', error)
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder les préférences. Veuillez réessayer.",
+        title: dict?.common?.error || "Erreur",
+        description: dict?.notifications?.saveAllError || "Impossible de sauvegarder les préférences. Veuillez réessayer.",
         variant: "destructive",
       })
     } finally {
@@ -240,9 +231,11 @@ export function NotificationsTab() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Notifications</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            {dict?.notifications?.title || "Notifications"}
+          </h2>
           <p className="text-slate-600 dark:text-slate-400">
-            Gérez comment et quand vous recevez des notifications
+            {dict?.notifications?.subtitle || "Gérez comment et quand vous recevez des notifications"}
           </p>
         </div>
         <Button 
@@ -250,7 +243,9 @@ export function NotificationsTab() {
           disabled={isLoading}
           className="bg-blue-600 hover:bg-blue-700"
         >
-          {isLoading ? "Sauvegarde..." : "Sauvegarder tout"}
+          {isLoading 
+            ? (dict?.common?.saving || "Sauvegarde...") 
+            : (dict?.common?.saveAll || "Sauvegarder tout")}
         </Button>
       </div>
 

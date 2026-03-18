@@ -65,7 +65,12 @@ interface PasswordForm {
   confirmPassword: string
 }
 
-export function SecurityTab() {
+interface SecurityTabProps {
+  dict: any
+  lang: string
+}
+
+export function SecurityTab({ dict, lang }: SecurityTabProps) {
   const { data: session, update } = useSession()
   const [loading, setLoading] = useState(false)
   const [twoFactorLoading, setTwoFactorLoading] = useState(false)
@@ -110,29 +115,20 @@ export function SecurityTab() {
       const response = await fetch('/api/users/sessions')
       if (response.ok) {
         const data = await response.json()
-        console.log('Sessions loaded:', data)
-        // Filtrer les sessions en double avant de les définir
         const uniqueSessions = getUniqueSessions(data.sessions || [])
         setSessions(uniqueSessions)
-      } else {
-        const error = await response.json()
-        console.error('Error loading sessions response:', error)
       }
     } catch (error) {
       console.error('Error loading sessions:', error)
-      toast.error("Erreur lors du chargement des sessions")
+      toast.error(dict?.security?.errors?.loadSessions || "Erreur lors du chargement des sessions")
     }
   }
 
-  // Fonction pour filtrer les sessions en double
   const getUniqueSessions = (sessions: Session[]): Session[] => {
     const seen = new Set<string>()
     return sessions.filter(session => {
-      // Créer un identifiant unique pour chaque session
       const key = `${session.id}_${session.createdAt}_${session.device.browser}_${session.device.os}`
-      if (seen.has(key)) {
-        return false
-      }
+      if (seen.has(key)) return false
       seen.add(key)
       return true
     })
@@ -142,12 +138,12 @@ export function SecurityTab() {
     e.preventDefault()
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("Les mots de passe ne correspondent pas")
+      toast.error(dict?.security?.errors?.passwordsNotMatch || "Les mots de passe ne correspondent pas")
       return
     }
 
     if (passwordForm.newPassword.length < 8) {
-      toast.error("Le mot de passe doit contenir au moins 8 caractères")
+      toast.error(dict?.security?.errors?.passwordTooShort || "Le mot de passe doit contenir au moins 8 caractères")
       return
     }
 
@@ -166,7 +162,7 @@ export function SecurityTab() {
       })
 
       if (response.ok) {
-        toast.success("Mot de passe modifié avec succès!")
+        toast.success(dict?.security?.success?.passwordChanged || "Mot de passe modifié avec succès!")
         setPasswordForm({
           currentPassword: "",
           newPassword: "",
@@ -178,7 +174,7 @@ export function SecurityTab() {
       }
     } catch (error) {
       console.error('Error changing password:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la modification du mot de passe")
+      toast.error(error instanceof Error ? error.message : dict?.security?.errors?.changePassword || "Erreur lors de la modification du mot de passe")
     } finally {
       setLoading(false)
     }
@@ -195,7 +191,7 @@ export function SecurityTab() {
         setShow2FASetup(true)
       }
     } catch (error) {
-      toast.error("Erreur lors de la configuration du 2FA")
+      toast.error(dict?.security?.errors?.setup2FA || "Erreur lors de la configuration du 2FA")
     } finally {
       setTwoFactorLoading(false)
     }
@@ -203,7 +199,7 @@ export function SecurityTab() {
 
   const handleVerify2FA = async () => {
     if (!verificationToken) {
-      toast.error("Veuillez entrer le code de vérification")
+      toast.error(dict?.security?.errors?.enterCode || "Veuillez entrer le code de vérification")
       return
     }
 
@@ -223,11 +219,10 @@ export function SecurityTab() {
       if (response.ok) {
         const data = await response.json()
         if (data.valid) {
-          toast.success("Code vérifié avec succès!")
+          toast.success(dict?.security?.success?.codeVerified || "Code vérifié avec succès!")
           setShow2FASetup(false)
           setVerificationToken("")
           
-          // Activer le 2FA
           await fetch('/api/users/two-factor', {
             method: 'POST',
             headers: {
@@ -242,14 +237,14 @@ export function SecurityTab() {
           setTwoFactorEnabled(true)
           await update()
         } else {
-          toast.error("Code invalide")
+          toast.error(dict?.security?.errors?.invalidCode || "Code invalide")
         }
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Échec de la vérification')
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la vérification")
+      toast.error(error instanceof Error ? error.message : dict?.security?.errors?.verification || "Erreur lors de la vérification")
     } finally {
       setTwoFactorLoading(false)
     }
@@ -271,7 +266,9 @@ export function SecurityTab() {
 
       if (response.ok) {
         setTwoFactorEnabled(enabled)
-        toast.success(`Authentification à deux facteurs ${enabled ? 'activée' : 'désactivée'}!`)
+        toast.success(enabled 
+          ? (dict?.security?.success?.twoFAEnabled || "Authentification à deux facteurs activée!") 
+          : (dict?.security?.success?.twoFADisabled || "Authentification à deux facteurs désactivée!"))
         await update()
       } else {
         const error = await response.json()
@@ -279,7 +276,7 @@ export function SecurityTab() {
       }
     } catch (error) {
       console.error('Error updating 2FA:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour")
+      toast.error(error instanceof Error ? error.message : dict?.security?.errors?.update2FA || "Erreur lors de la mise à jour")
     } finally {
       setTwoFactorLoading(false)
     }
@@ -287,12 +284,11 @@ export function SecurityTab() {
 
   const handleTerminateSession = async (sessionId: string) => {
     if (!sessionId) {
-      toast.error("ID de session manquant")
+      toast.error(dict?.security?.errors?.missingSessionId || "ID de session manquant")
       return
     }
 
     setTerminatingSession(sessionId)
-    console.log("Attempting to terminate session:", sessionId)
 
     try {
       const response = await fetch('/api/users/sessions', {
@@ -304,30 +300,27 @@ export function SecurityTab() {
       })
 
       const data = await response.json()
-      console.log("Terminate session response:", data)
 
       if (response.ok) {
-        toast.success("Session terminée avec succès")
-        // Recharger les sessions
+        toast.success(dict?.security?.success?.sessionTerminated || "Session terminée avec succès")
         await loadSessions()
       } else {
         throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`)
       }
     } catch (error) {
       console.error('Error terminating session:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la fermeture de session")
+      toast.error(error instanceof Error ? error.message : dict?.security?.errors?.terminateSession || "Erreur lors de la fermeture de session")
     } finally {
       setTerminatingSession(null)
     }
   }
 
   const handleTerminateAllSessions = async () => {
-    if (!confirm("Êtes-vous sûr de vouloir déconnecter toutes les autres sessions ?")) {
+    if (!confirm(dict?.security?.confirmTerminateAll || "Êtes-vous sûr de vouloir déconnecter toutes les autres sessions ?")) {
       return
     }
 
     setTerminatingAll(true)
-    console.log("Terminating all other sessions")
 
     try {
       const response = await fetch('/api/users/sessions', {
@@ -339,17 +332,16 @@ export function SecurityTab() {
       })
 
       const data = await response.json()
-      console.log("Terminate all sessions response:", data)
 
       if (response.ok) {
-        toast.success(`Toutes les sessions ont été terminées (${data.terminatedCount || 0} sessions)`)
+        toast.success(`${dict?.security?.success?.allSessionsTerminated || "Toutes les sessions ont été terminées"} (${data.terminatedCount || 0} sessions)`)
         await loadSessions()
       } else {
         throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`)
       }
     } catch (error) {
       console.error('Error terminating all sessions:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la fermeture des sessions")
+      toast.error(error instanceof Error ? error.message : dict?.security?.errors?.terminateAll || "Erreur lors de la fermeture des sessions")
     } finally {
       setTerminatingAll(false)
     }
@@ -357,7 +349,7 @@ export function SecurityTab() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    toast.success("Secret copié dans le presse-papier")
+    toast.success(dict?.security?.success?.copied || "Secret copié dans le presse-papier")
   }
 
   const getDeviceIcon = (deviceType: string) => {
@@ -375,7 +367,7 @@ export function SecurityTab() {
   const formatDate = (date: Date | string) => {
     try {
       const d = new Date(date)
-      return d.toLocaleDateString('fr-FR', {
+      return d.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'fr-FR', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -383,7 +375,7 @@ export function SecurityTab() {
         minute: '2-digit'
       })
     } catch (error) {
-      return "Date inconnue"
+      return dict?.common?.unknownDate || "Date inconnue"
     }
   }
 
@@ -396,22 +388,21 @@ export function SecurityTab() {
       const diffHours = Math.floor(diffMs / 3600000)
       const diffDays = Math.floor(diffMs / 86400000)
 
-      if (diffMins < 1) return "À l'instant"
-      if (diffMins < 60) return `Il y a ${diffMins} min`
-      if (diffHours < 24) return `Il y a ${diffHours} h`
-      if (diffDays < 7) return `Il y a ${diffDays} j`
+      if (diffMins < 1) return dict?.common?.justNow || "À l'instant"
+      if (diffMins < 60) return `${dict?.common?.minutesAgo?.replace('{count}', diffMins.toString()) || `Il y a ${diffMins} min`}`
+      if (diffHours < 24) return `${dict?.common?.hoursAgo?.replace('{count}', diffHours.toString()) || `Il y a ${diffHours} h`}`
+      if (diffDays < 7) return `${dict?.common?.daysAgo?.replace('{count}', diffDays.toString()) || `Il y a ${diffDays} j`}`
       return formatDate(then)
     } catch (error) {
-      return "Temps inconnu"
+      return dict?.common?.unknownTime || "Temps inconnu"
     }
   }
 
   const refreshSessions = async () => {
     await loadSessions()
-    toast.success("Sessions rafraîchies")
+    toast.success(dict?.common?.refreshed || "Sessions rafraîchies")
   }
 
-  // Calculer le nombre de sessions pouvant être déconnectées
   const terminableSessionsCount = sessions.filter(s => s.active && !s.current).length
 
   return (
@@ -421,17 +412,17 @@ export function SecurityTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5 text-blue-500" />
-            Changer le Mot de Passe
+            {dict?.security?.changePassword || "Changer le Mot de Passe"}
           </CardTitle>
           <CardDescription>
-            Assurez-vous que votre compte utilise un mot de passe fort et sécurisé
+            {dict?.security?.changePasswordDesc || "Assurez-vous que votre compte utilise un mot de passe fort et sécurisé"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-3">
               <Label htmlFor="current-password" className="text-sm font-medium">
-                Mot de Passe Actuel
+                {dict?.security?.currentPassword || "Mot de Passe Actuel"}
               </Label>
               <Input
                 id="current-password"
@@ -439,7 +430,7 @@ export function SecurityTab() {
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
                 className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                placeholder="Entrez votre mot de passe actuel"
+                placeholder={dict?.security?.enterCurrentPassword || "Entrez votre mot de passe actuel"}
                 required
                 minLength={8}
               />
@@ -448,7 +439,7 @@ export function SecurityTab() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-3">
                 <Label htmlFor="new-password" className="text-sm font-medium">
-                  Nouveau Mot de Passe
+                  {dict?.security?.newPassword || "Nouveau Mot de Passe"}
                 </Label>
                 <Input
                   id="new-password"
@@ -456,18 +447,18 @@ export function SecurityTab() {
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                   className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                  placeholder="Créez un nouveau mot de passe"
+                  placeholder={dict?.security?.createNewPassword || "Créez un nouveau mot de passe"}
                   required
                   minLength={8}
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Minimum 8 caractères, incluant majuscules, minuscules et chiffres
+                  {dict?.security?.passwordRequirements || "Minimum 8 caractères, incluant majuscules, minuscules et chiffres"}
                 </p>
               </div>
               
               <div className="space-y-3">
                 <Label htmlFor="confirm-password" className="text-sm font-medium">
-                  Confirmer le Mot de Passe
+                  {dict?.security?.confirmPassword || "Confirmer le Mot de Passe"}
                 </Label>
                 <Input
                   id="confirm-password"
@@ -475,7 +466,7 @@ export function SecurityTab() {
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                   className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                  placeholder="Confirmez le nouveau mot de passe"
+                  placeholder={dict?.security?.confirmNewPassword || "Confirmez le nouveau mot de passe"}
                   required
                   minLength={8}
                 />
@@ -491,12 +482,12 @@ export function SecurityTab() {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    Mise à jour...
+                    {dict?.common?.updating || "Mise à jour..."}
                   </>
                 ) : (
                   <>
                     <Lock className="h-4 w-4 mr-2" />
-                    Mettre à jour le mot de passe
+                    {dict?.security?.updatePassword || "Mettre à jour le mot de passe"}
                   </>
                 )}
               </Button>
@@ -511,7 +502,7 @@ export function SecurityTab() {
                 })}
                 className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
               >
-                Effacer
+                {dict?.common?.clear || "Effacer"}
               </Button>
             </div>
           </form>
@@ -523,10 +514,10 @@ export function SecurityTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-green-500" />
-            Authentification à Deux Facteurs
+            {dict?.security?.twoFactorAuth || "Authentification à Deux Facteurs"}
           </CardTitle>
           <CardDescription>
-            Ajoutez une couche de sécurité supplémentaire à votre compte
+            {dict?.security?.twoFactorAuthDesc || "Ajoutez une couche de sécurité supplémentaire à votre compte"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -537,10 +528,10 @@ export function SecurityTab() {
               </div>
               <div>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  2FA par Application
+                  {dict?.security?.twoFactorApp || "2FA par Application"}
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Utilisez Google Authenticator ou Authy
+                  {dict?.security?.twoFactorAppDesc || "Utilisez Google Authenticator ou Authy"}
                 </p>
               </div>
             </div>
@@ -555,7 +546,9 @@ export function SecurityTab() {
                     : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                 )}
               >
-                {twoFactorEnabled ? "Activé" : "Désactivé"}
+                {twoFactorEnabled 
+                  ? (dict?.common?.enabled || "Activé") 
+                  : (dict?.common?.disabled || "Désactivé")}
               </Badge>
               <Switch
                 checked={twoFactorEnabled}
@@ -576,8 +569,7 @@ export function SecurityTab() {
             <Alert className="mt-4 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30">
               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertDescription className="text-green-800 dark:text-green-200">
-                L'authentification à deux facteurs est activée sur votre compte.
-                Vous devrez entrer un code de vérification à chaque connexion.
+                {dict?.security?.twoFactorActive || "L'authentification à deux facteurs est activée sur votre compte. Vous devrez entrer un code de vérification à chaque connexion."}
               </AlertDescription>
             </Alert>
           )}
@@ -586,10 +578,10 @@ export function SecurityTab() {
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Configuration 2FA en attente
+                {dict?.security?.pendingSetup || "Configuration 2FA en attente"}
               </h4>
               <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                Vous avez généré un secret 2FA mais ne l'avez pas encore activé.
+                {dict?.security?.pendingSetupDesc || "Vous avez généré un secret 2FA mais ne l'avez pas encore activé."}
               </p>
               <div className="flex gap-2">
                 <Button 
@@ -597,7 +589,7 @@ export function SecurityTab() {
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700"
                 >
-                  Terminer la configuration
+                  {dict?.security?.completeSetup || "Terminer la configuration"}
                 </Button>
                 <Button
                   onClick={() => {
@@ -608,7 +600,7 @@ export function SecurityTab() {
                   variant="outline"
                   className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                 >
-                  Annuler
+                  {dict?.common?.cancel || "Annuler"}
                 </Button>
               </div>
             </div>
@@ -616,20 +608,20 @@ export function SecurityTab() {
 
           <div className="mt-4">
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-              Pour une sécurité optimale, activez l'authentification à deux facteurs.
+              {dict?.security?.twoFactorTip || "Pour une sécurité optimale, activez l'authentification à deux facteurs."}
             </p>
             <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-1">
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                <span>Protège votre compte même si votre mot de passe est compromis</span>
+                <span>{dict?.security?.benefit1 || "Protège votre compte même si votre mot de passe est compromis"}</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                <span>Nécessite votre téléphone en plus de votre mot de passe</span>
+                <span>{dict?.security?.benefit2 || "Nécessite votre téléphone en plus de votre mot de passe"}</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                <span>Gratuit et facile à configurer</span>
+                <span>{dict?.security?.benefit3 || "Gratuit et facile à configurer"}</span>
               </li>
             </ul>
           </div>
@@ -642,10 +634,10 @@ export function SecurityTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-green-500" />
-              Configuration 2FA
+              {dict?.security?.twoFactorSetup || "Configuration 2FA"}
             </DialogTitle>
             <DialogDescription>
-              Suivez ces étapes pour activer l'authentification à deux facteurs
+              {dict?.security?.twoFactorSetupDesc || "Suivez ces étapes pour activer l'authentification à deux facteurs"}
             </DialogDescription>
           </DialogHeader>
 
@@ -653,7 +645,7 @@ export function SecurityTab() {
             {qrCode ? (
               <div className="space-y-3">
                 <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                  Étape 1: Scannez le QR Code
+                  {dict?.security?.step1 || "Étape 1: Scannez le QR Code"}
                 </h4>
                 <div className="flex flex-col items-center">
                   <img 
@@ -662,13 +654,13 @@ export function SecurityTab() {
                     className="w-48 h-48 border-2 border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-white"
                   />
                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 text-center">
-                    Utilisez Google Authenticator, Authy ou une application similaire
+                    {dict?.security?.qrCodeDesc || "Utilisez Google Authenticator, Authy ou une application similaire"}
                   </p>
                 </div>
                 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    Ou entrez manuellement ce code:
+                    {dict?.security?.enterManually || "Ou entrez manuellement ce code:"}
                   </Label>
                   <div className="flex items-center gap-2">
                     <Input
@@ -687,7 +679,7 @@ export function SecurityTab() {
                     </Button>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Copiez ce code dans votre application d'authentification
+                    {dict?.security?.copySecret || "Copiez ce code dans votre application d'authentification"}
                   </p>
                 </div>
               </div>
@@ -695,18 +687,18 @@ export function SecurityTab() {
               <div className="text-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
                 <p className="text-slate-600 dark:text-slate-400">
-                  Génération du secret 2FA...
+                  {dict?.common?.generating || "Génération du secret 2FA..."}
                 </p>
               </div>
             )}
 
             <div className="space-y-3">
               <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                Étape 2: Vérifiez le code
+                {dict?.security?.step2 || "Étape 2: Vérifiez le code"}
               </h4>
               <div className="space-y-2">
                 <Label htmlFor="verification-token" className="text-sm font-medium">
-                  Code à 6 chiffres
+                  {dict?.security?.sixDigitCode || "Code à 6 chiffres"}
                 </Label>
                 <Input
                   id="verification-token"
@@ -717,7 +709,7 @@ export function SecurityTab() {
                   className="text-center text-lg font-mono tracking-widest"
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Entrez le code à 6 chiffres affiché dans votre application d'authentification
+                  {dict?.security?.enterSixDigitCode || "Entrez le code à 6 chiffres affiché dans votre application d'authentification"}
                 </p>
               </div>
             </div>
@@ -734,7 +726,7 @@ export function SecurityTab() {
               disabled={twoFactorLoading}
               className="flex-1"
             >
-              Annuler
+              {dict?.common?.cancel || "Annuler"}
             </Button>
             <Button
               type="button"
@@ -745,10 +737,10 @@ export function SecurityTab() {
               {twoFactorLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Vérification...
+                  {dict?.common?.verifying || "Vérification..."}
                 </>
               ) : (
-                "Vérifier et activer"
+                dict?.security?.verifyAndEnable || "Vérifier et activer"
               )}
             </Button>
           </DialogFooter>
@@ -756,7 +748,7 @@ export function SecurityTab() {
       </Dialog>
 
       {/* Backup Codes (si 2FA activé) */}
-      {twoFactorEnabled && <BackupCodes />}
+      {twoFactorEnabled && <BackupCodes dict={dict} lang={lang} />}
 
       {/* Sessions actives */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
@@ -765,13 +757,13 @@ export function SecurityTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Monitor className="h-5 w-5 text-blue-500" />
-                Sessions Actives
+                {dict?.security?.activeSessions || "Sessions Actives"}
               </CardTitle>
               <CardDescription>
-                Gérez vos sessions connectées sur différents appareils
+                {dict?.security?.activeSessionsDesc || "Gérez vos sessions connectées sur différents appareils"}
                 {sessions.length > 0 && (
                   <div className="text-xs text-slate-500 mt-1">
-                    {sessions.length} session(s) • {terminableSessionsCount} pouvant être déconnectée(s)
+                    {sessions.length} {dict?.security?.sessions || "session(s)"} • {terminableSessionsCount} {dict?.security?.canBeDisconnected || "pouvant être déconnectée(s)"}
                   </div>
                 )}
               </CardDescription>
@@ -797,7 +789,7 @@ export function SecurityTab() {
                 ) : (
                   <>
                     <LogOut className="h-4 w-4 mr-2" />
-                    Tout déconnecter ({terminableSessionsCount})
+                    {dict?.security?.disconnectAll || "Tout déconnecter"} ({terminableSessionsCount})
                   </>
                 )}
               </Button>
@@ -816,11 +808,10 @@ export function SecurityTab() {
                 </div>
               </div>  
               <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Aucune session active
+                {dict?.security?.noActiveSessions || "Aucune session active"}
               </h4>
               <p className="text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-                Vous n'êtes actuellement connecté sur aucun appareil.
-                Les sessions apparaîtront ici lorsque vous vous connecterez.
+                {dict?.security?.noSessionsDesc || "Vous n'êtes actuellement connecté sur aucun appareil. Les sessions apparaîtront ici lorsque vous vous connecterez."}
               </p>
             </div>
           ) : (
@@ -855,16 +846,16 @@ export function SecurityTab() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                              {session.device.browser} sur {session.device.os}
+                              {session.device.browser} {dict?.common?.on || "sur"} {session.device.os}
                             </p>
                             {isCurrent && (
                               <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 text-xs px-2 py-0.5">
-                                Actuelle
+                                {dict?.security?.current || "Actuelle"}
                               </Badge>
                             )}
                             {!session.active && (
                               <Badge variant="outline" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                                Inactive
+                                {dict?.security?.inactive || "Inactive"}
                               </Badge>
                             )}
                           </div>
@@ -897,12 +888,12 @@ export function SecurityTab() {
                           <div className="flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-500">
                             <span className="flex items-center gap-1">
                               <span className="text-slate-400 dark:text-slate-600">🕐</span>
-                              Connecté le {formatDate(session.createdAt)}
+                              {dict?.security?.connectedOn || "Connecté le"} {formatDate(session.createdAt)}
                             </span>
                             <span className="text-slate-300 dark:text-slate-700">•</span>
                             <span className="flex items-center gap-1">
                               <span className="text-slate-400 dark:text-slate-600">⏱️</span>
-                              Dernière activité: {getTimeAgo(session.lastActive)}
+                              {dict?.security?.lastActivity || "Dernière activité"}: {getTimeAgo(session.lastActive)}
                             </span>
                           </div>
                           
@@ -929,7 +920,7 @@ export function SecurityTab() {
                           ) : (
                             <>
                               <LogOut className="h-4 w-4 mr-2" />
-                              Déconnecter
+                              {dict?.security?.disconnect || "Déconnecter"}
                             </>
                           )}
                         </Button>
@@ -937,7 +928,7 @@ export function SecurityTab() {
                       
                       {!canTerminate && !isCurrent && (
                         <span className="text-xs text-slate-500 italic px-3">
-                          Déjà déconnecté
+                          {dict?.security?.alreadyDisconnected || "Déjà déconnecté"}
                         </span>
                       )}
                     </div>
@@ -952,25 +943,25 @@ export function SecurityTab() {
                     <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                       {sessions.length}
                     </div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">Sessions</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">{dict?.security?.sessions || "Sessions"}</div>
                   </div>
                   <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                       {sessions.filter(s => s.current).length}
                     </div>
-                    <div className="text-sm text-blue-600 dark:text-blue-400">Actuelle</div>
+                    <div className="text-sm text-blue-600 dark:text-blue-400">{dict?.security?.current || "Actuelle"}</div>
                   </div>
                   <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {sessions.filter(s => s.active).length}
                     </div>
-                    <div className="text-sm text-green-600 dark:text-green-400">Actives</div>
+                    <div className="text-sm text-green-600 dark:text-green-400">{dict?.security?.active || "Actives"}</div>
                   </div>
                   <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                     <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                       {new Set(sessions.map(s => s.device.device)).size}
                     </div>
-                    <div className="text-sm text-amber-600 dark:text-amber-400">Types d'appareils</div>
+                    <div className="text-sm text-amber-600 dark:text-amber-400">{dict?.security?.deviceTypes || "Types d'appareils"}</div>
                   </div>
                 </div>
               </div>
@@ -979,24 +970,24 @@ export function SecurityTab() {
               <div className="mt-6 p-4 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800/50 dark:to-blue-900/20 rounded-lg border border-slate-200 dark:border-slate-700">
                 <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
                   <Shield className="h-4 w-4 text-blue-500" />
-                  Conseils de sécurité
+                  {dict?.security?.securityTips || "Conseils de sécurité"}
                 </h4>
                 <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Déconnectez-vous toujours des appareils publics ou partagés</span>
+                    <span>{dict?.security?.tip1 || "Déconnectez-vous toujours des appareils publics ou partagés"}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Activez le 2FA pour une protection supplémentaire de votre compte</span>
+                    <span>{dict?.security?.tip2 || "Activez le 2FA pour une protection supplémentaire de votre compte"}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Utilisez un mot de passe unique et fort pour chaque compte</span>
+                    <span>{dict?.security?.tip3 || "Utilisez un mot de passe unique et fort pour chaque compte"}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Vérifiez régulièrement vos sessions actives et déconnectez les appareils inconnus</span>
+                    <span>{dict?.security?.tip4 || "Vérifiez régulièrement vos sessions actives et déconnectez les appareils inconnus"}</span>
                   </li>
                 </ul>
               </div>

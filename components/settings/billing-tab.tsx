@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,16 +5,21 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, Download, Plus, CheckCircle2 } from "lucide-react"
 
-export function BillingTab() {
+interface BillingTabProps {
+  dict: any
+  lang: string
+}
+
+export function BillingTab({ dict, lang }: BillingTabProps) {
   const paymentMethods = [
-    { id: 1, type: "Carte de crédit", last4: "4242", expiry: "12/24", default: true },
+    { id: 1, type: dict?.billing?.creditCard || "Carte de crédit", last4: "4242", expiry: "12/24", default: true },
     { id: 2, type: "PayPal", email: "user@example.com", default: false },
   ]
 
   const invoices = [
-    { id: "INV-1234", date: "15 Jan 2024", amount: "$299.00", status: "Payé" },
-    { id: "INV-1233", date: "15 Déc 2023", amount: "$299.00", status: "Payé" },
-    { id: "INV-1232", date: "15 Nov 2023", amount: "$299.00", status: "Payé" },
+    { id: "INV-1234", date: "15 Jan 2024", amount: "$299.00", status: dict?.billing?.paid || "Payé" },
+    { id: "INV-1233", date: "15 Déc 2023", amount: "$299.00", status: dict?.billing?.paid || "Payé" },
+    { id: "INV-1232", date: "15 Nov 2023", amount: "$299.00", status: dict?.billing?.paid || "Payé" },
   ]
 
   return (
@@ -25,10 +29,10 @@ export function BillingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-blue-500" />
-            Méthodes de Paiement
+            {dict?.billing?.paymentMethods || "Méthodes de Paiement"}
           </CardTitle>
           <CardDescription>
-            Gérez vos méthodes de paiement et vos informations de facturation
+            {dict?.billing?.paymentMethodsDesc || "Gérez vos méthodes de paiement et vos informations de facturation"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -50,7 +54,7 @@ export function BillingTab() {
                       {method.default && (
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-300 dark:border-green-800 text-xs">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Par défaut
+                          {dict?.billing?.default || "Par défaut"}
                         </Badge>
                       )}
                     </div>
@@ -62,11 +66,11 @@ export function BillingTab() {
                 <div className="flex items-center gap-2">
                   {!method.default && (
                     <Button variant="outline" size="sm">
-                      Définir par défaut
+                      {dict?.billing?.setDefault || "Définir par défaut"}
                     </Button>
                   )}
                   <Button variant="outline" size="sm">
-                    Supprimer
+                    {dict?.billing?.delete || "Supprimer"}
                   </Button>
                 </div>
               </div>
@@ -74,7 +78,7 @@ export function BillingTab() {
             
             <Button variant="outline" className="w-full bg-transparent border-dashed">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter une méthode de paiement
+              {dict?.billing?.addMethod || "Ajouter une méthode de paiement"}
             </Button>
           </div>
         </CardContent>
@@ -83,9 +87,9 @@ export function BillingTab() {
       {/* Historique de facturation */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader>
-          <CardTitle>Historique de Facturation</CardTitle>
+          <CardTitle>{dict?.billing?.history || "Historique de Facturation"}</CardTitle>
           <CardDescription>
-            Consultez et téléchargez vos factures
+            {dict?.billing?.historyDesc || "Consultez et téléchargez vos factures"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -112,7 +116,7 @@ export function BillingTab() {
                   </Badge>
                   <Button variant="ghost" size="sm">
                     <Download className="h-4 w-4 mr-2" />
-                    Télécharger
+                    {dict?.billing?.download || "Télécharger"}
                   </Button>
                 </div>
               </div>
