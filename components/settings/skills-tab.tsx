@@ -364,7 +364,7 @@ export function SkillsTab({ user, dict, lang, onUpdate }: SkillsTabProps) {
 
             <div className="space-y-3">
               <Label htmlFor="category" className="text-sm font-medium">
-                {dict.proficiency}
+                {dict.portfolio.category}
               </Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="border-slate-200 dark:border-slate-700">
