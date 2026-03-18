@@ -99,7 +99,7 @@ export default function TwoFactorPage() {
         sessionStorage.removeItem('2fa_password')
         sessionStorage.removeItem('2fa_lang')
         
-        router.push(`/${lang}/dashboard`)
+        router.push(`/${lang}`)
       }
     } catch (error) {
       console.error('2FA error:', error)

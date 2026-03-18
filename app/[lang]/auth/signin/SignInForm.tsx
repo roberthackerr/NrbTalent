@@ -74,7 +74,7 @@ export default function SignInForm({ dict, lang }: Props) {
         toast.error(errorMessages[result.error] || result.error)
       } else {
         toast.success(dict.auth.success.login)
-        router.push(`/${lang}/dashboard`)
+        router.push(`/${lang}`)
         router.refresh()
       }
     } catch (error) {
