@@ -151,7 +151,7 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
 
     try {
       const response = await fetch('/api/notifications/preferences', {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
