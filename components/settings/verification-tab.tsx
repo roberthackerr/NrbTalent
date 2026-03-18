@@ -7,7 +7,23 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { CheckCircle2, XCircle, Clock, Upload, Shield, Mail, Phone, CreditCard, RefreshCw, Key, Smartphone } from "lucide-react"
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  Upload, 
+  Shield, 
+  Mail, 
+  Phone, 
+  CreditCard, 
+  RefreshCw, 
+  Key, 
+  Smartphone,
+  FileText,
+  Eye,
+  Download,
+  AlertTriangle
+} from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -19,12 +35,22 @@ interface VerificationTabProps {
 
 type VerificationStatus = "none" | "pending" | "approved" | "rejected" | "expired"
 
+interface UploadedDocument {
+  url: string
+  name: string
+  type: string
+  publicId?: string
+  size?: number
+}
+
 export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
   const [loading, setLoading] = useState(false)
   const [idVerificationStatus, setIdVerificationStatus] = useState<VerificationStatus>("none")
   const [resendLoading, setResendLoading] = useState(false)
   const [idDocuments, setIdDocuments] = useState<File[]>([])
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([])
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [requestId, setRequestId] = useState<string>("")
   
   // États pour la vérification SMS
   const [phoneVerificationOpen, setPhoneVerificationOpen] = useState(false)
@@ -46,6 +72,8 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
       if (response.ok) {
         const data = await response.json()
         setIdVerificationStatus(data.status)
+        setUploadedDocuments(data.documents || [])
+        setRequestId(data.requestId || "")
       }
     } catch (error) {
       console.error('Error fetching identity status:', error)
@@ -329,10 +357,13 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
       
       if (response.ok) {
         setIdVerificationStatus("pending")
-        toast.success(dict?.verification?.success?.documentsSubmitted || "Documents soumis! Nous les examinerons sous 24-48 heures.")
+        setUploadedDocuments(data.documents || [])
+        setRequestId(data.requestId || "")
+        toast.success(data.message || dict?.verification?.success?.documentsSubmitted || "Documents soumis! Nous les examinerons sous 24-48 heures.")
+        
         setTimeout(() => {
           window.location.reload()
-        }, 1000)
+        }, 2000)
       } else {
         throw new Error(data.error || 'Upload failed')
       }
@@ -344,6 +375,51 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
       setUploadProgress(0)
       clearInterval(progressInterval)
     }
+  }
+
+  // Annuler la demande de vérification
+  const handleCancelVerification = async () => {
+    if (!requestId) return
+
+    if (!confirm(dict?.verification?.confirmCancel || "Êtes-vous sûr de vouloir annuler cette demande de vérification ?")) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/users/verification/identity/${requestId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast.success(dict?.verification?.success?.cancelled || "Demande annulée avec succès")
+        setIdVerificationStatus("none")
+        setUploadedDocuments([])
+        setRequestId("")
+      } else {
+        throw new Error('Failed to cancel')
+      }
+    } catch (error) {
+      console.error('Error cancelling verification:', error)
+      toast.error(dict?.verification?.errors?.cancelFailed || "Erreur lors de l'annulation")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Voir un document
+  const viewDocument = (url: string) => {
+    window.open(url, '_blank')
+  }
+
+  // Télécharger un document
+  const downloadDocument = (url: string, filename: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const getStatusIcon = (status: VerificationStatus) => {
@@ -451,7 +527,6 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
               const Icon = verification.icon
               const isEmail = verification.id === "email"
               const isPhone = verification.id === "phone"
-              const isIdentity = verification.id === "identity"
               
               return (
                 <div
@@ -696,6 +771,73 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Afficher les documents soumis si en attente */}
+          {idVerificationStatus === "pending" && uploadedDocuments.length > 0 && (
+            <div className="mb-6 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-yellow-700 dark:text-yellow-300 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {dict?.verification?.documentsSubmitted || "Documents soumis"}
+                </h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelVerification}
+                  disabled={loading}
+                  className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {dict?.common?.cancel || "Annuler"}
+                </Button>
+              </div>
+              
+              <p className="text-sm text-yellow-600 dark:text-yellow-400 mb-3">
+                {dict?.verification?.documentsPending || "Vos documents sont en cours de vérification par notre équipe."}
+              </p>
+              
+              <div className="space-y-2">
+                {uploadedDocuments.map((doc, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-slate-800 border border-yellow-200 dark:border-yellow-800"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                        <FileText className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-slate-900 dark:text-white">
+                          {doc.name || `${dict?.verification?.document || "Document"} ${index + 1}`}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {doc.type?.split('/')[1]?.toUpperCase() || 'PDF'} • {doc.size ? `${(doc.size / 1024).toFixed(0)} KB` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => viewDocument(doc.url)}
+                        className="h-8 px-2"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadDocument(doc.url, doc.name || `document-${index + 1}`)}
+                        className="h-8 px-2"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {idVerificationStatus === "none" && (
             <div className="space-y-6">
               <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-4">
@@ -815,7 +957,7 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
             </div>
           )}
 
-          {idVerificationStatus === "pending" && (
+          {idVerificationStatus === "pending" && uploadedDocuments.length === 0 && (
             <div className="flex items-center gap-4 p-4 rounded-lg border border-yellow-500/50 bg-yellow-500/10">
               <Clock className="h-6 w-6 text-yellow-500" />
               <div>

@@ -1,4 +1,53 @@
 {
+   "admin": {
+    "verification": {
+      "title": "Fanamarinana ny maha-izy",
+      "subtitle": "Karibo ny fangatahan'ny mpampiasa momba ny fanamarinana",
+      "searchPlaceholder": "Karohy amin'ny anarana na mailaka...",
+      "noRequests": "Tsy misy fangatahana",
+      "noRequestsDesc": "Tsy misy fangatahana fanamarinana amin'ity sokajy ity amin'izao fotoana izao.",
+      "view": "Hijery",
+      "review": "Hamarina",
+      "reviewTitle": "Hamarinina ny fangatahana fanamarinana",
+      "reviewDescription": "Jereo ny antontan-taratasy ary ekeo na mandà ny fangatahana",
+      "documents": "Antontan-taratasy nalefa",
+      "document": "Antontan-taratasy",
+      "download": "Hampidina",
+      "rejectionReason": "Antony fandavana",
+      "rejectionPlaceholder": "Hazavao ny antony fandavana ny fangatahana...",
+      "rejectionNote": "Ity antony ity dia halefa any amin'ny mpampiasa amin'ny alalan'ny mailaka sy fampandrenesana.",
+      "approve": "Ekena",
+      "reject": "Lavina",
+      "noTitle": "Tsy misy anaram-piasana",
+      "page": "Pejy",
+      "tabs": {
+        "pending": "Miandry",
+        "approved": "Ekena",
+        "rejected": "Lavina",
+        "all": "Rehetra"
+      },
+      "stats": {
+        "total": "Fitsinjarana",
+        "pending": "Miandry",
+        "approved": "Ekena",
+        "rejected": "Lavina"
+      },
+      "status": {
+        "pending": "Miandry",
+        "approved": "Ekena",
+        "rejected": "Lavina"
+      },
+      "errors": {
+        "fetch": "Tsy fahombiazana ny fampidinana ny fangatahana",
+        "rejectReasonRequired": "Ampidiro ny antony fandavana azafady",
+        "update": "Tsy fahombiazana ny fanavaozana ny fangatahana"
+      },
+      "success": {
+        "approved": "Voamarina soa aman-tsara ny fangatahana",
+        "rejected": "Nolavina ny fangatahana"
+      }
+    }
+  },
    "verification": {
     "title": "Toeran'ny Fanamarinana",
     "subtitle": "Fenoy ny fanamarinana mba hamahana ny endri-javatra rehetra",

@@ -1,4 +1,53 @@
 {
+   "admin": {
+    "verification": {
+      "title": "Vérification d'Identité",
+      "subtitle": "Gérez les demandes de vérification des utilisateurs",
+      "searchPlaceholder": "Rechercher par nom ou email...",
+      "noRequests": "Aucune demande",
+      "noRequestsDesc": "Il n'y a actuellement aucune demande de vérification dans cette catégorie.",
+      "view": "Voir",
+      "review": "Examiner",
+      "reviewTitle": "Examiner la demande de vérification",
+      "reviewDescription": "Vérifiez les documents et approuvez ou rejetez la demande",
+      "documents": "Documents soumis",
+      "document": "Document",
+      "download": "Télécharger",
+      "rejectionReason": "Raison du rejet",
+      "rejectionPlaceholder": "Expliquez pourquoi la demande est rejetée...",
+      "rejectionNote": "Cette raison sera envoyée à l'utilisateur par email et notification.",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "noTitle": "Titre non défini",
+      "page": "Page",
+      "tabs": {
+        "pending": "En attente",
+        "approved": "Approuvées",
+        "rejected": "Rejetées",
+        "all": "Toutes"
+      },
+      "stats": {
+        "total": "Total",
+        "pending": "En attente",
+        "approved": "Approuvées",
+        "rejected": "Rejetées"
+      },
+      "status": {
+        "pending": "En attente",
+        "approved": "Approuvé",
+        "rejected": "Rejeté"
+      },
+      "errors": {
+        "fetch": "Erreur lors du chargement des demandes",
+        "rejectReasonRequired": "Veuillez fournir une raison de rejet",
+        "update": "Erreur lors de la mise à jour"
+      },
+      "success": {
+        "approved": "Demande approuvée avec succès",
+        "rejected": "Demande rejetée avec succès"
+      }
+    }
+  },
     "verification": {
     "title": "Statut de Vérification",
     "subtitle": "Complétez les vérifications pour débloquer toutes les fonctionnalités",

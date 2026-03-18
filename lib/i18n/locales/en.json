@@ -1,4 +1,53 @@
 {
+  "admin": {
+    "verification": {
+      "title": "Identity Verification",
+      "subtitle": "Manage user verification requests",
+      "searchPlaceholder": "Search by name or email...",
+      "noRequests": "No requests",
+      "noRequestsDesc": "There are currently no verification requests in this category.",
+      "view": "View",
+      "review": "Review",
+      "reviewTitle": "Review Verification Request",
+      "reviewDescription": "Check the documents and approve or reject the request",
+      "documents": "Submitted Documents",
+      "document": "Document",
+      "download": "Download",
+      "rejectionReason": "Rejection Reason",
+      "rejectionPlaceholder": "Explain why the request is rejected...",
+      "rejectionNote": "This reason will be sent to the user via email and notification.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "noTitle": "No title set",
+      "page": "Page",
+      "tabs": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "all": "All"
+      },
+      "stats": {
+        "total": "Total",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "errors": {
+        "fetch": "Error loading requests",
+        "rejectReasonRequired": "Please provide a rejection reason",
+        "update": "Error updating request"
+      },
+      "success": {
+        "approved": "Request approved successfully",
+        "rejected": "Request rejected successfully"
+      }
+    }
+  },
   "verification": {
     "title": "Verification Status",
     "subtitle": "Complete verifications to unlock all features",
