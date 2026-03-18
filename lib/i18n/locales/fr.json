@@ -745,6 +745,12 @@
       "title": "Nouveau : Votre Calendrier Intelligent",
       "description": "Gérez vos rendez-vous et projets en un seul endroit",
       "button": "Découvrir"
+    },
+        "teams": {
+      "title": "Nouveau : Équipes Collaboratives",
+      "description": "Rejoignez des équipes de talents complémentaires",
+      "viewTeams": "Voir les équipes",
+      "createTeam": "Créer une équipe"
     }
   }
 

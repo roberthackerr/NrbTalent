@@ -748,6 +748,12 @@
       "title": "New: Your Smart Calendar",
       "description": "Manage your appointments and projects in one place",
       "button": "Discover"
+    },
+        "teams": {
+      "title": "New: Collaborative Teams",
+      "description": "Join teams of complementary talents",
+      "viewTeams": "View Teams",
+      "createTeam": "Create a Team"
     }
-  }
+      }
 }

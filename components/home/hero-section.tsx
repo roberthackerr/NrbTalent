@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar } from "lucide-react"
+import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar, Users } from "lucide-react"
 import { useState } from "react"
 import { TeamAccessButton } from '@/components/ui/team-access-button';
 
@@ -42,6 +42,12 @@ interface HeroSectionProps {
         title: string
         description: string
         button: string
+      }
+      teams: {  // Add this section
+        title: string
+        description: string
+        viewTeams: string
+        createTeam: string
       }
     }
   }
@@ -161,31 +167,95 @@ export function HeroSection({ lang, user, onSearch, onCalendarClick, dict }: Her
             )}
           </div>
 
-          {/* Nouvelle section Calendrier */}
+          {/* Team Section with TeamAccessButton */}
           {user && (
-            <div className="animate-fade-in">
-              <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-6">
+              {/* Calendar Section */}
+              <div className="animate-fade-in">
+                <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 w-full">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white font-semibold text-sm">
+                        {dict.hero.calendar.title}
+                      </p>
+                      <p className="text-blue-200 text-xs">
+                        {dict.hero.calendar.description}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-white font-semibold text-sm">
-                      {dict.hero.calendar.title}
-                    </p>
-                    <p className="text-blue-200 text-xs">
-                      {dict.hero.calendar.description}
-                    </p>
-                  </div>
+                  <Button 
+                    onClick={onCalendarClick}
+                    size="sm"
+                    className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/25 flex-shrink-0"
+                  >
+                    {dict.hero.calendar.button}
+                  </Button>
                 </div>
-                <Button 
-                  onClick={onCalendarClick}
-                  size="sm"
-                  className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/25"
-                >
-                  {dict.hero.calendar.button}
-                </Button>
               </div>
+
+              {/* Team Section with TeamAccessButton */}
+              <div className="animate-fade-in">
+                <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 w-full">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white font-semibold text-sm">
+                        {dict.hero.teams.title}
+                      </p>
+                      <p className="text-blue-200 text-xs">
+                        {dict.hero.teams.description}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Using TeamAccessButton */}
+                  <TeamAccessButton
+                    teamId="discover" // This could be a dynamic team ID or just for navigation
+                    variant="gradient"
+                    size="sm"
+                    iconType="users"
+                    dict={{
+                      viewTeam: dict.hero.teams.viewTeams,
+                      viewDetails: dict.hero.teams.viewTeams,
+                      openTeam: dict.hero.teams.viewTeams,
+                      loading: lang === 'fr' ? 'Chargement...' : 
+                              lang === 'mg' ? 'Amplasiana...' : 'Loading...',
+                    }}
+                    lang={lang}
+                    className="flex-shrink-0"
+                  >
+                    {dict.hero.teams.viewTeams}
+                  </TeamAccessButton>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create Team Button for users not in any team */}
+          {user && user.role === "freelance" && (
+            <div className="mt-4">
+              <TeamAccessButton
+                teamId="create" // This would link to create team page
+                variant="outline"
+                size="default"
+                iconType="sparkles"
+                dict={{
+                  viewTeam: dict.hero.teams.createTeam,
+                  viewDetails: dict.hero.teams.createTeam,
+                  openTeam: dict.hero.teams.createTeam,
+                  loading: lang === 'fr' ? 'Chargement...' : 
+                          lang === 'mg' ? 'Amplasiana...' : 'Loading...',
+                }}
+                lang={lang}
+                className="border-white/30 text-white hover:bg-white/10"
+              >
+                {dict.hero.teams.createTeam}
+              </TeamAccessButton>
             </div>
           )}
         </div>
