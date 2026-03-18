@@ -19,17 +19,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Filter,
   RefreshCw,
   AlertTriangle,
   Mail,
   Calendar,
   FileText,
-  User,
   Loader2
 } from "lucide-react"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 import { getDictionarySafe } from "@/lib/i18n/dictionaries"
 import type { Locale } from "@/lib/i18n/config"
 import {
@@ -43,24 +40,33 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
+// Interface pour les documents
+interface VerificationDocument {
+  url: string
+  publicId: string
+  type: string
+  name: string
+  size: number
+}
+
+// Interface mise à jour pour correspondre à la structure réelle
 interface VerificationRequest {
   _id: string
   userId: string
-  documents: string[]
+  requestId: string
+  documents: VerificationDocument[]  // ← Maintenant c'est un tableau d'objets, pas de strings
   status: 'pending' | 'approved' | 'rejected'
   submittedAt: string
   updatedAt: string
   reviewedBy?: string
   reviewedAt?: string
   rejectionReason?: string
+  metadata?: {
+    fileCount: number
+    userAgent: string
+    ip: string
+  }
   user?: {
     _id: string
     name: string
@@ -102,9 +108,9 @@ export default function AdminVerificationPage() {
     
     if (!session || (session.user as any)?.role !== "admin") {
       router.push(`/${lang}/dashboard`)
-      toast.error("Accès non autorisé")
+      toast.error(dict?.common?.unauthorized || "Accès non autorisé")
     }
-  }, [session, status, router, lang])
+  }, [session, status, router, lang, dict])
 
   // Charger le dictionnaire
   useEffect(() => {
@@ -116,7 +122,7 @@ export default function AdminVerificationPage() {
     if (session && dict) {
       fetchRequests()
     }
-  }, [session, dict, activeTab, currentPage])
+  }, [session, dict, activeTab, currentPage, searchQuery])
 
   const fetchRequests = async () => {
     setLoading(true)
@@ -128,13 +134,17 @@ export default function AdminVerificationPage() {
         search: searchQuery
       })
 
+      console.log('Fetching with params:', queryParams.toString())
       const response = await fetch(`/api/admin/verification?${queryParams}`)
       
       if (!response.ok) {
-        throw new Error('Failed to fetch requests')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch requests')
       }
 
       const data = await response.json()
+      console.log('API Response:', data)
+      
       setRequests(data.requests || [])
       setTotalPages(data.totalPages || 1)
       setStats(data.stats || { pending: 0, approved: 0, rejected: 0, total: 0 })
@@ -168,8 +178,10 @@ export default function AdminVerificationPage() {
         })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to update request')
+        throw new Error(data.error || 'Failed to update request')
       }
 
       toast.success(
@@ -232,14 +244,28 @@ export default function AdminVerificationPage() {
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return dateString
+    }
+  }
+
+  const getFileExtension = (filename: string) => {
+    return filename.split('.').pop()?.toUpperCase() || 'FILE'
+  }
+
+  const getFileIcon = (type: string) => {
+    if (type.includes('pdf')) return '📄'
+    if (type.includes('image')) return '🖼️'
+    return '📁'
   }
 
   if (!session || (session.user as any)?.role !== "admin") {
@@ -463,8 +489,13 @@ export default function AdminVerificationPage() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <FileText className="h-3 w-3" />
-                                {request.documents.length} document(s)
+                                {request.documents?.length || 0} document(s)
                               </span>
+                              {request.metadata?.ip && (
+                                <span className="flex items-center gap-1 text-xs text-slate-400">
+                                  IP: {request.metadata.ip}
+                                </span>
+                              )}
                             </div>
                             
                             {request.rejectionReason && (
@@ -477,17 +508,19 @@ export default function AdminVerificationPage() {
                         </div>
                         
                         <div className="flex gap-2 lg:flex-shrink-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              viewDocument(request.documents[0])
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            {dict?.admin?.verification?.view || "Voir"}
-                          </Button>
+                          {request.documents && request.documents.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                viewDocument(request.documents[0].url)
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              {dict?.admin?.verification?.view || "Voir"}
+                            </Button>
+                          )}
                           <Button
                             variant="default"
                             size="sm"
@@ -588,11 +621,8 @@ export default function AdminVerificationPage() {
                   {dict?.admin?.verification?.documents || "Documents soumis"}
                 </h4>
                 <div className="grid gap-3">
-                  {selectedRequest.documents.map((doc, index) => {
-                    const filename = doc.split('/').pop() || `document-${index + 1}`
-                    const extension = filename.split('.').pop()?.toUpperCase()
-                    
-                    return (
+                  {selectedRequest.documents && selectedRequest.documents.length > 0 ? (
+                    selectedRequest.documents.map((doc, index) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
@@ -603,13 +633,13 @@ export default function AdminVerificationPage() {
                           </div>
                           <div>
                             <p className="font-medium text-slate-900 dark:text-white">
-                              {dict?.admin?.verification?.document || "Document"} {index + 1}
+                              {doc.name || `Document ${index + 1}`}
                               <span className="ml-2 text-xs text-slate-500 dark:text-slate-500">
-                                .{extension}
+                                .{getFileExtension(doc.name)}
                               </span>
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-500">
-                              {filename.substring(0, 30)}...
+                              {doc.type} • {(doc.size / 1024).toFixed(0)} KB
                             </p>
                           </div>
                         </div>
@@ -617,7 +647,7 @@ export default function AdminVerificationPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => viewDocument(doc)}
+                            onClick={() => viewDocument(doc.url)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             {dict?.admin?.verification?.view || "Voir"}
@@ -625,19 +655,23 @@ export default function AdminVerificationPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => downloadDocument(doc, filename)}
+                            onClick={() => downloadDocument(doc.url, doc.name)}
                           >
                             <Download className="h-4 w-4 mr-2" />
                             {dict?.admin?.verification?.download || "Télécharger"}
                           </Button>
                         </div>
                       </div>
-                    )
-                  })}
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Aucun document disponible
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Rejection Reason (if rejecting) */}
+              {/* Rejection Reason */}
               <div className="space-y-3">
                 <Label htmlFor="reject-reason" className="text-sm font-medium">
                   {dict?.admin?.verification?.rejectionReason || "Raison du rejet"}
