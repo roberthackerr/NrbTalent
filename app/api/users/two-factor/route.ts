@@ -26,7 +26,7 @@ export async function GET() {
 
     const user = await db.collection("users").findOne(
       { _id: userId },
-      { projection: { twoFactorSecret: 1, twoFactorEnabled: 1, email: 1 } }
+      { projection: { twoFactorSecret: 1, twoFactorEnabled: 1, twoFactorVerified: 1, email: 1 } }
     )
 
     if (!user) {
@@ -42,6 +42,7 @@ export async function GET() {
         { 
           $set: { 
             twoFactorSecret: secret,
+            twoFactorVerified: false, // 👈 AJOUTER
             updatedAt: new Date()
           } 
         }
@@ -55,6 +56,7 @@ export async function GET() {
         secret: secret,
         qrCode: qrCode,
         enabled: false,
+        verified: false, // 👈 AJOUTER
         message: "Secret généré. Scannez le QR code avec votre application d'authentification."
       })
     }
@@ -67,12 +69,15 @@ export async function GET() {
       return NextResponse.json({
         secret: user.twoFactorSecret,
         qrCode: qrCode,
-        enabled: false
+        enabled: false,
+        verified: user.twoFactorVerified || false, // 👈 AJOUTER
+        message: user.twoFactorVerified ? "Secret vérifié, prêt à activer" : "Secret généré, en attente de vérification"
       })
     }
 
     return NextResponse.json({
       enabled: user.twoFactorEnabled,
+      verified: true,
       message: user.twoFactorEnabled ? "2FA activé" : "2FA non configuré"
     })
 
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
 
     const user = await db.collection("users").findOne(
       { _id: userId },
-      { projection: { twoFactorSecret: 1, twoFactorEnabled: 1, email: 1 } }
+      { projection: { twoFactorSecret: 1, twoFactorEnabled: 1, twoFactorVerified: 1, email: 1 } }
     )
 
     if (!user) {
@@ -125,7 +130,7 @@ export async function POST(request: Request) {
         }, { status: 400 })
       }
 
-      // Marquer le 2FA comme vérifié (mais pas encore activé)
+      // Marquer le 2FA comme vérifié
       await db.collection("users").updateOne(
         { _id: userId },
         { 
@@ -190,6 +195,7 @@ export async function POST(request: Request) {
           { 
             $set: { 
               twoFactorEnabled: false,
+              twoFactorVerified: false, // 👈 RÉINITIALISER
               updatedAt: new Date()
             } 
           }

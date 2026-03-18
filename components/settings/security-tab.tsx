@@ -79,6 +79,7 @@ export function SecurityTab({ dict, lang }: SecurityTabProps) {
   const [qrCode, setQrCode] = useState("")
   const [verificationToken, setVerificationToken] = useState("")
   const [show2FASetup, setShow2FASetup] = useState(false)
+  const [twoFactorVerified, setTwoFactorVerified] = useState(false)
   const [sessions, setSessions] = useState<Session[]>([])
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: "",
@@ -94,21 +95,22 @@ export function SecurityTab({ dict, lang }: SecurityTabProps) {
     loadSessions()
   }, [])
 
-  const load2FAStatus = async () => {
-    try {
-      const response = await fetch('/api/users/two-factor')
-      if (response.ok) {
-        const data = await response.json()
-        setTwoFactorEnabled(data.enabled)
-        if (data.secret) {
-          setTwoFactorSecret(data.secret)
-          setQrCode(data.qrCode)
-        }
+ const load2FAStatus = async () => {
+  try {
+    const response = await fetch('/api/users/two-factor')
+    if (response.ok) {
+      const data = await response.json()
+      setTwoFactorEnabled(data.enabled)
+      setTwoFactorVerified(data.verified || false) // 👈 AJOUTER CET ÉTAT
+      if (data.secret) {
+        setTwoFactorSecret(data.secret)
+        setQrCode(data.qrCode)
       }
-    } catch (error) {
-      console.error('Error loading 2FA status:', error)
     }
+  } catch (error) {
+    console.error('Error loading 2FA status:', error)
   }
+}
 
   const loadSessions = async () => {
     try {
@@ -574,7 +576,7 @@ export function SecurityTab({ dict, lang }: SecurityTabProps) {
             </Alert>
           )}
 
-          {!twoFactorEnabled && twoFactorSecret && (
+          {!twoFactorEnabled && twoFactorSecret && !twoFactorVerified && (
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
               <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
