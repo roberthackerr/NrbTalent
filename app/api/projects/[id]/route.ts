@@ -311,14 +311,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+   const {id}= await params;
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
 
-    if (!ObjectId.isValid(params.id)) {
+    if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "ID de projet invalide" }, { status: 400 })
     }
 
@@ -326,7 +327,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     
     // Vérifier que l'utilisateur est le client et que le projet peut être supprimé
     const project = await db.collection("projects").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       clientId: new ObjectId((session.user as any).id)
     })
 
@@ -346,7 +347,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     const result = await db.collection("projects").deleteOne({
-      _id: new ObjectId(params.id)
+      _id: new ObjectId(id)
     })
 
     if (result.deletedCount === 0) {
@@ -355,7 +356,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     // Supprimer les applications associées
     await db.collection("applications").deleteMany({
-      projectId: new ObjectId(params.id)
+      projectId: new ObjectId(id)
     })
 
     return NextResponse.json({ 
