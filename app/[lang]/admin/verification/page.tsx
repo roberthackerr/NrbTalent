@@ -206,14 +206,61 @@ export default function AdminVerificationPage() {
     window.open(url, '_blank')
   }
 
-  const downloadDocument = (url: string, filename: string) => {
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+ // Fonction pour nettoyer le nom du fichier
+const cleanFilename = (filename: string): string => {
+  // Enlever l'extension en double si elle existe
+  // Par exemple: "document.pdf.PDF" -> "document.pdf"
+  const parts = filename.split('.')
+  if (parts.length > 2) {
+    // Si on a plus de 2 parties, garder la première et la dernière
+    const extension = parts.pop() // Prend la dernière extension
+    const baseName = parts.join('.') // Le reste
+    return `${baseName}.${extension}`
   }
+  return filename
+}
+
+// Version améliorée de downloadDocument
+const downloadDocument = async (url: string, filename: string) => {
+  try {
+    // Nettoyer le nom du fichier
+    const cleanName = cleanFilename(filename)
+    console.log('Downloading:', { original: filename, cleaned: cleanName })
+
+    // Si c'est une URL Cloudinary
+    if (url.includes('cloudinary.com')) {
+      // Cloudinary permet de forcer le téléchargement avec un nom spécifique
+      // Format: fl_attachment: NomDuFichier
+      const encodedName = encodeURIComponent(cleanName)
+      const downloadUrl = url.replace('/upload/', `/upload/fl_attachment:${encodedName}/`)
+      
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = cleanName // Le nom souhaité
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      toast.success(`Téléchargement de ${cleanName}`)
+    } else {
+      // Pour les autres URLs
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = cleanName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(blobUrl)
+    }
+  } catch (error) {
+    console.error('Error downloading document:', error)
+    toast.error("Erreur lors du téléchargement")
+  }
+}
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
