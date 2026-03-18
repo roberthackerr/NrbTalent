@@ -1,5 +1,48 @@
 {
-
+ "general": {
+    "publicProfile": "Mombamomba ampahibemaso",
+    "publicProfileDesc": "Ireo fampahalalana ireo dia ho hita amin'ny mpampiasa hafa",
+    "profileCompletion": "Fahavitahan'ny mombamomba",
+    "completionTip": "Fenoy ny mombamomba anao mba hampitomboana ny fahitana anao hatramin'ny {percent}%",
+    "profilePhoto": "Sarin'ny mombamomba",
+    "photoRequirements": "PNG, JPG hatramin'ny 5MB",
+    "changePhoto": "Hanova sary",
+    "personalInfo": "Fampahalalana manokana",
+    "personalInfoDesc": "Havaozy ny mombamomba anao manokana sy matihanina",
+    "fullName": "Anarana feno",
+    "fullNamePlaceholder": "Ny anarana feno anao",
+    "email": "Mailaka",
+    "emailPlaceholder": "ny@mailakanao.com",
+    "emailNotEditable": "Tsy azo ovaina ny mailaka",
+    "professionalTitle": "Anaram-piasana matihanina",
+    "titlePlaceholder": "ohatra: Mpamorona Full-Stack Zokiny",
+    "bio": "Tantara fohy",
+    "bioPlaceholder": "Amaritso ny traikefanao, ny fahaizanao ary ny manam-pahaizanao...",
+    "location": "Toerana",
+    "locationPlaceholder": "Tanàna, Firenena",
+    "socialLinks": "Rohy sosialy",
+    "website": "Tranonkala",
+    "websitePlaceholder": "https://tranonkalanao.com",
+    "linkedinPlaceholder": "https://linkedin.com/in/anarana",
+    "githubPlaceholder": "https://github.com/anarana",
+    "twitterPlaceholder": "https://twitter.com/anarana",
+    "completion": {
+      "excellent": "Tena tsara",
+      "good": "Tsara",
+      "needsImprovement": "Mila fanatsarana"
+    },
+    "errors": {
+      "fetch": "Tsy fahombiazana ny fampidinana ny mombamomba",
+      "update": "Tsy fahombiazana ny fanavaozana ny mombamomba",
+      "invalidImage": "Fidio sary mety azafady",
+      "fileTooLarge": "Tsy maintsy latsaky ny 5MB ny sary",
+      "upload": "Tsy fahombiazana ny fampiakarana sary"
+    },
+    "success": {
+      "update": "Voavao soa aman-tsara ny mombamomba!",
+      "avatar": "Voaova soa aman-tsara ny sarin'ny mombamomba!"
+    }
+  },
    "billing": {
     "paymentMethods": "Fomba Fandoavana",
     "paymentMethodsDesc": "Karibo ny fomba fandoavanao sy ny mombamomba ny faktiora",
@@ -323,6 +366,11 @@
   },
 
   "common": {
+        "saving": "Fitehirizana...",
+    "saveChanges": "Tehirizo ny fanovana",
+    "noChanges": "Tsy misy fanovana",
+    "uploading": "Fampakarana...",
+    "characters": "literatiora",
       "verifying": "Fanamarinana...",
     "resendIn": "Handefa indray afaka",
     "sending": "Amplasiana...",

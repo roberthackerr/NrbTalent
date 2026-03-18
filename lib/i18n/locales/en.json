@@ -1,4 +1,49 @@
 {
+    "general": {
+    "publicProfile": "Public Profile",
+    "publicProfileDesc": "This information will be visible to other users",
+    "profileCompletion": "Profile Completion",
+    "completionTip": "Complete your profile to increase your visibility by {percent}%",
+    "profilePhoto": "Profile Photo",
+    "photoRequirements": "PNG, JPG up to 5MB",
+    "changePhoto": "Change Photo",
+    "personalInfo": "Personal Information",
+    "personalInfoDesc": "Update your personal and professional information",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "emailNotEditable": "Email cannot be changed",
+    "professionalTitle": "Professional Title",
+    "titlePlaceholder": "e.g., Senior Full-Stack Developer",
+    "bio": "Bio",
+    "bioPlaceholder": "Describe your experience, skills and specialties...",
+    "location": "Location",
+    "locationPlaceholder": "City, Country",
+    "socialLinks": "Social Links",
+    "website": "Website",
+    "websitePlaceholder": "https://your-website.com",
+    "linkedinPlaceholder": "https://linkedin.com/in/username",
+    "githubPlaceholder": "https://github.com/username",
+    "twitterPlaceholder": "https://twitter.com/username",
+    "completion": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "needsImprovement": "Needs Improvement"
+    },
+    "errors": {
+      "fetch": "Error loading profile",
+      "update": "Error updating profile",
+      "invalidImage": "Please select a valid image",
+      "fileTooLarge": "Image must be less than 5MB",
+      "upload": "Error uploading image"
+    },
+    "success": {
+      "update": "Profile updated successfully!",
+      "avatar": "Profile photo updated successfully!"
+    }
+  },
+
   "billing": {
     "paymentMethods": "Payment Methods",
     "paymentMethodsDesc": "Manage your payment methods and billing information",
@@ -556,6 +601,12 @@
   },
 
   "common": {
+        "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "cancel": "Cancel",
+    "noChanges": "No changes",
+    "uploading": "Uploading...",
+    "characters": "characters",
     "verifying": "Verifying...",
     "resendIn": "Resend in",
     "sending": "Sending...",

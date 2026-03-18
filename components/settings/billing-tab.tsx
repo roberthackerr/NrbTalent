@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, Download, Plus, CheckCircle2 } from "lucide-react"
+import Link from "next/link"
 
 interface BillingTabProps {
   dict: any
@@ -76,10 +77,12 @@ export function BillingTab({ dict, lang }: BillingTabProps) {
               </div>
             ))}
             
-            <Button variant="outline" className="w-full bg-transparent border-dashed">
+            <Link variant="outline" className="w-full bg-transparent border-dashed"
+            href={"/"+lang+"/dashboard/payment-methods"}
+            >
               <Plus className="h-4 w-4 mr-2" />
               {dict?.billing?.addMethod || "Ajouter une méthode de paiement"}
-            </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -13,9 +13,12 @@ import { Progress } from "@/components/ui/progress"
 import { Edit, Upload, MapPin, Briefcase, Globe, Linkedin, Github, Twitter } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { Label } from "../ui/label"
 
 interface GeneralTabProps {
   user: any
+  dict: any
+  lang: string
 }
 
 interface UserProfile {
@@ -32,8 +35,9 @@ interface UserProfile {
   }
 }
 
-export function GeneralTab({ user }: GeneralTabProps) {
+export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
   const { update } = useSession()
+  const params = useParams()
   const [loading, setLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
@@ -82,7 +86,7 @@ export function GeneralTab({ user }: GeneralTabProps) {
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
-      toast.error("Erreur lors du chargement du profil")
+      toast.error(dict?.general?.errors?.fetch || "Erreur lors du chargement du profil")
     }
   }
 
@@ -122,14 +126,14 @@ export function GeneralTab({ user }: GeneralTabProps) {
           name: formData.name
         })
         
-        toast.success("Profil mis à jour avec succès!")
+        toast.success(dict?.general?.success?.update || "Profil mis à jour avec succès!")
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Failed to update profile')
       }
     } catch (error) {
       console.error('Error updating profile:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la mise à jour du profil")
+      toast.error(error instanceof Error ? error.message : dict?.general?.errors?.update || "Erreur lors de la mise à jour du profil")
     } finally {
       setLoading(false)
     }
@@ -164,12 +168,12 @@ export function GeneralTab({ user }: GeneralTabProps) {
 
     // Validation
     if (!file.type.startsWith('image/')) {
-      toast.error("Veuillez sélectionner une image valide")
+      toast.error(dict?.general?.errors?.invalidImage || "Veuillez sélectionner une image valide")
       return
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("L'image doit faire moins de 5MB")
+      toast.error(dict?.general?.errors?.fileTooLarge || "L'image doit faire moins de 5MB")
       return
     }
 
@@ -196,14 +200,14 @@ export function GeneralTab({ user }: GeneralTabProps) {
         // Recharger le profil pour le score à jour
         await fetchUserProfile()
         
-        toast.success("Photo de profil mise à jour avec succès!")
+        toast.success(dict?.general?.success?.avatar || "Photo de profil mise à jour avec succès!")
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Upload failed')
       }
     } catch (error) {
       console.error('Error uploading avatar:', error)
-      toast.error(error instanceof Error ? error.message : "Erreur lors du téléchargement de l'image")
+      toast.error(error instanceof Error ? error.message : dict?.general?.errors?.upload || "Erreur lors du téléchargement de l'image")
     } finally {
       setIsUploading(false)
       // Reset the input
@@ -233,13 +237,19 @@ export function GeneralTab({ user }: GeneralTabProps) {
 
   const hasChanges = calculateFormChanges()
 
+  const getCompletionLabel = () => {
+    if (completionScore >= 80) return dict?.general?.completion?.excellent || "Excellent"
+    if (completionScore >= 60) return dict?.general?.completion?.good || "Bon"
+    return dict?.general?.completion?.needsImprovement || "À améliorer"
+  }
+
   return (
     <div className="space-y-6">
       {/* En-tête du profil */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center justify-between">
-            <span>Profil Public</span>
+            <span>{dict?.general?.publicProfile || "Profil Public"}</span>
             <Badge variant="outline" className={cn(
               "text-xs",
               completionScore >= 80 
@@ -248,23 +258,23 @@ export function GeneralTab({ user }: GeneralTabProps) {
                 ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800"
                 : "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800"
             )}>
-              {completionScore >= 80 ? "Excellent" : completionScore >= 60 ? "Bon" : "À améliorer"}
+              {getCompletionLabel()}
             </Badge>
           </CardTitle>
           <CardDescription>
-            Ces informations seront visibles par les autres utilisateurs
+            {dict?.general?.publicProfileDesc || "Ces informations seront visibles par les autres utilisateurs"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Score de complétion */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600 dark:text-slate-400">Complétion du profil</span>
+              <span className="text-slate-600 dark:text-slate-400">{dict?.general?.profileCompletion || "Complétion du profil"}</span>
               <span className="font-semibold text-slate-900 dark:text-slate-100">{completionScore}%</span>
             </div>
             <Progress value={completionScore} className="h-2 bg-slate-200 dark:bg-slate-800" />
             <p className="text-xs text-slate-500 dark:text-slate-500">
-              Complétez votre profil pour augmenter votre visibilité de 40%
+              {dict?.general?.completionTip?.replace('{percent}', '40') || "Complétez votre profil pour augmenter votre visibilité de 40%"}
             </p>
           </div>
 
@@ -301,14 +311,16 @@ export function GeneralTab({ user }: GeneralTabProps) {
             </div>
             
             <div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Photo de profil</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">{dict?.general?.profilePhoto || "Photo de profil"}</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                PNG, JPG jusqu'à 5MB
+                {dict?.general?.photoRequirements || "PNG, JPG jusqu'à 5MB"}
               </p>
               <label htmlFor="avatar-upload">
                 <Button variant="outline" size="sm" disabled={isUploading} className="cursor-pointer">
                   <Upload className="h-4 w-4 mr-2" />
-                  {isUploading ? "Téléchargement..." : "Changer la photo"}
+                  {isUploading 
+                    ? (dict?.common?.uploading || "Téléchargement...") 
+                    : (dict?.general?.changePhoto || "Changer la photo")}
                 </Button>
               </label>
             </div>
@@ -319,9 +331,9 @@ export function GeneralTab({ user }: GeneralTabProps) {
       {/* Formulaire d'information */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader>
-          <CardTitle>Informations Personnelles</CardTitle>
+          <CardTitle>{dict?.general?.personalInfo || "Informations Personnelles"}</CardTitle>
           <CardDescription>
-            Mettez à jour vos informations personnelles et professionnelles
+            {dict?.general?.personalInfoDesc || "Mettez à jour vos informations personnelles et professionnelles"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -329,21 +341,21 @@ export function GeneralTab({ user }: GeneralTabProps) {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-3">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Nom Complet *
+                  {dict?.general?.fullName || "Nom Complet"} *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                  placeholder="Votre nom complet"
+                  placeholder={dict?.general?.fullNamePlaceholder || "Votre nom complet"}
                   required
                 />
               </div>
               
               <div className="space-y-3">
                 <Label htmlFor="email" className="text-sm font-medium">
-                  Email *
+                  {dict?.general?.email || "Email"} *
                 </Label>
                 <Input
                   id="email"
@@ -351,12 +363,12 @@ export function GeneralTab({ user }: GeneralTabProps) {
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   className="border-slate-200 dark:border-slate-700 focus:border-blue-500 bg-slate-50 dark:bg-slate-800"
-                  placeholder="votre@email.com"
+                  placeholder={dict?.general?.emailPlaceholder || "votre@email.com"}
                   required
                   disabled
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-500">
-                  L'email ne peut pas être modifié
+                  {dict?.general?.emailNotEditable || "L'email ne peut pas être modifié"}
                 </p>
               </div>
             </div>
@@ -364,24 +376,24 @@ export function GeneralTab({ user }: GeneralTabProps) {
             <div className="space-y-3">
               <Label htmlFor="title" className="text-sm font-medium flex items-center gap-2">
                 <Briefcase className="h-4 w-4" />
-                Titre Professionnel
+                {dict?.general?.professionalTitle || "Titre Professionnel"}
               </Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                placeholder="ex: Développeur Full-Stack Senior"
+                placeholder={dict?.general?.titlePlaceholder || "ex: Développeur Full-Stack Senior"}
                 maxLength={100}
               />
               <p className="text-xs text-slate-500 dark:text-slate-500">
-                {formData.title?.length}/100 caractères
+                {formData.title?.length || 0}/100 {dict?.common?.characters || "caractères"}
               </p>
             </div>
 
             <div className="space-y-3">
               <Label htmlFor="bio" className="text-sm font-medium">
-                Bio
+                {dict?.general?.bio || "Bio"}
               </Label>
               <Textarea
                 id="bio"
@@ -389,38 +401,38 @@ export function GeneralTab({ user }: GeneralTabProps) {
                 onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                 rows={4}
                 className="border-slate-200 dark:border-slate-700 focus:border-blue-500 resize-none"
-                placeholder="Décrivez votre expérience, vos compétences et vos spécialités..."
+                placeholder={dict?.general?.bioPlaceholder || "Décrivez votre expérience, vos compétences et vos spécialités..."}
                 maxLength={500}
               />
               <p className="text-xs text-slate-500 dark:text-slate-500">
-                {formData.bio?.length}/500 caractères
+                {formData.bio?.length || 0}/500 {dict?.common?.characters || "caractères"}
               </p>
             </div>
 
             <div className="space-y-3">
               <Label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Localisation
+                {dict?.general?.location || "Localisation"}
               </Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                 className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                placeholder="Ville, Pays"
+                placeholder={dict?.general?.locationPlaceholder || "Ville, Pays"}
                 maxLength={50}
               />
             </div>
 
             {/* Liens sociaux */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-slate-900 dark:text-slate-100">Liens Sociaux</h4>
+              <h4 className="font-semibold text-slate-900 dark:text-slate-100">{dict?.general?.socialLinks || "Liens Sociaux"}</h4>
               
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-3">
                   <Label htmlFor="website" className="text-sm font-medium flex items-center gap-2">
                     <Globe className="h-4 w-4" />
-                    Site Web
+                    {dict?.general?.website || "Site Web"}
                   </Label>
                   <Input
                     id="website"
@@ -430,7 +442,7 @@ export function GeneralTab({ user }: GeneralTabProps) {
                       socialLinks: { ...prev.socialLinks, website: e.target.value }
                     }))}
                     className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                    placeholder="https://votre-site.com"
+                    placeholder={dict?.general?.websitePlaceholder || "https://votre-site.com"}
                     type="url"
                   />
                 </div>
@@ -448,7 +460,7 @@ export function GeneralTab({ user }: GeneralTabProps) {
                       socialLinks: { ...prev.socialLinks, linkedin: e.target.value }
                     }))}
                     className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                    placeholder="https://linkedin.com/in/username"
+                    placeholder={dict?.general?.linkedinPlaceholder || "https://linkedin.com/in/username"}
                     type="url"
                   />
                 </div>
@@ -466,7 +478,7 @@ export function GeneralTab({ user }: GeneralTabProps) {
                       socialLinks: { ...prev.socialLinks, github: e.target.value }
                     }))}
                     className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                    placeholder="https://github.com/username"
+                    placeholder={dict?.general?.githubPlaceholder || "https://github.com/username"}
                     type="url"
                   />
                 </div>
@@ -484,7 +496,7 @@ export function GeneralTab({ user }: GeneralTabProps) {
                       socialLinks: { ...prev.socialLinks, twitter: e.target.value }
                     }))}
                     className="border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                    placeholder="https://twitter.com/username"
+                    placeholder={dict?.general?.twitterPlaceholder || "https://twitter.com/username"}
                     type="url"
                   />
                 </div>
@@ -500,10 +512,10 @@ export function GeneralTab({ user }: GeneralTabProps) {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    Enregistrement...
+                    {dict?.common?.saving || "Enregistrement..."}
                   </>
                 ) : (
-                  "Enregistrer les modifications"
+                  dict?.common?.saveChanges || "Enregistrer les modifications"
                 )}
               </Button>
               <Button 
@@ -512,12 +524,12 @@ export function GeneralTab({ user }: GeneralTabProps) {
                 onClick={fetchUserProfile}
                 disabled={loading || !hasChanges}
               >
-                Annuler
+                {dict?.common?.cancel || "Annuler"}
               </Button>
               
               {!hasChanges && (
                 <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
-                  Aucune modification
+                  {dict?.common?.noChanges || "Aucune modification"}
                 </Badge>
               )}
             </div>
