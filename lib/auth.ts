@@ -9,6 +9,7 @@ import crypto from "crypto"
 import { User, CreateUserDTO, toUserResponseDTO, createNewUser } from "./models/user"
 import { ObjectId } from "mongodb"
 import { sendVerificationEmail } from "./email-service"
+import { authenticator } from "otplib"
 
 // ==================== TYPE EXTENSIONS ====================
 declare module "next-auth" {
@@ -131,6 +132,8 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
         lang: { label: "Language", type: "text" },
         isVerifiedFlow: { label: "Verified Flow", type: "text" }, // 👈 NOUVEAU CHAMP
+            twoFactorToken: { label: "2FA Token", type: "text" }, // 👈 AJOUTER
+    twoFactorSkip: { label: "2FA Skip", type: "text" }, // 👈 AJOUTER
       },
       async authorize(credentials) {
         try {
@@ -222,7 +225,38 @@ export const authOptions: NextAuthOptions = {
           if (!isValid) {
             throw new Error("Mot de passe incorrect")
           }
+               // ✅ VÉRIFICATION 2FA
+      if (existingUser.twoFactorEnabled) {
+        // Si c'est la première étape (pas de token 2FA fourni)
+        if (!credentials.twoFactorToken) {
+          throw new Error("2FA_REQUIRED")
+        }
 
+        // Vérifier le token 2FA
+        if (!existingUser.twoFactorSecret) {
+          throw new Error("Configuration 2FA invalide")
+        }
+
+        const isValidToken = authenticator.verify({
+          token: credentials.twoFactorToken,
+          secret: existingUser.twoFactorSecret
+        })
+
+        if (!isValidToken) {
+          throw new Error("Code 2FA invalide")
+        }
+
+        // Optionnel: stocker que l'utilisateur a validé 2FA pour cette session
+        await usersCollection.updateOne(
+          { _id: existingUser._id },
+          { 
+            $set: { 
+              lastTwoFactorVerified: new Date(),
+              updatedAt: new Date() 
+            } 
+          }
+        )
+      }
           // Mettre à jour la date de dernière connexion
           await usersCollection.updateOne(
             { _id: existingUser._id },
@@ -238,6 +272,7 @@ export const authOptions: NextAuthOptions = {
             onboardingCompleted: existingUser.onboardingCompleted || false,
             avatar: existingUser.avatar,
             emailVerified: true,
+             twoFactorVerified: existingUser.twoFactorEnabled ? true : false, // Ajouter cette info
           }
         } catch (error) {
           console.error("Authorize error:", error)

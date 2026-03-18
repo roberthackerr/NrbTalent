@@ -48,7 +48,11 @@ export default function SignInForm({ dict, lang }: Props) {
       })
 
       if (result?.error) {
-        if (result.error === 'EMAIL_NOT_VERIFIED') {
+             if (result.error === '2FA_REQUIRED') {
+        // Rediriger vers la page 2FA avec les credentials
+        router.push(`/${lang}/auth/2fa?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&lang=${lang}`)
+      } 
+        else if (result.error === 'EMAIL_NOT_VERIFIED') {
     // Rediriger vers la page de vérification
     sessionStorage.setItem('pendingVerificationEmail', email)
     router.push(`/${lang}/auth/verify-email-prompt`)
