@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Bell, Mail, MessageSquare, Calendar, CreditCard, Users, Shield, TrendingUp, FileText, DollarSign } from "lucide-react"
+import { Bell, Mail, MessageSquare, Calendar, CreditCard, Users, Shield, TrendingUp, FileText, DollarSign, Loader2 } from "lucide-react"
 
 interface NotificationSetting {
   id: string
@@ -31,6 +31,7 @@ interface NotificationsTabProps {
 export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState<string | null>(null)
   const [categories, setCategories] = useState<NotificationCategory[]>([])
 
   // Initialize categories with dictionary values
@@ -103,6 +104,7 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
   }, [dict])
 
   const loadPreferences = async () => {
+    setIsLoading(true)
     try {
       const response = await fetch('/api/notifications/preferences')
       
@@ -111,6 +113,7 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
       }
       
       const data = await response.json()
+      console.log('Preferences loaded:', data) // Debug
       
       if (data.preferences && Array.isArray(data.preferences)) {
         updateCategoriesWithPreferences(data.preferences)
@@ -122,6 +125,8 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
         description: dict?.notifications?.loadError || "Impossible de charger les préférences. Utilisation des paramètres par défaut.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -132,7 +137,7 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
       prevCategories.map(category => ({
         ...category,
         settings: category.settings.map(setting => {
-          const savedPref = preferences.find(p => p && p.settingId === setting.id)
+          const savedPref = preferences.find(p => p && p.id === setting.id)
           return savedPref ? { ...setting, enabled: savedPref.enabled } : setting
         })
       }))
@@ -140,6 +145,7 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
   }
 
   const handleToggle = async (settingId: string, enabled: boolean) => {
+    // Mise à jour optimiste
     setCategories(prevCategories => 
       prevCategories.map(category => ({
         ...category,
@@ -148,6 +154,8 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
         )
       }))
     )
+
+    setIsSaving(settingId)
 
     try {
       const response = await fetch('/api/notifications/preferences', {
@@ -161,22 +169,20 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to save preference')
+        throw new Error(data.error || 'Failed to save preference')
       }
 
       toast({
-        title: dict?.common?.success || "Préférence sauvegardée",
-        description: dict?.notifications?.saveSuccess || "Votre préférence de notification a été mise à jour.",
+        title: dict?.common?.success || "Succès",
+        description: dict?.notifications?.saveSuccess || "Préférence mise à jour avec succès.",
       })
     } catch (error) {
       console.error('Error saving preference:', error)
-      toast({
-        title: dict?.common?.error || "Erreur",
-        description: dict?.notifications?.saveError || "Impossible de sauvegarder la préférence. Veuillez réessayer.",
-        variant: "destructive",
-      })
       
+      // Revenir à l'état précédent en cas d'erreur
       setCategories(prevCategories => 
         prevCategories.map(category => ({
           ...category,
@@ -185,6 +191,14 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
           )
         }))
       )
+
+      toast({
+        title: dict?.common?.error || "Erreur",
+        description: dict?.notifications?.saveError || "Impossible de sauvegarder la préférence.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(null)
     }
   }
 
@@ -207,24 +221,37 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(data.error || 'Failed to save preferences')
       }
 
       toast({
-        title: dict?.common?.success || "Préférences sauvegardées",
-        description: dict?.notifications?.saveAllSuccess || "Toutes vos préférences de notification ont été sauvegardées.",
+        title: dict?.common?.success || "Succès",
+        description: dict?.notifications?.saveAllSuccess || "Toutes les préférences ont été sauvegardées.",
       })
     } catch (error) {
       console.error('Error saving preferences:', error)
       toast({
         title: dict?.common?.error || "Erreur",
-        description: dict?.notifications?.saveAllError || "Impossible de sauvegarder les préférences. Veuillez réessayer.",
+        description: dict?.notifications?.saveAllError || "Impossible de sauvegarder les préférences.",
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isLoading && categories.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="ml-3 text-slate-600 dark:text-slate-400">
+          {dict?.common?.loading || "Chargement..."}
+        </span>
+      </div>
+    )
   }
 
   return (
@@ -243,9 +270,14 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
           disabled={isLoading}
           className="bg-blue-600 hover:bg-blue-700"
         >
-          {isLoading 
-            ? (dict?.common?.saving || "Sauvegarde...") 
-            : (dict?.common?.saveAll || "Sauvegarder tout")}
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {dict?.common?.saving || "Sauvegarde..."}
+            </>
+          ) : (
+            dict?.common?.saveAll || "Sauvegarder tout"
+          )}
         </Button>
       </div>
 
@@ -273,6 +305,9 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
                       <span className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                         {setting.channel}
                       </span>
+                      {isSaving === setting.id && (
+                        <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
+                      )}
                     </div>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                       {setting.description}
@@ -281,6 +316,7 @@ export function NotificationsTab({ dict, lang }: NotificationsTabProps) {
                   <Switch 
                     id={setting.id} 
                     checked={setting.enabled}
+                    disabled={isSaving === setting.id}
                     onCheckedChange={(checked) => handleToggle(setting.id, checked)}
                   />
                 </div>
