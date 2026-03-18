@@ -70,17 +70,27 @@ export async function GET(request: Request) {
           }
         )
         
-        // IMPORTANT: Convertir les ObjectId en strings
+        // Convertir les documents si nécessaire (déjà au bon format d'après vos données)
+        const documents = request.documents || []
+        
         return {
           _id: request._id.toString(),
           userId: request.userId.toString(),
-          documents: request.documents || [],
+          requestId: request.requestId || '',
+          documents: documents.map((doc: any) => ({
+            url: doc.url,
+            publicId: doc.publicId,
+            type: doc.type,
+            name: doc.name,
+            size: doc.size
+          })),
           status: request.status,
           submittedAt: request.submittedAt.toISOString(),
           updatedAt: request.updatedAt?.toISOString(),
           reviewedBy: request.reviewedBy?.toString(),
           reviewedAt: request.reviewedAt?.toISOString(),
           rejectionReason: request.rejectionReason,
+          metadata: request.metadata || {},
           user: user ? {
             _id: user._id.toString(),
             name: user.name || '',
@@ -141,7 +151,13 @@ export async function PATCH(request: Request) {
     }
 
     const db = await getDatabase()
-    const requestObjId = new ObjectId(requestId)
+    let requestObjId
+    
+    try {
+      requestObjId = new ObjectId(requestId)
+    } catch {
+      return NextResponse.json({ error: "Invalid request ID" }, { status: 400 })
+    }
 
     // Récupérer la demande
     const verificationRequest = await db.collection("verification_requests")
