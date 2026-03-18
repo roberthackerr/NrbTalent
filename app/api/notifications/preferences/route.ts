@@ -1,201 +1,151 @@
-// app/api/notifications/preferences/route.ts
+// app/api/notifications/preferences/route.ts - Version simplifiée
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-// Structure par défaut des préférences
-const DEFAULT_PREFERENCES = [
-  { id: "email-messages", enabled: true, channel: 'email' },
-  { id: "email-projects", enabled: true, channel: 'email' },
-  { id: "email-applications", enabled: true, channel: 'email' },
-  { id: "email-offers", enabled: true, channel: 'email' },
-  { id: "email-payments", enabled: true, channel: 'email' },
-  { id: "email-marketing", enabled: false, channel: 'email' },
-  { id: "push-messages", enabled: true, channel: 'push' },
-  { id: "push-projects", enabled: true, channel: 'push' },
-  { id: "push-deadlines", enabled: true, channel: 'push' },
-  { id: "push-bids", enabled: true, channel: 'push' },
-  { id: "push-reviews", enabled: true, channel: 'push' },
-  { id: "security-login", enabled: true, channel: 'email' },
-  { id: "security-password", enabled: true, channel: 'email' },
-  { id: "security-2fa", enabled: true, channel: 'email' },
-  { id: "security-verification", enabled: true, channel: 'email' },
-  { id: "payment-invoices", enabled: true, channel: 'email' },
-  { id: "payment-withdrawals", enabled: true, channel: 'email' },
-  { id: "payment-escrow", enabled: true, channel: 'email' },
-  { id: "payment-disputes", enabled: true, channel: 'email' },
-  { id: "social-connections", enabled: true, channel: 'in_app' },
-  { id: "social-follows", enabled: true, channel: 'in_app' },
-  { id: "social-endorsements", enabled: true, channel: 'in_app' },
-  { id: "social-events", enabled: false, channel: 'email' },
-];
+const DEFAULT_PREFERENCES = {
+  "email-messages": true,
+  "email-projects": true,
+  "email-applications": true,
+  "email-offers": true,
+  "email-payments": true,
+  "email-marketing": false,
+  "push-messages": true,
+  "push-projects": true,
+  "push-deadlines": true,
+  "push-bids": true,
+  "push-reviews": true,
+  "security-login": true,
+  "security-password": true,
+  "security-2fa": true,
+  "security-verification": true,
+  "payment-invoices": true,
+  "payment-withdrawals": true,
+  "payment-escrow": true,
+  "payment-disputes": true,
+  "social-connections": true,
+  "social-follows": true,
+  "social-endorsements": true,
+  "social-events": false
+};
 
-// GET /api/notifications/preferences - Get user preferences
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     const db = await getDatabase();
-    const userId = session.user.id;
+    const userId = new ObjectId(session.user.id);
 
-    // Chercher les préférences de l'utilisateur
-    let userPrefs = await db.collection('notification_preferences').findOne({ 
-      userId: userId
-    });
+    const user = await db.collection('users').findOne(
+      { _id: userId },
+      { projection: { notificationPreferences: 1 } }
+    );
 
-    // Si pas de préférences, créer les préférences par défaut
-    if (!userPrefs) {
-      userPrefs = {
-        _id: new ObjectId(),
-        userId: userId,
-        preferences: DEFAULT_PREFERENCES,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      await db.collection('notification_preferences').insertOne(userPrefs);
-    }
+    const preferences = user?.notificationPreferences || DEFAULT_PREFERENCES;
 
-    return NextResponse.json({ 
-      preferences: userPrefs.preferences || DEFAULT_PREFERENCES 
-    });
+    // Convertir en format array pour le frontend
+    const preferencesArray = Object.entries(preferences).map(([id, enabled]) => ({
+      id,
+      enabled
+    }));
+
+    return NextResponse.json({ preferences: preferencesArray });
 
   } catch (error) {
-    console.error('Error fetching preferences:', error);
+    console.error('Erreur GET preferences:', error);
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Erreur serveur interne' }, 
       { status: 500 }
     );
   }
 }
 
-// PUT /api/notifications/preferences - Update a single preference
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     const db = await getDatabase();
-    const userId = session.user.id;
-    const { settingId, enabled } = await request.json();
+    const userId = new ObjectId(session.user.id);
+    
+    const body = await request.json();
+    const { settingId, enabled } = body;
 
     if (!settingId || enabled === undefined) {
       return NextResponse.json(
-        { error: 'settingId and enabled are required' }, 
+        { error: 'settingId et enabled sont requis' }, 
         { status: 400 }
       );
     }
 
-    // Mettre à jour une préférence spécifique
-    const result = await db.collection('notification_preferences').findOneAndUpdate(
-      { userId: userId },
+    // Mettre à jour directement dans l'utilisateur
+    await db.collection('users').updateOne(
+      { _id: userId },
       { 
         $set: { 
-          'preferences.$[elem].enabled': enabled,
+          [`notificationPreferences.${settingId}`]: enabled,
           updatedAt: new Date()
-        }
-      },
-      {
-        arrayFilters: [{ 'elem.id': settingId }],
-        returnDocument: 'after',
-        upsert: true
+        } 
       }
     );
 
-    // Si le document n'existait pas, créer avec les préférences par défaut modifiées
-    if (!result) {
-      const defaultPrefs = DEFAULT_PREFERENCES.map(p => 
-        p.id === settingId ? { ...p, enabled } : p
-      );
-      
-      await db.collection('notification_preferences').insertOne({
-        _id: new ObjectId(),
-        userId: userId,
-        preferences: defaultPrefs,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-
-    return NextResponse.json({ 
-      success: true,
-      message: 'Preference updated successfully' 
-    });
+    return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Error updating preference:', error);
+    console.error('Erreur PUT preferences:', error);
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Erreur serveur interne' }, 
       { status: 500 }
     );
   }
 }
 
-// POST /api/notifications/preferences/bulk - Update multiple preferences
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     const db = await getDatabase();
-    const userId = session.user.id;
-    const { preferences } = await request.json();
+    const userId = new ObjectId(session.user.id);
+    
+    const body = await request.json();
+    const { preferences } = body;
 
     if (!preferences || !Array.isArray(preferences)) {
       return NextResponse.json(
-        { error: 'preferences array is required' }, 
+        { error: 'preferences array est requis' }, 
         { status: 400 }
       );
     }
 
-    // Récupérer les préférences existantes
-    const existingPrefs = await db.collection('notification_preferences').findOne({ 
-      userId: userId 
+    // Construire l'objet de mise à jour
+    const updateObject: any = { updatedAt: new Date() };
+    preferences.forEach((p: any) => {
+      if (p.id && p.enabled !== undefined) {
+        updateObject[`notificationPreferences.${p.id}`] = p.enabled;
+      }
     });
 
-    if (existingPrefs) {
-      // Mettre à jour chaque préférence
-      const bulkOps = preferences.map((pref: { id: string; enabled: boolean }) => ({
-        updateOne: {
-          filter: { userId: userId, 'preferences.id': pref.id },
-          update: { $set: { 'preferences.$.enabled': pref.enabled, updatedAt: new Date() } }
-        }
-      }));
+    await db.collection('users').updateOne(
+      { _id: userId },
+      { $set: updateObject }
+    );
 
-      await db.collection('notification_preferences').bulkWrite(bulkOps);
-    } else {
-      // Créer nouvelles préférences
-      const newPrefs = DEFAULT_PREFERENCES.map(defaultPref => {
-        const updated = preferences.find(p => p.id === defaultPref.id);
-        return updated ? { ...defaultPref, enabled: updated.enabled } : defaultPref;
-      });
-
-      await db.collection('notification_preferences').insertOne({
-        _id: new ObjectId(),
-        userId: userId,
-        preferences: newPrefs,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-
-    return NextResponse.json({ 
-      success: true,
-      message: 'Preferences updated successfully' 
-    });
+    return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Error updating preferences:', error);
+    console.error('Erreur POST preferences:', error);
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Erreur serveur interne' }, 
       { status: 500 }
     );
   }
