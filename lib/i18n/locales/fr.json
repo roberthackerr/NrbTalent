@@ -187,6 +187,7 @@
 
 
    "billing": {
+    
     "paymentMethods": "Méthodes de Paiement",
     "paymentMethodsDesc": "Gérez vos méthodes de paiement et vos informations de facturation",
     "creditCard": "Carte de crédit",
@@ -198,6 +199,51 @@
     "historyDesc": "Consultez et téléchargez vos factures",
     "paid": "Payé",
     "download": "Télécharger"
+  },
+  "billings": {
+    "paymentMethods": "Méthodes de Paiement",
+    "paymentMethodsDesc": "Gérez vos cartes bancaires pour des paiements rapides et sécurisés",
+    "noCards": "Aucune carte enregistrée",
+    "noCardsDesc": "Ajoutez une carte pour pouvoir payer vos projets rapidement",
+    "addFirstCard": "Ajouter ma première carte",
+    "addMethod": "Ajouter une autre carte",
+    "managePaymentMethods": "Gérer toutes mes méthodes de paiement",
+    "default": "Par défaut",
+    "setDefault": "Définir par défaut",
+    "delete": "Supprimer",
+    "expires": "Expire le",
+    "addedOn": "Ajoutée le",
+    "cardholder": "Titulaire",
+    "history": "Historique de Facturation",
+    "historyDesc": "Consultez et téléchargez vos factures",
+    "paid": "Payé",
+    "download": "Télécharger",
+    "securePayment": "Paiement sécurisé",
+    "securePaymentDesc": "Toutes les transactions sont cryptées et conformes aux normes PCI DSS niveau 1",
+    "dataProtection": "Données protégées",
+    "dataProtectionDesc": "Vos informations bancaires ne sont jamais stockées sur nos serveurs",
+    "important": "Information importante",
+    "importantDesc": "Vous devez configurer au moins une carte bancaire avant de pouvoir payer un projet. Les cartes sont validées avec une transaction de 1€ qui est immédiatement annulée.",
+    "addCard": "Ajouter une carte",
+    "addCardDesc": "Entrez les informations de votre carte bancaire",
+    "cardholderName": "Nom du titulaire",
+    "cardNumber": "Numéro de carte",
+    "expiry": "Date d'expiration",
+    "setAsDefault": "Définir comme carte par défaut",
+    "testCard": "Mode test: utilisez 4242 4242 4242 4242",
+    "add": "Ajouter",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette carte ?",
+    "errors": {
+      "fetch": "Erreur lors du chargement des cartes",
+      "delete": "Erreur lors de la suppression",
+      "defaultSet": "Erreur lors du changement de carte par défaut",
+      "add": "Erreur lors de l'ajout de la carte"
+    },
+    "success": {
+      "deleted": "Carte supprimée avec succès",
+      "defaultSet": "Carte par défaut mise à jour",
+      "added": "Carte ajoutée avec succès !"
+    }
   },
   
   "security": {

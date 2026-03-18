@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface VerificationTabProps {
   user: any
@@ -43,14 +44,27 @@ interface UploadedDocument {
   size?: number
 }
 
+interface PaymentMethod {
+  id: string
+  brand: string
+  last4: string
+  exp_month: number
+  exp_year: number
+  isDefault: boolean
+  addedAt: Date
+  cardholderName?: string
+}
+
 export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
   const [loading, setLoading] = useState(false)
   const [idVerificationStatus, setIdVerificationStatus] = useState<VerificationStatus>("none")
+  const [paymentVerificationStatus, setPaymentVerificationStatus] = useState<VerificationStatus>("none")
   const [resendLoading, setResendLoading] = useState(false)
   const [idDocuments, setIdDocuments] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([])
   const [uploadProgress, setUploadProgress] = useState(0)
   const [requestId, setRequestId] = useState<string>("")
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   
   // États pour la vérification SMS
   const [phoneVerificationOpen, setPhoneVerificationOpen] = useState(false)
@@ -61,9 +75,10 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
   const [smsSent, setSmsSent] = useState(false)
   const [countdown, setCountdown] = useState(0)
 
-  // Charger le statut de vérification d'identité
+  // Charger les statuts
   useEffect(() => {
     fetchIdentityVerificationStatus()
+    fetchPaymentMethods()
   }, [])
 
   const fetchIdentityVerificationStatus = async () => {
@@ -77,6 +92,21 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
       }
     } catch (error) {
       console.error('Error fetching identity status:', error)
+    }
+  }
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const response = await fetch('/api/stripe/payment-methods')
+      const data = await response.json()
+      
+      if (data.success) {
+        setPaymentMethods(data.paymentMethods || [])
+        // Si l'utilisateur a au moins une carte, considérer comme vérifié
+        setPaymentVerificationStatus(data.paymentMethods.length > 0 ? "approved" : "none")
+      }
+    } catch (error) {
+      console.error('Erreur récupération cartes:', error)
     }
   }
 
@@ -167,11 +197,12 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
     {
       id: "payment",
       name: dict?.verification?.paymentMethod || "Méthode de Paiement",
-      description: dict?.verification?.paymentMethodDesc || "Carte bancaire ou compte",
-      status: "none" as VerificationStatus,
+      description: getPaymentDescription(),
+      status: paymentVerificationStatus,
       icon: CreditCard,
-      required: false,
-      canResend: false
+      required: true,
+      canResend: false,
+      hasVerification: true
     }
   ]
 
@@ -188,6 +219,15 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
       default:
         return `${user.phone} (${dict?.verification?.notVerified || "non vérifié"})`
     }
+  }
+
+  function getPaymentDescription() {
+    if (paymentMethods.length === 0) {
+      return dict?.verification?.noPaymentMethod || "Aucune carte enregistrée"
+    }
+    
+    const defaultCard = paymentMethods.find(c => c.isDefault) || paymentMethods[0]
+    return `${defaultCard.brand.toUpperCase()} •••• ${defaultCard.last4}`
   }
 
   const handleResendVerification = async () => {
@@ -495,6 +535,23 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
     }
   }
 
+  const formatBrand = (brand: string) => {
+    const brands: Record<string, string> = {
+      visa: 'Visa',
+      mastercard: 'Mastercard',
+      amex: 'American Express',
+      discover: 'Discover',
+      jcb: 'JCB',
+      diners: 'Diners Club',
+      unionpay: 'UnionPay'
+    }
+    return brands[brand.toLowerCase()] || brand.toUpperCase()
+  }
+
+  const formatExpiry = (month: number, year: number) => {
+    return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`
+  }
+
   const completedVerifications = verifications.filter(v => v.status === "approved").length
   const requiredVerifications = verifications.filter(v => v.required).length
   const verificationProgress = requiredVerifications > 0 ? (completedVerifications / requiredVerifications) * 100 : 0
@@ -527,6 +584,7 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
               const Icon = verification.icon
               const isEmail = verification.id === "email"
               const isPhone = verification.id === "phone"
+              const isPayment = verification.id === "payment"
               
               return (
                 <div
@@ -738,6 +796,41 @@ export function VerificationTab({ user, dict, lang }: VerificationTabProps) {
                         </div>
                       </DialogContent>
                     </Dialog>
+                  )}
+
+                  {/* Actions pour le paiement - juste afficher le statut avec lien vers la gestion */}
+                  {isPayment && (
+                    <div className="space-y-2">
+                      {paymentMethods.length > 0 ? (
+                        <div className="space-y-2">
+                          {paymentMethods.slice(0, 2).map((method) => (
+                            <div key={method.id} className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                              <CreditCard className="h-3 w-3" />
+                              <span>
+                                {formatBrand(method.brand)} •••• {method.last4} - {dict?.billing?.expires || "Expire"} {formatExpiry(method.exp_month, method.exp_year)}
+                                {method.isDefault && ` (${dict?.billing?.default || "défaut"})`}
+                              </span>
+                            </div>
+                          ))}
+                          {paymentMethods.length > 2 && (
+                            <p className="text-xs text-slate-500">
+                              +{paymentMethods.length - 2} {dict?.verification?.otherCards || "autre(s) carte(s)"}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {dict?.verification?.noPaymentMethod || "Aucune carte enregistrée"}
+                        </p>
+                      )}
+                      
+                      <Link 
+                        href={`/${lang}/dashboard/payment-methods`}
+                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline block mt-2"
+                      >
+                        {dict?.verification?.managePayments || "Gérer mes méthodes de paiement"} →
+                      </Link>
+                    </div>
                   )}
 
                   {/* Messages d'information */}
