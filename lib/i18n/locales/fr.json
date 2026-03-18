@@ -535,6 +535,7 @@
     },
 
     "skills": {
+      "category": "Catégorie",
       "title": "Compétences techniques",
       "description": "Listez vos technologies et domaines d'expertise",
       "searchSkills": "Rechercher des compétences...",

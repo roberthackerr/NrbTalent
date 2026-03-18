@@ -537,6 +537,7 @@
     },
 
     "skills": {
+      "category": "Category",
       "title": "Technical Skills",
       "description": "List your technologies and areas of expertise",
       "searchSkills": "Search skills...",

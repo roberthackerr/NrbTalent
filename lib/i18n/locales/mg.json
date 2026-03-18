@@ -287,6 +287,7 @@
     },
 
     "skills": {
+      "category": "karazany",
       "title": "Fahaiza-manao ara-teknika",
       "description": "Lisiro ny teknolojia sy ny fahaizanao",
       "searchSkills": "Hitady fahaiza-manao...",
@@ -486,6 +487,12 @@
       "title": "Vaovao : Ny Kalandrienao manan-tsaina",
       "description": "Karibo ny fotoana sy tetikasanao amin'ny toerana iray",
       "button": "Hahafantatra"
+    }
+    ,"teams": {
+      "title": "Vaovao : Ekipa Miaraha-miasa",
+      "description": "Midira amin'ny ekipa misy talenta mifameno",
+      "viewTeams": "Hijery ekipa",
+      "createTeam": "Mamorona ekipa"
     }
   }
 }
