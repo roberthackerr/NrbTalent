@@ -216,7 +216,7 @@ export function HeroSection({
                   </div>
                   
                   <TeamAccessButton
-                    teamId="discover"
+                    teamId=""
                     variant="gradient"
                     size="sm"
                     iconType="users"
