@@ -178,10 +178,20 @@ export default function GigsPage() {
                     <p className="text-slate-600 dark:text-slate-400 mt-1">
                       {!loading && (
                         <>
-                          {gigs.length} {dict?.gigs_page?.servicesFound?.replace('{count}', gigs.length.toString()) || `service${gigs.length > 1 ? 's' : ''} trouvé${gigs.length > 1 ? 's' : ''}`}
-                          <span className="text-green-600 dark:text-green-400 font-medium ml-2">
-                            • {activeGigsCount} {dict?.gigs_page?.active?.replace('{count}', activeGigsCount.toString()) || `actif${activeGigsCount > 1 ? 's' : ''}`}
-                          </span>
+                       {gigs.length} {
+  dict?.gigs_page?.servicesFound
+    ?.replace('{count}', gigs.length.toString())
+    ?.replace('{s}', gigs.length > 1 ? 's' : '') || 
+    `service${gigs.length > 1 ? 's' : ''} trouvé${gigs.length > 1 ? 's' : ''}`
+}
+<span className="text-green-600 dark:text-green-400 font-medium ml-2">
+  • {activeGigsCount} {
+    dict?.gigs_page?.active
+      ?.replace('{count}', activeGigsCount.toString())
+      ?.replace('{s}', activeGigsCount > 1 ? 's' : '') ||
+      `actif${activeGigsCount > 1 ? 's' : ''}`
+  }
+</span>
                         </>
                       )}
                     </p>

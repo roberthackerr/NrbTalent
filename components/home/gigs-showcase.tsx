@@ -59,17 +59,7 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
     <div className="space-y-8">
       {/* En-tête avec statistiques */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {dict?.gigs_page?.availableTitle || "Services Disponibles"}
-          </h3>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            {dict?.gigs_page?.servicesFound?.replace('{count}', gigs.length.toString()) || `${gigs.length} service${gigs.length > 1 ? 's' : ''} de freelances experts`}
-            <span className="text-green-600 dark:text-green-400 font-medium ml-1">
-              • {dict?.gigs_page?.active?.replace('{count}', activeGigsCount.toString()) || `${activeGigsCount} actif${activeGigsCount > 1 ? 's' : ''}`}
-            </span>
-          </p>
-        </div>
+
         
         <div className="flex items-center gap-3">
           <Button variant="outline" asChild>
