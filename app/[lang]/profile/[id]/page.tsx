@@ -80,6 +80,7 @@ import { cn } from "@/lib/utils"
 import { SkillBadge } from "@/components/SkillBadge"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
+import { ReviewSystem } from "@/components/reviews/ReviewSystem"
 
 interface UserProfile {
   _id: string
@@ -547,6 +548,7 @@ export default function PublicProfilePage() {
 
       {/* Contenu principal */}
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+        
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar améliorée */}
           <div className="space-y-6">
@@ -1201,6 +1203,13 @@ export default function PublicProfilePage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+              <div className="mt-6">
+          <ReviewSystem 
+            userId={profile._id}
+            userRole={profile.role === 'freelance' ? 'freelancer' : 'client'}
+            isOwnProfile={session?.user?.id === profile._id}
+          />
+        </div>
             </Tabs>
           </div>
         </div>
