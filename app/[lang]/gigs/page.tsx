@@ -188,8 +188,7 @@ export default function GigsPage() {
   • {activeGigsCount} {
     dict?.gigs_page?.active
       ?.replace('{count}', activeGigsCount.toString())
-      ?.replace('{s}', activeGigsCount > 1 ? 's' : '') ||
-      `actif${activeGigsCount > 1 ? 's' : ''}`
+    
   }
 </span>
                         </>
