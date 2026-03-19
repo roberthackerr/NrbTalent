@@ -246,7 +246,67 @@ export default function ProfilePage() {
   const [newBio, setNewBio] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [activeTab, setActiveTab] = useState("about")
+// Dans le composant ProfilePage, ajoutez ces nouvelles fonctions
 
+const [isUploadingCover, setIsUploadingCover] = useState(false)
+
+const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    toast.error(dict?.profile?.errors?.invalidImage || "Veuillez sélectionner une image valide")
+    return
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error(dict?.profile?.errors?.fileTooLarge || "L'image doit faire moins de 5MB")
+    return
+  }
+
+  setIsUploadingCover(true)
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'covers') // Dossier spécifique pour les couvertures
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      
+      // Mettre à jour le profil avec la nouvelle image de couverture
+      const updateResponse = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          section: 'basic',
+          data: { coverImage: data.url }
+        }),
+      })
+
+      if (updateResponse.ok) {
+        setProfile(prev => prev ? { ...prev, coverImage: data.url } : null)
+        toast.success(dict?.profile?.success?.cover || "Image de couverture mise à jour avec succès")
+      } else {
+        throw new Error('Failed to update profile')
+      }
+    } else {
+      throw new Error('Upload failed')
+    }
+  } catch (error) {
+    console.error('Error uploading cover:', error)
+    toast.error(dict?.profile?.errors?.upload || "Erreur lors du téléchargement de l'image")
+  } finally {
+    setIsUploadingCover(false)
+  }
+}
   // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -430,26 +490,53 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20 pt-16">
       {/* Header avec image de couverture améliorée */}
       <div className="relative">
-        <div className="h-56 lg:h-64 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
-          {profile.coverImage ? (
-            <Image
-              src={profile.coverImage}
-              alt="Cover"
-              fill
-              className="object-cover"
-              priority
-            />
-          ) : (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90"></div>
-              <div className="absolute inset-0 opacity-30">
-                <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
-                <div className="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
-              </div>
-            </>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        <div className="h-56 lg:h-64 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden group">
+    {profile.coverImage ? (
+      <Image
+        src={profile.coverImage}
+        alt="Cover"
+        fill
+        className="object-cover"
+        priority
+      />
+    ) : (
+      <>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90"></div>
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
         </div>
+      </>
+    )}
+    
+    {/* Overlay pour le téléchargement de couverture */}
+    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <label 
+        htmlFor="cover-upload"
+        className="cursor-pointer bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg backdrop-blur-sm transition-all flex items-center gap-2"
+      >
+        <Camera className="h-5 w-5" />
+        <span>{dict?.profile?.changeCover || "Changer la couverture"}</span>
+        <input
+          id="cover-upload"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleCoverUpload}
+          disabled={isUploadingCover}
+        />
+      </label>
+      
+      {isUploadingCover && (
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mx-auto mb-2"></div>
+            <p>{dict?.common?.uploading || "Téléchargement..."}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
 
         <div className="container mx-auto px-4 -mt-20 relative z-10 max-w-7xl">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
