@@ -210,6 +210,7 @@ export interface User {
   _id: ObjectId
   /** Creation timestamp (automatically set) */
   createdAt: Date
+  coverImage:any
   /** Last update timestamp (automatically updated) */
   updatedAt: Date
 

@@ -287,7 +287,7 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
         },
         body: JSON.stringify({ 
           section: 'basic',
-          data: { coverImage: data.url }
+          data: {coverImage : data.url }
         }),
       })
 
