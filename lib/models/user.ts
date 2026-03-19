@@ -408,6 +408,7 @@ export interface UpdateUserDTO {
  */
 export interface UserResponseDTO {
   id: string
+  coverImage:any
   name: string
   email: string
   role: UserRole
@@ -476,6 +477,7 @@ export interface VerificationToken {
 export function toUserResponseDTO(user: User): UserResponseDTO {
   return {
     id: user._id.toString(),
+    coverImage:user.coverImage,
     name: user.name,
     email: user.email,
     role: user.role,
