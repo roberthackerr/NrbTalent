@@ -16,11 +16,13 @@ interface GigsShowcaseProps {
   loading: boolean
   searchQuery: string
   showCreateButton?: boolean
+  dict: any
+  lang: string
 }
 
-export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = true }: GigsShowcaseProps) {
+export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = true, dict, lang }: GigsShowcaseProps) {
   if (loading) {
-    return <GigsSkeleton />
+    return <GigsSkeleton dict={dict} />
   }
 
   if (gigs.length === 0) {
@@ -30,19 +32,20 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
           <Zap className="h-10 w-10 text-blue-600 dark:text-blue-400" />
         </div>
         <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 text-lg">
-          {searchQuery ? "Aucun service trouvé" : "Aucun service disponible"}
+          {searchQuery 
+            ? (dict?.gigs_page?.noResults || "Aucun service trouvé") 
+            : (dict?.gigs_page?.noGigs || "Aucun service disponible")}
         </h3>
         <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
           {searchQuery 
-            ? "Essayez de modifier vos critères de recherche ou explorez d'autres catégories"
-            : "Soyez le premier à proposer vos compétences et démarquez-vous sur la plateforme"
-          }
+            ? (dict?.gigs_page?.noResultsDesc || "Essayez de modifier vos critères de recherche ou explorez d'autres catégories")
+            : (dict?.gigs_page?.noGigsDesc || "Soyez le premier à proposer vos compétences et démarquez-vous sur la plateforme")}
         </p>
         {showCreateButton && (
           <Button asChild>
-            <Link href="/gigs/create">
+            <Link href={`/${lang}/gigs/create`}>
               <Zap className="h-4 w-4 mr-2" />
-              Créer mon premier service
+              {dict?.gigs_page?.createFirst || "Créer mon premier service"}
             </Link>
           </Button>
         )}
@@ -50,34 +53,36 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
     )
   }
 
+  const activeGigsCount = gigs.filter(g => g.status === 'active').length
+
   return (
     <div className="space-y-8">
       {/* En-tête avec statistiques */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Services Disponibles
+            {dict?.gigs_page?.availableTitle || "Services Disponibles"}
           </h3>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
-            {gigs.length} service{gigs.length > 1 ? 's' : ''} de freelances experts • 
+            {dict?.gigs_page?.servicesFound?.replace('{count}', gigs.length.toString()) || `${gigs.length} service${gigs.length > 1 ? 's' : ''} de freelances experts`}
             <span className="text-green-600 dark:text-green-400 font-medium ml-1">
-              {gigs.filter(g => g.status === 'active').length} actif{gigs.filter(g => g.status === 'active').length > 1 ? 's' : ''}
+              • {dict?.gigs_page?.active?.replace('{count}', activeGigsCount.toString()) || `${activeGigsCount} actif${activeGigsCount > 1 ? 's' : ''}`}
             </span>
           </p>
         </div>
         
         <div className="flex items-center gap-3">
           <Button variant="outline" asChild>
-            <Link href="/gigs/trending">
+            <Link href={`/${lang}/gigs/trending`}>
               <TrendingUp className="h-4 w-4 mr-2" />
-              Tendance
+              {dict?.gigs_page?.trending || "Tendance"}
             </Link>
           </Button>
           {showCreateButton && (
             <Button asChild>
-              <Link href="/gigs/create">
+              <Link href={`/${lang}/gigs/create`}>
                 <Zap className="h-4 w-4 mr-2" />
-                Nouveau service
+                {dict?.gigs_page?.createNew || "Nouveau service"}
               </Link>
             </Button>
           )}
@@ -85,9 +90,9 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
       </div>
 
       {/* Grid des services */}
-     <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-2">
         {gigs.map((gig) => (
-          <GigCard key={gig._id} gig={gig} />
+          <GigCard key={gig._id} gig={gig} dict={dict} lang={lang} />
         ))}
       </div>
 
@@ -95,8 +100,8 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
       {gigs.length >= 12 && (
         <div className="text-center pt-4">
           <Button variant="outline" size="lg" asChild>
-            <Link href="/gigs">
-              Voir tous les services
+            <Link href={`/${lang}/gigs`}>
+              {dict?.gigs_page?.viewAll || "Voir tous les services"}
               <TrendingUp className="h-4 w-4 ml-2" />
             </Link>
           </Button>
@@ -106,13 +111,12 @@ export function GigsShowcase({ gigs, loading, searchQuery, showCreateButton = tr
   )
 }
 
-function GigCard({ gig }: { gig: any }) {
+function GigCard({ gig, dict, lang }: { gig: any; dict: any; lang: string }) {
   const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
   const handleContact = async () => {
     try {
-      // Créer une conversation avec le vendeur
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,50 +125,66 @@ function GigCard({ gig }: { gig: any }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success("Conversation créée!")
-        // Rediriger vers la conversation
-        window.location.href = `/messages/${data.conversation._id}`
+        toast.success(dict?.gigs_page?.messages?.conversationCreated || "Conversation créée!")
+        window.location.href = `/${lang}/messages/${data.conversation._id}`
       } else {
         throw new Error('Erreur création conversation')
       }
     } catch (error) {
-      toast.error("Erreur lors de la prise de contact")
+      toast.error(dict?.gigs_page?.errors?.contact || "Erreur lors de la prise de contact")
     }
   }
 
   const handleQuickOrder = async () => {
     try {
-      // Créer une commande rapide
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           gigId: gig._id, 
           package: 'basic',
-          requirements: 'Je souhaite commander ce service'
+          requirements: dict?.gigs_page?.defaultRequirements || 'Je souhaite commander ce service'
         })
       })
 
       if (response.ok) {
         const data = await response.json()
-        toast.success("Commande créée avec succès!")
-        // Rediriger vers la page de commande
-        window.location.href = `/orders/${data.order._id}`
+        toast.success(dict?.gigs_page?.messages?.orderCreated || "Commande créée avec succès!")
+        window.location.href = `/${lang}/orders/${data.order._id}`
       } else {
         throw new Error('Erreur création commande')
       }
     } catch (error) {
-      toast.error("Erreur lors de la commande")
+      toast.error(dict?.gigs_page?.errors?.order || "Erreur lors de la commande")
     }
   }
 
   const toggleLike = async () => {
     try {
-      // Implémentation du like
       setIsLiked(!isLiked)
-      toast.success(isLiked ? "Service retiré des favoris" : "Service ajouté aux favoris")
+      toast.success(
+        isLiked 
+          ? (dict?.gigs_page?.messages?.removedFromFavorites || "Service retiré des favoris") 
+          : (dict?.gigs_page?.messages?.addedToFavorites || "Service ajouté aux favoris")
+      )
     } catch (error) {
-      toast.error("Erreur lors de l'action")
+      toast.error(dict?.gigs_page?.errors?.favorite || "Erreur lors de l'action")
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch(status) {
+      case 'active': return dict?.gigs_page?.status?.active || 'Actif';
+      case 'paused': return dict?.gigs_page?.status?.paused || 'En pause';
+      default: return dict?.gigs_page?.status?.draft || 'Brouillon';
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'active': return "bg-green-500 hover:bg-green-600 text-white";
+      case 'paused': return "bg-yellow-500 hover:bg-yellow-600 text-white";
+      default: return "bg-slate-500 hover:bg-slate-600 text-white";
     }
   }
 
@@ -197,15 +217,8 @@ function GigCard({ gig }: { gig: any }) {
         
         {/* Badge de statut */}
         <div className="absolute top-3 left-3">
-          <Badge className={cn(
-            "text-xs font-semibold",
-            gig.status === 'active' 
-              ? "bg-green-500 hover:bg-green-600 text-white" 
-              : gig.status === 'paused'
-              ? "bg-yellow-500 hover:bg-yellow-600 text-white"
-              : "bg-slate-500 hover:bg-slate-600 text-white"
-          )}>
-            {gig.status === 'active' ? 'Actif' : gig.status === 'paused' ? 'En pause' : 'Brouillon'}
+          <Badge className={cn("text-xs font-semibold", getStatusColor(gig.status))}>
+            {getStatusText(gig.status)}
           </Badge>
         </div>
 
@@ -236,8 +249,8 @@ function GigCard({ gig }: { gig: any }) {
             className="bg-white/90 backdrop-blur-sm hover:bg-white"
             asChild
           >
-            <Link href={`/gigs/${gig._id}`}>
-              Voir les détails
+            <Link href={`/${lang}/gigs/${gig._id}`}>
+              {dict?.gigs_page?.viewDetails || "Voir les détails"}
             </Link>
           </Button>
         </div>
@@ -254,12 +267,12 @@ function GigCard({ gig }: { gig: any }) {
           </Avatar>
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm">
-              {gig.seller?.name || gig.createdBy?.name || 'Vendeur'}
+              {gig.seller?.name || gig.createdBy?.name || dict?.gigs_page?.seller || 'Vendeur'}
             </h4>
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3 text-yellow-500 fill-current" />
               <span className="text-xs text-slate-600 dark:text-slate-400">
-                {gig.rating || 'Nouveau'} {gig.reviewsCount && `(${gig.reviewsCount})`}
+                {gig.rating || dict?.gigs_page?.new || 'Nouveau'} {gig.reviewsCount && `(${gig.reviewsCount})`}
               </span>
             </div>
           </div>
@@ -267,7 +280,7 @@ function GigCard({ gig }: { gig: any }) {
 
         {/* Titre et description */}
         <CardTitle className="text-lg leading-tight line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-2">
-          <Link href={`/gigs/${gig._id}`} className="hover:underline">
+          <Link href={`/${lang}/gigs/${gig._id}`} className="hover:underline">
             {gig.title}
           </Link>
         </CardTitle>
@@ -281,16 +294,16 @@ function GigCard({ gig }: { gig: any }) {
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200">
             <DollarSign className="h-3 w-3 mr-1" />
-            À partir de {gig.price} {gig.currency || '€'}
+            {dict?.gigs_page?.from || "À partir de"} {gig.price} {gig.currency || '€'}
           </Badge>
           <Badge variant="outline" className="text-xs bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200">
             <Clock className="h-3 w-3 mr-1" />
-            {gig.deliveryTime} jour{gig.deliveryTime > 1 ? 's' : ''}
+            {gig.deliveryTime} {dict?.gigs_page?.days?.replace('{count}', gig.deliveryTime.toString()) || `jour${gig.deliveryTime > 1 ? 's' : ''}`}
           </Badge>
           {gig.revisions > 0 && (
             <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200">
               <CheckCircle className="h-3 w-3 mr-1" />
-              {gig.revisions} révision{gig.revisions > 1 ? 's' : ''}
+              {gig.revisions} {dict?.gigs_page?.revisions?.replace('{count}', gig.revisions.toString()) || `révision${gig.revisions > 1 ? 's' : ''}`}
             </Badge>
           )}
         </div>
@@ -298,7 +311,7 @@ function GigCard({ gig }: { gig: any }) {
         {/* Catégorie et tags */}
         <div className="space-y-2">
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            Catégorie: <span className="font-medium text-slate-700 dark:text-slate-300">{gig.category}</span>
+            {dict?.gigs_page?.category}: <span className="font-medium text-slate-700 dark:text-slate-300">{gig.category}</span>
           </div>
           <div className="flex flex-wrap gap-1">
             {gig.tags?.slice(0, 3).map((tag: string, index: number) => (
@@ -335,14 +348,14 @@ function GigCard({ gig }: { gig: any }) {
             className="border-slate-300 dark:border-slate-600"
           >
             <MessageCircle className="h-4 w-4 mr-2" />
-            Contacter
+            {dict?.gigs_page?.contact || "Contacter"}
           </Button>
           <Button 
             size="sm" 
             onClick={handleQuickOrder}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
-            Commander
+            {dict?.gigs_page?.order || "Commander"}
           </Button>
         </div>
       </CardFooter>
@@ -350,7 +363,7 @@ function GigCard({ gig }: { gig: any }) {
   )
 }
 
-function GigsSkeleton() {
+function GigsSkeleton({ dict }: { dict: any }) {
   return (
     <div className="space-y-8">
       {/* En-tête skeleton */}
@@ -369,11 +382,9 @@ function GigsSkeleton() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {[...Array(8)].map((_, i) => (
           <Card key={i} className="border-slate-200 dark:border-slate-800 overflow-hidden">
-            {/* Image skeleton */}
             <div className="aspect-video bg-slate-200 dark:bg-slate-700 relative">
               <Skeleton className="w-full h-full" />
             </div>
-
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3 mb-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
@@ -386,7 +397,6 @@ function GigsSkeleton() {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-2/3" />
             </CardHeader>
-
             <CardContent className="pb-3 space-y-3">
               <div className="flex gap-2">
                 <Skeleton className="h-5 w-20" />
@@ -399,7 +409,6 @@ function GigsSkeleton() {
                 <Skeleton className="h-5 w-14" />
               </div>
             </CardContent>
-
             <CardFooter className="pt-3 border-t border-slate-200 dark:border-slate-800">
               <div className="flex justify-between w-full">
                 <div className="flex gap-4">

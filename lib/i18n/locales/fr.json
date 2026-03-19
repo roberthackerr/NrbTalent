@@ -1,5 +1,98 @@
 {
-
+"gigs_page": {
+    "pageTitle": "Services",
+    "pageDescription": "Trouvez le service parfait pour votre projet",
+    "heroTitle": "Trouvez le service parfait",
+    "heroSubtitle": "Des milliers de freelances talentueux prêts à réaliser vos projets",
+    "searchPlaceholder": "Rechercher un service, une compétence...",
+    
+    "filters": "Filtres",
+    "search": "Recherche",
+    "price": "Prix",
+    "min": "Min",
+    "max": "Max",
+    "rating": "Évaluation",
+    "minRating": "Note minimum",
+    "ratingAndAbove": "{rating}.0 étoiles et plus",
+    "sortBy": "Trier par",
+    "activeFilters": "Filtres actifs",
+    
+    "categories": {
+      "title": "Catégories",
+      "web": "Développement Web",
+      "design": "Design Graphique",
+      "writing": "Rédaction & Traduction",
+      "marketing": "Marketing Digital",
+      "video": "Montage Vidéo",
+      "audio": "Audio & Musique",
+      "business": "Business",
+      "lifestyle": "Lifestyle"
+    },
+    
+    "delivery": {
+      "title": "Délai de livraison",
+      "hour24": "24 heures",
+      "days3": "3 jours",
+      "week1": "7 jours",
+      "weeks2": "14 jours",
+      "month1": "1 mois"
+    },
+    
+    "sort": {
+      "newest": "Plus récent",
+      "bestRated": "Meilleures notes",
+      "priceAsc": "Prix croissant",
+      "priceDesc": "Prix décroissant",
+      "popular": "Plus populaires"
+    },
+    
+    "availableTitle": "Services Disponibles",
+    "servicesFound": "{count} service{count > 1 ? 's' : ''} de freelances experts",
+    "active": "{count} actif{count > 1 ? 's' : ''}",
+    "trending": "Tendance",
+    "createNew": "Nouveau service",
+    "viewAll": "Voir tous les services",
+    
+    "noResults": "Aucun service trouvé",
+    "noResultsDesc": "Essayez de modifier vos critères de recherche ou explorez d'autres catégories",
+    "noGigs": "Aucun service disponible",
+    "noGigsDesc": "Soyez le premier à proposer vos compétences et démarquez-vous sur la plateforme",
+    "createFirst": "Créer mon premier service",
+    
+    "from": "À partir de",
+    "days": "{count} jour",
+    "days_plural": "{count} jours",
+    "revisions": "{count} révision",
+    "revisions_plural": "{count} révisions",
+    "category": "Catégorie",
+    "viewDetails": "Voir les détails",
+    "contact": "Contacter",
+    "order": "Commander",
+    "seller": "Vendeur",
+    "new": "Nouveau",
+    "stars": "étoiles",
+    "defaultRequirements": "Je souhaite commander ce service",
+    
+    "status": {
+      "active": "Actif",
+      "paused": "En pause",
+      "draft": "Brouillon"
+    },
+    
+    "messages": {
+      "conversationCreated": "Conversation créée!",
+      "orderCreated": "Commande créée avec succès!",
+      "addedToFavorites": "Service ajouté aux favoris",
+      "removedFromFavorites": "Service retiré des favoris"
+    },
+    
+    "errors": {
+      "fetch": "Erreur lors du chargement des services",
+      "contact": "Erreur lors de la prise de contact",
+      "order": "Erreur lors de la commande",
+      "favorite": "Erreur lors de l'action"
+    }
+  },
   "twoFactor": {
     "title": "Authentification à deux facteurs",
     "subtitle": "Entrez le code à 6 chiffres de votre application d'authentification",

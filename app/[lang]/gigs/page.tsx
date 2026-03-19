@@ -2,21 +2,38 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
+import { useParams } from "next/navigation"
 import { GigsShowcase } from "@/components/home/gigs-showcase"
 import { GigFilters } from "@/components/gigs/GigFilters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, Filter, SlidersHorizontal, Grid3X3, List } from "lucide-react"
+import { Search, Filter, SlidersHorizontal, Grid3X3, List, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { getDictionarySafe } from "@/lib/i18n/dictionaries"
+import type { Locale } from "@/lib/i18n/config"
+
+interface Filters {
+  category: string
+  minPrice: string
+  maxPrice: string
+  deliveryTime: string[]
+  rating: string[]
+  sortBy: string
+  search: string
+}
 
 export default function GigsPage() {
   const { data: session } = useSession()
+  const params = useParams()
+  const lang = params.lang as Locale
+  
+  const [dict, setDict] = useState<any>(null)
   const [gigs, setGigs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     category: '',
     minPrice: '',
     maxPrice: '',
@@ -27,22 +44,30 @@ export default function GigsPage() {
   })
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showFilters, setShowFilters] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
 
   const fetchGigs = useCallback(async () => {
+    if (!dict) return
+    
     try {
       setLoading(true)
       const params = new URLSearchParams()
       
       // Ajouter les filtres aux paramètres
-   Object.entries(filters).forEach(([key, value]) => {
-  if (value) {
-    if (Array.isArray(value)) {
-      value.forEach((v: any) => params.append(key, v.toString()))
-    } else {
-      params.append(key, value.toString())
-    }
-  }
-})
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          if (Array.isArray(value)) {
+            value.forEach((v: any) => params.append(key, v.toString()))
+          } else {
+            params.append(key, value.toString())
+          }
+        }
+      })
 
       const response = await fetch(`/api/gigs?${params}`)
       const data = await response.json()
@@ -54,15 +79,17 @@ export default function GigsPage() {
       }
     } catch (error) {
       console.error('Error fetching gigs:', error)
-      toast.error("Erreur lors du chargement des services")
+      toast.error(dict?.gigs?.errors?.fetch || "Erreur lors du chargement des services")
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, [filters, dict])
 
   useEffect(() => {
-    fetchGigs()
-  }, [fetchGigs])
+    if (dict) {
+      fetchGigs()
+    }
+  }, [fetchGigs, dict])
 
   // Recherche avec debounce
   useEffect(() => {
@@ -73,6 +100,21 @@ export default function GigsPage() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
+  if (!isMounted || !dict) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-slate-900">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">
+            {dict?.common?.loading || "Chargement..."}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const activeGigsCount = gigs.filter(g => g.status === 'active').length
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-slate-900">
       {/* Header Hero */}
@@ -80,10 +122,10 @@ export default function GigsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Trouvez le service parfait
+              {dict?.gigs?.heroTitle || "Trouvez le service parfait"}
             </h1>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Des milliers de freelances talentueux prêts à réaliser vos projets
+              {dict?.gigs?.heroSubtitle || "Des milliers de freelances talentueux prêts à réaliser vos projets"}
             </p>
             
             {/* Barre de recherche principale */}
@@ -91,7 +133,7 @@ export default function GigsPage() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 type="text"
-                placeholder="Rechercher un service, une compétence..."
+                placeholder={dict?.gigs?.searchPlaceholder || "Rechercher un service, une compétence..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 text-slate-900 bg-white border-0 rounded-full shadow-lg focus:ring-2 focus:ring-blue-500"
@@ -101,7 +143,7 @@ export default function GigsPage() {
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filtres
+                {dict?.gigs?.filters || "Filtres"}
               </Button>
             </div>
           </div>
@@ -118,6 +160,8 @@ export default function GigsPage() {
             <GigFilters 
               filters={filters} 
               onFiltersChange={setFilters}
+              dict={dict}
+              lang={lang}
             />
           </div>
 
@@ -129,14 +173,14 @@ export default function GigsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      Services Disponibles
+                      {dict?.gigs?.availableTitle || "Services Disponibles"}
                     </h2>
                     <p className="text-slate-600 dark:text-slate-400 mt-1">
                       {!loading && (
                         <>
-                          {gigs.length} service{gigs.length > 1 ? 's' : ''} trouvé{gigs.length > 1 ? 's' : ''}
+                          {gigs.length} {dict?.gigs?.servicesFound?.replace('{count}', gigs.length.toString()) || `service${gigs.length > 1 ? 's' : ''} trouvé${gigs.length > 1 ? 's' : ''}`}
                           <span className="text-green-600 dark:text-green-400 font-medium ml-2">
-                            • {gigs.filter(g => g.status === 'active').length} actif{gigs.filter(g => g.status === 'active').length > 1 ? 's' : ''}
+                            • {activeGigsCount} {dict?.gigs?.active?.replace('{count}', activeGigsCount.toString()) || `actif${activeGigsCount > 1 ? 's' : ''}`}
                           </span>
                         </>
                       )}
@@ -154,6 +198,7 @@ export default function GigsPage() {
                           "h-9 w-9 p-0",
                           viewMode === 'grid' && "bg-blue-600 text-white"
                         )}
+                        title={dict?.gigs?.gridView || "Vue grille"}
                       >
                         <Grid3X3 className="h-4 w-4" />
                       </Button>
@@ -165,6 +210,7 @@ export default function GigsPage() {
                           "h-9 w-9 p-0",
                           viewMode === 'list' && "bg-blue-600 text-white"
                         )}
+                        title={dict?.gigs?.listView || "Vue liste"}
                       >
                         <List className="h-4 w-4" />
                       </Button>
@@ -178,7 +224,7 @@ export default function GigsPage() {
                       onClick={() => setShowFilters(!showFilters)}
                     >
                       <Filter className="h-4 w-4 mr-2" />
-                      Filtres
+                      {dict?.gigs?.filters || "Filtres"}
                     </Button>
                   </div>
                 </div>
@@ -191,6 +237,8 @@ export default function GigsPage() {
               loading={loading}
               searchQuery={searchQuery}
               showCreateButton={!!session}
+              dict={dict}
+              lang={lang}
             />
           </div>
         </div>

@@ -1,4 +1,97 @@
 {
+  "gigs_page": {
+    "pageTitle": "Tolotra",
+    "pageDescription": "Tadiavo ny tolotra mety indrindra ho an'ny tetikasanao",
+    "heroTitle": "Tadiavo ny tolotra mety",
+    "heroSubtitle": "Freelance manam-pahaizana an'arivony vonona ny hamita ny tetikasanao",
+    "searchPlaceholder": "Karohy tolotra, fahaizana...",
+        "filters": "Fisivanana",
+    "search": "Fikarohana",
+    "price": "Vidiny",
+    "min": "Kely indrindra",
+    "max": "Betsaka indrindra",
+    "rating": "Naoty",
+    "minRating": "Naoty kely indrindra",
+    "ratingAndAbove": "{rating}.0 kintana sy mihoatra",
+    "sortBy": "Araho ny",
+    "activeFilters": "Fisivanana mavitrika",
+    
+    "categories": {
+      "title": "Sokajy",
+      "web": "Fampandrosoana Web",
+      "design": "Sary sy Design",
+      "writing": "Fanoratana sy Dika-teny",
+      "marketing": "Marketing nomerika",
+      "video": "Fanamboarana horonantsary",
+      "audio": "Feo sy Mozika",
+      "business": "Business",
+      "lifestyle": "Fomba fiaina"
+    },
+    
+    "delivery": {
+      "title": "Fotoana fanaterana",
+      "hour24": "24 ora",
+      "days3": "3 andro",
+      "week1": "7 andro",
+      "weeks2": "14 andro",
+      "month1": "1 volana"
+    },
+    
+    "sort": {
+      "newest": "Vaovao indrindra",
+      "bestRated": "Tsara naoty indrindra",
+      "priceAsc": "Vidiny: Kely mankany Betsaka",
+      "priceDesc": "Vidiny: Betsaka mankany Kely",
+      "popular": "Malaza indrindra"
+    },
+    
+    "availableTitle": "Tolotra misy",
+    "servicesFound": "Tolotra {count} avy amin'ny freelance manam-pahaizana",
+    "active": "{count} mavitrika",
+    "trending": "Malaza",
+    "createNew": "Tolotra vaovao",
+    "viewAll": "Hijery tolotra rehetra",
+    
+    "noResults": "Tsy nisy tolotra hita",
+    "noResultsDesc": "Andramo ovaina ny fikarohanao na hijery sokajy hafa",
+    "noGigs": "Tsy misy tolotra misy",
+    "noGigsDesc": "Ianao no voalohany manolotra ny fahaizanao ary miavaka eo amin'ny sehatra",
+    "createFirst": "Mamorona tolotra voalohany",
+    
+    "from": "Manomboka amin'ny",
+    "days": "Andro {count}",
+    "days_plural": "Andro {count}",
+    "revisions": "Fanitsiana {count}",
+    "revisions_plural": "Fanitsiana {count}",
+    "category": "Sokajy",
+    "viewDetails": "Hijery antsipiriany",
+    "contact": "Mifandraisa",
+    "order": "Baiko",
+    "seller": "Mpivarotra",
+    "new": "Vaovao",
+    "stars": "kintana",
+    "defaultRequirements": "Te-hanafatra ity tolotra ity aho",
+    
+    "status": {
+      "active": "Mavitrika",
+      "paused": "Nijanona",
+      "draft": "Volavola"
+    },
+    
+    "messages": {
+      "conversationCreated": "Tafajoro ny resaka!",
+      "orderCreated": "Vita soa aman-tsara ny baiko!",
+      "addedToFavorites": "Nampiana tao amin'ny favorites ny tolotra",
+      "removedFromFavorites": "Nesorina tao amin'ny favorites ny tolotra"
+    },
+    
+    "errors": {
+      "fetch": "Tsy fahombiazana ny fampidinana tolotra",
+      "contact": "Tsy fahombiazana ny fifandraisana",
+      "order": "Tsy fahombiazana ny fanaovana baiko",
+      "favorite": "Tsy fahombiazana ny hetsika"
+    }
+  },
    "projects": {
     "applicationSuccess": "🎉 Arahabaina! Voaray soa aman-tsara ny fangatahanao.",
     "projectNotFound": "❌ Tsy hita ilay tetikasa tadiavinao na voafafa izy.",

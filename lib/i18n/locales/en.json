@@ -1,4 +1,98 @@
 {
+   "gigs_page": {
+    "pageTitle": "Services",
+    "pageDescription": "Find the perfect service for your project",
+    "heroTitle": "Find the perfect service",
+    "heroSubtitle": "Thousands of talented freelancers ready to bring your projects to life",
+    "searchPlaceholder": "Search for a service, skill...",
+    
+    "filters": "Filters",
+    "search": "Search",
+    "price": "Price",
+    "min": "Min",
+    "max": "Max",
+    "rating": "Rating",
+    "minRating": "Minimum rating",
+    "ratingAndAbove": "{rating}.0 stars & up",
+    "sortBy": "Sort by",
+    "activeFilters": "Active filters",
+    
+    "categories": {
+      "title": "Categories",
+      "web": "Web Development",
+      "design": "Graphic Design",
+      "writing": "Writing & Translation",
+      "marketing": "Digital Marketing",
+      "video": "Video Editing",
+      "audio": "Audio & Music",
+      "business": "Business",
+      "lifestyle": "Lifestyle"
+    },
+    
+    "delivery": {
+      "title": "Delivery time",
+      "hour24": "24 hours",
+      "days3": "3 days",
+      "week1": "7 days",
+      "weeks2": "14 days",
+      "month1": "1 month"
+    },
+    
+    "sort": {
+      "newest": "Newest",
+      "bestRated": "Best rated",
+      "priceAsc": "Price: Low to High",
+      "priceDesc": "Price: High to Low",
+      "popular": "Most popular"
+    },
+    
+    "availableTitle": "Available Services",
+    "servicesFound": "{count} service{count > 1 ? 's' : ''} from expert freelancers",
+    "active": "{count} active",
+    "trending": "Trending",
+    "createNew": "New service",
+    "viewAll": "View all services",
+    
+    "noResults": "No services found",
+    "noResultsDesc": "Try adjusting your search criteria or explore other categories",
+    "noGigs": "No services available",
+    "noGigsDesc": "Be the first to offer your skills and stand out on the platform",
+    "createFirst": "Create my first service",
+    
+    "from": "From",
+    "days": "{count} day",
+    "days_plural": "{count} days",
+    "revisions": "{count} revision",
+    "revisions_plural": "{count} revisions",
+    "category": "Category",
+    "viewDetails": "View details",
+    "contact": "Contact",
+    "order": "Order",
+    "seller": "Seller",
+    "new": "New",
+    "stars": "stars",
+    "defaultRequirements": "I would like to order this service",
+    
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "draft": "Draft"
+    },
+    
+    "messages": {
+      "conversationCreated": "Conversation created!",
+      "orderCreated": "Order created successfully!",
+      "addedToFavorites": "Service added to favorites",
+      "removedFromFavorites": "Service removed from favorites"
+    },
+    
+    "errors": {
+      "fetch": "Error loading services",
+      "contact": "Error contacting seller",
+      "order": "Error placing order",
+      "favorite": "Error performing action"
+    }
+  },
    "twoFactor": {
     "title": "Two-Factor Authentication",
     "subtitle": "Enter the 6-digit code from your authenticator app",

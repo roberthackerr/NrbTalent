@@ -10,34 +10,37 @@ import { Label } from "@/components/ui/label"
 import { Search, Filter, X, Star, Clock, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const CATEGORIES = [
-  "Développement Web",
-  "Design Graphique",
-  "Rédaction",
-  "Marketing Digital",
-  "Montage Vidéo",
-  "Audio & Musique",
-  "Business",
-  "Lifestyle"
-]
-
-const DELIVERY_TIMES = [
-  { value: 1, label: "24 heures" },
-  { value: 3, label: "3 jours" },
-  { value: 7, label: "7 jours" },
-  { value: 14, label: "14 jours" },
-  { value: 30, label: "1 mois" }
-]
-
-const RATINGS = [5, 4, 3, 2, 1]
-
 interface GigFiltersProps {
   filters: any
   onFiltersChange: (filters: any) => void
+  dict: any
+  lang: string
 }
 
-export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
+export function GigFilters({ filters, onFiltersChange, dict, lang }: GigFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+
+  // Catégories dynamiques depuis le dictionnaire
+  const CATEGORIES = [
+    dict?.gigs_page?.categories?.web || "Développement Web",
+    dict?.gigs_page?.categories?.design || "Design Graphique",
+    dict?.gigs_page?.categories?.writing || "Rédaction",
+    dict?.gigs_page?.categories?.marketing || "Marketing Digital",
+    dict?.gigs_page?.categories?.video || "Montage Vidéo",
+    dict?.gigs_page?.categories?.audio || "Audio & Musique",
+    dict?.gigs_page?.categories?.business || "Business",
+    dict?.gigs_page?.categories?.lifestyle || "Lifestyle"
+  ]
+
+  const DELIVERY_TIMES = [
+    { value: 1, label: dict?.gigs_page?.delivery?.hour24 || "24 heures" },
+    { value: 3, label: dict?.gigs_page?.delivery?.days3 || "3 jours" },
+    { value: 7, label: dict?.gigs_page?.delivery?.week1 || "7 jours" },
+    { value: 14, label: dict?.gigs_page?.delivery?.weeks2 || "14 jours" },
+    { value: 30, label: dict?.gigs_page?.delivery?.month1 || "1 mois" }
+  ]
+
+  const RATINGS = [5, 4, 3, 2, 1]
 
   const updateFilter = (key: string, value: any) => {
     onFiltersChange({ ...filters, [key]: value })
@@ -50,7 +53,8 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
       maxPrice: '',
       deliveryTime: [],
       rating: [],
-      sortBy: 'createdAt'
+      sortBy: 'createdAt',
+      search: filters.search
     })
   }
 
@@ -63,12 +67,12 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtres
+            {dict?.gigs_page?.filters || "Filtres"}
           </CardTitle>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               <X className="h-4 w-4 mr-1" />
-              Effacer
+              {dict?.common?.clear || "Effacer"}
             </Button>
           )}
         </div>
@@ -77,12 +81,14 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
       <CardContent className="space-y-6">
         {/* Recherche */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Recherche</Label>
+          <Label className="text-sm font-medium">
+            {dict?.common?.search || "Recherche"}
+          </Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder={dict?.gigs_page?.searchPlaceholder || "Rechercher..."}
               value={filters.search || ''}
               onChange={(e) => updateFilter('search', e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -92,7 +98,9 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
 
         {/* Catégories */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Catégories</Label>
+          <Label className="text-sm font-medium">
+            {dict?.gigs_page?.categories?.title || "Catégories"}
+          </Label>
           <div className="space-y-2">
             {CATEGORIES.map((category) => (
               <div key={category} className="flex items-center space-x-2">
@@ -114,7 +122,7 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
         {/* Prix */}
         <div className="space-y-4">
           <Label className="text-sm font-medium">
-            Prix - {filters.minPrice || 0}€ à {filters.maxPrice || 500}€
+            {dict?.gigs_page?.price || "Prix"} - {filters.minPrice || 0}€ à {filters.maxPrice || 500}€
           </Label>
           <Slider
             defaultValue={[0, 500]}
@@ -129,7 +137,9 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
           />
           <div className="flex gap-2">
             <div className="flex-1">
-              <Label htmlFor="min-price" className="text-xs text-slate-500">Min</Label>
+              <Label htmlFor="min-price" className="text-xs text-slate-500">
+                {dict?.gigs_page?.min || "Min"}
+              </Label>
               <input
                 id="min-price"
                 type="number"
@@ -140,7 +150,9 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
               />
             </div>
             <div className="flex-1">
-              <Label htmlFor="max-price" className="text-xs text-slate-500">Max</Label>
+              <Label htmlFor="max-price" className="text-xs text-slate-500">
+                {dict?.gigs_page?.max || "Max"}
+              </Label>
               <input
                 id="max-price"
                 type="number"
@@ -157,7 +169,7 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
         <div className="space-y-3">
           <Label className="text-sm font-medium flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            Délai de livraison
+            {dict?.gigs_page?.delivery?.title || "Délai de livraison"}
           </Label>
           <div className="space-y-2">
             {DELIVERY_TIMES.map((time) => (
@@ -185,7 +197,7 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
         <div className="space-y-3">
           <Label className="text-sm font-medium flex items-center gap-2">
             <Star className="h-4 w-4" />
-            Note minimum
+            {dict?.gigs_page?.minRating || "Note minimum"}
           </Label>
           <div className="space-y-2">
             {RATINGS.map((rating) => (
@@ -205,7 +217,9 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
                   {Array.from({ length: rating }).map((_, i) => (
                     <Star key={i} className="h-3 w-3 text-yellow-500 fill-current" />
                   ))}
-                  <span className="ml-1">{rating}.0 et plus</span>
+                  <span className="ml-1">
+                    {dict?.gigs_page?.ratingAndAbove?.replace('{rating}', rating.toString()) || `${rating}.0 et plus`}
+                  </span>
                 </Label>
               </div>
             ))}
@@ -214,24 +228,28 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
 
         {/* Tri */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Trier par</Label>
+          <Label className="text-sm font-medium">
+            {dict?.gigs_page?.sortBy || "Trier par"}
+          </Label>
           <select
             value={filters.sortBy || 'createdAt'}
             onChange={(e) => updateFilter('sortBy', e.target.value)}
             className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="createdAt">Plus récent</option>
-            <option value="rating">Meilleures notes</option>
-            <option value="price">Prix croissant</option>
-            <option value="price_desc">Prix décroissant</option>
-            <option value="ordersCount">Plus populaires</option>
+            <option value="createdAt">{dict?.gigs_page?.sort?.newest || "Plus récent"}</option>
+            <option value="rating">{dict?.gigs_page?.sort?.bestRated || "Meilleures notes"}</option>
+            <option value="price">{dict?.gigs_page?.sort?.priceAsc || "Prix croissant"}</option>
+            <option value="price_desc">{dict?.gigs_page?.sort?.priceDesc || "Prix décroissant"}</option>
+            <option value="ordersCount">{dict?.gigs_page?.sort?.popular || "Plus populaires"}</option>
           </select>
         </div>
 
         {/* Filtres actifs */}
         {hasActiveFilters && (
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Filtres actifs</Label>
+            <Label className="text-sm font-medium">
+              {dict?.gigs_page?.activeFilters || "Filtres actifs"}
+            </Label>
             <div className="flex flex-wrap gap-2">
               {filters.category && (
                 <Badge variant="secondary" className="text-xs">
@@ -268,7 +286,7 @@ export function GigFilters({ filters, onFiltersChange }: GigFiltersProps) {
               ))}
               {filters.rating?.map((rating: number) => (
                 <Badge key={rating} variant="secondary" className="text-xs">
-                  {rating} étoiles
+                  {rating} {dict?.common?.stars || "étoiles"}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
                     onClick={() => {
