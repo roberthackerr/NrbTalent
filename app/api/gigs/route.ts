@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { getDatabase } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
+// app/api/gigs/route.ts - Version avec logs
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -16,24 +17,56 @@ export async function GET(request: Request) {
     const maxPrice = searchParams.get('maxPrice')
     const sortBy = searchParams.get('sortBy') || 'createdAt'
 
+    console.log('🔍 Fetching gigs with params:', {
+      page,
+      limit,
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      sortBy
+    })
+
     const db = await getDatabase()
-    const skip = (page - 1) * limit
+
+    // Compter d'abord tous les gigs sans filtre
+    const totalGigs = await db.collection('gigs').countDocuments({})
+    console.log('📊 Total gigs in database:', totalGigs)
+
+    // Compter les gigs actifs
+    const activeGigs = await db.collection('gigs').countDocuments({ status: 'active' })
+    console.log('✅ Active gigs:', activeGigs)
 
     // Build filter
     const filter: any = { status: 'active' }
-    if (category) filter.category = category
+    
+    if (category && category !== 'all') {
+      filter.category = category
+      console.log('🏷️ Filter by category:', category)
+    }
+    
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { tags: { $in: [new RegExp(search, 'i')] } }
       ]
+      console.log('🔎 Search filter:', filter.$or)
     }
+    
     if (minPrice || maxPrice) {
       filter.price = {}
-      if (minPrice) filter.price.$gte = parseInt(minPrice)
-      if (maxPrice) filter.price.$lte = parseInt(maxPrice)
+      if (minPrice) {
+        filter.price.$gte = parseInt(minPrice)
+        console.log('💰 Min price:', minPrice)
+      }
+      if (maxPrice) {
+        filter.price.$lte = parseInt(maxPrice)
+        console.log('💰 Max price:', maxPrice)
+      }
     }
+
+    console.log('🎯 Final filter:', JSON.stringify(filter, null, 2))
 
     // Build sort
     const sort: any = {}
@@ -41,6 +74,10 @@ export async function GET(request: Request) {
     else if (sortBy === 'price_desc') sort.price = -1
     else if (sortBy === 'rating') sort.rating = -1
     else sort.createdAt = -1
+
+    console.log('📋 Sort order:', sort)
+
+    const skip = (page - 1) * limit
 
     const [gigs, total] = await Promise.all([
       db.collection('gigs')
@@ -57,7 +94,7 @@ export async function GET(request: Request) {
               as: 'seller'
             }
           },
-          { $unwind: '$seller' },
+          { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
           {
             $project: {
               'seller.password': 0,
@@ -69,6 +106,13 @@ export async function GET(request: Request) {
       db.collection('gigs').countDocuments(filter)
     ])
 
+    console.log('📦 Gigs found:', gigs.length)
+    console.log('📊 Total matching filter:', total)
+    
+    if (gigs.length > 0) {
+      console.log('📝 First gig sample:', JSON.stringify(gigs[0], null, 2))
+    }
+
     return NextResponse.json({
       gigs,
       pagination: {
@@ -79,11 +123,10 @@ export async function GET(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Error fetching gigs:', error)
+    console.error('❌ Error fetching gigs:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
 // app/api/gigs/route.ts
 
 
