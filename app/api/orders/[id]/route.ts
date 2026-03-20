@@ -6,15 +6,15 @@ import { ObjectId } from 'mongodb'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const orderId = params.id
+   const  {id} =await params
+    const orderId = id
 
     if (!ObjectId.isValid(orderId)) {
       return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })

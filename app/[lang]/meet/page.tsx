@@ -29,7 +29,8 @@ import {
   Maximize2,
   Minimize2,
   ArrowLeft,
-  Link as LinkIcon
+  Link as LinkIcon,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -533,6 +534,7 @@ export default function AgoraVideoMeetPage() {
       setRemoteUsers([])
       setConnectionInfo(null)
       setStatus('idle')
+      setShowSettings(false)
       
     } catch (err) {
       console.error('Cleanup error:', err)
@@ -558,7 +560,10 @@ export default function AgoraVideoMeetPage() {
   }
 
   const switchCamera = async () => {
-    if (!isMobile || isSwitchingCamera || status !== 'connected') return
+    if (!isMobile || isSwitchingCamera || status !== 'connected') {
+      console.log('Cannot switch camera:', { isMobile, isSwitchingCamera, status })
+      return
+    }
     
     setIsSwitchingCamera(true)
     const newFacing = facingMode === 'user' ? 'environment' : 'user'
@@ -567,6 +572,9 @@ export default function AgoraVideoMeetPage() {
       const currentVideoTrack = localTracksRef.current.find(t => t?.trackMediaType === 'video')
       
       if (currentVideoTrack && clientRef.current) {
+        // Sauvegarder l'état de la caméra
+        const wasEnabled = currentVideoTrack.enabled
+        
         // Arrêter et fermer l'ancienne piste
         await currentVideoTrack.stop()
         await currentVideoTrack.close()
@@ -581,6 +589,9 @@ export default function AgoraVideoMeetPage() {
             frameRate: { ideal: 30, max: 30 }
           }
         })
+        
+        // Restaurer l'état
+        await newVideoTrack.setEnabled(wasEnabled)
         
         // Remplacer dans le tableau des pistes
         const index = localTracksRef.current.findIndex(t => t?.trackMediaType === 'video')
@@ -597,6 +608,9 @@ export default function AgoraVideoMeetPage() {
         
         setFacingMode(newFacing)
         console.log('✅ Camera switched to:', newFacing)
+      } else {
+        // Si pas encore connecté, juste changer le mode
+        setFacingMode(newFacing)
       }
     } catch (err) {
       console.error('Switch camera error:', err)
@@ -788,7 +802,7 @@ export default function AgoraVideoMeetPage() {
                   You
                 </span>
               </div>
-              <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-3 right-3 flex gap-2">
                 {hasVideo && (
                   <button
                     onClick={toggleCamera}
@@ -965,46 +979,64 @@ export default function AgoraVideoMeetPage() {
           )}
         </div>
 
-        {/* Settings Panel */}
+        {/* Settings Panel - MODAL style for better visibility */}
         {showSettings && status === 'connected' && (
-          <div className="mt-4 p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 animate-in slide-in-from-bottom">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Settings
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {videoDevices.length > 0 && (
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Camera</label>
-                  <select
-                    value={selectedVideoDevice}
-                    onChange={(e) => setSelectedVideoDevice(e.target.value)}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-white/20">
+              <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-purple-400" />
+                  Settings
+                </h3>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                {videoDevices.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">Camera</label>
+                    <select
+                      value={selectedVideoDevice}
+                      onChange={(e) => setSelectedVideoDevice(e.target.value)}
+                      className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                    >
+                      {videoDevices.map(device => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {audioDevices.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">Microphone</label>
+                    <select
+                      value={selectedAudioDevice}
+                      onChange={(e) => setSelectedAudioDevice(e.target.value)}
+                      className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                    >
+                      {audioDevices.map(device => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `Mic ${audioDevices.indexOf(device) + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="pt-4">
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-medium transition-all"
                   >
-                    {videoDevices.map(device => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
-                      </option>
-                    ))}
-                  </select>
+                    Close
+                  </button>
                 </div>
-              )}
-              {audioDevices.length > 0 && (
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Microphone</label>
-                  <select
-                    value={selectedAudioDevice}
-                    onChange={(e) => setSelectedAudioDevice(e.target.value)}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                  >
-                    {audioDevices.map(device => (
-                      <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Mic ${audioDevices.indexOf(device) + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}
