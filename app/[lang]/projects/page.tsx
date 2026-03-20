@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { AIMatchingButton } from '@/components/ai-matching/AIMatchingButton'
 
 interface Category {
   id: string
@@ -497,7 +498,12 @@ function ProjectsPageContent() {
           </div>
         </div>
       </div>
-
+      <AIMatchingButton 
+  variant="gradient" 
+  size="default"
+  //dict={dict}
+  //lang={lang}
+/>
       <div className="container mx-auto px-4 py-8">
         {/* Barre de filtres en dropdown */}
         <div className="flex flex-col gap-6 mb-8">

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar, Users, Code2 } from "lucide-react"
 import { useState } from "react"
 import { TeamAccessButton } from '@/components/ui/team-access-button';
+import { AIMatchingButtonHero } from "../ai-matching/AIMatchingButton"
 
 interface HeroSectionProps {
   lang: 'fr' | 'en' | 'mg'
@@ -87,7 +88,7 @@ export function HeroSection({
               </Button>
             </div>
           </form>
-
+          <AIMatchingButtonHero dict={dict} lang={lang} />
           {/* Stats rapides */}
           <div className="flex flex-wrap justify-center gap-8 mb-8">
             <div className="text-center">

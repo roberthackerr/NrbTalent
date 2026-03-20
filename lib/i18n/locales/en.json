@@ -1,4 +1,6 @@
-{"orders": {
+{
+ 
+  "orders": {
     "title": "My Orders",
     "myOrders": "My orders",
     "viewOrders": "View my orders",
@@ -1058,8 +1060,7 @@
   },
   
   "aiMatching": {
-    "title": "Personalized recommendations",
-    "subtitle": "Based on your profile and skills",
+
     "matchStrength": "Match strength",
     "strongMatch": "Strong match",
     "goodMatch": "Good match",
@@ -1075,7 +1076,38 @@
     "viewMore": "View more recommendations",
     "refresh": "Refresh recommendations",
     "noRecommendations": "No recommendations yet",
-    "noRecommendationsDesc": "Complete your profile to get personalized recommendations"
+    "noRecommendationsDesc": "Complete your profile to get personalized recommendations",
+        "buttonLabel": "AI Matching",
+    "buttonLabelShort": "AI Match",
+    "heroButton": "Discover AI Matching",
+    "tryNow": "Try AI Matching",
+    "badge": "AI Matching Beta",
+    "title": "Find Your Perfect Match",
+    "subtitle": "Our artificial intelligence analyzes skills, experiences, and compatibility to create meaningful connections.",
+    "clientButton": "I'm a Client",
+    "freelancerButton": "I'm a Freelancer",
+    "feature1Title": "Intelligent Matching",
+    "feature1Desc": "Advanced algorithms based on skills, experience, and compatibility",
+    "feature2Title": "Personalized Recommendations",
+    "feature2Desc": "Suggestions tailored to your profile and preferences",
+    "feature3Title": "Detailed Analytics",
+    "feature3Desc": "Detailed scores, strengths, and improvement opportunities",
+    "statAccuracy": "Accuracy rate",
+    "statMatches": "Successful matches",
+    "statTime": "Average response time",
+    "howItWorks": "How it works?",
+    "step1Title": "Create your profile",
+    "step1Desc": "Fill in your skills, experiences, and preferences",
+    "step2Title": "AI Analysis",
+    "step2Desc": "Our AI analyzes your profile and finds the best matches",
+    "step3Title": "Connect",
+    "step3Desc": "Get in touch with your best matches and collaborate",
+    "testimonial": "Thanks to AI Matching, I found the perfect freelancer for my project in less than 24 hours. An incredible time saver!",
+    "testimonialAuthor": "Marie Dupont, CEO TechStart",
+    "ctaTitle": "Ready to revolutionize your search?",
+    "ctaDesc": "Join hundreds of clients and freelancers who are already using our AI Matching",
+    "clientCTA": "Start as a Client",
+    "freelancerCTA": "Start as a Freelancer"
   },
   
   "talents": {
