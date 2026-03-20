@@ -16,14 +16,12 @@ import {
   Calendar, 
   Edit, 
   Trash2,
-  CheckCircle2,
-  AlertCircle,
   Loader2
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { fr, enUS  } from "date-fns/locale"
+import { fr, enUS } from "date-fns/locale"
 
 interface Education {
   id: string
@@ -43,7 +41,7 @@ interface EducationTabProps {
   onUpdate?: () => void
 }
 
-const locales = { fr, en:enUS, mg:fr }
+const locales = { fr, en: enUS, mg: fr }
 
 export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) {
   const [loading, setLoading] = useState(false)
@@ -60,11 +58,27 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
     description: ""
   })
 
+  // Charger les données depuis user
   useEffect(() => {
-    if (user?.education) {
+    if (user?.education && Array.isArray(user.education)) {
       setEducations(user.education)
     }
   }, [user])
+
+  // Fonction pour recharger les données depuis l'API
+  const refreshEducations = async () => {
+    try {
+      const response = await fetch('/api/users/profile')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.education && Array.isArray(data.education)) {
+          setEducations(data.education)
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing education:', error)
+    }
+  }
 
   const resetForm = () => {
     setFormData({
@@ -89,7 +103,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
     try {
       const educationData = {
         ...formData,
-        id: editingId || new Date().getTime().toString(),
+        id: editingId || Date.now().toString(),
         endDate: formData.current ? null : formData.endDate
       }
 
@@ -104,17 +118,21 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
         })
       })
 
-      if (response.ok) {
+      const result = await response.json()
+
+      if (response.ok && result.success) {
         toast.success(editingId 
           ? (dict?.education?.success?.updated || "Formation mise à jour avec succès")
           : (dict?.education?.success?.added || "Formation ajoutée avec succès"))
+        
+        // Recharger les données depuis l'API
+        await refreshEducations()
         
         resetForm()
         setShowForm(false)
         if (onUpdate) onUpdate()
       } else {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update education')
+        throw new Error(result.error || 'Failed to update education')
       }
     } catch (error) {
       console.error('Error updating education:', error)
@@ -144,6 +162,8 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
 
       if (response.ok) {
         toast.success(dict?.education?.success?.deleted || "Formation supprimée avec succès")
+        // Recharger les données depuis l'API
+        await refreshEducations()
         if (onUpdate) onUpdate()
       } else {
         const error = await response.json()
@@ -162,8 +182,8 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
       degree: edu.degree,
       school: edu.school,
       field: edu.field,
-      startDate: edu.startDate?.split('T')[0] || "",
-      endDate: edu.endDate?.split('T')[0] || "",
+      startDate: edu.startDate?.split('T')[0] || edu.startDate || "",
+      endDate: edu.endDate?.split('T')[0] || edu.endDate || "",
       current: edu.current,
       description: edu.description || ""
     })
@@ -174,11 +194,18 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
   const formatDate = (dateString: string) => {
     if (!dateString) return ""
     try {
-      const date = new Date(dateString)
+      // Gérer les formats "YYYY-MM" et "YYYY-MM-DD"
+      let date: Date
+      if (dateString.length === 7) {
+        // Format "YYYY-MM"
+        date = new Date(dateString + "-01")
+      } else {
+        date = new Date(dateString)
+      }
       const locale = locales[lang as keyof typeof locales] || fr
       return format(date, 'MMM yyyy', { locale })
     } catch {
-      return dateString.split('T')[0] || dateString
+      return dateString
     }
   }
 
