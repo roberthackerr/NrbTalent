@@ -24,9 +24,7 @@ import {
   ArrowRight,
   Zap,
   Eye,
-  MessageSquare,
-  Heart,
-  Share2
+  MessageSquare
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -48,43 +46,34 @@ interface MatchScore {
   budget: number
   availability: number
   compatibility: number
-  matchGrade?: 'excellent' | 'good' | 'potential' | 'low'
 }
 
 interface Match {
-  id: string
-  matchScore: number
-  score?: number
-  matchGrade?: 'excellent' | 'good' | 'potential' | 'low'
-  details?: MatchScore
-  reason?: string
-  project?: {
-    _id: string
-    title: string
-    description: string
-    budget: { min: number; max: number; currency: string }
-    deadline: string
-    skills: string[]
-    category: string
-    client?: { name: string; avatar?: string; rating?: number }
+  freelancer?: any
+  project?: any
+  match: {
+    matchScore: number
+    matchGrade: 'excellent' | 'good' | 'potential' | 'low'
+    skillGapAnalysis?: {
+      missing: string[]
+      strong: string[]
+      learningOpportunities: string[]
+    }
+    projectSuccessScore?: number
+    culturalFit?: number
+    learningPotential?: number
+    clientSatisfactionPrediction?: number
+    riskFactors?: string[]
+    recommendedActions?: string[]
+    estimatedTimeline?: number
+    confidence?: number
   }
-  freelancer?: {
-    _id: string
-    name: string
-    avatar?: string
-    title?: string
-    hourlyRate?: number
-    skills: string[]
-    rating?: number
-    completedProjects?: number
-    availability?: string
-  }
+  reasoning?: string[]
 }
 
 export function AIMatchingWidget({ 
   type, 
   projectId, 
-  freelancerId, 
   quickAction = false, 
   maxResults = 5,
   dict,
@@ -99,7 +88,7 @@ export function AIMatchingWidget({
 
   useEffect(() => {
     fetchMatches()
-  }, [projectId, freelancerId])
+  }, [projectId])
 
   const fetchMatches = async () => {
     try {
@@ -107,7 +96,6 @@ export function AIMatchingWidget({
       const searchParams = new URLSearchParams()
       
       if (projectId) searchParams.append('projectId', projectId)
-      if (freelancerId) searchParams.append('freelancerId', freelancerId)
       searchParams.append('limit', maxResults.toString())
 
       const response = await fetch(`/api/ai/matching?${searchParams}`)
@@ -115,21 +103,18 @@ export function AIMatchingWidget({
       if (!response.ok) throw new Error('Failed to fetch matches')
       
       const data = await response.json()
+      console.log('API Response:', data) // Pour déboguer
       
-      // Extraire les matches selon le type
-      if (type === 'client' && data.matches) {
-        setMatches(data.matches)
+      // Adapter la structure selon le type et la réponse
+      if (type === 'client' && data.recommendations) {
+        setMatches(data.recommendations)
       } else if (type === 'freelancer' && data.recommendations) {
-        setMatches(data.recommendations.map((rec: any) => ({
-          ...rec.match,
-          project: rec.project,
-          id: rec.project?._id,
-          matchGrade: rec.match.matchGrade || rec.matchType
-        })))
+        setMatches(data.recommendations)
       } else {
         setMatches([])
       }
     } catch (err) {
+      console.error('Error fetching matches:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
@@ -210,7 +195,7 @@ export function AIMatchingWidget({
         <div className="space-y-4">
           {matches.slice(0, maxResults).map((match, index) => (
             <MatchCard 
-              key={match.id || index} 
+              key={index} 
               match={match} 
               type={type}
               dict={dict}
@@ -254,8 +239,13 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
   const [expanded, setExpanded] = useState(false)
   const t = dict?.aiMatching || {}
   
-  const score = match.matchScore || match.score || 0
-  const matchGrade = match.matchGrade || 
+  // Extraire les données correctement
+  const freelancer = match.freelancer
+  const matchData = match.match
+  const reasoning = match.reasoning || []
+  
+  const score = matchData?.matchScore || 0
+  const matchGrade = matchData?.matchGrade || 
     (score >= 80 ? 'excellent' : score >= 60 ? 'good' : score >= 40 ? 'potential' : 'low')
   
   const gradeConfig = {
@@ -267,8 +257,7 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
   
   const grade = gradeConfig[matchGrade as keyof typeof gradeConfig] || gradeConfig.potential
 
-  if (type === 'client' && match.freelancer) {
-    const freelancer = match.freelancer
+  if (type === 'client' && freelancer) {
     return (
       <div className="group relative p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all duration-300">
         {/* Score Badge */}
@@ -300,7 +289,7 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
                   </span>
                 </div>
               )}
-              {freelancer.completedProjects && freelancer.completedProjects > 0 && (
+              {freelancer.completedProjects > 0 && (
                 <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   {freelancer.completedProjects} {t.projectsCompleted || 'projets'}
@@ -317,7 +306,7 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
             
             {freelancer.skills && freelancer.skills.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
-                {freelancer.skills.slice(0, 4).map((skill, i) => (
+                {freelancer.skills.slice(0, 4).map((skill: string, i: number) => (
                   <Badge key={i} variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800">
                     {skill}
                   </Badge>
@@ -330,8 +319,38 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
               </div>
             )}
             
-            {match.details && (
-              <div className="mt-3">
+            {/* Réussite et workload */}
+            <div className="flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400 mb-3">
+              {freelancer.successRate && (
+                <span className="flex items-center gap-1">
+                  <Award className="h-3 w-3 text-green-500" />
+                  {t.successRate || 'Taux de réussite'}: {freelancer.successRate}%
+                </span>
+              )}
+              {freelancer.currentWorkload !== undefined && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {t.workload || 'Charge'}: {freelancer.currentWorkload}%
+                </span>
+              )}
+            </div>
+            
+            {/* Raisons du match */}
+            {reasoning && reasoning.length > 0 && (
+              <div className="mt-2 mb-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {reasoning.slice(0, 2).map((reason, i) => (
+                    <Badge key={i} variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                      💡 {reason}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Détails du match */}
+            {matchData && (
+              <div className="mt-2">
                 <button
                   onClick={() => setExpanded(!expanded)}
                   className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1"
@@ -342,11 +361,57 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
                 
                 {expanded && (
                   <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-2">
-                    <MatchScoreDetails details={match.details} dict={dict} />
-                    {match.reason && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 italic">
-                        💡 {match.reason}
-                      </p>
+                    {matchData.skillGapAnalysis && (
+                      <>
+                        {matchData.skillGapAnalysis.strong && matchData.skillGapAnalysis.strong.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
+                              {t.strongSkills || 'Compétences fortes'}:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {matchData.skillGapAnalysis.strong.map((skill: string, i: number) => (
+                                <Badge key={i} variant="outline" className="text-xs bg-green-50 dark:bg-green-900/30 text-green-700">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {matchData.skillGapAnalysis.missing && matchData.skillGapAnalysis.missing.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">
+                              {t.missingSkills || 'Compétences à développer'}:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {matchData.skillGapAnalysis.missing.map((skill: string, i: number) => (
+                                <Badge key={i} variant="outline" className="text-xs bg-orange-50 dark:bg-orange-900/30 text-orange-700">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {matchData.projectSuccessScore && (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-400">{t.successPrediction || 'Prédiction de réussite'}</span>
+                          <span className="font-medium">{Math.round(matchData.projectSuccessScore)}%</span>
+                        </div>
+                        <Progress value={matchData.projectSuccessScore} className="h-1.5 bg-slate-200 dark:bg-slate-700" />
+                      </div>
+                    )}
+                    
+                    {matchData.culturalFit && (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-400">{t.culturalFit || 'Compatibilité culturelle'}</span>
+                          <span className="font-medium">{Math.round(matchData.culturalFit)}%</span>
+                        </div>
+                        <Progress value={matchData.culturalFit} className="h-1.5 bg-slate-200 dark:bg-slate-700" />
+                      </div>
                     )}
                   </div>
                 )}
@@ -378,164 +443,7 @@ function MatchCard({ match, type, dict, lang }: { match: Match; type: string; di
     )
   }
   
-  if (type === 'freelancer' && match.project) {
-    const project = match.project
-    const daysLeft = project.deadline ? Math.ceil((new Date(project.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
-    
-    return (
-      <div className="group relative p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all duration-300">
-        {/* Score Badge */}
-        <div className="absolute top-4 right-4">
-          <div className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-sm font-semibold", grade.bg, grade.color)}>
-            <TrendingUp className="h-3 w-3" />
-            <span>{Math.round(score)}%</span>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Briefcase className="h-7 w-7 text-white" />
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h4 className="font-semibold text-slate-900 dark:text-white text-lg">
-                {project.title}
-              </h4>
-              <Badge className={cn("text-xs", grade.bg, grade.color)}>
-                {grade.label}
-              </Badge>
-              {project.client?.rating && project.client.rating > 0 && (
-                <div className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {project.client.rating.toFixed(1)}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-2">
-              {project.description}
-            </p>
-            
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400 mb-2">
-              {project.budget && (
-                <span className="flex items-center gap-1">
-                  <DollarSign className="h-3.5 w-3.5" />
-                  {project.budget.min} - {project.budget.max} {project.budget.currency}
-                </span>
-              )}
-              {daysLeft !== null && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {daysLeft > 0 ? `${daysLeft} ${t.daysLeft || 'jours restants'}` : (t.urgent || 'Urgent')}
-                </span>
-              )}
-            </div>
-            
-            {project.skills && project.skills.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {project.skills.slice(0, 4).map((skill, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800">
-                    {skill}
-                  </Badge>
-                ))}
-                {project.skills.length > 4 && (
-                  <Badge variant="secondary" className="text-xs">
-                    +{project.skills.length - 4}
-                  </Badge>
-                )}
-              </div>
-            )}
-            
-            {match.details && (
-              <div className="mt-3">
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1"
-                >
-                  {expanded ? (t.showLess || 'Voir moins') : (t.matchDetails || 'Détails du match')}
-                  <ArrowRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
-                </button>
-                
-                {expanded && (
-                  <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-2">
-                    <MatchScoreDetails details={match.details} dict={dict} />
-                    {match.reason && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 italic">
-                        💡 {match.reason}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => router.push(`/${lang}/projects/${project._id}`)}
-            className="text-xs"
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            {t.viewProject || 'Voir projet'}
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => router.push(`/${lang}/projects/${project._id}/apply`)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-xs"
-          >
-            <Target className="h-3 w-3 mr-1" />
-            {t.apply || 'Postuler'}
-          </Button>
-        </div>
-      </div>
-    )
-  }
-  
   return null
-}
-
-function MatchScoreDetails({ details, dict }: { details: MatchScore; dict?: any }) {
-  const t = dict?.aiMatching?.scoreDetails || {}
-  
-  const metrics = [
-    { key: 'skills', label: t.skills || 'Compétences', icon: Award },
-    { key: 'experience', label: t.experience || 'Expérience', icon: Briefcase },
-    { key: 'budget', label: t.budget || 'Budget', icon: DollarSign },
-    { key: 'availability', label: t.availability || 'Disponibilité', icon: Clock },
-    { key: 'compatibility', label: t.compatibility || 'Compatibilité', icon: Users }
-  ]
-  
-  return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
-        {t.title || 'Score détaillé'}
-      </p>
-      {metrics.map(metric => {
-        const score = details[metric.key as keyof MatchScore]
-        if (score === undefined) return null
-        const Icon = metric.icon
-        
-        return (
-          <div key={metric.key} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1">
-                <Icon className="h-3 w-3 text-slate-500" />
-                <span className="text-slate-600 dark:text-slate-400">{metric.label}</span>
-              </div>
-              <span className="font-medium text-slate-700 dark:text-slate-300">{Math.round(score)}%</span>
-            </div>
-            <Progress value={score} className="h-1.5 bg-slate-200 dark:bg-slate-700" />
-          </div>
-        )
-      })}
-    </div>
-  )
 }
 
 function MatchingSkeleton({ type, dict }: { type: string; dict?: any }) {
