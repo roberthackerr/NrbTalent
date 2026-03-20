@@ -54,6 +54,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import { OrdersButton } from "../orders/OrdersButton"
 
 interface SidebarProps {
   role: "freelance" | "client"
@@ -576,7 +577,16 @@ export function DashboardSidebar({ role }: SidebarProps) {
             <p className="text-xs text-gray-500 mt-1">Plateforme Freelance</p>
           </div>
         </div>
-
+        <div className="sidebar">
+  <h3>Mon activité</h3>
+  <OrdersButton 
+    variant="outline" 
+    size="sm"
+  //  dict={dict}
+   // lang={lang}
+    className="w-full justify-start"
+  />
+</div>
         {/* Carte utilisateur */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
           <div className="flex items-center gap-3 mb-3">

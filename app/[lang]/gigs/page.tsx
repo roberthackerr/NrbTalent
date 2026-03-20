@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getDictionarySafe } from "@/lib/i18n/dictionaries"
 import type { Locale } from "@/lib/i18n/config"
+import { OrdersButtonHero } from "@/components/orders/OrdersButton"
 
 interface Filters {
   category: string
@@ -120,6 +121,11 @@ export default function GigsPage() {
       {/* Header Hero */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="hero-section">
+  <h1>Bienvenue</h1>
+  <OrdersButtonHero dict={dict} lang={lang} />
+</div>
+
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               {dict?.gigs_page?.heroTitle || "Trouvez le service parfait"}
