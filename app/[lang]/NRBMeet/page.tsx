@@ -1,11 +1,44 @@
-"use client"
+// app/[lang]/meet/page.tsx
+'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { getDictionarySafe } from '@/lib/i18n/dictionaries'
+import type { Locale } from '@/lib/i18n/config'
+import { 
+  Video, 
+  VideoOff, 
+  Mic, 
+  MicOff, 
+  PhoneOff, 
+  Phone,
+  Users,
+  Settings,
+  Share2,
+  Copy,
+  Check,
+  RefreshCw,
+  Camera,
+  CameraOff,
+  Wifi,
+  WifiOff,
+  Loader2,
+  Sparkles,
+  Shield,
+  Info,
+  ChevronDown,
+  Maximize2,
+  Minimize2
+} from 'lucide-react'
 
-export default function AgoraVideoTestPage() {
+export default function AgoraVideoMeetPage() {
+  const params = useParams()
+  const lang = params.lang as Locale
+  
+  const [dict, setDict] = useState<any>(null)
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected'>('idle')
   const [error, setError] = useState('')
-  const [channelName, setChannelName] = useState(`test-room-${Math.floor(Math.random() * 1000)}`)
+  const [channelName, setChannelName] = useState(`meet-${Math.floor(Math.random() * 10000)}`)
   const [connectionInfo, setConnectionInfo] = useState<any>(null)
   const [remoteUsers, setRemoteUsers] = useState<number[]>([])
   const [isMobile, setIsMobile] = useState(false)
@@ -16,31 +49,45 @@ export default function AgoraVideoTestPage() {
   const [cameraEnabled, setCameraEnabled] = useState(true)
   const [micEnabled, setMicEnabled] = useState(true)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
+  const [copied, setCopied] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>('')
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('')
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
   
   const localVideoRef = useRef<HTMLDivElement>(null)
   const remoteVideoRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
+  const containerRef = useRef<HTMLDivElement>(null)
   
   const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID || ''
+
+  // Charger le dictionnaire
+  useEffect(() => {
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
 
   useEffect(() => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     setIsMobile(mobileCheck)
     
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError('Your browser does not support camera/microphone access')
+      setError(dict?.meet?.errors?.browserSupport || 'Your browser does not support camera/microphone access')
       setHasAudio(false)
       setHasVideo(false)
       return
     }
     
-    checkDevicesAndPermissions()
-  }, [])
+    if (dict) {
+      checkDevicesAndPermissions()
+    }
+  }, [dict])
 
   const checkDevicesAndPermissions = async () => {
     try {
-      // Check current permission state
       if (navigator.permissions) {
         try {
           const cameraPermission = await navigator.permissions.query({ name: 'camera' as PermissionName })
@@ -55,32 +102,33 @@ export default function AgoraVideoTestPage() {
         }
       }
       
-      // Enumerate devices
       const devices = await navigator.mediaDevices.enumerateDevices()
-      const audioDevices = devices.filter(device => device.kind === 'audioinput')
-      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      const audioInputs = devices.filter(device => device.kind === 'audioinput')
+      const videoInputs = devices.filter(device => device.kind === 'videoinput')
       
-      console.log('Audio devices found:', audioDevices.length)
-      console.log('Video devices found:', videoDevices.length)
+      setAudioDevices(audioInputs)
+      setVideoDevices(videoInputs)
       
-      if (audioDevices.length === 0) {
+      console.log('Audio devices found:', audioInputs.length)
+      console.log('Video devices found:', videoInputs.length)
+      
+      if (audioInputs.length === 0) {
         console.warn('No audio input devices found')
         setHasAudio(false)
       }
       
-      if (videoDevices.length === 0) {
+      if (videoInputs.length === 0) {
         console.warn('No video input devices found')
         setHasVideo(false)
       }
       
-      // Log device details for debugging
-      videoDevices.forEach((device, idx) => {
-        console.log(`Video device ${idx}:`, {
-          label: device.label,
-          deviceId: device.deviceId,
-          groupId: device.groupId
-        })
-      })
+      if (videoInputs.length > 0 && !selectedVideoDevice) {
+        setSelectedVideoDevice(videoInputs[0].deviceId)
+      }
+      
+      if (audioInputs.length > 0 && !selectedAudioDevice) {
+        setSelectedAudioDevice(audioInputs[0].deviceId)
+      }
       
     } catch (err) {
       console.warn('Could not check devices:', err)
@@ -92,7 +140,6 @@ export default function AgoraVideoTestPage() {
     try {
       console.log('Requesting media permissions...')
       
-      // Request both audio and video permissions upfront
       const constraints: MediaStreamConstraints = {}
       
       if (hasAudio) {
@@ -107,44 +154,33 @@ export default function AgoraVideoTestPage() {
         constraints.video = isMobile ? {
           facingMode: facingMode,
           width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          frameRate: { ideal: 30, max: 30 }
+          height: { ideal: 480, max: 720 }
         } : {
           width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
+          height: { ideal: 720 }
         }
       }
       
-      console.log('Requesting with constraints:', constraints)
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       
-      console.log('✅ Permissions granted!')
       setPermissionStatus('granted')
       
-      // Stop the test stream
-      stream.getTracks().forEach(track => {
-        console.log('Stopping test track:', track.kind, track.label)
-        track.stop()
-      })
+      stream.getTracks().forEach(track => track.stop())
       
-      // Re-enumerate devices to get labels
       await checkDevicesAndPermissions()
-      
-      alert('✅ Permissions granted! You can now connect to the video call.')
       
     } catch (err: any) {
       console.error('❌ Permission request failed:', err)
       setPermissionStatus('denied')
       
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Camera/microphone access denied. Please allow access in your browser settings.')
+        setError(dict?.meet?.errors?.permissionDenied || 'Camera/microphone access denied. Please allow access in your browser settings.')
       } else if (err.name === 'NotFoundError') {
-        setError('No camera or microphone found on your device.')
+        setError(dict?.meet?.errors?.noDevice || 'No camera or microphone found on your device.')
       } else if (err.name === 'NotReadableError') {
-        setError('Camera/microphone is already in use by another application.')
+        setError(dict?.meet?.errors?.deviceInUse || 'Camera/microphone is already in use by another application.')
       } else {
-        setError(`Permission error: ${err.message}`)
+        setError(`${dict?.meet?.errors?.permission || 'Permission error'}: ${err.message}`)
       }
     }
   }
@@ -155,32 +191,27 @@ export default function AgoraVideoTestPage() {
       const data = await response.json()
       
       if (!data.success) {
-        throw new Error(data.error || 'Failed to generate token')
+        throw new Error(data.error || dict?.meet?.errors?.token || 'Failed to generate token')
       }
       
       return data
     } catch (err: any) {
-      throw new Error(`Token error: ${err.message}`)
+      throw new Error(`${dict?.meet?.errors?.token || 'Token error'}: ${err.message}`)
     }
   }
 
   const playLocalPreview = async (videoTrack: any) => {
     try {
       const container = localVideoRef.current
-      if (!container) {
-        console.warn('Local container not ready for preview')
-        return
-      }
+      if (!container) return
       
       container.innerHTML = ''
       await new Promise(requestAnimationFrame)
       await videoTrack.setEnabled(true)
       
-      // Direct HTMLVideo rendering to avoid Agora DOM issues
       const mediaTrack = videoTrack.getMediaStreamTrack?.()
       if (!mediaTrack) {
-        console.warn('No media track available for preview')
-        setError('Unable to render local preview. Please retry or refresh.')
+        setError(dict?.meet?.errors?.preview || 'Unable to render local preview')
         return
       }
       
@@ -194,27 +225,21 @@ export default function AgoraVideoTestPage() {
       videoEl.style.objectFit = 'cover'
       videoEl.srcObject = stream
       container.appendChild(videoEl)
-      await videoEl.play().catch((e) => console.warn('HTML video play warning:', e))
-      console.log('✅ Local video playing via direct element')
+      await videoEl.play().catch(() => {})
     } catch (err) {
       console.warn('❌ Local preview error:', err)
-      setError('Unable to render local preview. Please retry or refresh.')
     }
   }
 
   const playRemoteVideo = async (user: any) => {
     const container = remoteVideoRef.current
-    if (!container) {
-      console.warn('Remote container not ready')
-      return
-    }
+    if (!container) return
     
     let playerDiv = document.getElementById(`remote-player-${user.uid}`)
     if (!playerDiv) {
       playerDiv = document.createElement('div')
       playerDiv.id = `remote-player-${user.uid}`
-      playerDiv.className = 'w-full h-full'
-      playerDiv.style.objectFit = 'cover'
+      playerDiv.className = 'absolute inset-0'
       container.appendChild(playerDiv)
     } else {
       playerDiv.innerHTML = ''
@@ -222,9 +247,7 @@ export default function AgoraVideoTestPage() {
     
     try {
       await user.videoTrack.play(playerDiv)
-      console.log('🎬 Remote video playing:', user.uid)
     } catch (playErr: any) {
-      console.warn('Remote video play failed, using fallback element:', playErr)
       const mediaTrack = user.videoTrack?.getMediaStreamTrack?.()
       if (mediaTrack) {
         const stream = new MediaStream([mediaTrack])
@@ -237,9 +260,7 @@ export default function AgoraVideoTestPage() {
         videoEl.style.objectFit = 'cover'
         videoEl.srcObject = stream
         playerDiv.appendChild(videoEl)
-        await videoEl.play().catch((e) => console.warn('Remote HTML video play warning:', e))
-      } else {
-        console.warn('No media track available for remote user:', user.uid)
+        await videoEl.play().catch(() => {})
       }
     }
   }
@@ -254,14 +275,12 @@ export default function AgoraVideoTestPage() {
       if (user.hasAudio) {
         await clientRef.current.subscribe(user, 'audio')
         user.audioTrack.play()
-        console.log('🔊 Playing remote audio:', user.uid)
       }
     } catch (err: any) {
       console.error('❌ Subscribe media error for user', user.uid, err)
     }
   }
 
-  // Re-assert local preview whenever we are connected and have a video track.
   useEffect(() => {
     if (status !== 'connected') return
     const videoTrack = localTracksRef.current.find((t: any) => t?.trackMediaType === 'video')
@@ -281,18 +300,11 @@ export default function AgoraVideoTestPage() {
       const tokenData = await getToken()
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
       
-      // Enable debug logging
       AgoraRTC.setLogLevel(0)
       
       clientRef.current = AgoraRTC.createClient({ 
         mode: 'rtc', 
         codec: 'vp8' 
-      })
-      
-      console.log('Joining channel:', {
-        appId: tokenData.appId?.substring(0, 8) + '...',
-        channelName: tokenData.channelName,
-        uid: tokenData.uid
       })
       
       await clientRef.current.join(
@@ -302,17 +314,13 @@ export default function AgoraVideoTestPage() {
         tokenData.uid
       )
       
-      console.log('✅ Joined channel successfully')
-      
       const tracks = []
       let microphoneTrack = null
       let cameraTrack = null
       
-      // Create audio track
       if (hasAudio && micEnabled) {
         try {
-          console.log('Creating microphone track...')
-          const audioConfig = {
+          microphoneTrack = await AgoraRTC.createMicrophoneAudioTrack({
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
@@ -321,10 +329,7 @@ export default function AgoraVideoTestPage() {
               stereo: false,
               bitrate: 48
             }
-          }
-          
-          microphoneTrack = await AgoraRTC.createMicrophoneAudioTrack(audioConfig)
-          console.log('✅ Microphone track created:', microphoneTrack.getTrackId())
+          })
           tracks.push(microphoneTrack)
         } catch (audioErr: any) {
           console.warn('❌ Microphone error:', audioErr.message)
@@ -332,45 +337,34 @@ export default function AgoraVideoTestPage() {
         }
       }
       
-      // Create video track with better mobile support
       if (hasVideo && cameraEnabled) {
         try {
-          console.log('Creating camera track with facing mode:', facingMode)
-          
           const videoConfig: any = isMobile ? {
             facingMode: facingMode,
             encoderConfig: {
               width: { ideal: 640, max: 1280 },
               height: { ideal: 480, max: 720 },
-              frameRate: { ideal: 30, max: 30 },
-              bitrateMin: 400,
-              bitrateMax: 1000
+              frameRate: { ideal: 30, max: 30 }
             }
           } : {
             encoderConfig: {
               width: { ideal: 1280 },
               height: { ideal: 720 },
-              frameRate: { ideal: 30 },
-              bitrateMin: 600,
-              bitrateMax: 1500
+              frameRate: { ideal: 30 }
             }
           }
           
           cameraTrack = await AgoraRTC.createCameraVideoTrack(videoConfig)
-          console.log('✅ Camera track created:', cameraTrack.getTrackId())
           tracks.push(cameraTrack)
           
         } catch (videoErr: any) {
-          console.warn('❌ Camera error:', videoErr.message, videoErr.code)
+          console.warn('❌ Camera error:', videoErr.message)
           
-          // Fallback: try with minimal constraints
           if (videoErr.code !== 'PERMISSION_DENIED') {
             try {
-              console.log('🔄 Trying fallback camera constraints...')
               cameraTrack = await AgoraRTC.createCameraVideoTrack({
                 facingMode: isMobile ? facingMode : undefined
               })
-              console.log('✅ Camera track created with fallback')
               tracks.push(cameraTrack)
             } catch (fallbackErr: any) {
               console.error('❌ Fallback camera failed:', fallbackErr.message)
@@ -382,12 +376,9 @@ export default function AgoraVideoTestPage() {
         }
       }
       
-      console.log('Publishing', tracks.length, 'tracks...')
-      
       if (tracks.length > 0) {
         try {
           await clientRef.current.publish(tracks)
-          console.log('✅ Tracks published successfully')
           setIsPublished(true)
         } catch (publishErr: any) {
           console.error('❌ Publish failed:', publishErr)
@@ -396,7 +387,6 @@ export default function AgoraVideoTestPage() {
       
       localTracksRef.current = tracks
       
-      // Mark as connected before trying to render preview so the DOM exists
       setStatus('connected')
       setConnectionInfo({
         channelName: tokenData.channelName,
@@ -404,14 +394,12 @@ export default function AgoraVideoTestPage() {
         appId: tokenData.appId
       })
       
-      // Play local video (wait a tick for DOM to render connected layout)
       if (cameraTrack) {
         await playLocalPreview(cameraTrack)
       }
       
       setupRemoteUserHandlers()
       
-      // If any users were already in the channel, subscribe to their media
       if (clientRef.current?.remoteUsers?.length) {
         for (const user of clientRef.current.remoteUsers) {
           await subscribeToUserMedia(user)
@@ -422,13 +410,13 @@ export default function AgoraVideoTestPage() {
       console.error('❌ Connection error:', error)
       
       if (error.message.includes('AGORA_APP_ID')) {
-        setError(`Config Error: ${error.message}`)
+        setError(`${dict?.meet?.errors?.config || 'Config Error'}: ${error.message}`)
       } else if (error.message.includes('token')) {
-        setError(`Token Error: ${error.message}`)
+        setError(`${dict?.meet?.errors?.token || 'Token Error'}: ${error.message}`)
       } else if (error.code === 'PERMISSION_DENIED') {
-        setError('Permission denied. Please allow camera/microphone access.')
+        setError(dict?.meet?.errors?.permissionDenied || 'Permission denied')
       } else {
-        setError(`Error: ${error.message || 'Unknown error'}`)
+        setError(`${dict?.meet?.errors?.connection || 'Error'}: ${error.message || 'Unknown error'}`)
       }
       
       setStatus('idle')
@@ -441,7 +429,6 @@ export default function AgoraVideoTestPage() {
       
       try {
         await clientRef.current.subscribe(user, mediaType)
-        console.log('✅ Subscribed to:', user.uid)
         
         if (mediaType === 'video' && remoteVideoRef.current) {
           await playRemoteVideo(user)
@@ -450,7 +437,6 @@ export default function AgoraVideoTestPage() {
         
         if (mediaType === 'audio') {
           user.audioTrack.play()
-          console.log('🔊 Playing remote audio:', user.uid)
         }
       } catch (err: any) {
         console.error('❌ Subscribe error:', err)
@@ -458,19 +444,16 @@ export default function AgoraVideoTestPage() {
     })
 
     clientRef.current.on('user-unpublished', (user: any) => {
-      console.log('👤 User unpublished:', user.uid)
       const playerDiv = document.getElementById(`remote-player-${user.uid}`)
       if (playerDiv) playerDiv.remove()
       setRemoteUsers(prev => prev.filter(id => id !== user.uid))
     })
     
     clientRef.current.on('user-joined', async (user: any) => {
-      console.log('👋 User joined:', user.uid)
       await subscribeToUserMedia(user)
     })
     
     clientRef.current.on('user-left', (user: any) => {
-      console.log('👋 User left:', user.uid)
       const playerDiv = document.getElementById(`remote-player-${user.uid}`)
       if (playerDiv) playerDiv.remove()
       setRemoteUsers(prev => prev.filter(id => id !== user.uid))
@@ -483,8 +466,6 @@ export default function AgoraVideoTestPage() {
   
   const cleanup = async () => {
     try {
-      console.log('🧹 Cleaning up...')
-      
       localTracksRef.current.forEach(track => {
         if (track) {
           track.stop()
@@ -524,7 +505,6 @@ export default function AgoraVideoTestPage() {
       const newState = !track.enabled
       await track.setEnabled(newState)
       setCameraEnabled(newState)
-      console.log('Camera:', newState ? 'ON' : 'OFF')
     }
   }
 
@@ -534,7 +514,6 @@ export default function AgoraVideoTestPage() {
       const newState = !track.enabled
       await track.setEnabled(newState)
       setMicEnabled(newState)
-      console.log('Microphone:', newState ? 'ON' : 'OFF')
     }
   }
 
@@ -567,11 +546,10 @@ export default function AgoraVideoTestPage() {
           await clientRef.current.unpublish(videoTrack)
           await clientRef.current.publish(newTrack)
           
-        if (localVideoRef.current) {
-          await playLocalPreview(newTrack)
-        }
+          if (localVideoRef.current) {
+            await playLocalPreview(newTrack)
+          }
           
-          console.log('✅ Camera switched to:', newFacing)
         } catch (err) {
           console.error('Switch camera error:', err)
         }
@@ -579,224 +557,374 @@ export default function AgoraVideoTestPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-         NRBMeet {isMobile && '📱'}
-          </h1>
-          <p className="text-slate-600">
-            {isMobile ? 'Mobile mode active' : 'Desktop video testing'}
-          </p>
-          
-          <div className="flex justify-center gap-3 mt-4 flex-wrap">
-            <div className={`px-3 py-1 rounded-full text-sm ${
-              hasAudio ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              🎤 {hasAudio ? 'Available' : 'Unavailable'}
-            </div>
-            <div className={`px-3 py-1 rounded-full text-sm ${
-              hasVideo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              📹 {hasVideo ? 'Available' : 'Unavailable'}
-            </div>
-            <div className={`px-3 py-1 rounded-full text-sm ${
-              permissionStatus === 'granted' ? 'bg-green-100 text-green-800' :
-              permissionStatus === 'denied' ? 'bg-red-100 text-red-800' :
-              'bg-yellow-100 text-yellow-800'
-            }`}>
-              🔐 {permissionStatus === 'granted' ? 'Granted' : 
-                   permissionStatus === 'denied' ? 'Denied' : 'Not Requested'}
-            </div>
+  const copyInviteLink = () => {
+    const url = `${window.location.origin}/${lang}/meet?room=${channelName}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen()
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen()
+      setIsFullscreen(false)
+    }
+  }
+
+  if (!dict) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-24 h-24 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <Sparkles className="w-8 h-8 text-purple-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
           </div>
+          <p className="text-purple-300 font-medium">{dict?.common?.loading || 'Chargement...'}</p>
         </div>
-        
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start">
-              <span className="text-red-500 text-xl mr-2">⚠️</span>
-              <div>
-                <div className="font-medium text-red-800 mb-1">Error</div>
-                <p className="text-red-700 text-sm">{error}</p>
-              </div>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <Video className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
+                NRBMeet
+              </h1>
+              <p className="text-xs text-purple-300/70">{dict?.meet?.tagline || 'Video calls reimagined'}</p>
             </div>
           </div>
-        )}
-        
-        {permissionStatus !== 'granted' && status === 'idle' && (
-          <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-            <div className="text-4xl mb-3">🔒</div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              Camera & Microphone Access Required
-            </h3>
-            <p className="text-blue-700 mb-4">
-              Please grant permission to use your camera and microphone for video calls.
-            </p>
+
+          <div className="flex items-center gap-2">
+            {status === 'connected' && (
+              <>
+                <button
+                  onClick={copyInviteLink}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-all"
+                  title={dict?.meet?.copyInvite || 'Copy invite link'}
+                >
+                  {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-all"
+                  title={dict?.common?.settings || 'Settings'}
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              </>
+            )}
             <button
-              onClick={requestPermissions}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              onClick={toggleFullscreen}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-all"
             >
-              Grant Permissions
+              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
             </button>
           </div>
-        )}
-        
-        {status === 'connected' && !isPublished && (
-          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-yellow-800 font-medium">
-                ⚠️ Not broadcasting - others can't see you
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 pt-20 max-w-7xl">
+        {/* Status Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 backdrop-blur-sm ${
+              status === 'connected' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+              status === 'connecting' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+              'bg-slate-500/20 text-slate-300 border border-slate-500/30'
+            }`}>
+              {status === 'connected' ? <Wifi className="w-4 h-4" /> : 
+               status === 'connecting' ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+               <WifiOff className="w-4 h-4" />}
+              <span>
+                {status === 'connected' ? dict?.meet?.connected || 'Connected' :
+                 status === 'connecting' ? dict?.meet?.connecting || 'Connecting' :
+                 dict?.meet?.disconnected || 'Disconnected'}
               </span>
-              <button
-                onClick={async () => {
-                  if (clientRef.current && localTracksRef.current.length > 0) {
-                    await clientRef.current.publish(localTracksRef.current)
-                    setIsPublished(true)
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Start Broadcasting
-              </button>
+            </div>
+            {remoteUsers.length > 0 && (
+              <div className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full text-sm font-medium flex items-center gap-2 backdrop-blur-sm">
+                <Users className="w-4 h-4" />
+                <span>{remoteUsers.length} {remoteUsers.length > 1 ? dict?.meet?.participants : dict?.meet?.participant}</span>
+              </div>
+            )}
+          </div>
+
+          {permissionStatus !== 'granted' && status === 'idle' && (
+            <button
+              onClick={requestPermissions}
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg shadow-purple-500/25"
+            >
+              <Shield className="w-4 h-4" />
+              {dict?.meet?.grantPermissions || 'Grant Permissions'}
+            </button>
+          )}
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl backdrop-blur-sm animate-in fade-in slide-in-from-top">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-red-300 mb-1">{dict?.common?.error || 'Error'}</h3>
+                <p className="text-red-200/80 text-sm">{error}</p>
+              </div>
             </div>
           </div>
         )}
-        
-        {status === 'connected' ? (
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-slate-800 text-white p-3 flex items-center justify-between">
-                <h3 className="font-semibold">📹 Your Camera</h3>
-                <div className={`w-2 h-2 rounded-full ${cameraEnabled ? 'bg-green-500' : 'bg-red-500'}`} />
+
+        {/* Video Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          {/* Local Video */}
+          <div className="relative group">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+              <div className="aspect-video bg-slate-900 relative">
+                <div ref={localVideoRef} className="absolute inset-0" />
+                {status !== 'connected' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Camera className="w-16 h-16 text-slate-700 mb-3" />
+                    <p className="text-slate-500 font-medium">{dict?.meet?.cameraPreview || 'Camera Preview'}</p>
+                  </div>
+                )}
+                {status === 'connected' && !cameraEnabled && (
+                  <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
+                    <CameraOff className="w-16 h-16 text-slate-700" />
+                  </div>
+                )}
               </div>
-              <div className="h-64 bg-slate-900 relative">
-                <div id="local-player" ref={localVideoRef} className="w-full h-full" />
+              <div className="absolute top-3 left-3">
+                <span className="px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-xs text-white/80">
+                  {dict?.meet?.you || 'You'}
+                </span>
               </div>
-              <div className="p-3 bg-slate-50 flex gap-2">
+              <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 {hasVideo && (
-                  <>
-                    <button onClick={toggleCamera} className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium">
-                      {cameraEnabled ? '📹 On' : '📹 Off'}
-                    </button>
-                    {isMobile && (
-                      <button onClick={switchCamera} className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 font-medium">
-                        🔄
-                      </button>
-                    )}
-                  </>
+                  <button
+                    onClick={toggleCamera}
+                    className={`p-2 rounded-lg backdrop-blur-sm transition-all ${
+                      cameraEnabled 
+                        ? 'bg-white/20 hover:bg-white/30 text-white' 
+                        : 'bg-red-500/80 hover:bg-red-600 text-white'
+                    }`}
+                  >
+                    {cameraEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                  </button>
                 )}
                 {hasAudio && (
-                  <button onClick={toggleMic} className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-medium">
-                    {micEnabled ? '🎤 On' : '🎤 Off'}
+                  <button
+                    onClick={toggleMic}
+                    className={`p-2 rounded-lg backdrop-blur-sm transition-all ${
+                      micEnabled 
+                        ? 'bg-white/20 hover:bg-white/30 text-white' 
+                        : 'bg-red-500/80 hover:bg-red-600 text-white'
+                    }`}
+                  >
+                    {micEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                  </button>
+                )}
+                {isMobile && hasVideo && (
+                  <button
+                    onClick={switchCamera}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-sm transition-all"
+                  >
+                    <RefreshCw className="w-4 h-4" />
                   </button>
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-slate-800 text-white p-3">
-                <h3 className="font-semibold">👥 Remote ({remoteUsers.length})</h3>
+          {/* Remote Video */}
+          <div className="relative group">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+              <div className="aspect-video bg-slate-900 relative">
+                <div ref={remoteVideoRef} className="absolute inset-0">
+                  {remoteUsers.length === 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Users className="w-16 h-16 text-slate-700 mb-3" />
+                      <p className="text-slate-500 font-medium text-center px-4">
+                        {dict?.meet?.waitingForOthers || 'Waiting for others to join...'}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div ref={remoteVideoRef} className="h-64 bg-slate-900 flex items-center justify-center">
-                {remoteUsers.length === 0 && (
-                  <div className="text-center text-slate-400">
-                    <div className="text-4xl mb-2">⏳</div>
-                    <p>Waiting for others...</p>
-                  </div>
-                )}
+              <div className="absolute top-3 left-3">
+                <span className="px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-xs text-white/80">
+                  {remoteUsers.length > 0 
+                    ? `${remoteUsers.length} ${remoteUsers.length > 1 ? dict?.meet?.participants : dict?.meet?.participant}`
+                    : dict?.meet?.waiting || 'Waiting'}
+                </span>
               </div>
             </div>
           </div>
-        ) : (
-          <div className="mb-6 bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">📹</div>
-            <h3 className="text-xl font-semibold text-slate-700 mb-2">Ready to Connect</h3>
-            <p className="text-slate-600">Configure your settings below and click Connect</p>
+        </div>
+
+        {/* Controls */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Room Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span className="text-sm text-white/60 uppercase tracking-wider">
+                  {dict?.meet?.room || 'ROOM'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <code className="px-4 py-2 bg-black/30 rounded-lg text-purple-300 font-mono text-sm">
+                  {channelName}
+                </code>
+                <button
+                  onClick={copyInviteLink}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                  title={dict?.meet?.copyInvite || 'Copy invite link'}
+                >
+                  {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Main Actions */}
+            <div className="flex items-center gap-3">
+              {status === 'connected' ? (
+                <button
+                  onClick={cleanup}
+                  className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-red-500/25"
+                >
+                  <PhoneOff className="w-5 h-5" />
+                  {dict?.meet?.endCall || 'End Call'}
+                </button>
+              ) : (
+                <button
+                  onClick={testConnection}
+                  disabled={status === 'connecting' || permissionStatus !== 'granted'}
+                  className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${
+                    status === 'connecting' || permissionStatus !== 'granted'
+                      ? 'bg-slate-600 cursor-not-allowed opacity-50'
+                      : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-green-500/25'
+                  }`}
+                >
+                  {status === 'connecting' ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      {dict?.meet?.connecting || 'Connecting...'}
+                    </>
+                  ) : (
+                    <>
+                      <Phone className="w-5 h-5" />
+                      {dict?.meet?.startCall || 'Start Call'}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Device Info */}
+            <div className="flex items-center gap-4">
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                hasVideo ? 'bg-white/5' : 'bg-red-500/10'
+              }`}>
+                {hasVideo ? <Video className="w-4 h-4 text-green-400" /> : <VideoOff className="w-4 h-4 text-red-400" />}
+                <span className="text-sm hidden sm:inline">
+                  {hasVideo ? dict?.meet?.cameraAvailable || 'Camera OK' : dict?.meet?.noCamera || 'No Camera'}
+                </span>
+              </div>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                hasAudio ? 'bg-white/5' : 'bg-red-500/10'
+              }`}>
+                {hasAudio ? <Mic className="w-4 h-4 text-green-400" /> : <MicOff className="w-4 h-4 text-red-400" />}
+                <span className="text-sm hidden sm:inline">
+                  {hasAudio ? dict?.meet?.micAvailable || 'Mic OK' : dict?.meet?.noMic || 'No Mic'}
+                </span>
+              </div>
+            </div>
           </div>
-        )}
-        
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Channel Name
+
+          {/* Channel Input (when idle) */}
+          {status === 'idle' && (
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <label className="block text-sm font-medium text-white/60 mb-2">
+                {dict?.meet?.channelName || 'Channel Name'}
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg"
-                  placeholder="Enter channel name"
-                  disabled={status === 'connected'}
+                  className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-white/30"
+                  placeholder={dict?.meet?.enterChannel || 'Enter channel name'}
                 />
                 <button
-                  onClick={() => setChannelName(`room-${Math.floor(Math.random() * 10000)}`)}
-                  disabled={status === 'connected'}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50"
+                  onClick={() => setChannelName(`meet-${Math.floor(Math.random() * 10000)}`)}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                  title={dict?.meet?.random || 'Random'}
                 >
-                  🎲 Random
+                  🎲
                 </button>
               </div>
             </div>
-            
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          )}
+        </div>
+
+        {/* Settings Panel */}
+        {showSettings && status === 'connected' && (
+          <div className="mt-4 p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 animate-in slide-in-from-bottom">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              {dict?.common?.settings || 'Settings'}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {videoDevices.length > 0 && (
                 <div>
-                  <div className="flex items-center mb-2">
-                    <span className="font-medium text-slate-700 mr-3">Status:</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      status === 'idle' ? 'bg-slate-200 text-slate-800' :
-                      status === 'connecting' ? 'bg-yellow-200 text-yellow-800' :
-                      'bg-green-200 text-green-800'
-                    }`}>
-                      {status === 'idle' ? '⚪ Ready' : 
-                       status === 'connecting' ? '🟡 Connecting' : '🟢 Connected'}
-                    </span>
-                  </div>
-                  {connectionInfo && (
-                    <div className="text-sm text-slate-600">
-                      <div>Channel: <code className="bg-slate-200 px-2 py-1 rounded">{connectionInfo.channelName}</code></div>
-                      <div className="mt-1">ID: <code className="bg-slate-200 px-2 py-1 rounded">{connectionInfo.uid}</code></div>
-                    </div>
-                  )}
+                  <label className="block text-sm text-white/60 mb-2">
+                    {dict?.meet?.camera || 'Camera'}
+                  </label>
+                  <select
+                    value={selectedVideoDevice}
+                    onChange={(e) => setSelectedVideoDevice(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                  >
+                    {videoDevices.map(device => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label || `${dict?.meet?.camera || 'Camera'} ${videoDevices.indexOf(device) + 1}`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                
-                <div className="flex gap-2">
-                  {status === 'connected' ? (
-                    <>
-                      <button
-                        onClick={() => window.open(window.location.href, '_blank')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                      >
-                        🪟 New Tab
-                      </button>
-                      <button
-                        onClick={cleanup}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
-                      >
-                        ❌ Disconnect
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={testConnection}
-                      disabled={status === 'connecting' || permissionStatus !== 'granted'}
-                      className={`px-6 py-3 rounded-lg font-medium ${
-                        status === 'connecting' || permissionStatus !== 'granted'
-                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                          : 'bg-green-600 hover:bg-green-700 text-white'
-                      }`}
-                    >
-                      {status === 'connecting' ? '⏳ Connecting...' : '🚀 Connect'}
-                    </button>
-                  )}
+              )}
+              {audioDevices.length > 0 && (
+                <div>
+                  <label className="block text-sm text-white/60 mb-2">
+                    {dict?.meet?.microphone || 'Microphone'}
+                  </label>
+                  <select
+                    value={selectedAudioDevice}
+                    onChange={(e) => setSelectedAudioDevice(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                  >
+                    {audioDevices.map(device => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label || `${dict?.meet?.microphone || 'Mic'} ${audioDevices.indexOf(device) + 1}`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

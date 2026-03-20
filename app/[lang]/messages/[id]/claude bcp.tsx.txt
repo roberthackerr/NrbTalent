@@ -1,0 +1,2019 @@
+// app/messages/[id]/page.tsx - VERSION FINALE CORRIGÉE ET COMPLÈTE
+"use client"
+
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter, useParams } from "next/navigation"
+import { toast } from "sonner"
+
+// Components
+import { ConnectionStatus } from "@/components/ConnectionStatus"
+import { MessageBubble } from "@/components/MessageBubble"
+import { ConversationsSidebar } from "@/components/ConversationsSidebar"
+import { ChatHeader } from "@/components/ChatHeader"
+import { MessageInput } from "@/components/MessageInput"
+import { NewConversationModal } from "@/components/NewConversationModal"
+import { DeleteConversationModal } from "@/components/DeleteConversationModal"
+import { TypingIndicator } from "@/components/TypingIndicator"
+import { MessageSettings } from "@/components/MessageSettings"
+import { VideoCallModal, VideoCallModalHandle } from "@/components/VideoCallModal"
+import { IncomingCallPopup } from "@/components/IncomingCallPopup"
+import { OutgoingCallPopup } from "@/components/OutgoingCallPopup"
+
+// Hooks
+import { useWebSocketManager } from "@/hooks/useWebSocket"
+import { useConversationManager } from "@/hooks/useConversationManager"
+import { useTypingManager } from "@/hooks/useTypingManager"
+import { useMessagePreferences } from "@/hooks/useMessagePreferences"
+
+// Types
+import { Conversation, Message, User } from "@/types/chat"
+
+export default function ConversationPage() {
+  const { data: session, status: sessionStatus } = useSession()
+  const router = useRouter()
+  const params = useParams()
+  const conversationId = params?.id as string | undefined
+  
+  const conversationManager = useConversationManager()
+  const typingManager = useTypingManager()
+  const messagePreferences = useMessagePreferences()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // 🔥 ÉTATS POUR LES APPELS
+  const [showIncomingCall, setShowIncomingCall] = useState(false)
+  const [incomingCallData, setIncomingCallData] = useState<{
+    callerName: string
+    callerAvatar?: string
+    channelName: string
+    conversationId: string
+    isVideoCall: boolean
+  } | null>(null)
+
+  const [showOutgoingCall, setShowOutgoingCall] = useState(false)
+  const [outgoingCallData, setOutgoingCallData] = useState<{
+    recipientName: string
+    recipientAvatar?: string
+    isVideoCall: boolean
+  } | null>(null)
+
+  const [showNewConversation, setShowNewConversation] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<User[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
+  const [videoCallChannel, setVideoCallChannel] = useState("")
+  const [callStatus, setCallStatus] = useState<"idle" | "connecting" | "connected">("idle")
+  const [remoteUsers, setRemoteUsers] = useState<number[]>([])
+  const videoCallRef = useRef<VideoCallModalHandle>(null)
+
+  // Références de contrôle
+  const hasLoadedInitialConversations = useRef(false)
+  const hasOpenedUrlConversation = useRef(false)
+  const isLoadingMessages = useRef(false)
+  const lastSelectedConversation = useRef<string | null>(null)
+
+  // Scroll optimisé
+  const scrollToBottom = useCallback((force: boolean = false) => {
+    if (!messagesEndRef.current) return
+    
+    try {
+      if (force) {
+        messagesEndRef.current.scrollIntoView({ behavior: "auto" })
+      } else {
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        }, 100)
+      }
+    } catch (error) {
+      console.log('Scroll error (non-critical):', error)
+    }
+  }, [])
+
+  // Génération du nom de canal
+  const generateChannelName = useCallback((convId: string) => {
+    const timestamp = Date.now()
+    return `conv_${convId}_${timestamp}`
+  }, [])
+
+  // 🔥 DÉMARRAGE APPEL VIDÉO
+  const handleStartVideoCall = useCallback(() => {
+    console.log("🎥 Démarrage appel vidéo...")
+    
+    if (!conversationManager.selectedConversationId) {
+      toast.error("Aucune conversation sélectionnée")
+      return
+    }
+
+    const selectedConv = conversationManager.getConversation(
+      conversationManager.selectedConversationId
+    )
+    
+    const recipient = selectedConv?.participants?.find(
+      p => p._id !== (session?.user as any)?.id
+    )
+
+    setOutgoingCallData({
+      recipientName: recipient?.name || 'Utilisateur',
+      recipientAvatar: recipient?.avatar,
+      isVideoCall: true
+    })
+
+    setShowOutgoingCall(true)
+    setCallStatus("connecting")
+
+    const channelName = generateChannelName(conversationManager.selectedConversationId)
+    setVideoCallChannel(channelName)
+    
+    toast.success("Appel en cours...")
+
+    try {
+      const ws = (window as any).wsRef?.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'VIDEO_CALL_STARTED',
+          data: {
+            conversationId: conversationManager.selectedConversationId,
+            channelName: channelName,
+            callerId: (session?.user as any)?.id,
+            callerName: session?.user?.name,
+            callerAvatar: (session?.user as any)?.image,
+            isVideoCall: true
+          },
+          messageId: `call-start-${Date.now()}`
+        }))
+      }
+    } catch (error) {
+      console.error("Erreur envoi notification appel:", error)
+    }
+  }, [conversationManager, session, generateChannelName])
+
+  // 🔥 ANNULATION APPEL SORTANT
+  const handleCancelOutgoingCall = useCallback(() => {
+    console.log("❌ Annulation de l'appel sortant")
+    
+    setShowOutgoingCall(false)
+    setCallStatus("idle")
+    
+    toast.info("Appel annulé")
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'VIDEO_CALL_CANCELLED',
+          data: {
+            conversationId: conversationManager.selectedConversationId,
+            channelName: videoCallChannel
+          },
+          messageId: `call-cancel-${Date.now()}`
+        }))
+      }
+    } catch (error) {
+      console.error("Erreur notification annulation:", error)
+    }
+    
+    setOutgoingCallData(null)
+    setVideoCallChannel("")
+  }, [conversationManager.selectedConversationId, videoCallChannel])
+
+  // 🔥 FIN D'APPEL
+  const handleEndCall = useCallback(async () => {
+    console.log("📴 Fin de l'appel...")
+    
+    try {
+      if (videoCallRef.current) {
+        await videoCallRef.current.close()
+      }
+    } catch (error) {
+      console.error("Erreur fermeture appel:", error)
+    } finally {
+      setIsVideoCallOpen(false)
+      setCallStatus("idle")
+      setRemoteUsers([])
+      
+      try {
+        const ws = (window as any).wsRef?.current
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'VIDEO_CALL_ENDED',
+            data: {
+              conversationId: conversationManager.selectedConversationId,
+              channelName: videoCallChannel
+            },
+            messageId: `call-end-${Date.now()}`
+          }))
+        }
+      } catch (error) {
+        console.error("Erreur notification fin appel:", error)
+      }
+      
+      toast.success("Appel terminé")
+    }
+  }, [conversationManager.selectedConversationId, videoCallChannel])
+
+  const handleCallStatusChange = useCallback((status: "idle" | "connecting" | "connected") => {
+    console.log("📊 Statut appel:", status)
+    setCallStatus(status)
+    
+    if (status === "connected") {
+      toast.success("Appel connecté !")
+    }
+  }, [])
+
+  const handleRemoteUsersChange = useCallback((users: number[]) => {
+    console.log("👥 Utilisateurs distants:", users.length)
+    setRemoteUsers(users)
+    
+    if (users.length > 0 && callStatus === "connecting") {
+      setCallStatus("connected")
+    }
+  }, [callStatus])
+
+  // 🔥 ACCEPTATION APPEL ENTRANT
+  const handleAcceptIncomingCall = useCallback(() => {
+    console.log("✅ Acceptation de l'appel")
+    
+    if (!incomingCallData) return
+    
+    setShowIncomingCall(false)
+    
+    if (incomingCallData.conversationId !== conversationManager.selectedConversationId) {
+      handleSelectConversation(incomingCallData.conversationId)
+    }
+    
+    setVideoCallChannel(incomingCallData.channelName)
+    setIsVideoCallOpen(true)
+    setCallStatus("connected")
+    
+    toast.success("Connexion à l'appel...")
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'VIDEO_CALL_ACCEPTED',
+          data: {
+            conversationId: incomingCallData.conversationId,
+            channelName: incomingCallData.channelName
+          },
+          messageId: `call-accept-${Date.now()}`
+        }))
+      }
+    } catch (error) {
+      console.error("Erreur notification acceptation:", error)
+    }
+    
+    setIncomingCallData(null)
+  }, [incomingCallData, conversationManager.selectedConversationId])
+
+  // 🔥 REFUS APPEL ENTRANT
+  const handleDeclineIncomingCall = useCallback(() => {
+    console.log("❌ Refus de l'appel")
+    
+    if (!incomingCallData) return
+    
+    setShowIncomingCall(false)
+    
+    toast.info("Appel refusé")
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'VIDEO_CALL_DECLINED',
+          data: {
+            conversationId: incomingCallData.conversationId,
+            channelName: incomingCallData.channelName
+          },
+          messageId: `call-decline-${Date.now()}`
+        }))
+      }
+    } catch (error) {
+      console.error("Erreur notification refus:", error)
+    }
+    
+    setIncomingCallData(null)
+  }, [incomingCallData])
+
+  // Chargement des conversations
+  const fetchConversations = useCallback(async () => {
+    if (sessionStatus !== 'authenticated') return
+    
+    try {
+      console.log('🔄 Chargement conversations...')
+      const response = await fetch("/api/conversations", {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      
+      const data = await response.json()
+      const conversations = data.conversations || []
+      console.log('✅ Conversations chargées:', conversations.length)
+      
+      conversationManager.setConversations(conversations)
+      conversationManager.setIsLoading(false)
+      
+      if (conversationId && conversations.length > 0 && !hasOpenedUrlConversation.current) {
+        const targetConversation = conversations.find(
+          (conv: Conversation) => conv._id === conversationId
+        )
+        
+        if (targetConversation) {
+          console.log('🎯 Ouverture conversation URL:', conversationId)
+          hasOpenedUrlConversation.current = true
+          conversationManager.selectConversation(conversationId)
+          setTimeout(() => fetchMessages(conversationId), 200)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement conversations:', error)
+      toast.error('Impossible de charger les conversations')
+      conversationManager.setIsLoading(false)
+    }
+  }, [sessionStatus, conversationId])
+
+  // Chargement des messages
+  const fetchMessages = useCallback(async (convId: string) => {
+    if (!convId || sessionStatus !== 'authenticated') return
+    if (isLoadingMessages.current) return
+
+    isLoadingMessages.current = true
+    console.log('🔄 Chargement messages pour:', convId)
+    
+    try {
+      const response = await fetch(`/api/messages?conversationId=${convId}`, {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      
+      const data = await response.json()
+      const messages = data.messages || []
+      console.log('✅ Messages chargés:', messages.length)
+      
+      conversationManager.updateMessages(convId, messages)
+      setTimeout(() => scrollToBottom(true), 100)
+    } catch (error) {
+      console.error('❌ Erreur chargement messages:', error)
+      toast.error('Erreur lors du chargement des messages')
+    } finally {
+      isLoadingMessages.current = false
+    }
+  }, [sessionStatus, conversationManager, scrollToBottom])
+
+  // Handlers de typing
+  const handleTypingStart = useCallback(() => {
+    if (!conversationManager.selectedConversationId || !session?.user) return
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (!ws || ws.readyState !== WebSocket.OPEN) return
+
+      ws.send(JSON.stringify({
+        type: 'TYPING_START',
+        data: { conversationId: conversationManager.selectedConversationId },
+        messageId: `typing-${Date.now()}`
+      }))
+    } catch (error) {
+      console.log('Typing start error (non-critical):', error)
+    }
+  }, [conversationManager.selectedConversationId, session])
+  
+  const handleTypingStop = useCallback(() => {
+    if (!conversationManager.selectedConversationId || !session?.user) return
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (!ws || ws.readyState !== WebSocket.OPEN) return
+
+      ws.send(JSON.stringify({
+        type: 'TYPING_STOP',
+        data: { conversationId: conversationManager.selectedConversationId },
+        messageId: `typing-stop-${Date.now()}`
+      }))
+    } catch (error) {
+      console.log('Typing stop error (non-critical):', error)
+    }
+  }, [conversationManager.selectedConversationId, session])
+
+  // Handler WebSocket
+  const handleWebSocketMessage = useCallback((message: any) => {
+    if (!message?.type) return
+    
+    console.log('📨 WebSocket:', message.type)
+    
+    try {
+      switch (message.type) {
+        case 'AUTH_SUCCESS':
+          console.log('✅ Auth WebSocket OK')
+          break
+          
+        case 'CONVERSATIONS_FETCHED':
+          const conversations = message.data?.conversations || []
+          conversationManager.setConversations(conversations)
+          conversationManager.setIsLoading(false)
+          break
+
+        case 'MESSAGES_FETCHED':
+          const msgs = message.data?.messages || []
+          const cId = message.data?.conversationId
+          if (!cId) break
+          conversationManager.updateMessages(cId, msgs)
+          scrollToBottom(true)
+          break
+
+        case 'VIDEO_CALL_INCOMING':
+          console.log("📞 Appel entrant reçu:", message.data)
+          
+          setIncomingCallData({
+            callerName: message.data.callerName || 'Utilisateur',
+            callerAvatar: message.data.callerAvatar,
+            channelName: message.data.channelName,
+            conversationId: message.data.conversationId,
+            isVideoCall: message.data.isVideoCall !== false
+          })
+          
+          setShowIncomingCall(true)
+          
+          try {
+            const audio = new Audio('/sounds/incoming-call.mp3')
+            audio.play().catch(err => console.log('Audio play error:', err))
+          } catch (error) {
+            console.log('Audio error (non-critical):', error)
+          }
+          break
+
+        case 'VIDEO_CALL_ACCEPTED':
+          console.log("✅ Appel accepté par l'autre utilisateur")
+          
+          setShowOutgoingCall(false)
+          setIsVideoCallOpen(true)
+          setCallStatus("connected")
+          
+          toast.success("Appel accepté !")
+          break
+
+        case 'VIDEO_CALL_DECLINED':
+          console.log("❌ Appel refusé par l'autre utilisateur")
+          
+          setShowOutgoingCall(false)
+          setCallStatus("idle")
+          setOutgoingCallData(null)
+          
+          toast.error("Appel refusé")
+          break
+
+        case 'VIDEO_CALL_CANCELLED':
+          console.log("🚫 Appel annulé par l'appelant")
+          
+          if (showIncomingCall) {
+            setShowIncomingCall(false)
+            setIncomingCallData(null)
+            toast.info("L'appel a été annulé")
+          }
+          break
+
+        case 'VIDEO_CALL_ENDED':
+          if (message.data?.channelName === videoCallChannel) {
+            handleEndCall()
+            toast.info("L'appel a été terminé")
+          }
+          break
+
+        case 'VIDEO_CALL_MISSED':
+          console.log("📵 Appel manqué")
+          toast.info("Appel manqué")
+          break
+
+        case 'NEW_MESSAGE':
+          const newMsg = message.data
+          if (!newMsg?.conversationId || !newMsg._id) break
+          
+          conversationManager.addMessage(newMsg)
+          
+          if (newMsg.conversationId === conversationManager.selectedConversationId) {
+            scrollToBottom()
+            conversationManager.updateConversation(newMsg.conversationId, {
+              unreadCount: 0,
+              lastMessage: newMsg.content,
+              updatedAt: new Date().toISOString()
+            })
+          } else {
+            const conv = conversationManager.getConversation(newMsg.conversationId)
+            if (conv) {
+              conversationManager.updateConversation(newMsg.conversationId, {
+                unreadCount: (conv.unreadCount || 0) + 1,
+                lastMessage: newMsg.content,
+                updatedAt: new Date().toISOString()
+              })
+            }
+          }
+          break
+
+        case 'MESSAGE_SENT':
+          const sentMsg = message.data
+          if (!sentMsg?.conversationId || !sentMsg?.tempId) break
+          
+          const currentMsgs = conversationManager.getCachedMessages(sentMsg.conversationId)
+          const updatedMsgs = currentMsgs.map(msg => 
+            msg._id === sentMsg.tempId
+              ? { ...msg, _id: sentMsg.messageId, createdAt: sentMsg.createdAt || msg.createdAt }
+              : msg
+          )
+          conversationManager.updateMessages(sentMsg.conversationId, updatedMsgs)
+          break
+
+        case 'USER_TYPING':
+          if (!message.data?.conversationId || !message.data?.userId) break
+          typingManager.startTyping(
+            message.data.conversationId,
+            message.data.userId,
+            message.data.userName || 'Utilisateur'
+          )
+          break
+
+        case 'USER_STOPPED_TYPING':
+          if (!message.data?.conversationId) break
+          typingManager.stopTyping(message.data.conversationId)
+          break
+
+        case 'ERROR':
+          console.error('❌ Erreur WebSocket:', message.data)
+          toast.error(message.data?.message || 'Erreur de connexion')
+          break
+      }
+    } catch (error) {
+      console.error('❌ Erreur traitement message WS:', error)
+    }
+  }, [conversationManager, scrollToBottom, typingManager, videoCallChannel, handleEndCall, showIncomingCall])
+
+  const wsManager = useWebSocketManager(handleWebSocketMessage)
+
+  // Sélection de conversation
+  const handleSelectConversation = useCallback((convId: string) => {
+    if (!convId || lastSelectedConversation.current === convId) return
+    
+    console.log('🎯 Sélection conversation:', convId)
+    lastSelectedConversation.current = convId
+    
+    typingManager.cleanup()
+    conversationManager.selectConversation(convId)
+    
+    try {
+      window.history.pushState({}, '', `/messages/${convId}`)
+    } catch (error) {
+      console.log('History push error:', error)
+    }
+    
+    setTimeout(() => fetchMessages(convId), 50)
+  }, [conversationManager, typingManager, fetchMessages])
+
+  // Envoi message
+  const handleSendMessage = useCallback(async (content: string, convId: string) => {
+    if (!content.trim() || !session?.user) {
+      throw new Error("Message vide ou utilisateur non connecté")
+    }
+
+    const conversation = conversationManager.getConversation(convId)
+    if (!conversation) throw new Error("Conversation non trouvée")
+
+    const receiver = conversation.participants.find(p => p._id !== (session.user as any).id)
+    if (!receiver) throw new Error("Destinataire non trouvé")
+
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const tempMessage: Message = {
+      _id: tempId,
+      conversationId: convId,
+      senderId: (session.user as any).id,
+      receiverId: receiver._id,
+      content: content.trim(),
+      read: false,
+      createdAt: new Date().toISOString(),
+      isAIMessage: false
+    }
+
+    conversationManager.addMessage(tempMessage)
+    scrollToBottom()
+
+    try {
+      const ws = (window as any).wsRef?.current
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        throw new Error('WebSocket non connecté')
+      }
+
+      ws.send(JSON.stringify({
+        type: 'SEND_MESSAGE',
+        data: {
+          conversationId: convId,
+          receiverId: receiver._id,
+          content: content.trim(),
+          tempId: tempId
+        },
+        messageId: `send-${Date.now()}`
+      }))
+    } catch (error: any) {
+      console.error("❌ Erreur envoi message:", error)
+      conversationManager.removeMessage(convId, tempId)
+      toast.error("Erreur envoi message")
+      throw error
+    }
+  }, [conversationManager, session, scrollToBottom])
+
+  // Envoi message AI
+  const handleSendAIMessage = useCallback(async (content: string, convId: string) => {
+    if (!content.trim() || !session?.user) {
+      throw new Error("Message vide")
+    }
+
+    const conversation = conversationManager.getConversation(convId)
+    if (!conversation) throw new Error("Conversation non trouvée")
+
+    const otherParticipant = conversation.participants.find(p => p._id !== (session.user as any).id)
+    const tempId = `temp-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    const tempUserMessage: Message = {
+      _id: tempId,
+      conversationId: convId,
+      senderId: (session.user as any).id,
+      receiverId: otherParticipant?._id || 'ai-assistant',
+      content: content.trim(),
+      read: false,
+      createdAt: new Date().toISOString(),
+      isAIMessage: false
+    }
+    
+    conversationManager.addMessage(tempUserMessage)
+    scrollToBottom()
+
+    try {
+      const response = await fetch('/api/ai/chat-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content.trim(),
+          conversationId: convId,
+          conversationType: 'general'
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || 'AI API call failed')
+      }
+
+      const data = await response.json()
+      conversationManager.removeMessage(convId, tempId)
+
+      const confirmedUserMessage: Message = {
+        _id: data.userMessage?.messageId || `user-${Date.now()}`,
+        conversationId: convId,
+        senderId: (session.user as any).id,
+        receiverId: otherParticipant?._id || 'ai-assistant',
+        content: content.trim(),
+        read: false,
+        createdAt: data.userMessage?.createdAt || new Date().toISOString(),
+        isAIMessage: false
+      }
+      conversationManager.addMessage(confirmedUserMessage)
+
+      const aiMessage: Message = {
+        _id: data.response?.messageId || `ai-${Date.now()}`,
+        conversationId: convId,
+        senderId: data.response?.aiUser?._id || 'ai-assistant',
+        receiverId: (session.user as any).id,
+        content: data.response?.content || 'Désolé, je n\'ai pas pu générer de réponse.',
+        read: false,
+        createdAt: data.response?.createdAt || new Date().toISOString(),
+        isAIMessage: true,
+        aiUser: data.response?.aiUser
+      }
+      conversationManager.addMessage(aiMessage)
+      scrollToBottom()
+      
+      return data
+    } catch (error: any) {
+      console.error("❌ Erreur envoi message AI:", error)
+      conversationManager.removeMessage(convId, tempId)
+      toast.error("Erreur avec l'assistant AI")
+      throw error
+    }
+  }, [conversationManager, session, scrollToBottom])
+
+  // Création conversation AI
+  const createAIConversation = useCallback(async () => {
+    if (sessionStatus !== 'authenticated') {
+      toast.error('Veuillez vous connecter')
+      return
+    }
+
+    try {
+      const existingAIConv = conversationManager.conversations.find(conv => 
+        conv.isAIConversation || conv.participants?.some(p => p.role === "ai_assistant")
+      )
+
+      if (existingAIConv) {
+        handleSelectConversation(existingAIConv._id)
+        toast.success("Conversation AI rouverte !")
+        return
+      }
+
+      const response = await fetch('/api/ai/chat-assistant', { method: 'PUT' })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const data = await response.json()
+      if (!data.conversation?._id) throw new Error('Réponse API invalide')
+      
+      await fetchConversations()
+      handleSelectConversation(data.conversation._id)
+      toast.success("Conversation AI créée !")
+      
+      setTimeout(() => {
+        const welcomeMessage: Message = {
+          _id: `ai-welcome-${Date.now()}`,
+          conversationId: data.conversation._id,
+          senderId: data.aiUser?._id || 'ai-assistant',
+          receiverId: (session.user as any).id,
+          content: "👋 Bonjour ! Je suis votre assistant AI. Comment puis-je vous aider ?",
+          read: false,
+          createdAt: new Date().toISOString(),
+          isAIMessage: true,
+          aiUser: data.aiUser
+        }
+        conversationManager.addMessage(welcomeMessage)
+        scrollToBottom()
+      }, 500)
+    } catch (error) {
+      console.error("Erreur création conversation AI:", error)
+      toast.error("Erreur lors de la création de la conversation AI")
+    }
+  }, [conversationManager, handleSelectConversation, fetchConversations, scrollToBottom, sessionStatus, session])
+
+  // Création conversation normale
+  const createConversation = useCallback(async (user: User) => {
+    if (!user?._id || sessionStatus !== 'authenticated') {
+      toast.error('Données utilisateur invalides')
+      return
+    }
+
+    try {
+      const existingConv = conversationManager.conversations.find(conv => 
+        conv.participants?.some(p => p._id === user._id)
+      )
+
+      if (existingConv) {
+        router.push(`/messages/${existingConv._id}`)
+        setShowNewConversation(false)
+        setSearchQuery("")
+        setSearchResults([])
+        return
+      }
+
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantIds: [user._id] }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setShowNewConversation(false)
+        setSearchQuery("")
+        setSearchResults([])
+        await fetchConversations()
+        router.push(`/messages/${data.conversation._id}`)
+        toast.success("Conversation créée !")
+      } else {
+        throw new Error("Erreur création conversation")
+      }
+    } catch (error) {
+      console.error("Erreur création conversation:", error)
+      toast.error("Erreur lors de la création de la conversation")
+    }
+  }, [conversationManager, router, fetchConversations, sessionStatus])
+
+  // Suppression conversation
+  const deleteConversation = async (convId: string) => {
+    if (!convId || sessionStatus !== 'authenticated') {
+      toast.error('ID de conversation invalide')
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/conversations?conversationId=${convId}`, {
+        method: 'DELETE',
+      })
+
+      if
+
+
+
+
+
+
+      ----latest 1120161225
+
+
+      // app/messages/[id]/page.tsx - VERSION COMPLÈTE AVEC APPEL VIDÉO
+"use client"
+
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter, useParams } from "next/navigation"
+import { toast } from "sonner"
+
+// Components
+import { ConnectionStatus } from "@/components/ConnectionStatus"
+import { MessageBubble } from "@/components/MessageBubble"
+import { ConversationsSidebar } from "@/components/ConversationsSidebar"
+import { ChatHeader } from "@/components/ChatHeader"
+import { MessageInput } from "@/components/MessageInput"
+import { NewConversationModal } from "@/components/NewConversationModal"
+import { DeleteConversationModal } from "@/components/DeleteConversationModal"
+import { TypingIndicator } from "@/components/TypingIndicator"
+import { MessageSettings } from "@/components/MessageSettings"
+import { VideoCallModal, VideoCallModalHandle } from "@/components/VideoCallModal"
+
+// Hooks
+import { useWebSocketManager } from "@/hooks/useWebSocket"
+import { useConversationManager } from "@/hooks/useConversationManager"
+import { useTypingManager } from "@/hooks/useTypingManager"
+import { useMessagePreferences } from "@/hooks/useMessagePreferences"
+
+// Types
+import { Conversation, Message, User } from "@/types/chat"
+import { IncomingCallPopup } from "@/components/IncomingCallPopup"
+import { OutgoingCallPopup } from "@/components/OutgoingCallPopup"
+
+export default function ConversationPage() {
+  const { data: session, status: sessionStatus } = useSession()
+  const router = useRouter()
+  const params = useParams()
+  const conversationId = params?.id as string | undefined
+  
+  const conversationManager = useConversationManager()
+  const typingManager = useTypingManager()
+  const messagePreferences = useMessagePreferences()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+/*------   begin of the call component --------*/
+const [showIncomingCall, setShowIncomingCall] = useState(false)
+const [incomingCallData, setIncomingCallData] = useState<{
+  callerName: string
+  callerAvatar?: string
+  channelName: string
+  conversationId: string
+  isVideoCall: boolean
+} | null>(null)
+
+const [showOutgoingCall, setShowOutgoingCall] = useState(false)
+const [outgoingCallData, setOutgoingCallData] = useState<{
+  recipientName: string
+  recipientAvatar?: string
+  isVideoCall: boolean
+} | null>(null)
+
+/*------   end of the call component --------*/
+
+
+  const [showNewConversation, setShowNewConversation] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<User[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+
+  // 🔥 ÉTATS POUR L'APPEL VIDÉO
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false)
+  const [videoCallChannel, setVideoCallChannel] = useState("")
+  const [callStatus, setCallStatus] = useState<"idle" | "connecting" | "connected">("idle")
+  const [remoteUsers, setRemoteUsers] = useState<number[]>([])
+  const videoCallRef = useRef<VideoCallModalHandle>(null)
+
+  // Références de contrôle
+  const hasLoadedInitialConversations = useRef(false)
+  const hasOpenedUrlConversation = useRef(false)
+  const isLoadingMessages = useRef(false)
+  const lastSelectedConversation = useRef<string | null>(null)
+
+  // Scroll sécurisé et optimisé
+  const scrollToBottom = useCallback((force: boolean = false) => {
+    if (!messagesEndRef.current) return
+    
+    try {
+      if (force) {
+        messagesEndRef.current.scrollIntoView({ behavior: "auto" })
+      } else {
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        }, 100)
+      }
+    } catch (error) {
+      console.log('Scroll error (non-critical):', error)
+    }
+  }, [])
+
+  // 🔥 GESTION DES APPELS VIDÉO
+  const generateChannelName = useCallback((convId: string) => {
+    const timestamp = Date.now()
+    return `conv_${convId}_${timestamp}`
+  }, [])
+
+
+
+  const handleStartVideoCall = useCallback(() => {
+  console.log("🎥 Démarrage appel vidéo...")
+  
+  if (!conversationManager.selectedConversationId) {
+    toast.error("Aucune conversation sélectionnée")
+    return
+  }
+
+  // 🔥 Trouver le destinataire
+  const selectedConv = conversationManager.getConversation(
+    conversationManager.selectedConversationId
+  )
+  
+  const recipient = selectedConv?.participants?.find(
+    p => p._id !== (session?.user as any)?.id
+  )
+
+  // 🔥 Stocker les données du destinataire
+  setOutgoingCallData({
+    recipientName: recipient?.name || 'Utilisateur',
+    recipientAvatar: recipient?.avatar,
+    isVideoCall: true
+  })
+
+  // 🔥 Afficher le pop-up sortant SANS ouvrir la webcam encore
+  setShowOutgoingCall(true)
+  setCallStatus("connecting")
+
+  const channelName = generateChannelName(conversationManager.selectedConversationId)
+  setVideoCallChannel(channelName)
+  
+  toast.success("Appel en cours...")
+
+  // Envoyer la notification WebSocket
+  try {
+    const ws = (window as any).wsRef?.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'VIDEO_CALL_STARTED',
+        data: {
+          conversationId: conversationManager.selectedConversationId,
+          channelName: channelName,
+          callerId: (session?.user as any)?.id,
+          callerName: session?.user?.name,
+          callerAvatar: (session?.user as any)?.image,
+          isVideoCall: true
+        },
+        messageId: `call-start-${Date.now()}`
+      }))
+    }
+  } catch (error) {
+    console.error("Erreur envoi notification appel:", error)
+  }
+}, [conversationManager, session, generateChannelName])
+
+
+
+// 🔥 HANDLER POUR ANNULER L'APPEL SORTANT
+
+const handleCancelOutgoingCall = useCallback(() => {
+  console.log("❌ Annulation de l'appel sortant")
+  
+  // Fermer le pop-up
+  setShowOutgoingCall(false)
+  setCallStatus("idle")
+  
+  toast.info("Appel annulé")
+  
+  // Notifier l'autre utilisateur de l'annulation
+  try {
+    const ws = (window as any).wsRef?.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'VIDEO_CALL_CANCELLED',
+        data: {
+          conversationId: conversationManager.selectedConversationId,
+          channelName: videoCallChannel
+        },
+        messageId: `call-cancel-${Date.now()}`
+      }))
+    }
+  } catch (error) {
+    console.error("Erreur notification annulation:", error)
+  }
+  
+  // Nettoyer les données
+  setOutgoingCallData(null)
+  setVideoCallChannel("")
+}, [conversationManager.selectedConversationId, videoCallChannel])
+//  const handleStartVideoCall = useCallback(() => {
+//   console.log("🎥 Démarrage appel vidéo...")
+  
+//   if (!conversationManager.selectedConversationId) {
+//     toast.error("Aucune conversation sélectionnée")
+//     return
+//   }
+
+//   const channelName = generateChannelName(conversationManager.selectedConversationId)
+//   console.log("📺 Canal créé:", channelName)
+  
+//   setVideoCallChannel(channelName)
+//   setIsVideoCallOpen(true)
+//   setCallStatus("connecting")
+  
+//   toast.success("Appel en cours...")
+
+//   try {
+//     const ws = (window as any).wsRef?.current
+//     if (ws && ws.readyState === WebSocket.OPEN) {
+//       ws.send(JSON.stringify({
+//         type: 'VIDEO_CALL_STARTED',
+//         data: {
+//           conversationId: conversationManager.selectedConversationId,
+//           channelName: channelName,
+//           callerId: (session?.user as any)?.id,
+//           callerName: session?.user?.name,
+//           callerAvatar: (session?.user as any)?.image, // 🔥 AJOUTÉ
+//           isVideoCall: true // 🔥 AJOUTÉ
+//         },
+//         messageId: `call-start-${Date.now()}`
+//       }))
+//     }
+//   } catch (error) {
+//     console.error("Erreur envoi notification appel:", error)
+//   }
+// }, [conversationManager.selectedConversationId, session, generateChannelName])
+
+
+
+const handleEndCall = useCallback(async () => {
+    console.log("📴 Fin de l'appel...")
+    
+    try {
+      if (videoCallRef.current) {
+        await videoCallRef.current.close()
+      }
+    } catch (error) {
+      console.error("Erreur fermeture appel:", error)
+    } finally {
+      setIsVideoCallOpen(false)
+      setCallStatus("idle")
+      setRemoteUsers([])
+      
+      try {
+        const ws = (window as any).wsRef?.current
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'VIDEO_CALL_ENDED',
+            data: {
+              conversationId: conversationManager.selectedConversationId,
+              channelName: videoCallChannel
+            },
+            messageId: `call-end-${Date.now()}`
+          }))
+        }
+      } catch (error) {
+        console.error("Erreur notification fin appel:", error)
+      }
+      
+      toast.success("Appel terminé")
+    }
+  }, [conversationManager.selectedConversationId, videoCallChannel])
+
+  const handleCallStatusChange = useCallback((status: "idle" | "connecting" | "connected") => {
+    console.log("📊 Statut appel:", status)
+    setCallStatus(status)
+    
+    if (status === "connected") {
+      toast.success("Appel connecté !")
+    }
+  }, [])
+
+  const handleRemoteUsersChange = useCallback((users: number[]) => {
+    console.log("👥 Utilisateurs distants:", users.length)
+    setRemoteUsers(users)
+    
+    if (users.length > 0 && callStatus === "connecting") {
+      setCallStatus("connected")
+    }
+  }, [callStatus])
+
+  // Chargement des conversations
+  const fetchConversations = useCallback(async () => {
+    if (sessionStatus !== 'authenticated') return
+    
+    try {
+      console.log('🔄 Chargement conversations...')
+      const response = await fetch("/api/conversations", {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      
+      const data = await response.json()
+      const conversations = data.conversations || []
+      console.log('✅ Conversations chargées:', conversations.length)
+      
+      conversationManager.setConversations(conversations)
+      conversationManager.setIsLoading(false)
+      
+      if (conversationId && conversations.length > 0 && !hasOpenedUrlConversation.current) {
+        const targetConversation = conversations.find(
+          (conv: Conversation) => conv._id === conversationId
+        )
+        
+        if (targetConversation) {
+          console.log('🎯 Ouverture conversation URL:', conversationId)
+          hasOpenedUrlConversation.current = true
+          conversationManager.selectConversation(conversationId)
+          setTimeout(() => fetchMessages(conversationId), 200)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement conversations:', error)
+      toast.error('Impossible de charger les conversations')
+      conversationManager.setIsLoading(false)
+    }
+  }, [sessionStatus, conversationId])
+
+  // Chargement des messages
+  const fetchMessages = useCallback(async (convId: string) => {
+    if (!convId || sessionStatus !== 'authenticated') return
+    if (isLoadingMessages.current) return
+
+    isLoadingMessages.current = true
+    console.log('🔄 Chargement messages pour:', convId)
+    
+    try {
+      const response = await fetch(`/api/messages?conversationId=${convId}`, {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      
+      const data = await response.json()
+      const messages = data.messages || []
+      console.log('✅ Messages chargés:', messages.length)
+      
+      conversationManager.updateMessages(convId, messages)
+      setTimeout(() => scrollToBottom(true), 100)
+    } catch (error) {
+      console.error('❌ Erreur chargement messages:', error)
+      toast.error('Erreur lors du chargement des messages')
+    } finally {
+      isLoadingMessages.current = false
+    }
+  }, [sessionStatus, conversationManager, scrollToBottom])
+
+  // Handlers de typing
+  const handleTypingStart = useCallback(() => {
+    if (!conversationManager.selectedConversationId || !session?.user) return
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (!ws || ws.readyState !== WebSocket.OPEN) return
+
+      ws.send(JSON.stringify({
+        type: 'TYPING_START',
+        data: { conversationId: conversationManager.selectedConversationId },
+        messageId: `typing-${Date.now()}`
+      }))
+    } catch (error) {
+      console.log('Typing start error (non-critical):', error)
+    }
+  }, [conversationManager.selectedConversationId, session])
+  
+  const handleTypingStop = useCallback(() => {
+    if (!conversationManager.selectedConversationId || !session?.user) return
+    
+    try {
+      const ws = (window as any).wsRef?.current
+      if (!ws || ws.readyState !== WebSocket.OPEN) return
+
+      ws.send(JSON.stringify({
+        type: 'TYPING_STOP',
+        data: { conversationId: conversationManager.selectedConversationId },
+        messageId: `typing-stop-${Date.now()}`
+      }))
+    } catch (error) {
+      console.log('Typing stop error (non-critical):', error)
+    }
+  }, [conversationManager.selectedConversationId, session])
+
+  // Handler WebSocket
+  const handleWebSocketMessage = useCallback((message: any) => {
+    if (!message?.type) return
+    
+    console.log('📨 WebSocket:', message.type)
+    
+    try {
+      switch (message.type) {
+        case 'AUTH_SUCCESS':
+          console.log('✅ Auth WebSocket OK')
+          break
+          
+        case 'CONVERSATIONS_FETCHED':
+          const conversations = message.data?.conversations || []
+          conversationManager.setConversations(conversations)
+          conversationManager.setIsLoading(false)
+          break
+
+        case 'MESSAGES_FETCHED':
+          const msgs = message.data?.messages || []
+          const cId = message.data?.conversationId
+          if (!cId) break
+          conversationManager.updateMessages(cId, msgs)
+          scrollToBottom(true)
+          break
+          // Dans le switch de handleWebSocketMessage, ajoutez ces nouveaux cas :
+
+  
+case 'VIDEO_CALL_ACCEPTED':
+  console.log("✅ Appel accepté par l'autre utilisateur")
+  
+  // Fermer le pop-up sortant
+  setShowOutgoingCall(false)
+  
+  // 🔥 MAINTENANT on ouvre la vraie interface vidéo avec webcam
+  setIsVideoCallOpen(true)
+  setCallStatus("connected")
+  
+  toast.success("Appel accepté !")
+  break
+
+case 'VIDEO_CALL_DECLINED':
+  console.log("❌ Appel refusé par l'autre utilisateur")
+  
+  // Fermer le pop-up sortant
+  setShowOutgoingCall(false)
+  setCallStatus("idle")
+  setOutgoingCallData(null)
+  
+  toast.error("Appel refusé")
+  break
+          
+          // Fermer l'appel si ouvert
+          if (isVideoCallOpen) {
+            handleEndCall()
+          }
+          break
+
+        case 'VIDEO_CALL_MISSED':
+          console.log("📵 Appel manqué")
+          toast.info("Appel manqué")
+            // Fermer le pop-up entrant si ouvert
+  if (showIncomingCall) {
+    setShowIncomingCall(false)
+    setIncomingCallData(null)
+    toast.info("L'appel a été annulé")
+  }
+          break
+        case 'NEW_MESSAGE':
+          const newMsg = message.data
+          if (!newMsg?.conversationId || !newMsg._id) break
+          
+          conversationManager.addMessage(newMsg)
+          
+          if (newMsg.conversationId === conversationManager.selectedConversationId) {
+            scrollToBottom()
+            conversationManager.updateConversation(newMsg.conversationId, {
+              unreadCount: 0,
+              lastMessage: newMsg.content,
+              updatedAt: new Date().toISOString()
+            })
+          } else {
+            const conv = conversationManager.getConversation(newMsg.conversationId)
+            if (conv) {
+              conversationManager.updateConversation(newMsg.conversationId, {
+                unreadCount: (conv.unreadCount || 0) + 1,
+                lastMessage: newMsg.content,
+                updatedAt: new Date().toISOString()
+              })
+            }
+          }
+          break
+        // Dans handleWebSocketMessage, modifiez le case 'VIDEO_CALL_INCOMING':
+
+case 'VIDEO_CALL_INCOMING':
+  console.log("📞 Appel entrant reçu:", message.data)
+  
+  // Stocker les données de l'appel
+  setIncomingCallData({
+    callerName: message.data.callerName || 'Utilisateur',
+    callerAvatar: message.data.callerAvatar,
+    channelName: message.data.channelName,
+    conversationId: message.data.conversationId,
+    isVideoCall: message.data.isVideoCall !== false // true par défaut
+  })
+  
+  // Afficher le pop-up
+  setShowIncomingCall(true)
+  
+  // Jouer un son de notification (optionnel)
+  try {
+    const audio = new Audio('/sounds/incoming-call.mp3')
+    audio.play().catch(err => console.log('Audio play error:', err))
+  } catch (error) {
+    console.log('Audio error (non-critical):', error)
+  }
+  break
+        case 'MESSAGE_SENT':
+          const sentMsg = message.data
+          if (!sentMsg?.conversationId || !sentMsg?.tempId) break
+          
+          const currentMsgs = conversationManager.getCachedMessages(sentMsg.conversationId)
+          const updatedMsgs = currentMsgs.map(msg => 
+            msg._id === sentMsg.tempId
+              ? { ...msg, _id: sentMsg.messageId, createdAt: sentMsg.createdAt || msg.createdAt }
+              : msg
+          )
+          conversationManager.updateMessages(sentMsg.conversationId, updatedMsgs)
+          break
+
+        // 🔥 HANDLERS APPELS VIDÉO
+        case 'VIDEO_CALL_INCOMING':
+          if (message.data?.conversationId === conversationManager.selectedConversationId) {
+            toast.info(`${message.data.callerName} vous appelle en vidéo...`, {
+              action: {
+                label: "Rejoindre",
+                onClick: () => {
+                  setVideoCallChannel(message.data.channelName)
+                  setIsVideoCallOpen(true)
+                  setCallStatus("connecting")
+                }
+              }
+            })
+          }
+          break
+
+        case 'VIDEO_CALL_ENDED':
+          if (message.data?.channelName === videoCallChannel) {
+            handleEndCall()
+            toast.info("L'appel a été terminé")
+          }
+          break
+
+        case 'USER_TYPING':
+          if (!message.data?.conversationId || !message.data?.userId) break
+          typingManager.startTyping(
+            message.data.conversationId,
+            message.data.userId,
+            message.data.userName || 'Utilisateur'
+          )
+          break
+
+        case 'USER_STOPPED_TYPING':
+          if (!message.data?.conversationId) break
+          typingManager.stopTyping(message.data.conversationId)
+          break
+
+        case 'ERROR':
+          console.error('❌ Erreur WebSocket:', message.data)
+          toast.error(message.data?.message || 'Erreur de connexion')
+          break
+      }
+    } catch (error) {
+      console.error('❌ Erreur traitement message WS:', error)
+    }
+  }, [conversationManager, scrollToBottom, typingManager, videoCallChannel, handleEndCall])
+
+  const wsManager = useWebSocketManager(handleWebSocketMessage)
+
+  // Sélection de conversation
+  const handleSelectConversation = useCallback((convId: string) => {
+    if (!convId || lastSelectedConversation.current === convId) return
+    
+    console.log('🎯 Sélection conversation:', convId)
+    lastSelectedConversation.current = convId
+    
+    typingManager.cleanup()
+    conversationManager.selectConversation(convId)
+    
+    try {
+      window.history.pushState({}, '', `/messages/${convId}`)
+    } catch (error) {
+      console.log('History push error:', error)
+    }
+    
+    setTimeout(() => fetchMessages(convId), 50)
+  }, [conversationManager, typingManager, fetchMessages])
+
+  // Envoi message
+  const handleSendMessage = useCallback(async (content: string, convId: string) => {
+    if (!content.trim() || !session?.user) {
+      throw new Error("Message vide ou utilisateur non connecté")
+    }
+
+    const conversation = conversationManager.getConversation(convId)
+    if (!conversation) throw new Error("Conversation non trouvée")
+
+    const receiver = conversation.participants.find(p => p._id !== (session.user as any).id)
+    if (!receiver) throw new Error("Destinataire non trouvé")
+
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const tempMessage: Message = {
+      _id: tempId,
+      conversationId: convId,
+      senderId: (session.user as any).id,
+      receiverId: receiver._id,
+      content: content.trim(),
+      read: false,
+      createdAt: new Date().toISOString(),
+      isAIMessage: false
+    }
+
+    conversationManager.addMessage(tempMessage)
+    scrollToBottom()
+
+    try {
+      const ws = (window as any).wsRef?.current
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        throw new Error('WebSocket non connecté')
+      }
+
+      ws.send(JSON.stringify({
+        type: 'SEND_MESSAGE',
+        data: {
+          conversationId: convId,
+          receiverId: receiver._id,
+          content: content.trim(),
+          tempId: tempId
+        },
+        messageId: `send-${Date.now()}`
+      }))
+    } catch (error: any) {
+      console.error("❌ Erreur envoi message:", error)
+      conversationManager.removeMessage(convId, tempId)
+      toast.error("Erreur envoi message")
+      throw error
+    }
+  }, [conversationManager, session, scrollToBottom])
+
+  // Envoi message AI
+  const handleSendAIMessage = useCallback(async (content: string, convId: string) => {
+    if (!content.trim() || !session?.user) {
+      throw new Error("Message vide")
+    }
+
+    const conversation = conversationManager.getConversation(convId)
+    if (!conversation) throw new Error("Conversation non trouvée")
+
+    const otherParticipant = conversation.participants.find(p => p._id !== (session.user as any).id)
+    const tempId = `temp-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    const tempUserMessage: Message = {
+      _id: tempId,
+      conversationId: convId,
+      senderId: (session.user as any).id,
+      receiverId: otherParticipant?._id || 'ai-assistant',
+      content: content.trim(),
+      read: false,
+      createdAt: new Date().toISOString(),
+      isAIMessage: false
+    }
+    
+    conversationManager.addMessage(tempUserMessage)
+    scrollToBottom()
+
+    try {
+      const response = await fetch('/api/ai/chat-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content.trim(),
+          conversationId: convId,
+          conversationType: 'general'
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || 'AI API call failed')
+      }
+
+      const data = await response.json()
+      conversationManager.removeMessage(convId, tempId)
+
+      const confirmedUserMessage: Message = {
+        _id: data.userMessage?.messageId || `user-${Date.now()}`,
+        conversationId: convId,
+        senderId: (session.user as any).id,
+        receiverId: otherParticipant?._id || 'ai-assistant',
+        content: content.trim(),
+        read: false,
+        createdAt: data.userMessage?.createdAt || new Date().toISOString(),
+        isAIMessage: false
+      }
+      conversationManager.addMessage(confirmedUserMessage)
+
+      const aiMessage: Message = {
+        _id: data.response?.messageId || `ai-${Date.now()}`,
+        conversationId: convId,
+        senderId: data.response?.aiUser?._id || 'ai-assistant',
+        receiverId: (session.user as any).id,
+        content: data.response?.content || 'Désolé, je n\'ai pas pu générer de réponse.',
+        read: false,
+        createdAt: data.response?.createdAt || new Date().toISOString(),
+        isAIMessage: true,
+        aiUser: data.response?.aiUser
+      }
+      conversationManager.addMessage(aiMessage)
+      scrollToBottom()
+      
+      return data
+    } catch (error: any) {
+      console.error("❌ Erreur envoi message AI:", error)
+      conversationManager.removeMessage(convId, tempId)
+      toast.error("Erreur avec l'assistant AI")
+      throw error
+    }
+  }, [conversationManager, session, scrollToBottom])
+
+  // Création conversation AI
+  const createAIConversation = useCallback(async () => {
+    if (sessionStatus !== 'authenticated') {
+      toast.error('Veuillez vous connecter')
+      return
+    }
+
+    try {
+      const existingAIConv = conversationManager.conversations.find(conv => 
+        conv.isAIConversation || conv.participants?.some(p => p.role === "ai_assistant")
+      )
+
+      if (existingAIConv) {
+        handleSelectConversation(existingAIConv._id)
+        toast.success("Conversation AI rouverte !")
+        return
+      }
+
+      const response = await fetch('/api/ai/chat-assistant', { method: 'PUT' })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const data = await response.json()
+      if (!data.conversation?._id) throw new Error('Réponse API invalide')
+      
+      await fetchConversations()
+      handleSelectConversation(data.conversation._id)
+      toast.success("Conversation AI créée !")
+      
+      setTimeout(() => {
+        const welcomeMessage: Message = {
+          _id: `ai-welcome-${Date.now()}`,
+          conversationId: data.conversation._id,
+          senderId: data.aiUser?._id || 'ai-assistant',
+          receiverId: (session.user as any).id,
+          content: "👋 Bonjour ! Je suis votre assistant AI. Comment puis-je vous aider ?",
+          read: false,
+          createdAt: new Date().toISOString(),
+          isAIMessage: true,
+          aiUser: data.aiUser
+        }
+        conversationManager.addMessage(welcomeMessage)
+        scrollToBottom()
+      }, 500)
+    } catch (error) {
+      console.error("Erreur création conversation AI:", error)
+      toast.error("Erreur lors de la création de la conversation AI")
+    }
+  }, [conversationManager, handleSelectConversation, fetchConversations, scrollToBottom, sessionStatus, session])
+
+  // Création conversation normale
+  const createConversation = useCallback(async (user: User) => {
+    if (!user?._id || sessionStatus !== 'authenticated') {
+      toast.error('Données utilisateur invalides')
+      return
+    }
+
+    try {
+      const existingConv = conversationManager.conversations.find(conv => 
+        conv.participants?.some(p => p._id === user._id)
+      )
+
+      if (existingConv) {
+        router.push(`/messages/${existingConv._id}`)
+        setShowNewConversation(false)
+        setSearchQuery("")
+        setSearchResults([])
+        return
+      }
+
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantIds: [user._id] }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setShowNewConversation(false)
+        setSearchQuery("")
+        setSearchResults([])
+        await fetchConversations()
+        router.push(`/messages/${data.conversation._id}`)
+        toast.success("Conversation créée !")
+      } else {
+        throw new Error("Erreur création conversation")
+      }
+    } catch (error) {
+      console.error("Erreur création conversation:", error)
+      toast.error("Erreur lors de la création de la conversation")
+    }
+  }, [conversationManager, router, fetchConversations, sessionStatus])
+
+  // Suppression conversation
+  const deleteConversation = async (convId: string) => {
+    if (!convId || sessionStatus !== 'authenticated') {
+      toast.error('ID de conversation invalide')
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/conversations?conversationId=${convId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        conversationManager.removeConversation(convId)
+        
+        if (conversationManager.selectedConversationId === convId) {
+          conversationManager.selectConversation(null)
+          lastSelectedConversation.current = null
+          router.push('/messages')
+        }
+        
+        toast.success("Conversation supprimée")
+        setShowDeleteModal(false)
+        setConversationToDelete(null)
+      } else {
+        throw new Error("Erreur lors de la suppression")
+      }
+    } catch (error: any) {
+      console.error("Erreur suppression:", error)
+      toast.error(error.message || "Erreur lors de la suppression")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Effects
+  useEffect(() => {
+    if (sessionStatus === 'authenticated') {
+      wsManager.connect()
+    } else if (sessionStatus === 'unauthenticated') {
+      wsManager.cleanup()
+      conversationManager.clearAll()
+      typingManager.cleanup()
+    }
+  }, [sessionStatus, wsManager])
+
+  useEffect(() => {
+    if (sessionStatus === 'authenticated' && !hasLoadedInitialConversations.current) {
+      hasLoadedInitialConversations.current = true
+      fetchConversations()
+    }
+  }, [sessionStatus, fetchConversations])
+
+  useEffect(() => {
+    const searchUsers = async (query: string) => {
+      if (!query.trim() || sessionStatus !== 'authenticated') {
+        setSearchResults([])
+        return
+      }
+
+      setIsSearching(true)
+      try {
+        const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+        if (response.ok) {
+          const data = await response.json()
+          const filteredUsers = data.users?.filter((user: User) => 
+            user._id !== (session?.user as any)?.id
+          ) || []
+          setSearchResults(filteredUsers)
+        }
+      } catch (error) {
+        console.error("Erreur recherche:", error)
+      } finally {
+        setIsSearching(false)
+      }
+    }
+
+    const timeoutId = setTimeout(() => searchUsers(searchQuery), 300)
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, session, sessionStatus])
+
+  // Contexte de conversation
+  const selectedConversation = conversationManager.getConversation(
+    conversationManager.selectedConversationId || ''
+  )
+
+  const otherParticipant = selectedConversation?.participants?.find(
+    p => p._id !== (session?.user as any)?.id
+  )
+
+  const conversationContext = selectedConversation ? {
+    conversationId: selectedConversation._id,
+    participants: selectedConversation.participants || [],
+    isAIConversation: selectedConversation.isAIConversation || otherParticipant?.role === 'ai_assistant',
+    userId: (session?.user as any)?.id,
+    userName: session?.user?.name,
+    userEmail: session?.user?.email
+  } : null
+// 🔥 HANDLERS POUR LE POP-UP D'APPEL ENTRANT
+
+const handleAcceptIncomingCall = useCallback(() => {
+  console.log("✅ Acceptation de l'appel")
+  
+  if (!incomingCallData) return
+  
+  // Fermer le pop-up entrant
+  setShowIncomingCall(false)
+  
+  // Ouvrir la conversation si ce n'est pas déjà fait
+  if (incomingCallData.conversationId !== conversationManager.selectedConversationId) {
+    handleSelectConversation(incomingCallData.conversationId)
+  }
+  
+  // 🔥 Ouvrir l'interface vidéo IMMÉDIATEMENT (car l'autre a déjà sa webcam)
+  setVideoCallChannel(incomingCallData.channelName)
+  setIsVideoCallOpen(true)
+  setCallStatus("connected")
+  
+  toast.success("Connexion à l'appel...")
+  
+  // Notifier l'appelant
+  try {
+    const ws = (window as any).wsRef?.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'VIDEO_CALL_ACCEPTED',
+        data: {
+          conversationId: incomingCallData.conversationId,
+          channelName: incomingCallData.channelName
+        },
+        messageId: `call-accept-${Date.now()}`
+      }))
+    }
+  } catch (error) {
+    console.error("Erreur notification acceptation:", error)
+  }
+  
+  setIncomingCallData(null)
+}, [incomingCallData, conversationManager.selectedConversationId, handleSelectConversation])
+const handleDeclineIncomingCall = useCallback(() => {
+  console.log("❌ Refus de l'appel")
+  
+  if (!incomingCallData) return
+  
+  // Fermer le pop-up
+  setShowIncomingCall(false)
+  
+  toast.info("Appel refusé")
+  
+  // Notifier l'appelant que vous avez refusé
+  try {
+    const ws = (window as any).wsRef?.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'VIDEO_CALL_DECLINED',
+        data: {
+          conversationId: incomingCallData.conversationId,
+          channelName: incomingCallData.channelName
+        },
+        messageId: `call-decline-${Date.now()}`
+      }))
+    }
+  } catch (error) {
+    console.error("Erreur notification refus:", error)
+  }
+  
+  // Nettoyer les données
+  setIncomingCallData(null)
+}, [incomingCallData])
+  // Rendu des messages
+  const renderMessages = () => {
+    if (!conversationManager.messages.length) return null
+
+    return conversationManager.messages.map((msg, index) => {
+      const isMe = msg.senderId === (session?.user as any)?.id
+      const isAI = msg.isAIMessage || (otherParticipant?.role === 'ai_assistant' && !isMe)
+      const showAvatar = index === 0 || 
+        conversationManager.messages[index - 1]?.senderId !== msg.senderId
+      
+      return (
+        <MessageBubble
+          key={msg._id || `msg-${index}`}
+          message={msg}
+          isMe={isMe}
+          isAI={isAI}
+          showAvatar={showAvatar}
+          userAvatar={otherParticipant?.avatar}
+          userName={otherParticipant?.name}
+          aiUser={msg.aiUser}
+        />
+      ) 
+    })
+  }
+
+  return (
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+
+{/* 🔥 POP-UP D'APPEL ENTRANT */}
+<IncomingCallPopup
+  isOpen={showIncomingCall}
+  callerName={incomingCallData?.callerName || 'Utilisateur'}
+  callerAvatar={incomingCallData?.callerAvatar}
+  isVideoCall={incomingCallData?.isVideoCall}
+  onAccept={handleAcceptIncomingCall}
+  onDecline={handleDeclineIncomingCall}
+/>
+{/* 🔥 POP-UP D'APPEL SORTANT */}
+<OutgoingCallPopup
+  isOpen={showOutgoingCall}
+  recipientName={outgoingCallData?.recipientName || 'Utilisateur'}
+  recipientAvatar={outgoingCallData?.recipientAvatar}
+  isVideoCall={outgoingCallData?.isVideoCall}
+  callStatus={callStatus === "idle" ? "connecting" : callStatus === "connected" ? "connected" : "ringing"}
+  onCancel={handleCancelOutgoingCall}
+/>
+      <ConnectionStatus 
+        connectionStatus={wsManager.connectionStatus}
+        reconnectAttempt={wsManager.reconnectAttempt}
+        onReconnect={wsManager.reconnect}
+      />
+
+      <ConversationsSidebar
+        conversations={conversationManager.conversations}
+        selectedConversation={conversationManager.selectedConversationId}
+        onSelectConversation={handleSelectConversation}
+        isLoading={conversationManager.isLoading}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onNewConversation={() => setShowNewConversation(true)}
+        onNewAIConversation={createAIConversation}
+        onDeleteConversation={(conv, e) => {
+          e?.stopPropagation?.()
+          setConversationToDelete(conv)
+          setShowDeleteModal(true)
+        }}
+        isConnected={wsManager.isConnected}
+        session={session}
+      />
+
+      {selectedConversation ? (
+        <div className="flex flex-1 flex-col">
+          <ChatHeader
+            onOpenSettings={() => setShowSettings(true)}
+            conversation={selectedConversation}
+            otherParticipant={otherParticipant}
+            onRefresh={() => {
+              if (conversationManager.selectedConversationId) {
+                fetchMessages(conversationManager.selectedConversationId)
+              }
+            }}
+            isConnected={wsManager.isConnected}
+            onStartVideoCall={handleStartVideoCall}
+            onStartVoiceCall={()=>{}}
+            onEndCall={handleEndCall}
+            callStatus={callStatus}
+            callRemoteCount={remoteUsers.length}
+          />
+
+          <div className="flex-1 overflow-hidden">
+            {conversationManager.messages.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center text-center p-8">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mb-6">
+                  <div className="text-3xl">💬</div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Aucun message
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-sm">
+                  {conversationContext?.isAIConversation 
+                    ? "Demandez-moi de l'aide pour vos projets !"
+                    : "Envoyez le premier message pour commencer"
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="h-full overflow-y-auto">
+                <div className="p-6 space-y-4">
+                  {renderMessages()}
+                  
+                  <TypingIndicator 
+                    text={typingManager.getTypingText(conversationManager.selectedConversationId!)} 
+                  />
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            onSendAIMessage={handleSendAIMessage}
+            selectedConversation={conversationManager.selectedConversationId}
+            disabled={!wsManager.isConnected && !conversationContext?.isAIConversation}
+            onTypingStart={handleTypingStart}
+            onTypingStop={handleTypingStop}
+            conversationContext={conversationContext}
+            isConnected={wsManager.isConnected}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center p-8">
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="text-5xl">👋</div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              {conversationManager.conversations.length === 0 ? "Bienvenue" : "Sélectionnez une conversation"}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+              {conversationManager.conversations.length === 0 
+                ? "Commencez par créer une nouvelle conversation"
+                : "Choisissez une conversation dans la liste"
+              }
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => setShowNewConversation(true)}
+                disabled={!wsManager.isConnected}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white px-6 py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                Nouvelle conversation
+              </button>
+              
+              <button
+                onClick={createAIConversation}
+                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+              >
+                <span>🤖</span>
+                Discuter avec l'AI
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 MODAL D'APPEL VIDÉO - STYLE WHATSAPP */}
+      <VideoCallModal
+        ref={videoCallRef}
+        isOpen={isVideoCallOpen}
+        onClose={handleEndCall}
+        channelName={videoCallChannel}
+        onStatusChange={handleCallStatusChange}
+        onRemoteUsersChange={handleRemoteUsersChange}
+      />
+
+      <NewConversationModal
+        isOpen={showNewConversation}
+        onClose={() => {
+          setShowNewConversation(false)
+          setSearchQuery("")
+          setSearchResults([])
+        }}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchResults={searchResults}
+        isSearching={isSearching}
+        onUserClick={createConversation}
+      />
+
+      <MessageSettings
+        preferences={messagePreferences.preferences}
+        onSave={messagePreferences.savePreferences}
+        onReset={messagePreferences.resetPreferences}
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
+
+      <DeleteConversationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          setConversationToDelete(null)
+        }}
+        conversation={conversationToDelete}
+        onDelete={deleteConversation}
+        isDeleting={isDeleting}
+        session={session}
+      />
+    </div>
+  )
+}
