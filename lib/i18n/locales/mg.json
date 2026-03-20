@@ -1,4 +1,17 @@
 {
+  "orders": {
+    "title": "Baikoako",
+    "myOrders": "Ny baikoko",
+    "viewOrders": "Hijery ny baikoko",
+    "noOrders": "Tsy misy baiko",
+    "noOrdersDesc": "Mbola tsy nanao baiko ianao",
+    "pending": "Miandry",
+    "in_progress": "Mandefitra",
+    "delivered": "Nalefa",
+    "completed": "Vita",
+    "cancelled": "Nofoanana",
+    "disputed": "Misy olana"
+  },
   "meetButton": {
     "startMeeting": "Manomboka fivoriana",
     "joinMeeting": "Miditra fivoriana",

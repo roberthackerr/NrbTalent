@@ -1,4 +1,16 @@
-{
+{"orders": {
+    "title": "My Orders",
+    "myOrders": "My orders",
+    "viewOrders": "View my orders",
+    "noOrders": "No orders",
+    "noOrdersDesc": "You haven't placed any orders yet",
+    "pending": "Pending",
+    "in_progress": "In progress",
+    "delivered": "Delivered",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "disputed": "Disputed"
+  },
   "meetButton": {
     "startMeeting": "Start a Meeting",
     "joinMeeting": "Join a Meeting",

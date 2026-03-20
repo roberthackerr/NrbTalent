@@ -1,4 +1,17 @@
 {
+   "orders": {
+    "title": "Mes Commandes",
+    "myOrders": "Mes commandes",
+    "viewOrders": "Voir mes commandes",
+    "noOrders": "Aucune commande",
+    "noOrdersDesc": "Vous n'avez pas encore passé de commande",
+    "pending": "En attente",
+    "in_progress": "En cours",
+    "delivered": "Livré",
+    "completed": "Terminé",
+    "cancelled": "Annulé",
+    "disputed": "Litige"
+  },
    "meetButton": {
     "startMeeting": "Démarrer une réunion",
     "joinMeeting": "Rejoindre une réunion",
