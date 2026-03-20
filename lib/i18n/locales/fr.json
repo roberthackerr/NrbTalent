@@ -34,8 +34,9 @@
     "joinDescription": "Rejoignez une réunion existante avec un nom de salle",
     "recentMeetings": "Réunions récentes"
   },
-   "meet": {
-    "tagline": "Les appels vidéo réinventés",
+    "meet": {
+    "tagline": "Appels vidéo réinventés",
+    "newRoom": "Nouvelle salle",
     "connected": "Connecté",
     "connecting": "Connexion...",
     "disconnected": "Déconnecté",
@@ -46,6 +47,8 @@
     "you": "Vous",
     "waiting": "En attente",
     "waitingForOthers": "En attente d'autres participants...",
+    "startCallMessage": "Cliquez sur Démarrer pour commencer",
+    "joiningRoom": "Rejoint la salle",
     "room": "SALLE",
     "endCall": "Terminer",
     "startCall": "Démarrer",
@@ -68,7 +71,8 @@
       "token": "Erreur de token",
       "config": "Erreur de configuration",
       "connection": "Erreur de connexion",
-      "preview": "Impossible d'afficher l'aperçu"
+      "preview": "Impossible d'afficher l'aperçu",
+      "cameraSwitch": "Échec du changement de caméra"
     }
   },
   "reviews": {

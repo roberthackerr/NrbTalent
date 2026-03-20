@@ -33,8 +33,9 @@
     "joinDescription": "Join an existing meeting with a room name",
     "recentMeetings": "Recent Meetings"
   },
-    "meet": {
+     "meet": {
     "tagline": "Video calls reimagined",
+    "newRoom": "New Room",
     "connected": "Connected",
     "connecting": "Connecting...",
     "disconnected": "Disconnected",
@@ -45,6 +46,8 @@
     "you": "You",
     "waiting": "Waiting",
     "waitingForOthers": "Waiting for others to join...",
+    "startCallMessage": "Click Start Call to begin",
+    "joiningRoom": "Joining room",
     "room": "ROOM",
     "endCall": "End Call",
     "startCall": "Start Call",
@@ -67,9 +70,11 @@
       "token": "Token error",
       "config": "Configuration error",
       "connection": "Connection error",
-      "preview": "Unable to render preview"
+      "preview": "Unable to render preview",
+      "cameraSwitch": "Failed to switch camera"
     }
   },
+
   "reviews": {
     "title": "Client Reviews",
     "verifiedReviews": "verified reviews",

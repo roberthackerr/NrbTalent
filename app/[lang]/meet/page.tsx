@@ -68,19 +68,16 @@ export default function AgoraVideoMeetPage() {
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   
-  // ─── Refs ────────────────────────────────────────────────────────────────────
-  // CRITICAL: These divs are owned entirely by Agora.
-  // Never render any React children inside them — only sibling divs for overlays.
+  // Refs
   const localVideoRef = useRef<HTMLDivElement>(null)
   const remoteVideoContainerRef = useRef<HTMLDivElement>(null)
-  // ─────────────────────────────────────────────────────────────────────────────
-
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
   const remotePlayersRef = useRef<Map<number, HTMLDivElement>>(new Map())
   const containerRef = useRef<HTMLDivElement>(null)
   const mountedRef = useRef(true)
 
+  // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
     return () => {
@@ -88,6 +85,7 @@ export default function AgoraVideoMeetPage() {
     }
   }, [lang])
 
+  // Auto-connect if room parameter exists
   useEffect(() => {
     if (roomParam && dict && permissionStatus === 'granted' && !autoConnect && status === 'idle' && !isConnecting) {
       setAutoConnect(true)
@@ -204,11 +202,6 @@ export default function AgoraVideoMeetPage() {
     }
   }
 
-  /**
-   * Safely empty a container that Agora may have touched.
-   * Uses parentNode check on each child so we never call removeChild
-   * on a node that has already been moved by the SDK.
-   */
   const safeEmpty = (container: HTMLDivElement | null) => {
     if (!container) return
     Array.from(container.childNodes).forEach(child => {
@@ -279,10 +272,6 @@ export default function AgoraVideoMeetPage() {
     }
   }, [])
 
-  /**
-   * Remove a remote player safely — uses parentNode so it works
-   * even if Agora has already reparented or detached the node.
-   */
   const removeRemotePlayer = useCallback((uid: number) => {
     const playerDiv = remotePlayersRef.current.get(uid)
     if (playerDiv) {
@@ -501,7 +490,6 @@ export default function AgoraVideoMeetPage() {
     if (!mountedRef.current) return
     
     try {
-      // 1. Stop all local tracks
       localTracksRef.current.forEach(track => {
         if (track) {
           track.stop()
@@ -510,25 +498,18 @@ export default function AgoraVideoMeetPage() {
       })
       localTracksRef.current = []
 
-      // 2. Remove all SDK event listeners BEFORE leaving.
-      //    This prevents the SDK's internal teardown from firing
-      //    user-unpublished/user-left events that race with our cleanup below.
       if (clientRef.current) {
         clientRef.current.removeAllListeners()
         await clientRef.current.leave()
         clientRef.current = null
       }
 
-      // 3. Remove all remote player divs via parentNode (SDK-safe)
       remotePlayersRef.current.forEach((playerDiv) => {
         playerDiv.parentNode?.removeChild(playerDiv)
       })
       remotePlayersRef.current.clear()
 
-      // 4. Clear local preview container
       safeEmpty(localVideoRef.current)
-
-      // 5. Clear remote video container
       safeEmpty(remoteVideoContainerRef.current)
 
       setRemoteUsers([])
@@ -638,7 +619,7 @@ export default function AgoraVideoMeetPage() {
             <div className="w-24 h-24 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <Sparkles className="w-8 h-8 text-purple-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
           </div>
-          <p className="text-purple-300 font-medium">Chargement...</p>
+          <p className="text-purple-300 font-medium">{dict?.common?.loading || 'Chargement...'}</p>
         </div>
       </div>
     )
@@ -660,7 +641,7 @@ export default function AgoraVideoMeetPage() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
                 NRBMeet
               </h1>
-              <p className="text-xs text-purple-300/70">Video calls reimagined</p>
+              <p className="text-xs text-purple-300/70">{dict?.meet?.tagline || 'Video calls reimagined'}</p>
             </div>
           </div>
 
@@ -671,7 +652,7 @@ export default function AgoraVideoMeetPage() {
                 className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all flex items-center gap-2 text-sm"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline">New Room</span>
+                <span className="hidden sm:inline">{dict?.meet?.newRoom || 'New Room'}</span>
               </button>
             )}
             {status === 'connected' && (
@@ -679,14 +660,14 @@ export default function AgoraVideoMeetPage() {
                 <button
                   onClick={copyInviteLink}
                   className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-all"
-                  title="Copy invite link"
+                  title={dict?.meet?.copyInvite || 'Copy invite link'}
                 >
                   {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
                 </button>
                 <button
                   onClick={() => setShowSettings(!showSettings)}
                   className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm transition-all"
-                  title="Settings"
+                  title={dict?.common?.settings || 'Settings'}
                 >
                   <Settings className="w-5 h-5" />
                 </button>
@@ -710,7 +691,7 @@ export default function AgoraVideoMeetPage() {
               <LinkIcon className="w-5 h-5 text-purple-400" />
               <div>
                 <p className="text-sm text-purple-300">
-                  Joining room: <span className="font-mono text-purple-200">{roomParam}</span>
+                  {dict?.meet?.joiningRoom || 'Joining room'}: <span className="font-mono text-purple-200">{roomParam}</span>
                 </p>
               </div>
             </div>
@@ -729,15 +710,15 @@ export default function AgoraVideoMeetPage() {
                status === 'connecting' ? <Loader2 className="w-4 h-4 animate-spin" /> : 
                <WifiOff className="w-4 h-4" />}
               <span>
-                {status === 'connected' ? 'Connected' :
-                 status === 'connecting' ? 'Connecting...' :
-                 'Disconnected'}
+                {status === 'connected' ? dict?.meet?.connected || 'Connected' :
+                 status === 'connecting' ? dict?.meet?.connecting || 'Connecting...' :
+                 dict?.meet?.disconnected || 'Disconnected'}
               </span>
             </div>
             {remoteUsers.length > 0 && (
               <div className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full text-sm font-medium flex items-center gap-2 backdrop-blur-sm">
                 <Users className="w-4 h-4" />
-                <span>{remoteUsers.length} {remoteUsers.length > 1 ? 'participants' : 'participant'}</span>
+                <span>{remoteUsers.length} {remoteUsers.length > 1 ? dict?.meet?.participants : dict?.meet?.participant}</span>
               </div>
             )}
           </div>
@@ -748,7 +729,7 @@ export default function AgoraVideoMeetPage() {
               className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg shadow-purple-500/25"
             >
               <Shield className="w-4 h-4" />
-              Grant Permissions
+              {dict?.meet?.grantPermissions || 'Grant Permissions'}
             </button>
           )}
         </div>
@@ -759,7 +740,7 @@ export default function AgoraVideoMeetPage() {
             <div className="flex items-start gap-3">
               <Info className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-medium text-red-300 mb-1">Error</h3>
+                <h3 className="font-medium text-red-300 mb-1">{dict?.common?.error || 'Error'}</h3>
                 <p className="text-red-200/80 text-sm">{error}</p>
               </div>
             </div>
@@ -769,26 +750,17 @@ export default function AgoraVideoMeetPage() {
         {/* Video Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
-          {/* ── Local Video ─────────────────────────────────────────────────── */}
+          {/* Local Video */}
           <div className="relative group">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
               <div className="aspect-video bg-slate-900 relative">
-
-                {/*
-                  * Agora-owned node — always empty, no React children ever here.
-                  * All overlays are SIBLING divs below, not children of this ref.
-                  */}
                 <div ref={localVideoRef} className="absolute inset-0" />
-
-                {/* Overlay: pre-call placeholder — sibling, not child of ref */}
                 {status !== 'connected' && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <Camera className="w-16 h-16 text-slate-700 mb-3" />
-                    <p className="text-slate-500 font-medium">Camera Preview</p>
+                    <p className="text-slate-500 font-medium">{dict?.meet?.cameraPreview || 'Camera Preview'}</p>
                   </div>
                 )}
-
-                {/* Overlay: camera disabled — sibling, not child of ref */}
                 {status === 'connected' && !cameraEnabled && (
                   <div className="absolute inset-0 bg-slate-900 flex items-center justify-center pointer-events-none">
                     <CameraOff className="w-16 h-16 text-slate-700" />
@@ -798,7 +770,7 @@ export default function AgoraVideoMeetPage() {
 
               <div className="absolute top-3 left-3">
                 <span className="px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-xs text-white/80">
-                  You
+                  {dict?.meet?.you || 'You'}
                 </span>
               </div>
 
@@ -840,44 +812,34 @@ export default function AgoraVideoMeetPage() {
             </div>
           </div>
 
-          {/* ── Remote Video ────────────────────────────────────────────────── */}
+          {/* Remote Video */}
           <div className="relative group">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
               <div className="aspect-video bg-slate-900 relative">
-
-                {/*
-                  * Agora-owned node — always empty, no React children ever here.
-                  * All overlays are SIBLING divs below, not children of this ref.
-                  */}
                 <div ref={remoteVideoContainerRef} className="absolute inset-0" />
-
-                {/* Overlay: waiting for participants — sibling, not child of ref */}
                 {remoteUsers.length === 0 && status === 'connected' && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <Users className="w-16 h-16 text-slate-700 mb-3" />
                     <p className="text-slate-500 font-medium text-center px-4">
-                      Waiting for others to join...
+                      {dict?.meet?.waitingForOthers || 'Waiting for others to join...'}
                     </p>
                   </div>
                 )}
-
-                {/* Overlay: pre-call placeholder — sibling, not child of ref */}
                 {status !== 'connected' && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <Sparkles className="w-16 h-16 text-purple-700 mb-3" />
                     <p className="text-slate-500 font-medium text-center px-4">
-                      Click Start Call to begin
+                      {dict?.meet?.startCallMessage || 'Click Start Call to begin'}
                     </p>
                   </div>
                 )}
-
               </div>
 
               <div className="absolute top-3 left-3">
                 <span className="px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-xs text-white/80">
                   {remoteUsers.length > 0 
-                    ? `${remoteUsers.length} ${remoteUsers.length > 1 ? 'participants' : 'participant'}`
-                    : 'Waiting'}
+                    ? `${remoteUsers.length} ${remoteUsers.length > 1 ? dict?.meet?.participants : dict?.meet?.participant}`
+                    : dict?.meet?.waiting || 'Waiting'}
                 </span>
               </div>
             </div>
@@ -892,7 +854,7 @@ export default function AgoraVideoMeetPage() {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-slate-400'}`}></div>
-                <span className="text-sm text-white/60 uppercase tracking-wider">ROOM</span>
+                <span className="text-sm text-white/60 uppercase tracking-wider">{dict?.meet?.room || 'ROOM'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <code className="px-4 py-2 bg-black/30 rounded-lg text-purple-300 font-mono text-sm break-all">
@@ -901,7 +863,7 @@ export default function AgoraVideoMeetPage() {
                 <button
                   onClick={copyInviteLink}
                   className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all flex-shrink-0"
-                  title="Copy invite link"
+                  title={dict?.meet?.copyInvite || 'Copy invite link'}
                 >
                   {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -916,7 +878,7 @@ export default function AgoraVideoMeetPage() {
                   className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-red-500/25"
                 >
                   <PhoneOff className="w-5 h-5" />
-                  End Call
+                  {dict?.meet?.endCall || 'End Call'}
                 </button>
               ) : (
                 <button
@@ -931,12 +893,12 @@ export default function AgoraVideoMeetPage() {
                   {status === 'connecting' || isConnecting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Connecting...
+                      {dict?.meet?.connecting || 'Connecting...'}
                     </>
                   ) : (
                     <>
                       <Phone className="w-5 h-5" />
-                      Start Call
+                      {dict?.meet?.startCall || 'Start Call'}
                     </>
                   )}
                 </button>
@@ -950,7 +912,7 @@ export default function AgoraVideoMeetPage() {
               }`}>
                 {hasVideo ? <Video className="w-4 h-4 text-green-400" /> : <VideoOff className="w-4 h-4 text-red-400" />}
                 <span className="text-sm hidden sm:inline">
-                  {hasVideo ? 'Camera OK' : 'No Camera'}
+                  {hasVideo ? dict?.meet?.cameraAvailable || 'Camera OK' : dict?.meet?.noCamera || 'No Camera'}
                 </span>
               </div>
               <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
@@ -958,7 +920,7 @@ export default function AgoraVideoMeetPage() {
               }`}>
                 {hasAudio ? <Mic className="w-4 h-4 text-green-400" /> : <MicOff className="w-4 h-4 text-red-400" />}
                 <span className="text-sm hidden sm:inline">
-                  {hasAudio ? 'Mic OK' : 'No Mic'}
+                  {hasAudio ? dict?.meet?.micAvailable || 'Mic OK' : dict?.meet?.noMic || 'No Mic'}
                 </span>
               </div>
             </div>
@@ -968,7 +930,7 @@ export default function AgoraVideoMeetPage() {
           {status === 'idle' && !roomParam && (
             <div className="mt-6 pt-6 border-t border-white/10">
               <label className="block text-sm font-medium text-white/60 mb-2">
-                Channel Name
+                {dict?.meet?.channelName || 'Channel Name'}
               </label>
               <div className="flex gap-2">
                 <input
@@ -976,12 +938,12 @@ export default function AgoraVideoMeetPage() {
                   value={channelName}
                   onChange={(e) => setChannelName(e.target.value)}
                   className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-white/30"
-                  placeholder="Enter channel name"
+                  placeholder={dict?.meet?.enterChannel || 'Enter channel name'}
                 />
                 <button
                   onClick={() => setChannelName(`meet-${Math.floor(Math.random() * 10000)}`)}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
-                  title="Random"
+                  title={dict?.meet?.random || 'Random'}
                 >
                   🎲
                 </button>
@@ -997,7 +959,7 @@ export default function AgoraVideoMeetPage() {
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <h3 className="text-xl font-semibold flex items-center gap-2">
                   <Settings className="w-5 h-5 text-purple-400" />
-                  Settings
+                  {dict?.common?.settings || 'Settings'}
                 </h3>
                 <button
                   onClick={() => setShowSettings(false)}
@@ -1009,7 +971,9 @@ export default function AgoraVideoMeetPage() {
               <div className="p-6 space-y-6">
                 {videoDevices.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">Camera</label>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {dict?.meet?.camera || 'Camera'}
+                    </label>
                     <select
                       value={selectedVideoDevice}
                       onChange={(e) => setSelectedVideoDevice(e.target.value)}
@@ -1017,7 +981,7 @@ export default function AgoraVideoMeetPage() {
                     >
                       {videoDevices.map(device => (
                         <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
+                          {device.label || `${dict?.meet?.camera || 'Camera'} ${videoDevices.indexOf(device) + 1}`}
                         </option>
                       ))}
                     </select>
@@ -1025,7 +989,9 @@ export default function AgoraVideoMeetPage() {
                 )}
                 {audioDevices.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">Microphone</label>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      {dict?.meet?.microphone || 'Microphone'}
+                    </label>
                     <select
                       value={selectedAudioDevice}
                       onChange={(e) => setSelectedAudioDevice(e.target.value)}
@@ -1033,7 +999,7 @@ export default function AgoraVideoMeetPage() {
                     >
                       {audioDevices.map(device => (
                         <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Mic ${audioDevices.indexOf(device) + 1}`}
+                          {device.label || `${dict?.meet?.microphone || 'Mic'} ${audioDevices.indexOf(device) + 1}`}
                         </option>
                       ))}
                     </select>
@@ -1044,7 +1010,7 @@ export default function AgoraVideoMeetPage() {
                     onClick={() => setShowSettings(false)}
                     className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-medium transition-all"
                   >
-                    Close
+                    {dict?.common?.close || 'Close'}
                   </button>
                 </div>
               </div>
