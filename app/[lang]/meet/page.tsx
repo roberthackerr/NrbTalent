@@ -216,7 +216,7 @@ export default function AgoraVideoMeetPage() {
     if (!container || !mountedRef.current) return
     
     // Nettoyer proprement l'ancien contenu
-    while (container.firstChild) {
+    while (container.firstChild && container.contains(container.firstChild)) {
       container.removeChild(container.firstChild)
     }
     
@@ -257,7 +257,7 @@ export default function AgoraVideoMeetPage() {
       remotePlayersRef.current.set(user.uid, playerDiv)
     } else {
       // Nettoyer le contenu sans supprimer le div parent
-      while (playerDiv.firstChild) {
+      while (playerDiv.firstChild && playerDiv.contains(playerDiv.firstChild)) {
         playerDiv.removeChild(playerDiv.firstChild)
       }
     }
@@ -332,7 +332,7 @@ export default function AgoraVideoMeetPage() {
     clientRef.current.on('user-unpublished', (user: any) => {
       console.log('👤 User unpublished:', user.uid)
       const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv && remoteVideoContainerRef.current?.contains(playerDiv)) {
+      if (playerDiv && remoteVideoContainerRef.current && remoteVideoContainerRef.current.contains(playerDiv)) {
         remoteVideoContainerRef.current.removeChild(playerDiv)
       }
       remotePlayersRef.current.delete(user.uid)
@@ -347,7 +347,7 @@ export default function AgoraVideoMeetPage() {
     clientRef.current.on('user-left', (user: any) => {
       console.log('👋 User left:', user.uid)
       const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv && remoteVideoContainerRef.current?.contains(playerDiv)) {
+      if (playerDiv && remoteVideoContainerRef.current && remoteVideoContainerRef.current.contains(playerDiv)) {
         remoteVideoContainerRef.current.removeChild(playerDiv)
       }
       remotePlayersRef.current.delete(user.uid)
@@ -516,19 +516,23 @@ export default function AgoraVideoMeetPage() {
         clientRef.current = null
       }
       
-      // Nettoyer les conteneurs vidéo
+      // Nettoyer le conteneur local
       if (localVideoRef.current) {
-        while (localVideoRef.current.firstChild) {
-          localVideoRef.current.removeChild(localVideoRef.current.firstChild)
+        const container = localVideoRef.current
+        while (container.firstChild && container.contains(container.firstChild)) {
+          container.removeChild(container.firstChild)
         }
       }
       
+      // Nettoyer le conteneur distant
       if (remoteVideoContainerRef.current) {
-        while (remoteVideoContainerRef.current.firstChild) {
-          remoteVideoContainerRef.current.removeChild(remoteVideoContainerRef.current.firstChild)
+        const container = remoteVideoContainerRef.current
+        while (container.firstChild && container.contains(container.firstChild)) {
+          container.removeChild(container.firstChild)
         }
       }
       
+      // Nettoyer la Map des lecteurs distants
       remotePlayersRef.current.clear()
       localTracksRef.current = []
       setRemoteUsers([])
@@ -979,7 +983,7 @@ export default function AgoraVideoMeetPage() {
           )}
         </div>
 
-        {/* Settings Panel - MODAL style for better visibility */}
+        {/* Settings Panel - MODAL style */}
         {showSettings && status === 'connected' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-white/20">
