@@ -306,7 +306,7 @@ export function DashboardSidebar({ role }: SidebarProps) {
             badge: "Nouveau"
           },
           {
-            href: "/video",
+            href: "/meet",
             label: "Vidéo Conférence",
             icon: Video,
             description: "Appels et réunions"
