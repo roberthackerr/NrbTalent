@@ -115,20 +115,20 @@ export function TopRatedPage({ dict, lang }: TopRatedPageProps) {
               </div>
 
               {/* Skills */}
-              {freelancer.skills && freelancer.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-4 mb-4">
-                  {freelancer.skills.slice(0, 4).map((skill: string, i: number) => (
-                    <Badge key={i} variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-800">
-                      {skill}
-                    </Badge>
-                  ))}
-                  {freelancer.skills.length > 4 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{freelancer.skills.length - 4}
-                    </Badge>
-                  )}
-                </div>
-              )}
+{freelancer.skills && freelancer.skills.length > 0 && (
+  <div className="flex flex-wrap gap-1 mt-3 mb-3">
+    {freelancer.skills.slice(0, 3).map((skill, i) => (
+      <Badge key={skill.id || i} variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 dark:bg-slate-800">
+        {skill.name}  {/* ✅ Afficher skill.name au lieu de l'objet entier */}
+      </Badge>
+    ))}
+    {freelancer.skills.length > 3 && (
+      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+        +{freelancer.skills.length - 3}
+      </Badge>
+    )}
+  </div>
+)}
 
               {/* Stats */}
               <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
