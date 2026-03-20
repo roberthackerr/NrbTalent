@@ -23,7 +23,7 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { fr, en  , mg } from "date-fns/locale"
+import { fr, enUS  } from "date-fns/locale"
 
 interface Education {
   id: string
@@ -43,7 +43,7 @@ interface EducationTabProps {
   onUpdate?: () => void
 }
 
-const locales = { fr, en, mg }
+const locales = { fr, en:enUS, mg:fr }
 
 export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) {
   const [loading, setLoading] = useState(false)
