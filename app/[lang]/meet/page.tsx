@@ -14,7 +14,6 @@ import {
   Phone,
   Users,
   Settings,
-  Share2,
   Copy,
   Check,
   RefreshCw,
@@ -42,17 +41,13 @@ export default function AgoraVideoMeetPage() {
   
   const roomParam = searchParams.get('room')
   
-  // État pour le dictionnaire
   const [dict, setDict] = useState<any>(null)
-  
-  // État de la connexion
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected'>('idle')
   const [error, setError] = useState('')
   const [channelName, setChannelName] = useState(roomParam || `meet-${Math.floor(Math.random() * 10000)}`)
   const [connectionInfo, setConnectionInfo] = useState<any>(null)
   const [remoteUsers, setRemoteUsers] = useState<number[]>([])
   
-  // État des périphériques
   const [isMobile, setIsMobile] = useState(false)
   const [hasAudio, setHasAudio] = useState(true)
   const [hasVideo, setHasVideo] = useState(true)
@@ -61,13 +56,11 @@ export default function AgoraVideoMeetPage() {
   const [micEnabled, setMicEnabled] = useState(true)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   
-  // État des appareils sélectionnés
   const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>('')
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('')
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
   
-  // État UI
   const [copied, setCopied] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -75,16 +68,19 @@ export default function AgoraVideoMeetPage() {
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   
-  // Refs
+  // ─── Refs ────────────────────────────────────────────────────────────────────
+  // CRITICAL: These divs are owned entirely by Agora.
+  // Never render any React children inside them — only sibling divs for overlays.
   const localVideoRef = useRef<HTMLDivElement>(null)
   const remoteVideoContainerRef = useRef<HTMLDivElement>(null)
+  // ─────────────────────────────────────────────────────────────────────────────
+
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
   const remotePlayersRef = useRef<Map<number, HTMLDivElement>>(new Map())
   const containerRef = useRef<HTMLDivElement>(null)
   const mountedRef = useRef(true)
 
-  // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
     return () => {
@@ -92,7 +88,6 @@ export default function AgoraVideoMeetPage() {
     }
   }, [lang])
 
-  // Auto-connect if room parameter exists
   useEffect(() => {
     if (roomParam && dict && permissionStatus === 'granted' && !autoConnect && status === 'idle' && !isConnecting) {
       setAutoConnect(true)
@@ -123,7 +118,7 @@ export default function AgoraVideoMeetPage() {
       if (navigator.permissions) {
         try {
           const cameraPermission = await navigator.permissions.query({ name: 'camera' as PermissionName })
-          const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+          await navigator.permissions.query({ name: 'microphone' as PermissionName })
           setPermissionStatus(cameraPermission.state as any)
         } catch (permErr) {
           console.warn('Could not query permissions:', permErr)
@@ -140,14 +135,12 @@ export default function AgoraVideoMeetPage() {
       if (audioInputs.length === 0) setHasAudio(false)
       if (videoInputs.length === 0) setHasVideo(false)
       
-      // Définir les appareils par défaut
       if (videoInputs.length > 0 && !selectedVideoDevice) {
         setSelectedVideoDevice(videoInputs[0].deviceId)
       }
       if (audioInputs.length > 0 && !selectedAudioDevice) {
         setSelectedAudioDevice(audioInputs[0].deviceId)
       }
-      
     } catch (err) {
       console.warn('Could not check devices:', err)
     }
@@ -211,12 +204,25 @@ export default function AgoraVideoMeetPage() {
     }
   }
 
+  /**
+   * Safely empty a container that Agora may have touched.
+   * Uses parentNode check on each child so we never call removeChild
+   * on a node that has already been moved by the SDK.
+   */
+  const safeEmpty = (container: HTMLDivElement | null) => {
+    if (!container) return
+    Array.from(container.childNodes).forEach(child => {
+      if (child.parentNode === container) {
+        container.removeChild(child)
+      }
+    })
+  }
+
   const playLocalPreview = useCallback(async (videoTrack: any) => {
     const container = localVideoRef.current
     if (!container || !mountedRef.current) return
     
-    // FIX 1: Use replaceChildren() instead of while/removeChild loop
-    container.replaceChildren()
+    safeEmpty(container)
     
     try {
       await videoTrack.setEnabled(cameraEnabled)
@@ -231,9 +237,7 @@ export default function AgoraVideoMeetPage() {
       videoEl.autoplay = true
       videoEl.muted = true
       videoEl.playsInline = true
-      videoEl.style.width = '100%'
-      videoEl.style.height = '100%'
-      videoEl.style.objectFit = 'cover'
+      videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;'
       videoEl.srcObject = stream
       container.appendChild(videoEl)
       await videoEl.play().catch(() => {})
@@ -250,12 +254,11 @@ export default function AgoraVideoMeetPage() {
     if (!playerDiv) {
       playerDiv = document.createElement('div')
       playerDiv.id = `remote-player-${user.uid}`
-      playerDiv.className = 'absolute inset-0'
+      playerDiv.style.cssText = 'position:absolute;inset:0;'
       container.appendChild(playerDiv)
       remotePlayersRef.current.set(user.uid, playerDiv)
     } else {
-      // FIX 2: Use replaceChildren() instead of while/removeChild loop
-      playerDiv.replaceChildren()
+      safeEmpty(playerDiv)
     }
     
     try {
@@ -268,14 +271,25 @@ export default function AgoraVideoMeetPage() {
         videoEl.autoplay = true
         videoEl.muted = false
         videoEl.playsInline = true
-        videoEl.style.width = '100%'
-        videoEl.style.height = '100%'
-        videoEl.style.objectFit = 'cover'
+        videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;'
         videoEl.srcObject = stream
         playerDiv.appendChild(videoEl)
         await videoEl.play().catch(() => {})
       }
     }
+  }, [])
+
+  /**
+   * Remove a remote player safely — uses parentNode so it works
+   * even if Agora has already reparented or detached the node.
+   */
+  const removeRemotePlayer = useCallback((uid: number) => {
+    const playerDiv = remotePlayersRef.current.get(uid)
+    if (playerDiv) {
+      playerDiv.parentNode?.removeChild(playerDiv)
+      remotePlayersRef.current.delete(uid)
+    }
+    setRemoteUsers(prev => prev.filter(id => id !== uid))
   }, [])
 
   const subscribeToUserMedia = useCallback(async (user: any) => {
@@ -312,7 +326,6 @@ export default function AgoraVideoMeetPage() {
       if (!mountedRef.current) return
       try {
         await clientRef.current.subscribe(user, mediaType)
-        
         if (mediaType === 'video') {
           await playRemoteVideo(user)
           setRemoteUsers(prev => prev.includes(user.uid) ? prev : [...prev, user.uid])
@@ -327,13 +340,7 @@ export default function AgoraVideoMeetPage() {
 
     clientRef.current.on('user-unpublished', (user: any) => {
       console.log('👤 User unpublished:', user.uid)
-      // FIX 3: Remove via actual parentNode instead of assumed container
-      const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv) {
-        playerDiv.parentNode?.removeChild(playerDiv)
-      }
-      remotePlayersRef.current.delete(user.uid)
-      setRemoteUsers(prev => prev.filter(id => id !== user.uid))
+      removeRemotePlayer(user.uid)
     })
     
     clientRef.current.on('user-joined', async (user: any) => {
@@ -343,19 +350,13 @@ export default function AgoraVideoMeetPage() {
     
     clientRef.current.on('user-left', (user: any) => {
       console.log('👋 User left:', user.uid)
-      // FIX 4: Remove via actual parentNode instead of assumed container
-      const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv) {
-        playerDiv.parentNode?.removeChild(playerDiv)
-      }
-      remotePlayersRef.current.delete(user.uid)
-      setRemoteUsers(prev => prev.filter(id => id !== user.uid))
+      removeRemotePlayer(user.uid)
     })
 
     clientRef.current.on('connection-state-change', (curState: string, prevState: string) => {
       console.log('🔌 Connection:', prevState, '→', curState)
     })
-  }, [playRemoteVideo, subscribeToUserMedia])
+  }, [playRemoteVideo, subscribeToUserMedia, removeRemotePlayer])
 
   const testConnection = async () => {
     if (status !== 'idle' || isConnecting) return
@@ -489,7 +490,6 @@ export default function AgoraVideoMeetPage() {
         } else {
           setError(`${dict?.meet?.errors?.connection || 'Error'}: ${error.message || 'Unknown error'}`)
         }
-        
         setStatus('idle')
       }
     } finally {
@@ -501,28 +501,36 @@ export default function AgoraVideoMeetPage() {
     if (!mountedRef.current) return
     
     try {
-      // Stop all local tracks
+      // 1. Stop all local tracks
       localTracksRef.current.forEach(track => {
         if (track) {
           track.stop()
           track.close()
         }
       })
-      
+      localTracksRef.current = []
+
+      // 2. Remove all SDK event listeners BEFORE leaving.
+      //    This prevents the SDK's internal teardown from firing
+      //    user-unpublished/user-left events that race with our cleanup below.
       if (clientRef.current) {
+        clientRef.current.removeAllListeners()
         await clientRef.current.leave()
         clientRef.current = null
       }
-      
-      // FIX 5: Use replaceChildren() for local container — safe against SDK-orphaned nodes
-      localVideoRef.current?.replaceChildren()
 
-      // FIX 6: Use replaceChildren() for remote container — safe against SDK-orphaned nodes
-      remoteVideoContainerRef.current?.replaceChildren()
-      
-      // Clear the remote players map
+      // 3. Remove all remote player divs via parentNode (SDK-safe)
+      remotePlayersRef.current.forEach((playerDiv) => {
+        playerDiv.parentNode?.removeChild(playerDiv)
+      })
       remotePlayersRef.current.clear()
-      localTracksRef.current = []
+
+      // 4. Clear local preview container
+      safeEmpty(localVideoRef.current)
+
+      // 5. Clear remote video container
+      safeEmpty(remoteVideoContainerRef.current)
+
       setRemoteUsers([])
       setConnectionInfo(null)
       setStatus('idle')
@@ -552,10 +560,7 @@ export default function AgoraVideoMeetPage() {
   }
 
   const switchCamera = async () => {
-    if (!isMobile || isSwitchingCamera || status !== 'connected') {
-      console.log('Cannot switch camera:', { isMobile, isSwitchingCamera, status })
-      return
-    }
+    if (!isMobile || isSwitchingCamera || status !== 'connected') return
     
     setIsSwitchingCamera(true)
     const newFacing = facingMode === 'user' ? 'environment' : 'user'
@@ -564,14 +569,11 @@ export default function AgoraVideoMeetPage() {
       const currentVideoTrack = localTracksRef.current.find(t => t?.trackMediaType === 'video')
       
       if (currentVideoTrack && clientRef.current) {
-        // Save camera state
         const wasEnabled = currentVideoTrack.enabled
         
-        // Stop and close old track
         await currentVideoTrack.stop()
         await currentVideoTrack.close()
         
-        // Create new track with new facing mode
         const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
         const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
           facingMode: newFacing,
@@ -582,26 +584,20 @@ export default function AgoraVideoMeetPage() {
           }
         })
         
-        // Restore state
         await newVideoTrack.setEnabled(wasEnabled)
         
-        // Replace in tracks array
         const index = localTracksRef.current.findIndex(t => t?.trackMediaType === 'video')
         if (index !== -1) {
           localTracksRef.current[index] = newVideoTrack
         }
         
-        // Publish new track
         await clientRef.current.unpublish(currentVideoTrack)
         await clientRef.current.publish(newVideoTrack)
-        
-        // Update local preview
         await playLocalPreview(newVideoTrack)
         
         setFacingMode(newFacing)
         console.log('✅ Camera switched to:', newFacing)
       } else {
-        // Not yet connected, just change the mode
         setFacingMode(newFacing)
       }
     } catch (err) {
@@ -772,28 +768,40 @@ export default function AgoraVideoMeetPage() {
 
         {/* Video Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          {/* Local Video */}
+
+          {/* ── Local Video ─────────────────────────────────────────────────── */}
           <div className="relative group">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
               <div className="aspect-video bg-slate-900 relative">
+
+                {/*
+                  * Agora-owned node — always empty, no React children ever here.
+                  * All overlays are SIBLING divs below, not children of this ref.
+                  */}
                 <div ref={localVideoRef} className="absolute inset-0" />
+
+                {/* Overlay: pre-call placeholder — sibling, not child of ref */}
                 {status !== 'connected' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <Camera className="w-16 h-16 text-slate-700 mb-3" />
                     <p className="text-slate-500 font-medium">Camera Preview</p>
                   </div>
                 )}
+
+                {/* Overlay: camera disabled — sibling, not child of ref */}
                 {status === 'connected' && !cameraEnabled && (
-                  <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-slate-900 flex items-center justify-center pointer-events-none">
                     <CameraOff className="w-16 h-16 text-slate-700" />
                   </div>
                 )}
               </div>
+
               <div className="absolute top-3 left-3">
                 <span className="px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-xs text-white/80">
                   You
                 </span>
               </div>
+
               <div className="absolute bottom-3 right-3 flex gap-2">
                 {hasVideo && (
                   <button
@@ -832,29 +840,39 @@ export default function AgoraVideoMeetPage() {
             </div>
           </div>
 
-          {/* Remote Video */}
+          {/* ── Remote Video ────────────────────────────────────────────────── */}
           <div className="relative group">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
               <div className="aspect-video bg-slate-900 relative">
-                <div ref={remoteVideoContainerRef} className="absolute inset-0">
-                  {remoteUsers.length === 0 && status === 'connected' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Users className="w-16 h-16 text-slate-700 mb-3" />
-                      <p className="text-slate-500 font-medium text-center px-4">
-                        Waiting for others to join...
-                      </p>
-                    </div>
-                  )}
-                  {status !== 'connected' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Sparkles className="w-16 h-16 text-purple-700 mb-3" />
-                      <p className="text-slate-500 font-medium text-center px-4">
-                        Click Start Call to begin
-                      </p>
-                    </div>
-                  )}
-                </div>
+
+                {/*
+                  * Agora-owned node — always empty, no React children ever here.
+                  * All overlays are SIBLING divs below, not children of this ref.
+                  */}
+                <div ref={remoteVideoContainerRef} className="absolute inset-0" />
+
+                {/* Overlay: waiting for participants — sibling, not child of ref */}
+                {remoteUsers.length === 0 && status === 'connected' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <Users className="w-16 h-16 text-slate-700 mb-3" />
+                    <p className="text-slate-500 font-medium text-center px-4">
+                      Waiting for others to join...
+                    </p>
+                  </div>
+                )}
+
+                {/* Overlay: pre-call placeholder — sibling, not child of ref */}
+                {status !== 'connected' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <Sparkles className="w-16 h-16 text-purple-700 mb-3" />
+                    <p className="text-slate-500 font-medium text-center px-4">
+                      Click Start Call to begin
+                    </p>
+                  </div>
+                )}
+
               </div>
+
               <div className="absolute top-3 left-3">
                 <span className="px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-xs text-white/80">
                   {remoteUsers.length > 0 
@@ -864,6 +882,7 @@ export default function AgoraVideoMeetPage() {
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Controls */}
@@ -971,7 +990,7 @@ export default function AgoraVideoMeetPage() {
           )}
         </div>
 
-        {/* Settings Panel - MODAL style */}
+        {/* Settings Panel */}
         {showSettings && status === 'connected' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-white/20">
