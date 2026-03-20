@@ -3,10 +3,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
@@ -14,22 +12,16 @@ import {
   Search, 
   MapPin, 
   Star, 
-  Briefcase, 
-  DollarSign, 
-  Zap,
   Filter,
   SlidersHorizontal,
   Grid3X3,
   List,
   CheckCircle2,
-  Award,
-  Clock,
-  TrendingUp,
   Users,
-  Heart,
   MessageCircle,
   Eye,
-  Loader2
+  Loader2,
+  DollarSign
 } from "lucide-react"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
@@ -45,12 +37,8 @@ interface Freelancer {
   rating?: number
   completedProjects?: number
   skills: string[]
-  languages?: string[]
   availability: "available" | "busy" | "unavailable"
   isVerified: boolean
-  responseTime?: number
-  successRate?: number
-  totalEarnings?: number
 }
 
 export default function FreelancersPage() {
@@ -70,7 +58,6 @@ export default function FreelancersPage() {
     availability: "all",
     minRate: "",
     maxRate: "",
-    skills: [] as string[],
     minRating: 0
   })
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -80,24 +67,31 @@ export default function FreelancersPage() {
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
+  // Charger le dictionnaire
+  useEffect(() => {
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery)
-      setPage(1)
-      setFreelancers([])
-      setHasMore(true)
+      resetAndFetch()
     }, 500)
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Recharger quand les filtres ou la recherche changent
+  // Reset et fetch quand les filtres changent
+  const resetAndFetch = useCallback(() => {
+    setPage(1)
+    setFreelancers([])
+    setHasMore(true)
+    fetchFreelancers(1, true)
+  }, [filters, debouncedSearch])
+
   useEffect(() => {
     if (dict) {
-      setPage(1)
-      setFreelancers([])
-      setHasMore(true)
-      fetchFreelancers(1, true)
+      resetAndFetch()
     }
   }, [dict, filters, debouncedSearch])
 
@@ -116,7 +110,6 @@ export default function FreelancersPage() {
       if (filters.minRate) params.append('minRate', filters.minRate)
       if (filters.maxRate) params.append('maxRate', filters.maxRate)
       if (filters.minRating > 0) params.append('minRating', filters.minRating.toString())
-      if (filters.skills.length > 0) params.append('skills', filters.skills.join(','))
       params.append('page', pageNum.toString())
       params.append('limit', '12')
 
@@ -124,13 +117,19 @@ export default function FreelancersPage() {
       const data = await response.json()
       
       if (response.ok) {
+        const newFreelancers = data.freelancers || []
+        const totalItems = data.pagination?.total || 0
+        
         if (reset) {
-          setFreelancers(data.freelancers || [])
+          setFreelancers(newFreelancers)
         } else {
-          setFreelancers(prev => [...prev, ...(data.freelancers || [])])
+          setFreelancers(prev => [...prev, ...newFreelancers])
         }
-        setTotal(data.pagination?.total || 0)
-        setHasMore(data.freelancers?.length === 12 && freelancers.length + data.freelancers.length < data.pagination?.total)
+        
+        setTotal(totalItems)
+        // Vérifier s'il y a plus de résultats à charger
+        const currentCount = reset ? newFreelancers.length : freelancers.length + newFreelancers.length
+        setHasMore(currentCount < totalItems)
       }
     } catch (error) {
       console.error('Error fetching freelancers:', error)
@@ -149,9 +148,13 @@ export default function FreelancersPage() {
     }
   }, [loadingMore, hasMore, loading, page])
 
-  // Observer pour l'intersection (scroll infini)
+  // Observer pour le scroll infini
   useEffect(() => {
-    if (loading) return
+    if (loading || freelancers.length === 0) return
+
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -159,7 +162,7 @@ export default function FreelancersPage() {
           loadMore()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: '100px' }
     )
 
     if (loadMoreRef.current) {
@@ -171,7 +174,7 @@ export default function FreelancersPage() {
         observerRef.current.disconnect()
       }
     }
-  }, [hasMore, loadingMore, loadMore, loading])
+  }, [hasMore, loadingMore, loadMore, loading, freelancers.length])
 
   const getAvailabilityBadge = (availability: string) => {
     const config = {
@@ -183,6 +186,14 @@ export default function FreelancersPage() {
   }
 
   const t = dict?.freelancers || {}
+
+  if (!dict) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20">
@@ -347,7 +358,7 @@ export default function FreelancersPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setFilters({ availability: "all", minRate: "", maxRate: "", skills: [], minRating: 0 })}
+                  onClick={() => setFilters({ availability: "all", minRate: "", maxRate: "", minRating: 0 })}
                   className="w-full text-sm"
                 >
                   {t.resetFilters || "Réinitialiser"}
