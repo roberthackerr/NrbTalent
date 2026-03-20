@@ -486,8 +486,7 @@ function FreelancerCardGrid({ freelancer, dict, lang }: { freelancer: Freelancer
         </div>
 
         {/* Skills */}
-        // ✅ CORRECTION
-{freelancer.skills && freelancer.skills.length > 0 && (
+    {freelancer.skills && freelancer.skills.length > 0 && (
   <div className="flex flex-wrap gap-1 mt-3 mb-3">
     {freelancer.skills.slice(0, 3).map((skill, i) => (
       <Badge key={skill.id || i} variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 dark:bg-slate-800">
