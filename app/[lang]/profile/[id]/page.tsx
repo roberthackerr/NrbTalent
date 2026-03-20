@@ -103,7 +103,7 @@ interface UserProfile {
   completionScore: number
   hourlyRate?: number
   totalEarnings?: number
-  languages: string[]
+  languages: Language[]
   skills: Skill[]
   education: Education[]
   experience: Experience[]
@@ -113,6 +113,12 @@ interface UserProfile {
   badges: Badge[]
   statistics: UserStatistics
   socialLinks: SocialLinks
+}
+
+interface Language {
+  id: string
+  name: string
+  level: 'native' | 'fluent' | 'advanced' | 'intermediate' | 'beginner'
 }
 
 interface Skill {
@@ -132,6 +138,7 @@ interface Education {
   startDate: string
   endDate?: string
   current: boolean
+  description?: string
 }
 
 interface Experience {
@@ -190,6 +197,29 @@ interface SocialLinks {
   github?: string
   twitter?: string
   instagram?: string
+}
+
+// Fonction pour obtenir le niveau de langue
+const getLanguageLevelLabel = (level: string, dict: any) => {
+  const levels: Record<string, string> = {
+    native: dict?.publicProfile?.languageLevels?.native || "Natif",
+    fluent: dict?.publicProfile?.languageLevels?.fluent || "Courant",
+    advanced: dict?.publicProfile?.languageLevels?.advanced || "Avancé",
+    intermediate: dict?.publicProfile?.languageLevels?.intermediate || "Intermédiaire",
+    beginner: dict?.publicProfile?.languageLevels?.beginner || "Débutant"
+  }
+  return levels[level] || level
+}
+
+const getLanguageLevelColor = (level: string) => {
+  const colors: Record<string, string> = {
+    native: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    fluent: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    advanced: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    intermediate: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    beginner: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+  }
+  return colors[level] || colors.intermediate
 }
 
 // Composant Skeleton optimisé
@@ -691,6 +721,30 @@ export default function PublicProfilePage() {
               </CardContent>
             </Card>
 
+            {/* Langues - MISE À JOUR */}
+            {profile.languages && profile.languages.length > 0 && (
+              <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader className="pb-4 bg-gradient-to-r from-green-500/10 to-teal-500/10">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <Languages className="h-5 w-5 text-green-500" />
+                    {dict?.publicProfile?.languages || "Langues"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {profile.languages.map((lang, index) => (
+                      <div key={lang.id || index} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                        <span className="font-medium text-sm">{typeof lang === 'string' ? lang : lang.name}</span>
+                        <Badge className={cn("text-xs", getLanguageLevelColor(typeof lang === 'string' ? 'intermediate' : lang.level))}>
+                          {getLanguageLevelLabel(typeof lang === 'string' ? 'intermediate' : lang.level, dict)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Compétences améliorées */}
             {profile.skills?.length > 0 && (
               <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
@@ -790,28 +844,6 @@ export default function PublicProfilePage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Langues */}
-            {profile.languages?.length > 0 && (
-              <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-4 bg-gradient-to-r from-green-500/10 to-teal-500/10">
-                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                    <Languages className="h-5 w-5 text-green-500" />
-                    {dict?.publicProfile?.languages || "Langues"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {profile.languages.map((lang, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <span className="font-medium text-sm">{lang}</span>
-                        <Badge variant="outline" className="text-xs">Natif</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Contenu principal amélioré */}
@@ -866,8 +898,8 @@ export default function PublicProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Éducation améliorée */}
-                {profile.education?.length > 0 && (
+                {/* Éducation améliorée - MISE À JOUR */}
+                {profile.education && profile.education.length > 0 && (
                   <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10">
                       <CardTitle className="flex items-center gap-2">
@@ -876,7 +908,7 @@ export default function PublicProfilePage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {profile.education.map((edu, index) => (
+                      {profile.education.map((edu) => (
                         <div 
                           key={edu.id} 
                           className="flex gap-4 group p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
@@ -897,6 +929,11 @@ export default function PublicProfilePage() {
                                 {new Date(edu.startDate).getFullYear()} - {edu.current ? dict?.publicProfile?.present || 'Présent' : new Date(edu.endDate!).getFullYear()}
                               </span>
                             </div>
+                            {edu.description && (
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                                {edu.description}
+                              </p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1203,13 +1240,17 @@ export default function PublicProfilePage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* Review System */}
               <div className="mt-6">
-          <ReviewSystem 
-            userId={profile._id}
-            userRole={profile.role === 'freelance' ? 'freelancer' : 'client'}
-            isOwnProfile={session?.user?.id === profile._id}
-          />
-        </div>
+                <ReviewSystem 
+                  userId={profile._id}
+                  userRole={profile.role === 'freelance' ? 'freelancer' : 'client'}
+                  isOwnProfile={session?.user?.id === profile._id}
+                  dict={dict}
+                  lang={lang}
+                />
+              </div>
             </Tabs>
           </div>
         </div>
