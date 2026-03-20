@@ -167,13 +167,13 @@ export function ClientDashboardContent({ dict, lang }: ClientDashboardContentPro
         </div>
 
         {/* AI Matching Widget */}
-        <AIMatchingWidget 
-          type="client"
-          quickAction={true}
-          maxResults={3}
-          dict={dict}
-          lang={lang}
-        />
+    <AIMatchingWidget 
+  type="client"
+  quickAction={true}
+  maxResults={3}
+  dict={dict}
+  lang={lang}
+/>
 
         {/* Recent Projects */}
         <Card className="border-slate-200 dark:border-slate-800 shadow-lg mt-6">

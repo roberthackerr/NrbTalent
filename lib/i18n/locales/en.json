@@ -1,4 +1,5 @@
 {
+
   "sidebar": {
     "platformTagline": "Freelance Platform",
     "dashboard": "Dashboard",
@@ -1289,7 +1290,38 @@
   },
   
   "aiMatching": {
-
+        "clientTitle": "Recommended Freelancers",
+    "freelancerTitle": "Recommended Projects",
+    "clientDesc": "The best talents matching your needs",
+    "freelancerDesc": "Projects tailored to your profile",
+    "errorTitle": "Loading Error",
+    "retry": "Retry",
+    "viewAll": "View all",
+    "exploreMore": "Explore all recommendations",
+    "noMatches": "No recommendations found",
+    "noMatchesDesc": "Adjust your criteria or complete your profile to get personalized recommendations.",
+    "matchDetails": "Match details",
+    "showLess": "Show less",
+    "viewProfile": "View profile",
+    "contact": "Contact",
+    "viewProject": "View project",
+    "apply": "Apply",
+    "projectsCompleted": "projects",
+    "freelancer": "Freelancer",
+    "daysLeft": "days left",
+    "urgent": "Urgent",
+    "gradeExcellent": "Excellent",
+    "gradeGood": "Good",
+    "gradePotential": "Potential",
+    "gradeLow": "Low",
+    "scoreDetails": {
+      "title": "Detailed score",
+      "skills": "Skills",
+      "experience": "Experience",
+      "budget": "Budget",
+      "availability": "Availability",
+      "compatibility": "Compatibility"
+    },
     "matchStrength": "Match strength",
     "strongMatch": "Strong match",
     "goodMatch": "Good match",

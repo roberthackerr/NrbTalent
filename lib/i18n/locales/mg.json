@@ -1,4 +1,5 @@
 {
+  
 "sidebar": {
     "platformTagline": "Sehatra Freelance",
     "dashboard": "Takelaka Fandraisana",
@@ -104,6 +105,38 @@
     "spent": "Naloan-droa"
   },
   "aiMatching": {
+       "clientTitle": "Freelance Atolotra",
+    "freelancerTitle": "Tetikasa Atolotra",
+    "clientDesc": "Ny talenta tsara indrindra mifanaraka amin'ny filanao",
+    "freelancerDesc": "Tetikasa mifanaraka amin'ny mombamomba anao",
+    "errorTitle": "Tsy nahomby ny fampidinana",
+    "retry": "Andramo indray",
+    "viewAll": "Hijery rehetra",
+    "exploreMore": "Hijery ny tolo-kevitra rehetra",
+    "noMatches": "Tsy misy tolo-kevitra hita",
+    "noMatchesDesc": "Ampifanaraho ny fepetra na feno ny mombamomba anao mba hahazoana tolo-kevitra manokana.",
+    "matchDetails": "Antsipirihan'ny fifanentanana",
+    "showLess": "Asehoy kely",
+    "viewProfile": "Hijery mombamomba",
+    "contact": "Mifandraisa",
+    "viewProject": "Hijery tetikasa",
+    "apply": "Mangataka",
+    "projectsCompleted": "tetikasa",
+    "freelancer": "Freelance",
+    "daysLeft": "andro sisa",
+    "urgent": "Maika",
+    "gradeExcellent": "Tena tsara",
+    "gradeGood": "Tsara",
+    "gradePotential": "Mety",
+    "gradeLow": "Kely",
+    "scoreDetails": {
+      "title": "Naoty antsipirihany",
+      "skills": "Fahaizana",
+      "experience": "Traikefa",
+      "budget": "Tetibola",
+      "availability": "Fahafahana",
+      "compatibility": "Fifanentanana"
+    },
     "buttonLabel": "AI Matching",
     "buttonLabelShort": "AI Match",
     "heroButton": "Hahafantatra ny AI Matching",

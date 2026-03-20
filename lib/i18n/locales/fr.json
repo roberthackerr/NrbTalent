@@ -1,4 +1,5 @@
 {
+
    "sidebar": {
     "platformTagline": "Plateforme Freelance",
     "dashboard": "Tableau de Bord",
@@ -1334,6 +1335,38 @@
   },
   
   "aiMatching": {
+        "clientTitle": "Freelancers Recommandés",
+    "freelancerTitle": "Projets Recommandés",
+    "clientDesc": "Les meilleurs talents correspondant à vos besoins",
+    "freelancerDesc": "Projets adaptés à votre profil",
+    "errorTitle": "Erreur de chargement",
+    "retry": "Réessayer",
+    "viewAll": "Voir tout",
+    "exploreMore": "Explorer toutes les recommandations",
+    "noMatches": "Aucune recommandation trouvée",
+    "noMatchesDesc": "Ajustez vos critères ou complétez votre profil pour obtenir des recommandations personnalisées.",
+    "matchDetails": "Détails du match",
+    "showLess": "Voir moins",
+    "viewProfile": "Voir profil",
+    "contact": "Contacter",
+    "viewProject": "Voir projet",
+    "apply": "Postuler",
+    "projectsCompleted": "projets",
+    "freelancer": "Freelancer",
+    "daysLeft": "jours restants",
+    "urgent": "Urgent",
+    "gradeExcellent": "Excellent",
+    "gradeGood": "Bon",
+    "gradePotential": "Potentiel",
+    "gradeLow": "Faible",
+    "scoreDetails": {
+      "title": "Score détaillé",
+      "skills": "Compétences",
+      "experience": "Expérience",
+      "budget": "Budget",
+      "availability": "Disponibilité",
+      "compatibility": "Compatibilité"
+    },
    "buttonLabel": "AI Matching",
     "buttonLabelShort": "AI Match",
     "heroButton": "Découvrir AI Matching",
