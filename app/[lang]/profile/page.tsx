@@ -71,7 +71,6 @@ import {
   Instagram,
   Youtube,
   Twitch,
-
   Slack
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
@@ -105,7 +104,7 @@ interface UserProfile {
   completionScore: number
   hourlyRate?: number
   totalEarnings?: number
-  languages: string[]
+  languages: Language[]
   skills: Skills[]
   education: Education[]
   experience: Experience[]
@@ -117,6 +116,12 @@ interface UserProfile {
   socialLinks: SocialLinks
 }
 
+interface Language {
+  id: string
+  name: string
+  level: 'native' | 'fluent' | 'advanced' | 'intermediate' | 'beginner'
+}
+
 interface Education {
   id: string
   school: string
@@ -125,6 +130,7 @@ interface Education {
   startDate: string
   endDate?: string
   current: boolean
+  description?: string
 }
 
 interface PortfolioItem {
@@ -245,68 +251,9 @@ export default function ProfilePage() {
   const [isEditingBio, setIsEditingBio] = useState(false)
   const [newBio, setNewBio] = useState("")
   const [isUploading, setIsUploading] = useState(false)
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [activeTab, setActiveTab] = useState("about")
-// Dans le composant ProfilePage, ajoutez ces nouvelles fonctions
 
-const [isUploadingCover, setIsUploadingCover] = useState(false)
-
-const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0]
-  if (!file) return
-
-  if (!file.type.startsWith('image/')) {
-    toast.error(dict?.profile?.errors?.invalidImage || "Veuillez sélectionner une image valide")
-    return
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error(dict?.profile?.errors?.fileTooLarge || "L'image doit faire moins de 5MB")
-    return
-  }
-
-  setIsUploadingCover(true)
-
-  try {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('folder', 'covers') // Dossier spécifique pour les couvertures
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      
-      // Mettre à jour le profil avec la nouvelle image de couverture
-      const updateResponse = await fetch('/api/users/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          section: 'basic',
-          data: {coverImage : data.url }
-        }),
-      })
-
-      if (updateResponse.ok) {
-        setProfile(prev => prev ? { ...prev, coverImage: data.url } : null)
-        toast.success(dict?.profile?.success?.cover || "Image de couverture mise à jour avec succès")
-      } else {
-        throw new Error('Failed to update profile')
-      }
-    } else {
-      throw new Error('Upload failed')
-    }
-  } catch (error) {
-    console.error('Error uploading cover:', error)
-    toast.error(dict?.profile?.errors?.upload || "Erreur lors du téléchargement de l'image")
-  } finally {
-    setIsUploadingCover(false)
-  }
-}
   // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -385,6 +332,63 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
     }
   }
 
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(dict?.profile?.errors?.invalidImage || "Veuillez sélectionner une image valide")
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(dict?.profile?.errors?.fileTooLarge || "L'image doit faire moins de 5MB")
+      return
+    }
+
+    setIsUploadingCover(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'covers')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        const updateResponse = await fetch('/api/users/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            section: 'basic',
+            data: { coverImage: data.url }
+          }),
+        })
+
+        if (updateResponse.ok) {
+          setProfile(prev => prev ? { ...prev, coverImage: data.url } : null)
+          toast.success(dict?.profile?.success?.cover || "Image de couverture mise à jour avec succès")
+        } else {
+          throw new Error('Failed to update profile')
+        }
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Error uploading cover:', error)
+      toast.error(dict?.profile?.errors?.upload || "Erreur lors du téléchargement de l'image")
+    } finally {
+      setIsUploadingCover(false)
+    }
+  }
+
   const updateBio = async () => {
     try {
       const response = await fetch('/api/users/profile', {
@@ -435,6 +439,29 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
       console.error('Error updating availability:', error)
       toast.error(dict?.profile?.errors?.availability || "Erreur lors de la mise à jour du statut")
     }
+  }
+
+  // Fonction pour obtenir le label du niveau de langue
+  const getLanguageLevelLabel = (level: string) => {
+    const levels: Record<string, string> = {
+      native: dict?.profile?.languageLevels?.native || "Natif",
+      fluent: dict?.profile?.languageLevels?.fluent || "Courant",
+      advanced: dict?.profile?.languageLevels?.advanced || "Avancé",
+      intermediate: dict?.profile?.languageLevels?.intermediate || "Intermédiaire",
+      beginner: dict?.profile?.languageLevels?.beginner || "Débutant"
+    }
+    return levels[level] || level
+  }
+
+  const getLanguageLevelColor = (level: string) => {
+    const colors: Record<string, string> = {
+      native: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+      fluent: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+      advanced: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+      intermediate: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+      beginner: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+    }
+    return colors[level] || colors.intermediate
   }
 
   // Calculs mémoïsés pour la performance
@@ -491,52 +518,52 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
       {/* Header avec image de couverture améliorée */}
       <div className="relative">
         <div className="h-56 lg:h-64 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden group">
-    {profile.coverImage ? (
-      <Image
-        src={profile.coverImage}
-        alt="Cover"
-        fill
-        className="object-cover"
-        priority
-      />
-    ) : (
-      <>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90"></div>
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
-        </div>
-      </>
-    )}
-    
-    {/* Overlay pour le téléchargement de couverture */}
-    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-      <label 
-        htmlFor="cover-upload"
-        className="cursor-pointer bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg backdrop-blur-sm transition-all flex items-center gap-2"
-      >
-        <Camera className="h-5 w-5" />
-        <span>{dict?.profile?.changeCover || "Changer la couverture"}</span>
-        <input
-          id="cover-upload"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleCoverUpload}
-          disabled={isUploadingCover}
-        />
-      </label>
-      
-      {isUploadingCover && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-          <div className="text-white text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mx-auto mb-2"></div>
-            <p>{dict?.common?.uploading || "Téléchargement..."}</p>
+          {profile.coverImage ? (
+            <Image
+              src={profile.coverImage}
+              alt="Cover"
+              fill
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90"></div>
+              <div className="absolute inset-0 opacity-30">
+                <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
+                <div className="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl"></div>
+              </div>
+            </>
+          )}
+          
+          {/* Overlay pour le téléchargement de couverture */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <label 
+              htmlFor="cover-upload"
+              className="cursor-pointer bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg backdrop-blur-sm transition-all flex items-center gap-2"
+            >
+              <Camera className="h-5 w-5" />
+              <span>{dict?.profile?.changeCover || "Changer la couverture"}</span>
+              <input
+                id="cover-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverUpload}
+                disabled={isUploadingCover}
+              />
+            </label>
+            
+            {isUploadingCover && (
+              <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mx-auto mb-2"></div>
+                  <p>{dict?.common?.uploading || "Téléchargement..."}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
-    </div>
-  </div>
 
         <div className="container mx-auto px-4 -mt-20 relative z-10 max-w-7xl">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -846,6 +873,32 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
               </CardContent>
             </Card>
 
+            {/* Langues - NOUVEAU */}
+            {profile.languages && profile.languages.length > 0 && (
+              <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader className="pb-4 bg-gradient-to-r from-green-500/10 to-teal-500/10">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <Languages className="h-5 w-5 text-green-500" />
+                    {dict?.profile?.languages || "Langues"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {profile.languages.map((lang, index) => (
+                      <div key={lang.id || index} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                        <div>
+                          <span className="font-medium text-sm">{typeof lang === 'string' ? lang : lang.name}</span>
+                        </div>
+                        <Badge className={cn("text-xs", getLanguageLevelColor(typeof lang === 'string' ? 'intermediate' : lang.level))}>
+                          {getLanguageLevelLabel(typeof lang === 'string' ? 'intermediate' : lang.level)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Compétences améliorées */}
             {profile.skills?.length > 0 && (
               <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
@@ -962,28 +1015,6 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
                 </CardContent>
               </Card>
             )}
-
-            {/* Langues */}
-            {profile.languages?.length > 0 && (
-              <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-4 bg-gradient-to-r from-green-500/10 to-teal-500/10">
-                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                    <Languages className="h-5 w-5 text-green-500" />
-                    {dict?.profile?.languages || "Langues"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {profile.languages.map((lang, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <span className="font-medium text-sm">{lang}</span>
-                        <Badge variant="outline" className="text-xs">Natif</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Contenu principal amélioré */}
@@ -1073,8 +1104,8 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
                   </CardContent>
                 </Card>
 
-                {/* Éducation améliorée */}
-                {profile.education?.length > 0 && (
+                {/* Éducation améliorée - MISE À JOUR */}
+                {profile.education && profile.education.length > 0 && (
                   <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10">
                       <CardTitle className="flex items-center gap-2">
@@ -1083,7 +1114,7 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {profile.education.map((edu, index) => (
+                      {profile.education.map((edu) => (
                         <div 
                           key={edu.id} 
                           className="flex gap-4 group p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all"
@@ -1104,6 +1135,11 @@ const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
                                 {new Date(edu.startDate).getFullYear()} - {edu.current ? dict?.profile?.present || 'Présent' : new Date(edu.endDate!).getFullYear()}
                               </span>
                             </div>
+                            {edu.description && (
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                                {edu.description}
+                              </p>
+                            )}
                           </div>
                         </div>
                       ))}
