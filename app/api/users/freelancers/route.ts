@@ -28,7 +28,7 @@ const filter: any = {
     { role: 'freelance' },
     { role: 'freelancer' }
   ],
-  isActive: true 
+ // isActive: true 
 }
 
     // Recherche par nom ou compétences
