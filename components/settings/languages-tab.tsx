@@ -14,8 +14,8 @@ import {
   X, 
   Edit, 
   Trash2,
-  CheckCircle2,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -46,23 +46,56 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
   const [languages, setLanguages] = useState<Language[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [formData, setFormData] = useState<Partial<Language>>({
     name: "",
     level: "intermediate"
   })
 
+  // Charger les données depuis l'API au montage
   useEffect(() => {
-    if (user?.languages) {
-      const formattedLanguages = Array.isArray(user.languages) 
-        ? user.languages.map((lang: any, index: number) => ({
+    loadLanguagesFromAPI()
+  }, [])
+
+  // Recharger quand user change
+  useEffect(() => {
+    if (user?.languages && Array.isArray(user.languages) && user.languages.length > 0) {
+      const formattedLanguages = user.languages.map((lang: any, index: number) => ({
+        id: lang.id || index.toString(),
+        name: typeof lang === 'string' ? lang : lang.name,
+        level: typeof lang === 'string' ? 'intermediate' : (lang.level || 'intermediate')
+      }))
+      setLanguages(formattedLanguages)
+    } else if (user?.languages === undefined) {
+      loadLanguagesFromAPI()
+    }
+  }, [user])
+
+  // Fonction pour charger les données depuis l'API
+  const loadLanguagesFromAPI = async () => {
+    setIsRefreshing(true)
+    try {
+      const response = await fetch('/api/users/profile')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.languages && Array.isArray(data.languages)) {
+          const formattedLanguages = data.languages.map((lang: any, index: number) => ({
             id: lang.id || index.toString(),
             name: typeof lang === 'string' ? lang : lang.name,
             level: typeof lang === 'string' ? 'intermediate' : (lang.level || 'intermediate')
           }))
-        : []
-      setLanguages(formattedLanguages)
+          setLanguages(formattedLanguages)
+          console.log('✅ Languages loaded:', formattedLanguages.length)
+        } else {
+          setLanguages([])
+        }
+      }
+    } catch (error) {
+      console.error('Error loading languages:', error)
+    } finally {
+      setIsRefreshing(false)
     }
-  }, [user])
+  }
 
   const resetForm = () => {
     setFormData({
@@ -90,7 +123,7 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
         )
       } else {
         const newLanguage: Language = {
-          id: new Date().getTime().toString(),
+          id: Date.now().toString(),
           name: formData.name!,
           level: formData.level as Language['level']
         }
@@ -109,10 +142,12 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
       })
 
       if (response.ok) {
-        setLanguages(updatedLanguages)
         toast.success(editingId 
           ? (dict?.languages?.success?.updated || "Langue mise à jour avec succès")
           : (dict?.languages?.success?.added || "Langue ajoutée avec succès"))
+        
+        // Recharger les données depuis l'API
+        await loadLanguagesFromAPI()
         
         resetForm()
         setShowForm(false)
@@ -150,8 +185,8 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
       })
 
       if (response.ok) {
-        setLanguages(updatedLanguages)
         toast.success(dict?.languages?.success?.deleted || "Langue supprimée avec succès")
+        await loadLanguagesFromAPI()
         if (onUpdate) onUpdate()
       } else {
         const error = await response.json()
@@ -200,30 +235,50 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
               {t.description || "Ajoutez les langues que vous parlez"}
             </CardDescription>
           </div>
-          <Button
-            onClick={() => {
-              resetForm()
-              setShowForm(!showForm)
-            }}
-            variant={showForm ? "outline" : "default"}
-            className={showForm ? "text-red-600 hover:text-red-700" : "bg-blue-600 hover:bg-blue-700"}
-          >
-            {showForm ? (
-              <>
-                <X className="h-4 w-4 mr-2" />
-                {dict?.common?.cancel || "Annuler"}
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                {t.addLanguage || "Ajouter une langue"}
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadLanguagesFromAPI}
+              disabled={isRefreshing}
+              className="h-9 w-9 p-0"
+              title={dict?.common?.refresh || "Actualiser"}
+            >
+              <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+            </Button>
+            <Button
+              onClick={() => {
+                resetForm()
+                setShowForm(!showForm)
+              }}
+              variant={showForm ? "outline" : "default"}
+              className={showForm ? "text-red-600 hover:text-red-700" : "bg-blue-600 hover:bg-blue-700"}
+            >
+              {showForm ? (
+                <>
+                  <X className="h-4 w-4 mr-2" />
+                  {dict?.common?.cancel || "Annuler"}
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t.addLanguage || "Ajouter une langue"}
+                </>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-6">
+          {/* Indicateur de chargement */}
+          {isRefreshing && (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-slate-500">{dict?.common?.loading || "Chargement..."}</span>
+            </div>
+          )}
+
           {/* Formulaire d'ajout/modification */}
-          {showForm && (
+          {!isRefreshing && showForm && (
             <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
                 {editingId ? (t.editLanguage || "Modifier la langue") : (t.addLanguage || "Ajouter une langue")}
@@ -281,7 +336,7 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
           )}
 
           {/* Liste des langues */}
-          {languages.length === 0 && !showForm ? (
+          {!isRefreshing && languages.length === 0 && !showForm ? (
             <div className="text-center py-12">
               <div className="w-20 h-20 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                 <Languages className="h-10 w-10 text-slate-400" />
@@ -293,7 +348,7 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
                 {t.noLanguagesDesc || "Ajoutez les langues que vous parlez pour attirer plus de clients"}
               </p>
             </div>
-          ) : (
+          ) : !isRefreshing && languages.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {languages.map((lang) => {
                 const levelBadge = getLevelBadge(lang.level)
@@ -337,7 +392,7 @@ export function LanguagesTab({ user, dict, lang, onUpdate }: LanguagesTabProps) 
                 )
               })}
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

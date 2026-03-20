@@ -16,7 +16,8 @@ import {
   Calendar, 
   Edit, 
   Trash2,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -48,6 +49,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
   const [educations, setEducations] = useState<Education[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [formData, setFormData] = useState<Partial<Education>>({
     degree: "",
     school: "",
@@ -58,25 +60,41 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
     description: ""
   })
 
-  // Charger les données depuis user
+  // Charger les données depuis l'API au montage
   useEffect(() => {
-    if (user?.education && Array.isArray(user.education)) {
+    loadEducationsFromAPI()
+  }, [])
+
+  // Recharger quand user change (optionnel)
+  useEffect(() => {
+    if (user?.education && Array.isArray(user.education) && user.education.length > 0) {
       setEducations(user.education)
+    } else if (user?.education === undefined) {
+      // Si user n'a pas d'éducation, charger depuis l'API
+      loadEducationsFromAPI()
     }
   }, [user])
 
-  // Fonction pour recharger les données depuis l'API
-  const refreshEducations = async () => {
+  // Fonction pour charger les données depuis l'API
+  const loadEducationsFromAPI = async () => {
+    setIsRefreshing(true)
     try {
       const response = await fetch('/api/users/profile')
       if (response.ok) {
         const data = await response.json()
         if (data.education && Array.isArray(data.education)) {
           setEducations(data.education)
+          console.log('✅ Education loaded:', data.education.length)
+        } else {
+          setEducations([])
         }
+      } else {
+        console.error('Failed to load profile')
       }
     } catch (error) {
-      console.error('Error refreshing education:', error)
+      console.error('Error loading education:', error)
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -126,7 +144,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
           : (dict?.education?.success?.added || "Formation ajoutée avec succès"))
         
         // Recharger les données depuis l'API
-        await refreshEducations()
+        await loadEducationsFromAPI()
         
         resetForm()
         setShowForm(false)
@@ -163,7 +181,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
       if (response.ok) {
         toast.success(dict?.education?.success?.deleted || "Formation supprimée avec succès")
         // Recharger les données depuis l'API
-        await refreshEducations()
+        await loadEducationsFromAPI()
         if (onUpdate) onUpdate()
       } else {
         const error = await response.json()
@@ -194,10 +212,8 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
   const formatDate = (dateString: string) => {
     if (!dateString) return ""
     try {
-      // Gérer les formats "YYYY-MM" et "YYYY-MM-DD"
       let date: Date
       if (dateString.length === 7) {
-        // Format "YYYY-MM"
         date = new Date(dateString + "-01")
       } else {
         date = new Date(dateString)
@@ -224,30 +240,50 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
               {t.description || "Ajoutez vos diplômes et formations"}
             </CardDescription>
           </div>
-          <Button
-            onClick={() => {
-              resetForm()
-              setShowForm(!showForm)
-            }}
-            variant={showForm ? "outline" : "default"}
-            className={showForm ? "text-red-600 hover:text-red-700" : "bg-blue-600 hover:bg-blue-700"}
-          >
-            {showForm ? (
-              <>
-                <X className="h-4 w-4 mr-2" />
-                {dict?.common?.cancel || "Annuler"}
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                {t.addEducation || "Ajouter une formation"}
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadEducationsFromAPI}
+              disabled={isRefreshing}
+              className="h-9 w-9 p-0"
+              title={dict?.common?.refresh || "Actualiser"}
+            >
+              <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+            </Button>
+            <Button
+              onClick={() => {
+                resetForm()
+                setShowForm(!showForm)
+              }}
+              variant={showForm ? "outline" : "default"}
+              className={showForm ? "text-red-600 hover:text-red-700" : "bg-blue-600 hover:bg-blue-700"}
+            >
+              {showForm ? (
+                <>
+                  <X className="h-4 w-4 mr-2" />
+                  {dict?.common?.cancel || "Annuler"}
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t.addEducation || "Ajouter une formation"}
+                </>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-6">
+          {/* Indicateur de chargement */}
+          {isRefreshing && (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-slate-500">{dict?.common?.loading || "Chargement..."}</span>
+            </div>
+          )}
+
           {/* Formulaire d'ajout/modification */}
-          {showForm && (
+          {!isRefreshing && showForm && (
             <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
                 {editingId ? (t.editEducation || "Modifier la formation") : (t.addEducation || "Ajouter une formation")}
@@ -358,7 +394,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
           )}
 
           {/* Liste des formations */}
-          {educations.length === 0 && !showForm ? (
+          {!isRefreshing && educations.length === 0 && !showForm ? (
             <div className="text-center py-12">
               <div className="w-20 h-20 mx-auto bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
                 <GraduationCap className="h-10 w-10 text-slate-400" />
@@ -370,7 +406,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
                 {t.noEducationDesc || "Ajoutez vos diplômes et formations pour renforcer votre profil"}
               </p>
             </div>
-          ) : (
+          ) : !isRefreshing && educations.length > 0 ? (
             <div className="space-y-4">
               {educations.map((edu) => (
                 <div
@@ -429,7 +465,7 @@ export function EducationTab({ user, dict, lang, onUpdate }: EducationTabProps) 
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>
