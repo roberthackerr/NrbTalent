@@ -215,10 +215,8 @@ export default function AgoraVideoMeetPage() {
     const container = localVideoRef.current
     if (!container || !mountedRef.current) return
     
-    // Nettoyer proprement l'ancien contenu
-    while (container.firstChild && container.contains(container.firstChild)) {
-      container.removeChild(container.firstChild)
-    }
+    // FIX 1: Use replaceChildren() instead of while/removeChild loop
+    container.replaceChildren()
     
     try {
       await videoTrack.setEnabled(cameraEnabled)
@@ -256,10 +254,8 @@ export default function AgoraVideoMeetPage() {
       container.appendChild(playerDiv)
       remotePlayersRef.current.set(user.uid, playerDiv)
     } else {
-      // Nettoyer le contenu sans supprimer le div parent
-      while (playerDiv.firstChild && playerDiv.contains(playerDiv.firstChild)) {
-        playerDiv.removeChild(playerDiv.firstChild)
-      }
+      // FIX 2: Use replaceChildren() instead of while/removeChild loop
+      playerDiv.replaceChildren()
     }
     
     try {
@@ -331,9 +327,10 @@ export default function AgoraVideoMeetPage() {
 
     clientRef.current.on('user-unpublished', (user: any) => {
       console.log('👤 User unpublished:', user.uid)
+      // FIX 3: Remove via actual parentNode instead of assumed container
       const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv && remoteVideoContainerRef.current && remoteVideoContainerRef.current.contains(playerDiv)) {
-        remoteVideoContainerRef.current.removeChild(playerDiv)
+      if (playerDiv) {
+        playerDiv.parentNode?.removeChild(playerDiv)
       }
       remotePlayersRef.current.delete(user.uid)
       setRemoteUsers(prev => prev.filter(id => id !== user.uid))
@@ -346,9 +343,10 @@ export default function AgoraVideoMeetPage() {
     
     clientRef.current.on('user-left', (user: any) => {
       console.log('👋 User left:', user.uid)
+      // FIX 4: Remove via actual parentNode instead of assumed container
       const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv && remoteVideoContainerRef.current && remoteVideoContainerRef.current.contains(playerDiv)) {
-        remoteVideoContainerRef.current.removeChild(playerDiv)
+      if (playerDiv) {
+        playerDiv.parentNode?.removeChild(playerDiv)
       }
       remotePlayersRef.current.delete(user.uid)
       setRemoteUsers(prev => prev.filter(id => id !== user.uid))
@@ -503,7 +501,7 @@ export default function AgoraVideoMeetPage() {
     if (!mountedRef.current) return
     
     try {
-      // Arrêter toutes les pistes locales
+      // Stop all local tracks
       localTracksRef.current.forEach(track => {
         if (track) {
           track.stop()
@@ -516,23 +514,13 @@ export default function AgoraVideoMeetPage() {
         clientRef.current = null
       }
       
-      // Nettoyer le conteneur local
-      if (localVideoRef.current) {
-        const container = localVideoRef.current
-        while (container.firstChild && container.contains(container.firstChild)) {
-          container.removeChild(container.firstChild)
-        }
-      }
+      // FIX 5: Use replaceChildren() for local container — safe against SDK-orphaned nodes
+      localVideoRef.current?.replaceChildren()
+
+      // FIX 6: Use replaceChildren() for remote container — safe against SDK-orphaned nodes
+      remoteVideoContainerRef.current?.replaceChildren()
       
-      // Nettoyer le conteneur distant
-      if (remoteVideoContainerRef.current) {
-        const container = remoteVideoContainerRef.current
-        while (container.firstChild && container.contains(container.firstChild)) {
-          container.removeChild(container.firstChild)
-        }
-      }
-      
-      // Nettoyer la Map des lecteurs distants
+      // Clear the remote players map
       remotePlayersRef.current.clear()
       localTracksRef.current = []
       setRemoteUsers([])
@@ -576,14 +564,14 @@ export default function AgoraVideoMeetPage() {
       const currentVideoTrack = localTracksRef.current.find(t => t?.trackMediaType === 'video')
       
       if (currentVideoTrack && clientRef.current) {
-        // Sauvegarder l'état de la caméra
+        // Save camera state
         const wasEnabled = currentVideoTrack.enabled
         
-        // Arrêter et fermer l'ancienne piste
+        // Stop and close old track
         await currentVideoTrack.stop()
         await currentVideoTrack.close()
         
-        // Créer une nouvelle piste avec le nouveau mode
+        // Create new track with new facing mode
         const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
         const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
           facingMode: newFacing,
@@ -594,26 +582,26 @@ export default function AgoraVideoMeetPage() {
           }
         })
         
-        // Restaurer l'état
+        // Restore state
         await newVideoTrack.setEnabled(wasEnabled)
         
-        // Remplacer dans le tableau des pistes
+        // Replace in tracks array
         const index = localTracksRef.current.findIndex(t => t?.trackMediaType === 'video')
         if (index !== -1) {
           localTracksRef.current[index] = newVideoTrack
         }
         
-        // Publier la nouvelle piste
+        // Publish new track
         await clientRef.current.unpublish(currentVideoTrack)
         await clientRef.current.publish(newVideoTrack)
         
-        // Mettre à jour l'affichage local
+        // Update local preview
         await playLocalPreview(newVideoTrack)
         
         setFacingMode(newFacing)
         console.log('✅ Camera switched to:', newFacing)
       } else {
-        // Si pas encore connecté, juste changer le mode
+        // Not yet connected, just change the mode
         setFacingMode(newFacing)
       }
     } catch (err) {
