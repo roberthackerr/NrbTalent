@@ -22,7 +22,14 @@ export async function GET(request: Request) {
     const db = await getDatabase()
 
     // Construire le filtre
-    const filter: any = { role: 'freelancer', isActive: true }
+   // Support des deux versions du rôle
+const filter: any = { 
+  $or: [
+    { role: 'freelance' },
+    { role: 'freelancer' }
+  ],
+  isActive: true 
+}
 
     // Recherche par nom ou compétences
     if (search) {
