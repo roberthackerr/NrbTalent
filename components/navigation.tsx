@@ -156,7 +156,7 @@ export function Navigation() {
             ))}
           </div>
               <div className="flex items-center gap-4">
-          <MeetButtonCompact dict={dict} lang={lang} />
+          <MeetButtonCompact />
           {/* Autres liens... */}
         </div>
           {/* Actions Desktop */}
