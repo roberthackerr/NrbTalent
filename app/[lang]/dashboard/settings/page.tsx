@@ -17,7 +17,9 @@ import type { Locale } from '@/lib/i18n/config'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Lock, ShieldCheck, Bell, Globe, CreditCard, Briefcase, Zap, Trash2 } from "lucide-react"
+import { User, Lock, ShieldCheck, Bell, Globe, CreditCard, Briefcase, Zap, Trash2, GraduationCap, Languages } from "lucide-react"
+import { EducationTab } from "@/components/settings/education-tab"
+import { LanguagesTab } from "@/components/settings/languages-tab"
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -47,18 +49,19 @@ export default function SettingsPage() {
     )
   }
 
-  const tabs = [
-    { id: "general", label: dict.settings.tabs.general, icon: User },
-    { id: "skills", label: dict.settings.tabs.skills, icon: Zap },
-    { id: "portfolio", label: dict.settings.tabs.portfolio, icon: Briefcase },
-    { id: "security", label: dict.settings.tabs.security, icon: Lock },
-    { id: "verification", label: dict.settings.tabs.verification, icon: ShieldCheck },
-    { id: "notifications", label: dict.settings.tabs.notifications, icon: Bell },
-    { id: "preferences", label: dict.settings.tabs.preferences, icon: Globe },
-    { id: "billing", label: dict.settings.tabs.billing, icon: CreditCard },
-    { id: "account", label: dict.settings.tabs.account, icon: Trash2 },
-  ]
-
+const tabs = [
+  { id: "general", label: dict.settings.tabs.general, icon: User },
+  { id: "skills", label: dict.settings.tabs.skills, icon: Zap },
+  { id: "portfolio", label: dict.settings.tabs.portfolio, icon: Briefcase },
+  { id: "education", label: dict.settings.tabs.education, icon: GraduationCap }, // Nouveau
+  { id: "languages", label: dict.settings.tabs.languages, icon: Languages }, // Nouveau
+  { id: "security", label: dict.settings.tabs.security, icon: Lock },
+  { id: "verification", label: dict.settings.tabs.verification, icon: ShieldCheck },
+  { id: "notifications", label: dict.settings.tabs.notifications, icon: Bell },
+  { id: "preferences", label: dict.settings.tabs.preferences, icon: Globe },
+  { id: "billing", label: dict.settings.tabs.billing, icon: CreditCard },
+  { id: "account", label: dict.settings.tabs.account, icon: Trash2 },
+]
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20">
       <div className="flex-1 flex">
@@ -111,15 +114,17 @@ export default function SettingsPage() {
 
             {/* Contenu des onglets */}
             <div className="space-y-6">
-              {activeTab === "general" && <GeneralTab user={user} dict={dict} lang={lang} />}
-              {activeTab === "security" && <SecurityTab dict={dict} lang={lang} />}
-              {activeTab === "verification" && <VerificationTab user={user} dict={dict} lang={lang} />}
-              {activeTab === "notifications" && <NotificationsTab dict={dict} lang={lang} />}
-              {activeTab === "preferences" && <PreferencesTab dict={dict} lang={lang} />}
-              {activeTab === "billing" && <BillingTab dict={dict} lang={lang} />}
-              {activeTab === "skills" && <SkillsTab user={user} dict={dict.onboardingPage.skills} lang={lang} />}
-              {activeTab === "portfolio" && <PortfolioTab user={user} dict={dict} lang={lang} />}
-              {activeTab === "account" && <AccountTab dict={dict} lang={lang} />}
+         {activeTab === "general" && <GeneralTab user={user} dict={dict} lang={lang} />}
+  {activeTab === "skills" && <SkillsTab user={user} dict={dict.onboardingPage.skills} lang={lang} />}
+  {activeTab === "portfolio" && <PortfolioTab user={user} dict={dict} lang={lang} />}
+  {activeTab === "education" && <EducationTab user={user} dict={dict} lang={lang} onUpdate={() => {}} />}
+  {activeTab === "languages" && <LanguagesTab user={user} dict={dict} lang={lang} onUpdate={() => {}} />}
+  {activeTab === "security" && <SecurityTab dict={dict} lang={lang} />}
+  {activeTab === "verification" && <VerificationTab user={user} dict={dict} lang={lang} />}
+  {activeTab === "notifications" && <NotificationsTab dict={dict} lang={lang} />}
+  {activeTab === "preferences" && <PreferencesTab dict={dict} lang={lang} />}
+  {activeTab === "billing" && <BillingTab dict={dict} lang={lang} />}
+  {activeTab === "account" && <AccountTab dict={dict} lang={lang} />}
             </div>
           </div>
         </main>

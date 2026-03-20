@@ -1,5 +1,64 @@
 {
-
+"education": {
+    "title": "Formation",
+    "description": "Ajoutez vos diplômes et formations",
+    "addEducation": "Ajouter une formation",
+    "editEducation": "Modifier la formation",
+    "degree": "Diplôme",
+    "degreePlaceholder": "Ex: Master en Informatique",
+    "field": "Domaine",
+    "fieldPlaceholder": "Ex: Développement Web",
+    "school": "Établissement",
+    "schoolPlaceholder": "Ex: Université Paris-Saclay",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "current": "En cours",
+    "inProgress": "En cours",
+    "present": "Présent",
+    "noEducation": "Aucune formation",
+    "noEducationDesc": "Ajoutez vos diplômes et formations pour renforcer votre profil",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette formation ?",
+    "errors": {
+      "missingFields": "Veuillez remplir tous les champs obligatoires",
+      "update": "Erreur lors de la mise à jour",
+      "delete": "Erreur lors de la suppression"
+    },
+    "success": {
+      "added": "Formation ajoutée avec succès",
+      "updated": "Formation mise à jour avec succès",
+      "deleted": "Formation supprimée avec succès"
+    }
+  },
+  "languages": {
+    "title": "Langues",
+    "description": "Ajoutez les langues que vous parlez",
+    "addLanguage": "Ajouter une langue",
+    "editLanguage": "Modifier la langue",
+    "language": "Langue",
+    "languagePlaceholder": "Ex: Français, Anglais, Espagnol...",
+    "level": "Niveau",
+    "selectLevel": "Sélectionnez un niveau",
+    "noLanguages": "Aucune langue",
+    "noLanguagesDesc": "Ajoutez les langues que vous parlez pour attirer plus de clients",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette langue ?",
+    "levels": {
+      "native": "Natif",
+      "fluent": "Courant",
+      "advanced": "Avancé",
+      "intermediate": "Intermédiaire",
+      "beginner": "Débutant"
+    },
+    "errors": {
+      "missingName": "Veuillez saisir une langue",
+      "update": "Erreur lors de la mise à jour",
+      "delete": "Erreur lors de la suppression"
+    },
+    "success": {
+      "added": "Langue ajoutée avec succès",
+      "updated": "Langue mise à jour avec succès",
+      "deleted": "Langue supprimée avec succès"
+    }
+  },
    "sidebar": {
     "platformTagline": "Plateforme Freelance",
     "dashboard": "Tableau de Bord",
@@ -1928,6 +1987,8 @@
     "title": "Paramètres",
     "subtitle": "Gérez les paramètres de votre compte et vos préférences",
     "tabs": {
+       "education": "Formation",
+      "languages": "Langues",
       "general": "Général",
       "skills": "Compétences",
       "portfolio": "Portfolio",

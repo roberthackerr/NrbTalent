@@ -1,5 +1,64 @@
 {
-  
+  "education": {
+    "title": "Fanabeazana",
+    "description": "Ampio ny diplôma sy ny fanabeazana",
+    "addEducation": "Hanampy fanabeazana",
+    "editEducation": "Hanova fanabeazana",
+    "degree": "Diplôma",
+    "degreePlaceholder": "Ohatra: Master amin'ny Informatika",
+    "field": "Sokajy",
+    "fieldPlaceholder": "Ohatra: Fampandrosoana tranonkala",
+    "school": "Andrim-pampianarana",
+    "schoolPlaceholder": "Ohatra: Oniversiten'i Paris-Saclay",
+    "startDate": "Daty fanombohana",
+    "endDate": "Daty fiafarana",
+    "current": "Mandritra",
+    "inProgress": "Mandritra",
+    "present": "Amin'izao fotoana izao",
+    "noEducation": "Tsy misy fanabeazana",
+    "noEducationDesc": "Ampio ny diplôma sy ny fanabeazana mba hanamafisana ny mombamomba anao",
+    "confirmDelete": "Tena te-hamafa ity fanabeazana ity ve ianao?",
+    "errors": {
+      "missingFields": "Feno ny saha ilaina rehetra azafady",
+      "update": "Tsy nahomby ny fanavaozana ny fanabeazana",
+      "delete": "Tsy nahomby ny famafana ny fanabeazana"
+    },
+    "success": {
+      "added": "Nampidirina soa aman-tsara ny fanabeazana",
+      "updated": "Nohavaozina soa aman-tsara ny fanabeazana",
+      "deleted": "Nofafana soa aman-tsara ny fanabeazana"
+    }
+  },
+  "languages": {
+    "title": "Fiteny",
+    "description": "Ampio ny fiteny tianao",
+    "addLanguage": "Hanampy fiteny",
+    "editLanguage": "Hanova fiteny",
+    "language": "Fiteny",
+    "languagePlaceholder": "Ohatra: Frantsay, Anglisy, Espaniôla...",
+    "level": "Ambaratonga",
+    "selectLevel": "Misafidiana ambaratonga",
+    "noLanguages": "Tsy misy fiteny",
+    "noLanguagesDesc": "Ampio ny fiteny tianao mba hisarihana mpanjifa maro kokoa",
+    "confirmDelete": "Tena te-hamafa ity fiteny ity ve ianao?",
+    "levels": {
+      "native": "Teny niaviany",
+      "fluent": "Mahay tsara",
+      "advanced": "Mahay",
+      "intermediate": "Antonontonony",
+      "beginner": "Vao manomboka"
+    },
+    "errors": {
+      "missingName": "Ampidiro ny anaran'ny fiteny azafady",
+      "update": "Tsy nahomby ny fanavaozana ny fiteny",
+      "delete": "Tsy nahomby ny famafana ny fiteny"
+    },
+    "success": {
+      "added": "Nampidirina soa aman-tsara ny fiteny",
+      "updated": "Nohavaozina soa aman-tsara ny fiteny",
+      "deleted": "Nofafana soa aman-tsara ny fiteny"
+    }
+  },
 "sidebar": {
     "platformTagline": "Sehatra Freelance",
     "dashboard": "Takelaka Fandraisana",
@@ -1497,6 +1556,8 @@
     "privacy": "Politika momba ny fiainana manokana"
   },
    "settings": {
+          "education": "Fanabeazana",
+      "languages": "Fiteny",
     "loading": "Amplasiana...",
     "title": "Fikirana",
     "subtitle": "Karibo ny fikiran'ny kaontinao sy ny safidinao",

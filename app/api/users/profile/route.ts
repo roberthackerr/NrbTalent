@@ -98,7 +98,36 @@ export async function PATCH(request: Request) {
         }
         console.log("✅ Onboarding completed status updated")
         break
-
+        case 'education':
+  if (data._delete) {
+    // Delete education
+    updateOperation.$pull = { 
+      education: { id: data.id } 
+    }
+  } else if (data.id) {
+    // Update existing education
+    updateOperation.$set = {
+      ...updateOperation.$set,
+      "education.$[elem]": {
+        ...data,
+        _id: undefined,
+        updatedAt: new Date()
+      }
+    }
+    arrayFilters = [{ "elem.id": data.id }]
+    useArrayFilters = true
+  } else {
+    // Add new education
+    updateOperation.$push = {
+      education: {
+        ...data,
+        id: data.id || new ObjectId().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    }
+  }
+  break
       // ------------------------------
       // EXPERIENCE
       // ------------------------------

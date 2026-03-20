@@ -1,5 +1,64 @@
 {
-
+ "education": {
+    "title": "Education",
+    "description": "Add your degrees and education",
+    "addEducation": "Add Education",
+    "editEducation": "Edit Education",
+    "degree": "Degree",
+    "degreePlaceholder": "Ex: Master in Computer Science",
+    "field": "Field",
+    "fieldPlaceholder": "Ex: Web Development",
+    "school": "School",
+    "schoolPlaceholder": "Ex: University of Paris-Saclay",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "current": "In Progress",
+    "inProgress": "In Progress",
+    "present": "Present",
+    "noEducation": "No education",
+    "noEducationDesc": "Add your degrees and education to strengthen your profile",
+    "confirmDelete": "Are you sure you want to delete this education?",
+    "errors": {
+      "missingFields": "Please fill in all required fields",
+      "update": "Error updating education",
+      "delete": "Error deleting education"
+    },
+    "success": {
+      "added": "Education added successfully",
+      "updated": "Education updated successfully",
+      "deleted": "Education deleted successfully"
+    }
+  },
+  "languages": {
+    "title": "Languages",
+    "description": "Add the languages you speak",
+    "addLanguage": "Add Language",
+    "editLanguage": "Edit Language",
+    "language": "Language",
+    "languagePlaceholder": "Ex: French, English, Spanish...",
+    "level": "Level",
+    "selectLevel": "Select a level",
+    "noLanguages": "No languages",
+    "noLanguagesDesc": "Add the languages you speak to attract more clients",
+    "confirmDelete": "Are you sure you want to delete this language?",
+    "levels": {
+      "native": "Native",
+      "fluent": "Fluent",
+      "advanced": "Advanced",
+      "intermediate": "Intermediate",
+      "beginner": "Beginner"
+    },
+    "errors": {
+      "missingName": "Please enter a language",
+      "update": "Error updating language",
+      "delete": "Error deleting language"
+    },
+    "success": {
+      "added": "Language added successfully",
+      "updated": "Language updated successfully",
+      "deleted": "Language deleted successfully"
+    }
+  },
   "sidebar": {
     "platformTagline": "Freelance Platform",
     "dashboard": "Dashboard",
@@ -1886,6 +1945,8 @@
     "title": "Settings",
     "subtitle": "Manage your account settings and preferences",
     "tabs": {
+      "education": "Education",
+      "languages": "Languages",
       "general": "General",
       "skills": "Skills",
       "portfolio": "Portfolio",
