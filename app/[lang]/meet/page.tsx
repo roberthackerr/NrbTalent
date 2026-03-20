@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import { 
@@ -28,17 +28,26 @@ import {
   Info,
   ChevronDown,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ArrowLeft,
+  Home,
+  Link as LinkIcon
 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AgoraVideoMeetPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const lang = params.lang as Locale
+  
+  // Récupérer le nom de la salle depuis les paramètres URL
+  const roomParam = searchParams.get('room')
   
   const [dict, setDict] = useState<any>(null)
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected'>('idle')
   const [error, setError] = useState('')
-  const [channelName, setChannelName] = useState(`meet-${Math.floor(Math.random() * 10000)}`)
+  const [channelName, setChannelName] = useState(roomParam || `meet-${Math.floor(Math.random() * 10000)}`)
   const [connectionInfo, setConnectionInfo] = useState<any>(null)
   const [remoteUsers, setRemoteUsers] = useState<number[]>([])
   const [isMobile, setIsMobile] = useState(false)
@@ -56,6 +65,7 @@ export default function AgoraVideoMeetPage() {
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('')
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
+  const [autoConnect, setAutoConnect] = useState(false)
   
   const localVideoRef = useRef<HTMLDivElement>(null)
   const remoteVideoRef = useRef<HTMLDivElement>(null)
@@ -69,6 +79,17 @@ export default function AgoraVideoMeetPage() {
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
+
+  // Auto-connect if room parameter exists
+  useEffect(() => {
+    if (roomParam && dict && permissionStatus === 'granted' && !autoConnect) {
+      setAutoConnect(true)
+      // Petit délai pour s'assurer que tout est prêt
+      setTimeout(() => {
+        testConnection()
+      }, 500)
+    }
+  }, [roomParam, dict, permissionStatus])
 
   useEffect(() => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -574,6 +595,11 @@ export default function AgoraVideoMeetPage() {
     }
   }
 
+  const createNewRoom = () => {
+    const newRoom = `meet-${Math.random().toString(36).substring(2, 10)}-${Date.now().toString().slice(-6)}`
+    router.push(`/${lang}/meet?room=${newRoom}`)
+  }
+
   if (!dict) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -594,6 +620,9 @@ export default function AgoraVideoMeetPage() {
       <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Link href={`/${lang}`} className="p-2 hover:bg-white/10 rounded-lg transition-all">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
               <Video className="w-5 h-5 text-white" />
             </div>
@@ -606,6 +635,16 @@ export default function AgoraVideoMeetPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {status === 'idle' && (
+              <button
+                onClick={createNewRoom}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all flex items-center gap-2 text-sm"
+                title={dict?.meet?.newRoom || 'New Room'}
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">{dict?.meet?.newRoom || 'New Room'}</span>
+              </button>
+            )}
             {status === 'connected' && (
               <>
                 <button
@@ -635,6 +674,20 @@ export default function AgoraVideoMeetPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8 pt-20 max-w-7xl">
+        {/* Room Info Banner */}
+        {roomParam && status === 'idle' && (
+          <div className="mb-6 p-4 bg-purple-500/20 border border-purple-500/30 rounded-xl backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <LinkIcon className="w-5 h-5 text-purple-400" />
+              <div>
+                <p className="text-sm text-purple-300">
+                  {dict?.meet?.joiningRoom || 'Joining room'}: <span className="font-mono text-purple-200">{roomParam}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Status Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
@@ -750,11 +803,19 @@ export default function AgoraVideoMeetPage() {
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
               <div className="aspect-video bg-slate-900 relative">
                 <div ref={remoteVideoRef} className="absolute inset-0">
-                  {remoteUsers.length === 0 && (
+                  {remoteUsers.length === 0 && status === 'connected' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <Users className="w-16 h-16 text-slate-700 mb-3" />
                       <p className="text-slate-500 font-medium text-center px-4">
                         {dict?.meet?.waitingForOthers || 'Waiting for others to join...'}
+                      </p>
+                    </div>
+                  )}
+                  {status !== 'connected' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Sparkles className="w-16 h-16 text-purple-700 mb-3" />
+                      <p className="text-slate-500 font-medium text-center px-4">
+                        {dict?.meet?.startCallMessage || 'Click Start Call to begin'}
                       </p>
                     </div>
                   )}
@@ -777,18 +838,18 @@ export default function AgoraVideoMeetPage() {
             {/* Room Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-slate-400'}`}></div>
                 <span className="text-sm text-white/60 uppercase tracking-wider">
                   {dict?.meet?.room || 'ROOM'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <code className="px-4 py-2 bg-black/30 rounded-lg text-purple-300 font-mono text-sm">
+                <code className="px-4 py-2 bg-black/30 rounded-lg text-purple-300 font-mono text-sm break-all">
                   {channelName}
                 </code>
                 <button
                   onClick={copyInviteLink}
-                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all flex-shrink-0"
                   title={dict?.meet?.copyInvite || 'Copy invite link'}
                 >
                   {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
@@ -853,7 +914,7 @@ export default function AgoraVideoMeetPage() {
           </div>
 
           {/* Channel Input (when idle) */}
-          {status === 'idle' && (
+          {status === 'idle' && !roomParam && (
             <div className="mt-6 pt-6 border-t border-white/10">
               <label className="block text-sm font-medium text-white/60 mb-2">
                 {dict?.meet?.channelName || 'Channel Name'}
