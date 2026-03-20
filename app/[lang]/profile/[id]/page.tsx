@@ -456,7 +456,7 @@ export default function PublicProfilePage() {
                           className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-3 py-1 text-xs lg:text-sm"
                         >
                           <Sparkles className="h-3 w-3 mr-1" />
-                          {badge.type.replace('_', ' ')}
+                          {badge?.type?.replace('_', ' ')}
                         </Badge>
                       ))}
                     </div>
