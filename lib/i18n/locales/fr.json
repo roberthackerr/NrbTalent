@@ -5,6 +5,8 @@
     "searchPlaceholder": "Rechercher par compétence, nom...",
     "filters": "Filtres",
     "filterTitle": "Filtres",
+      "loadingMore": "Chargement...",
+    "noMoreFreelancers": "Plus de freelancers à charger",
     "availability": "Disponibilité",
     "all": "Tous",
     "available": "Disponible",

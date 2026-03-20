@@ -5,6 +5,8 @@
     "searchPlaceholder": "Search by skill, name...",
     "filters": "Filters",
     "filterTitle": "Filters",
+     "loadingMore": "Loading...",
+    "noMoreFreelancers": "No more freelancers to load",
     "availability": "Availability",
     "all": "All",
     "available": "Available",
