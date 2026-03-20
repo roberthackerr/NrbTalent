@@ -1,4 +1,26 @@
 {
+  "meetButton": {
+    "startMeeting": "Start a Meeting",
+    "joinMeeting": "Join a Meeting",
+    "instantMeeting": "Instant Meeting",
+    "scheduleMeeting": "Schedule Meeting",
+    "roomName": "Room Name",
+    "roomNamePlaceholder": "Enter room name (e.g., project-discussion)",
+    "randomRoom": "Random",
+    "creating": "Creating...",
+    "joining": "Joining...",
+    "startNow": "Start Now",
+    "join": "Join",
+    "cancel": "Cancel",
+    "createInstant": "Create Instant Room",
+    "joinExisting": "Join Existing Room",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied!",
+    "description": "Start a video call with anyone, anywhere",
+    "instantDescription": "Create a room and invite others instantly",
+    "joinDescription": "Join an existing meeting with a room name",
+    "recentMeetings": "Recent Meetings"
+  },
     "meet": {
     "tagline": "Video calls reimagined",
     "connected": "Connected",

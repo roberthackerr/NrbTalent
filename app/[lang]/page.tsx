@@ -26,6 +26,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getDictionarySafe } from "@/lib/i18n/dictionaries"
 import type { Locale } from "@/lib/i18n/config"
+import { MeetButtonHero } from "@/components/meet/MeetButton"
 
 // ─── Types ─────────────────────────────────────────────────────
 type ItemType = "group_post" | "project" | "gig" | "ai_match"
@@ -304,6 +305,10 @@ export default function HomePage() {
         dict={dict} 
         lang={lang} 
       />
+      <div className="mt-8 flex justify-center gap-4">
+          <MeetButtonHero dict={dict} lang={lang} />
+          {/* Autres boutons... */}
+        </div>
         <StatsOverview dict={dict} />
         <QuickActions user={session?.user} onIDEClick={() => setShowIDE(true)} dict={dict} />
 

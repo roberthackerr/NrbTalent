@@ -1,4 +1,26 @@
 {
+   "meetButton": {
+    "startMeeting": "Démarrer une réunion",
+    "joinMeeting": "Rejoindre une réunion",
+    "instantMeeting": "Réunion instantanée",
+    "scheduleMeeting": "Planifier une réunion",
+    "roomName": "Nom de la salle",
+    "roomNamePlaceholder": "Entrez un nom de salle (ex: projet-discussion)",
+    "randomRoom": "Aléatoire",
+    "creating": "Création...",
+    "joining": "Connexion...",
+    "startNow": "Commencer maintenant",
+    "join": "Rejoindre",
+    "cancel": "Annuler",
+    "createInstant": "Créer une salle instantanée",
+    "joinExisting": "Rejoindre une salle existante",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié !",
+    "description": "Commencez un appel vidéo avec n'importe qui, n'importe où",
+    "instantDescription": "Créez une salle et invitez d'autres personnes instantanément",
+    "joinDescription": "Rejoignez une réunion existante avec un nom de salle",
+    "recentMeetings": "Réunions récentes"
+  },
    "meet": {
     "tagline": "Les appels vidéo réinventés",
     "connected": "Connecté",

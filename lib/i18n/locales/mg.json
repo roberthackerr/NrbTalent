@@ -1,4 +1,26 @@
 {
+  "meetButton": {
+    "startMeeting": "Manomboka fivoriana",
+    "joinMeeting": "Miditra fivoriana",
+    "instantMeeting": "Fivoriana eo no ho eo",
+    "scheduleMeeting": "Mandamina fivoriana",
+    "roomName": "Anaran'ny efitra",
+    "roomNamePlaceholder": "Ampidiro anaran'ny efitra (ohatra: tetikasa-resadresaka)",
+    "randomRoom": "Kisendra",
+    "creating": "Mamorona...",
+    "joining": "Miditra...",
+    "startNow": "Manomboka izao",
+    "join": "Miditra",
+    "cancel": "Ajanona",
+    "createInstant": "Mamorona efitra eo no ho eo",
+    "joinExisting": "Miditra efitra efa misy",
+    "copyLink": "Adikao ny rohy",
+    "linkCopied": "Nadika ny rohy!",
+    "description": "Manomboka antso video miaraka amin'iza na iza, na aiza na aiza",
+    "instantDescription": "Mamorona efitra sy manasa hafa eo no ho eo",
+    "joinDescription": "Miditra fivoriana efa misy amin'ny alalan'ny anaran'ny efitra",
+    "recentMeetings": "Fivoriana vao haingana"
+  },
   "meet": {
     "tagline": "Fiantsoana video nohavaozina",
     "connected": "Tafiditra",

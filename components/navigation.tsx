@@ -28,6 +28,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { MeetButtonCompact } from "./meet/MeetButton"
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
@@ -154,7 +155,10 @@ export function Navigation() {
               </Link>
             ))}
           </div>
-
+              <div className="flex items-center gap-4">
+          <MeetButtonCompact dict={dict} lang={lang} />
+          {/* Autres liens... */}
+        </div>
           {/* Actions Desktop */}
           <div className="hidden lg:flex items-center gap-3">
             <SearchCommand />

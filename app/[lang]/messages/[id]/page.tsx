@@ -29,6 +29,7 @@ import { useMessagePreferences } from "@/hooks/useMessagePreferences"
 // Types
 import { Conversation, Message, User } from "@/types/chat"
 import { CallDebugPanel } from "@/components/CallDebugPanel"
+import { MeetButtonFloating } from "@/components/meet/MeetButton"
 
 export default function ConversationPage() {
   const { data: session, status: sessionStatus } = useSession()
@@ -1293,7 +1294,7 @@ useEffect(() => {
         reconnectAttempt={wsManager.reconnectAttempt}
         onReconnect={wsManager.reconnect}
       />
-
+       {session && <MeetButtonFloating  lang={"fr"} />}
       <ConversationsSidebar
         conversations={conversationManager.conversations}
         selectedConversation={conversationManager.selectedConversationId}
