@@ -36,7 +36,7 @@ interface Freelancer {
   hourlyRate?: number
   rating?: number
   completedProjects?: number
-  skills: string[]
+  skills: any
   availability: "available" | "busy" | "unavailable"
   isVerified: boolean
 }
@@ -486,20 +486,21 @@ function FreelancerCardGrid({ freelancer, dict, lang }: { freelancer: Freelancer
         </div>
 
         {/* Skills */}
-        {freelancer.skills && freelancer.skills.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3 mb-3">
-            {freelancer.skills.slice(0, 3).map((skill, i) => (
-              <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 dark:bg-slate-800">
-                {skill}
-              </Badge>
-            ))}
-            {freelancer.skills.length > 3 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                +{freelancer.skills.length - 3}
-              </Badge>
-            )}
-          </div>
-        )}
+        // ✅ CORRECTION
+{freelancer.skills && freelancer.skills.length > 0 && (
+  <div className="flex flex-wrap gap-1 mt-3 mb-3">
+    {freelancer.skills.slice(0, 3).map((skill, i) => (
+      <Badge key={skill.id || i} variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 dark:bg-slate-800">
+        {skill.name}  {/* ✅ Afficher skill.name au lieu de l'objet entier */}
+      </Badge>
+    ))}
+    {freelancer.skills.length > 3 && (
+      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+        +{freelancer.skills.length - 3}
+      </Badge>
+    )}
+  </div>
+)}
 
         {/* Stats */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
