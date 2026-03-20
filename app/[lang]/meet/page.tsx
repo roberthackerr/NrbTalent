@@ -1,7 +1,7 @@
 // app/[lang]/meet/page.tsx
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
@@ -41,12 +41,17 @@ export default function AgoraVideoMeetPage() {
   
   const roomParam = searchParams.get('room')
   
+  // État pour le dictionnaire
   const [dict, setDict] = useState<any>(null)
+  
+  // État de la connexion
   const [status, setStatus] = useState<'idle' | 'connecting' | 'connected'>('idle')
   const [error, setError] = useState('')
   const [channelName, setChannelName] = useState(roomParam || `meet-${Math.floor(Math.random() * 10000)}`)
   const [connectionInfo, setConnectionInfo] = useState<any>(null)
   const [remoteUsers, setRemoteUsers] = useState<number[]>([])
+  
+  // État des périphériques
   const [isMobile, setIsMobile] = useState(false)
   const [hasAudio, setHasAudio] = useState(true)
   const [hasVideo, setHasVideo] = useState(true)
@@ -54,37 +59,47 @@ export default function AgoraVideoMeetPage() {
   const [cameraEnabled, setCameraEnabled] = useState(true)
   const [micEnabled, setMicEnabled] = useState(true)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
+  
+  // État des appareils sélectionnés
+  const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>('')
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('')
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
+  
+  // État UI
   const [copied, setCopied] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
-  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
   const [autoConnect, setAutoConnect] = useState(false)
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
   
+  // Refs
   const localVideoRef = useRef<HTMLDivElement>(null)
   const remoteVideoContainerRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
   const remotePlayersRef = useRef<Map<number, HTMLDivElement>>(new Map())
   const containerRef = useRef<HTMLDivElement>(null)
-  
-  const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID || ''
+  const mountedRef = useRef(true)
 
   // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
+    return () => {
+      mountedRef.current = false
+    }
   }, [lang])
 
   // Auto-connect if room parameter exists
   useEffect(() => {
-    if (roomParam && dict && permissionStatus === 'granted' && !autoConnect && status === 'idle') {
+    if (roomParam && dict && permissionStatus === 'granted' && !autoConnect && status === 'idle' && !isConnecting) {
       setAutoConnect(true)
       setTimeout(() => {
         testConnection()
       }, 500)
     }
-  }, [roomParam, dict, permissionStatus, status, autoConnect])
+  }, [roomParam, dict, permissionStatus, status, autoConnect, isConnecting])
 
   useEffect(() => {
     const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -123,6 +138,14 @@ export default function AgoraVideoMeetPage() {
       
       if (audioInputs.length === 0) setHasAudio(false)
       if (videoInputs.length === 0) setHasVideo(false)
+      
+      // Définir les appareils par défaut
+      if (videoInputs.length > 0 && !selectedVideoDevice) {
+        setSelectedVideoDevice(videoInputs[0].deviceId)
+      }
+      if (audioInputs.length > 0 && !selectedAudioDevice) {
+        setSelectedAudioDevice(audioInputs[0].deviceId)
+      }
       
     } catch (err) {
       console.warn('Could not check devices:', err)
@@ -176,7 +199,7 @@ export default function AgoraVideoMeetPage() {
 
   const getToken = async () => {
     try {
-      const response = await fetch(`/api/agora/token?channel=${channelName}`)
+      const response = await fetch(`/api/agora/token?channel=${encodeURIComponent(channelName)}`)
       const data = await response.json()
       if (!data.success) {
         throw new Error(data.error || dict?.meet?.errors?.token || 'Failed to generate token')
@@ -187,9 +210,9 @@ export default function AgoraVideoMeetPage() {
     }
   }
 
-  const playLocalPreview = async (videoTrack: any) => {
+  const playLocalPreview = useCallback(async (videoTrack: any) => {
     const container = localVideoRef.current
-    if (!container) return
+    if (!container || !mountedRef.current) return
     
     // Nettoyer proprement l'ancien contenu
     while (container.firstChild) {
@@ -218,11 +241,11 @@ export default function AgoraVideoMeetPage() {
     } catch (err) {
       console.warn('❌ Local preview error:', err)
     }
-  }
+  }, [cameraEnabled, dict])
 
-  const playRemoteVideo = async (user: any) => {
+  const playRemoteVideo = useCallback(async (user: any) => {
     const container = remoteVideoContainerRef.current
-    if (!container) return
+    if (!container || !mountedRef.current) return
     
     let playerDiv = remotePlayersRef.current.get(user.uid)
     if (!playerDiv) {
@@ -256,9 +279,11 @@ export default function AgoraVideoMeetPage() {
         await videoEl.play().catch(() => {})
       }
     }
-  }
+  }, [])
 
-  const subscribeToUserMedia = async (user: any) => {
+  const subscribeToUserMedia = useCallback(async (user: any) => {
+    if (!clientRef.current || !mountedRef.current) return
+    
     try {
       if (user.hasVideo) {
         await clientRef.current.subscribe(user, 'video')
@@ -272,7 +297,7 @@ export default function AgoraVideoMeetPage() {
     } catch (err: any) {
       console.error('❌ Subscribe media error for user', user.uid, err)
     }
-  }
+  }, [playRemoteVideo])
 
   useEffect(() => {
     if (status !== 'connected') return
@@ -280,11 +305,63 @@ export default function AgoraVideoMeetPage() {
     if (videoTrack) {
       playLocalPreview(videoTrack)
     }
-  }, [status, cameraEnabled])
+  }, [status, cameraEnabled, playLocalPreview])
   
-  const testConnection = async () => {
-    if (status !== 'idle') return
+  const setupRemoteUserHandlers = useCallback(() => {
+    if (!clientRef.current) return
     
+    clientRef.current.on('user-published', async (user: any, mediaType: string) => {
+      console.log('👤 Remote user published:', user.uid, mediaType)
+      if (!mountedRef.current) return
+      try {
+        await clientRef.current.subscribe(user, mediaType)
+        
+        if (mediaType === 'video') {
+          await playRemoteVideo(user)
+          setRemoteUsers(prev => prev.includes(user.uid) ? prev : [...prev, user.uid])
+        }
+        if (mediaType === 'audio') {
+          user.audioTrack.play()
+        }
+      } catch (err: any) {
+        console.error('❌ Subscribe error:', err)
+      }
+    })
+
+    clientRef.current.on('user-unpublished', (user: any) => {
+      console.log('👤 User unpublished:', user.uid)
+      const playerDiv = remotePlayersRef.current.get(user.uid)
+      if (playerDiv && remoteVideoContainerRef.current?.contains(playerDiv)) {
+        remoteVideoContainerRef.current.removeChild(playerDiv)
+      }
+      remotePlayersRef.current.delete(user.uid)
+      setRemoteUsers(prev => prev.filter(id => id !== user.uid))
+    })
+    
+    clientRef.current.on('user-joined', async (user: any) => {
+      console.log('👋 User joined:', user.uid)
+      await subscribeToUserMedia(user)
+    })
+    
+    clientRef.current.on('user-left', (user: any) => {
+      console.log('👋 User left:', user.uid)
+      const playerDiv = remotePlayersRef.current.get(user.uid)
+      if (playerDiv && remoteVideoContainerRef.current?.contains(playerDiv)) {
+        remoteVideoContainerRef.current.removeChild(playerDiv)
+      }
+      remotePlayersRef.current.delete(user.uid)
+      setRemoteUsers(prev => prev.filter(id => id !== user.uid))
+    })
+
+    clientRef.current.on('connection-state-change', (curState: string, prevState: string) => {
+      console.log('🔌 Connection:', prevState, '→', curState)
+    })
+  }, [playRemoteVideo, subscribeToUserMedia])
+
+  const testConnection = async () => {
+    if (status !== 'idle' || isConnecting) return
+    
+    setIsConnecting(true)
     setStatus('connecting')
     setError('')
     setConnectionInfo(null)
@@ -379,12 +456,14 @@ export default function AgoraVideoMeetPage() {
       
       localTracksRef.current = tracks
       
-      setStatus('connected')
-      setConnectionInfo({
-        channelName: tokenData.channelName,
-        uid: tokenData.uid,
-        appId: tokenData.appId
-      })
+      if (mountedRef.current) {
+        setStatus('connected')
+        setConnectionInfo({
+          channelName: tokenData.channelName,
+          uid: tokenData.uid,
+          appId: tokenData.appId
+        })
+      }
       
       if (cameraTrack) {
         await playLocalPreview(cameraTrack)
@@ -401,71 +480,27 @@ export default function AgoraVideoMeetPage() {
     } catch (error: any) {
       console.error('❌ Connection error:', error)
       
-      if (error.message.includes('AGORA_APP_ID')) {
-        setError(`${dict?.meet?.errors?.config || 'Config Error'}: ${error.message}`)
-      } else if (error.message.includes('token')) {
-        setError(`${dict?.meet?.errors?.token || 'Token Error'}: ${error.message}`)
-      } else if (error.code === 'PERMISSION_DENIED') {
-        setError(dict?.meet?.errors?.permissionDenied || 'Permission denied')
-      } else {
-        setError(`${dict?.meet?.errors?.connection || 'Error'}: ${error.message || 'Unknown error'}`)
-      }
-      
-      setStatus('idle')
-    }
-  }
-
-  const setupRemoteUserHandlers = () => {
-    if (!clientRef.current) return
-    
-    clientRef.current.on('user-published', async (user: any, mediaType: string) => {
-      console.log('👤 Remote user published:', user.uid, mediaType)
-      try {
-        await clientRef.current.subscribe(user, mediaType)
+      if (mountedRef.current) {
+        if (error.message.includes('AGORA_APP_ID')) {
+          setError(`${dict?.meet?.errors?.config || 'Config Error'}: ${error.message}`)
+        } else if (error.message.includes('token')) {
+          setError(`${dict?.meet?.errors?.token || 'Token Error'}: ${error.message}`)
+        } else if (error.code === 'PERMISSION_DENIED') {
+          setError(dict?.meet?.errors?.permissionDenied || 'Permission denied')
+        } else {
+          setError(`${dict?.meet?.errors?.connection || 'Error'}: ${error.message || 'Unknown error'}`)
+        }
         
-        if (mediaType === 'video') {
-          await playRemoteVideo(user)
-          setRemoteUsers(prev => prev.includes(user.uid) ? prev : [...prev, user.uid])
-        }
-        if (mediaType === 'audio') {
-          user.audioTrack.play()
-        }
-      } catch (err: any) {
-        console.error('❌ Subscribe error:', err)
+        setStatus('idle')
       }
-    })
-
-    clientRef.current.on('user-unpublished', (user: any) => {
-      console.log('👤 User unpublished:', user.uid)
-      const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv && remoteVideoContainerRef.current?.contains(playerDiv)) {
-        remoteVideoContainerRef.current.removeChild(playerDiv)
-      }
-      remotePlayersRef.current.delete(user.uid)
-      setRemoteUsers(prev => prev.filter(id => id !== user.uid))
-    })
-    
-    clientRef.current.on('user-joined', async (user: any) => {
-      console.log('👋 User joined:', user.uid)
-      await subscribeToUserMedia(user)
-    })
-    
-    clientRef.current.on('user-left', (user: any) => {
-      console.log('👋 User left:', user.uid)
-      const playerDiv = remotePlayersRef.current.get(user.uid)
-      if (playerDiv && remoteVideoContainerRef.current?.contains(playerDiv)) {
-        remoteVideoContainerRef.current.removeChild(playerDiv)
-      }
-      remotePlayersRef.current.delete(user.uid)
-      setRemoteUsers(prev => prev.filter(id => id !== user.uid))
-    })
-
-    clientRef.current.on('connection-state-change', (curState: string, prevState: string) => {
-      console.log('🔌 Connection:', prevState, '→', curState)
-    })
+    } finally {
+      setIsConnecting(false)
+    }
   }
   
   const cleanup = async () => {
+    if (!mountedRef.current) return
+    
     try {
       // Arrêter toutes les pistes locales
       localTracksRef.current.forEach(track => {
@@ -477,6 +512,7 @@ export default function AgoraVideoMeetPage() {
       
       if (clientRef.current) {
         await clientRef.current.leave()
+        clientRef.current = null
       }
       
       // Nettoyer les conteneurs vidéo
@@ -495,12 +531,11 @@ export default function AgoraVideoMeetPage() {
       remotePlayersRef.current.clear()
       localTracksRef.current = []
       setRemoteUsers([])
+      setConnectionInfo(null)
+      setStatus('idle')
       
     } catch (err) {
       console.error('Cleanup error:', err)
-    } finally {
-      setStatus('idle')
-      setConnectionInfo(null)
     }
   }
 
@@ -523,51 +558,45 @@ export default function AgoraVideoMeetPage() {
   }
 
   const switchCamera = async () => {
-    if (!isMobile || isSwitchingCamera) return
+    if (!isMobile || isSwitchingCamera || status !== 'connected') return
     
     setIsSwitchingCamera(true)
     const newFacing = facingMode === 'user' ? 'environment' : 'user'
     
     try {
-      if (status === 'connected') {
-        const currentVideoTrack = localTracksRef.current.find(t => t?.trackMediaType === 'video')
+      const currentVideoTrack = localTracksRef.current.find(t => t?.trackMediaType === 'video')
+      
+      if (currentVideoTrack && clientRef.current) {
+        // Arrêter et fermer l'ancienne piste
+        await currentVideoTrack.stop()
+        await currentVideoTrack.close()
         
-        if (currentVideoTrack) {
-          // Arrêter et fermer l'ancienne piste
-          await currentVideoTrack.stop()
-          await currentVideoTrack.close()
-          
-          // Créer une nouvelle piste avec le nouveau mode
-          const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
-          const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
-            facingMode: newFacing,
-            encoderConfig: {
-              width: { ideal: 640, max: 1280 },
-              height: { ideal: 480, max: 720 },
-              frameRate: { ideal: 30, max: 30 }
-            }
-          })
-          
-          // Remplacer dans le tableau des pistes
-          const index = localTracksRef.current.findIndex(t => t?.trackMediaType === 'video')
-          if (index !== -1) {
-            localTracksRef.current[index] = newVideoTrack
+        // Créer une nouvelle piste avec le nouveau mode
+        const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
+        const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
+          facingMode: newFacing,
+          encoderConfig: {
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 },
+            frameRate: { ideal: 30, max: 30 }
           }
-          
-          // Publier la nouvelle piste
-          if (clientRef.current) {
-            await clientRef.current.unpublish(currentVideoTrack)
-            await clientRef.current.publish(newVideoTrack)
-          }
-          
-          // Mettre à jour l'affichage local
-          await playLocalPreview(newVideoTrack)
-          
-          setFacingMode(newFacing)
-          console.log('✅ Camera switched to:', newFacing)
+        })
+        
+        // Remplacer dans le tableau des pistes
+        const index = localTracksRef.current.findIndex(t => t?.trackMediaType === 'video')
+        if (index !== -1) {
+          localTracksRef.current[index] = newVideoTrack
         }
-      } else {
+        
+        // Publier la nouvelle piste
+        await clientRef.current.unpublish(currentVideoTrack)
+        await clientRef.current.publish(newVideoTrack)
+        
+        // Mettre à jour l'affichage local
+        await playLocalPreview(newVideoTrack)
+        
         setFacingMode(newFacing)
+        console.log('✅ Camera switched to:', newFacing)
       }
     } catch (err) {
       console.error('Switch camera error:', err)
@@ -867,14 +896,14 @@ export default function AgoraVideoMeetPage() {
               ) : (
                 <button
                   onClick={testConnection}
-                  disabled={status === 'connecting' || permissionStatus !== 'granted'}
+                  disabled={status === 'connecting' || permissionStatus !== 'granted' || isConnecting}
                   className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${
-                    status === 'connecting' || permissionStatus !== 'granted'
+                    status === 'connecting' || permissionStatus !== 'granted' || isConnecting
                       ? 'bg-slate-600 cursor-not-allowed opacity-50'
                       : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-green-500/25'
                   }`}
                 >
-                  {status === 'connecting' ? (
+                  {status === 'connecting' || isConnecting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Connecting...
@@ -948,7 +977,7 @@ export default function AgoraVideoMeetPage() {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Camera</label>
                   <select
-                    value={videoDevices.find(d => d.deviceId === selectedVideoDevice)?.deviceId || ''}
+                    value={selectedVideoDevice}
                     onChange={(e) => setSelectedVideoDevice(e.target.value)}
                     className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
                   >
@@ -964,7 +993,7 @@ export default function AgoraVideoMeetPage() {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Microphone</label>
                   <select
-                    value={audioDevices.find(d => d.deviceId === selectedAudioDevice)?.deviceId || ''}
+                    value={selectedAudioDevice}
                     onChange={(e) => setSelectedAudioDevice(e.target.value)}
                     className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
                   >
