@@ -108,7 +108,7 @@
     "@tailwindcss/postcss": "^4.1.9",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22",
-    "@types/react": "^19",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
     "postcss": "^8.5",
