@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import ProfessionalVSCode from "@/components/ide/professional-vscode"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -263,13 +263,13 @@ export default function ProfessionalIDEPage() {
         </Card>
 
         {/* Éditeur VSCode Professionnel */}
-        <ProfessionalVSCode
-          onSave={handleSave}
-          onRun={handleRun}
-          onDeploy={handleDeploy}
-          height="70vh"
-          collaborative={true}
-        />
+     <iframe
+	src="https://jam004-nrbtalents.hf.space"
+	frameborder="0"
+	width="850"
+	height="450"
+></iframe>
+
 
         {/* Informations professionnelles */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
