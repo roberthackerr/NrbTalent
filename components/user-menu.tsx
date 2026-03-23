@@ -111,66 +111,66 @@ export function UserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1">
       {/* 🔔 Notifications */}
       <NotificationBell />
 
       {/* 💬 Messages Dropdown séparé */}
       <DropdownMenu open={messagesOpen} onOpenChange={setMessagesOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-lg hover:bg-accent/50 transition-colors">
-            <MessageCircle className="h-4.5 w-4.5" />
-            <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-full flex items-center justify-center shadow-lg">
+          <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-lg hover:bg-accent/50">
+            <MessageCircle className="h-4 w-4" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
               2
             </span>
           </Button>
         </DropdownMenuTrigger>
         
         <DropdownMenuContent 
-          className="w-96 max-h-[80vh] overflow-hidden rounded-xl border-0 shadow-2xl" 
+          className="w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-h-[70vh] overflow-hidden rounded-xl border-0 shadow-2xl" 
           align="end" 
           forceMount
         >
           {/* En-tête Messages */}
-          <DropdownMenuLabel className="p-4 border-b border-border/50 bg-gradient-to-r from-background/50 to-background/30">
-            <div className="flex items-center justify-between gap-3">
+          <DropdownMenuLabel className="p-3 sm:p-4 border-b border-border/50 bg-gradient-to-r from-background/50 to-background/30 space-y-3">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <h3 className="font-bold text-lg">Messages</h3>
+                <h3 className="font-bold text-base sm:text-lg">Messages</h3>
                 <p className="text-xs text-muted-foreground font-medium">
-                  {recentConversations.length} conversations actives
+                  {recentConversations.length} conversations
                 </p>
               </div>
-              <Button size="sm" asChild className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 shadow-md hover:shadow-lg transition-all h-8">
-                <Link href="/messages" className="flex items-center gap-1.5">
-                  <Plus className="h-4 w-4" />
+              <Button size="sm" asChild className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 h-8 px-2 sm:px-3">
+                <Link href="/messages" className="flex items-center gap-1">
+                  <Plus className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline text-xs font-semibold">Nouveau</span>
                 </Link>
               </Button>
             </div>
             
             {/* Barre de recherche */}
-            <div className="relative mt-3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
               <input
                 type="text"
                 placeholder="Rechercher..."
-                className="w-full pl-10 pr-4 py-2 text-sm border border-border/50 rounded-lg bg-accent/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-9 pr-3 py-1.5 text-sm border border-border/50 rounded-lg bg-accent/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
           </DropdownMenuLabel>
 
           {/* Liste des conversations */}
-          <div className="p-2 max-h-96 overflow-y-auto">
+          <div className="p-1.5 sm:p-2 max-h-96 overflow-y-auto">
             {isLoading ? (
               // Squelette de chargement amélioré
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
-                  <div className="h-12 w-12 bg-muted rounded-full flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-3 bg-muted rounded w-1/2" />
+                <div key={i} className="flex items-center gap-2 p-2 sm:p-3 rounded-lg animate-pulse">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-muted rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-2 bg-muted rounded w-1/2" />
                   </div>
-                  <div className="h-3 bg-muted rounded w-8" />
+                  <div className="h-2 bg-muted rounded w-6 flex-shrink-0" />
                 </div>
               ))
             ) : recentConversations.length > 0 ? (
@@ -182,38 +182,38 @@ export function UserMenu() {
                   <DropdownMenuItem 
                     key={conversation._id} 
                     asChild 
-                    className="p-3 cursor-pointer rounded-lg hover:bg-accent/50 transition-colors"
+                    className="p-1.5 sm:p-2 cursor-pointer rounded-lg hover:bg-accent/50 transition-colors"
                   >
                     <Link 
                       href={`/messages?conversation=${conversation._id}`}
                       onClick={() => setMessagesOpen(false)}
                       className="w-full"
                     >
-                      <div className="flex items-center gap-3 w-full">
-                        <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-background">
+                      <div className="flex items-center gap-2 sm:gap-3 w-full">
+                        <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 border-2 border-background">
                           <AvatarImage src={otherParticipant?.avatar} />
-                          <AvatarFallback className="bg-gradient-to-br from-green-500 to-blue-600 text-white font-medium">
+                          <AvatarFallback className="bg-gradient-to-br from-green-500 to-blue-600 text-white font-medium text-xs sm:text-sm">
                             {otherParticipant?.name?.charAt(0)?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className={`text-sm font-semibold truncate ${isUnread ? 'text-foreground' : 'text-foreground/80'}`}>
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <p className={`text-xs sm:text-sm font-semibold truncate ${isUnread ? 'text-foreground' : 'text-foreground/80'}`}>
                               {otherParticipant?.name || 'Utilisateur'}
                             </p>
-                            <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {getMessageTime(conversation)}
                             </span>
                           </div>
                           
-                          <p className={`text-sm truncate ${isUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                          <p className={`text-xs sm:text-sm truncate ${isUnread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                             {formatLastMessage(conversation.lastMessage)}
                           </p>
                         </div>
                         
                         {isUnread && (
-                          <span className="h-6 w-6 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center flex-shrink-0 font-medium">
+                          <span className="h-5 w-5 sm:h-6 sm:w-6 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center flex-shrink-0 font-bold">
                             {conversation.unreadCount}
                           </span>
                         )}
@@ -224,16 +224,16 @@ export function UserMenu() {
               })
             ) : (
               // État vide
-              <div className="text-center py-8">
-                <MessageCircle className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-                <p className="text-lg font-medium text-muted-foreground mb-2">Aucune conversation</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Commencez une nouvelle conversation pour échanger avec d'autres utilisateurs
+              <div className="text-center py-6 sm:py-8 px-3">
+                <MessageCircle className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-base sm:text-lg font-medium text-muted-foreground mb-2">Aucune conversation</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
+                  Commencez une nouvelle conversation
                 </p>
-                <Button asChild>
+                <Button asChild size="sm">
                   <Link href="/messages" onClick={() => setMessagesOpen(false)}>
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Démarrer une conversation
+                    <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+                    Démarrer
                   </Link>
                 </Button>
               </div>
@@ -241,10 +241,10 @@ export function UserMenu() {
           </div>
 
           {/* Footer */}
-          <div className="p-3 border-t bg-muted/20">
-            <Button variant="outline" className="w-full" asChild>
+          <div className="p-2 sm:p-3 border-t bg-muted/20">
+            <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm" asChild>
               <Link href="/messages" onClick={() => setMessagesOpen(false)}>
-                Voir toutes les conversations
+                Voir tous
               </Link>
             </Button>
           </div>
@@ -254,7 +254,7 @@ export function UserMenu() {
       {/* 👤 Menu utilisateur simplifié */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-9 px-2 rounded-lg gap-2 hover:bg-accent/50 transition-colors duration-200 border border-border/20 hover:border-border/50">
+          <Button variant="ghost" className="relative h-8 px-1.5 sm:px-2 rounded-lg gap-1 sm:gap-2 hover:bg-accent/50 border border-border/20 hover:border-border/50">
             <Avatar className="h-8 w-8 border-2 border-background/50">
               <AvatarImage src={user.image || ""} alt={user.name || ""} />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 text-white text-xs font-bold">
@@ -263,33 +263,33 @@ export function UserMenu() {
             </Avatar>
             
             {/* Info utilisateur - visible sur desktop */}
-            <div className="hidden sm:flex flex-col items-start">
-              <p className="text-sm font-semibold leading-tight">{user.name}</p>
+            <div className="hidden md:flex flex-col items-start">
+              <p className="text-xs sm:text-sm font-semibold leading-tight">{user.name}</p>
               <p className="text-xs text-muted-foreground leading-tight capitalize font-medium">
                 {user.role || 'Utilisateur'}
               </p>
             </div>
             
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70 hidden sm:block transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70 hidden md:block" />
           </Button>
         </DropdownMenuTrigger>
         
-        <DropdownMenuContent className="w-72 rounded-xl border-0 shadow-2xl" align="end" forceMount>
+        <DropdownMenuContent className="w-[calc(100vw-2rem)] sm:w-72 rounded-xl border-0 shadow-2xl" align="end" forceMount>
           {/* En-tête utilisateur */}
-          <DropdownMenuLabel className="p-4 bg-gradient-to-r from-background/50 to-background/30 border-b border-border/50">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12 border-2 border-border/30">
+          <DropdownMenuLabel className="p-3 sm:p-4 bg-gradient-to-r from-background/50 to-background/30 border-b border-border/50">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-border/30 flex-shrink-0">
                 <AvatarImage src={user.image || ""} alt={user.name || ""} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 text-white font-bold text-sm">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 text-white font-bold text-xs sm:text-sm">
                   {user.name?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{user.name}</p>
+                <p className="text-xs sm:text-sm font-bold truncate">{user.name}</p>
                 <p className="text-xs text-muted-foreground truncate font-medium">{user.email}</p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Briefcase className="h-3.5 w-3.5 text-muted-foreground/70" />
-                  <span className="text-xs text-muted-foreground capitalize font-semibold">
+                <div className="flex items-center gap-1 mt-1">
+                  <Briefcase className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/70 flex-shrink-0" />
+                  <span className="text-xs text-muted-foreground capitalize font-semibold truncate">
                     {user.role || 'Utilisateur'}
                   </span>
                 </div>
@@ -300,26 +300,26 @@ export function UserMenu() {
           <DropdownMenuSeparator />
 
           {/* Navigation principale */}
-          <div className="p-1.5 space-y-0.5">
+          <div className="p-1 sm:p-1.5 space-y-0.5">
             <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
-              <Link href={dashboardUrl} className="flex items-center gap-3 py-2.5">
-                <LayoutDashboard className="h-4.5 w-4.5 text-blue-600" />
-                <span className="font-semibold">Tableau de bord</span>
+              <Link href={dashboardUrl} className="flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2">
+                <LayoutDashboard className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-blue-600 flex-shrink-0" />
+                <span className="text-sm font-semibold">Tableau</span>
               </Link>
             </DropdownMenuItem>
             
             <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
-              <Link href="/profile" className="flex items-center gap-3 py-2.5">
-                <User className="h-4.5 w-4.5 text-violet-600" />
-                <span className="font-semibold">Mon profil</span>
+              <Link href="/profile" className="flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2">
+                <User className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-violet-600 flex-shrink-0" />
+                <span className="text-sm font-semibold">Profil</span>
               </Link>
             </DropdownMenuItem>
             
             <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
-              <Link href="/messages" className="flex items-center gap-3 py-2.5">
-                <MessageCircle className="h-4.5 w-4.5 text-purple-600" />
-                <span className="font-semibold">Messages</span>
-                <span className="ml-auto h-5 w-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-md">
+              <Link href="/messages" className="flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2">
+                <MessageCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-purple-600 flex-shrink-0" />
+                <span className="text-sm font-semibold">Messages</span>
+                <span className="ml-auto h-4 w-4 sm:h-5 sm:w-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold flex-shrink-0">
                   2
                 </span>
               </Link>
@@ -329,25 +329,25 @@ export function UserMenu() {
           <DropdownMenuSeparator />
 
           {/* Paramètres et Déconnexion */}
-          <div className="p-1.5 space-y-0.5 border-t border-border/50">
-            <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer mt-1.5">
-              <Link href="/dashboard/settings" className="flex items-center gap-3 py-2.5">
-                <Settings className="h-4.5 w-4.5 text-amber-600" />
-                <span className="font-semibold">Paramètres</span>
+          <div className="p-1 sm:p-1.5 space-y-0.5 border-t border-border/50">
+            <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
+              <Link href="/dashboard/settings" className="flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2">
+                <Settings className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-amber-600 flex-shrink-0" />
+                <span className="text-sm font-semibold">Paramètres</span>
               </Link>
             </DropdownMenuItem>
             
             <DropdownMenuItem 
               onClick={() => signOut({ callbackUrl: "/" })} 
-              className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-100/20 focus:text-red-600 flex items-center gap-3 py-2.5 rounded-lg transition-colors"
+              className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-100/20 focus:text-red-600 flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2 rounded-lg transition-colors"
             >
-              <LogOut className="h-4.5 w-4.5" />
-              <span className="font-semibold">Se déconnecter</span>
+              <LogOut className="h-4 w-4 sm:h-4.5 sm:w-4.5 flex-shrink-0" />
+              <span className="text-sm font-semibold">Déconnexion</span>
             </DropdownMenuItem>
           </div>
 
           {/* Footer avec version */}
-          <div className="p-3 border-t border-border/50 bg-muted/30 text-center rounded-b-xl">
+          <div className="p-2 sm:p-3 border-t border-border/50 bg-muted/30 text-center rounded-b-xl">
             <p className="text-xs text-muted-foreground font-semibold">
               NRB Talents <span className="text-blue-600 font-bold">v1.0</span>
             </p>
