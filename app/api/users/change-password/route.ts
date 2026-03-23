@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import bcrypt from "bcryptjs"
-import { notificationService } from "@/services/notificationService"
+import { notificationService } from "@/services/NotificationService"
 
 // Messages d'erreur multilingues
 const errorMessages = {
