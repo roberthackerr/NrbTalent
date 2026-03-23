@@ -11,6 +11,7 @@ import {
   Briefcase, BookOpen, Layers, CreditCard, UserCheck, BarChart3,
   Bell, Hash, GitBranch, Package, Cpu, ScrollText, Gavel, Cookie,
   Mail, Info, ArrowRight, Zap as ZapIcon,
+  
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { UserMenu } from "@/components/user-menu"
@@ -28,6 +29,7 @@ import {
 import { MeetButtonCompact } from "./meet/MeetButton"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
+import Image from "next/image"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MegaItem {
@@ -248,7 +250,13 @@ export function Navigation() {
               onClick={() => setOpenMenu(null)}
             >
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-md shrink-0">
-                <span className="text-white font-bold text-xs">NRB</span>
+                 <Image 
+                  src={`/logo.png?v=${Date.now()}`} 
+                  alt="NRBTalents" 
+                  width={32} 
+                  height={32} 
+                  className="h-8 w-8 transition-transform group-hover:scale-110" 
+                />
               </div>
               {/*
                 FIX CRITIQUE : "hidden md:flex" → "hidden lg:flex"
