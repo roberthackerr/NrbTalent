@@ -1,5 +1,7 @@
-// services/notificationService.ts - Version complète
+// services/notificationService.ts - Version server-side (sans fetch)
 import { NotificationCategory, NotificationPriority } from '@/types/notifications';
+import { getDatabase } from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export interface NotificationTemplate {
   category: NotificationCategory;
@@ -25,11 +27,8 @@ export interface SendNotificationOptions {
 
 class NotificationService {
   private static instance: NotificationService;
-  private apiBaseUrl: string;
 
-  private constructor() {
-    this.apiBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  }
+  private constructor() {}
 
   public static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -39,7 +38,7 @@ class NotificationService {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Méthode principale d'envoi
+  // Méthode principale d'envoi (direct DB)
   // ──────────────────────────────────────────────────────────────────────────
   async send(options: SendNotificationOptions): Promise<string | null> {
     try {
@@ -52,6 +51,8 @@ class NotificationService {
         if (!shouldSend) return null;
       }
 
+      const db = await getDatabase();
+      
       const notification = {
         userId: options.userId,
         category: options.category,
@@ -66,18 +67,11 @@ class NotificationService {
         updatedAt: new Date(),
       };
 
-      const response = await fetch(`${this.apiBaseUrl}/api/notifications`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notification),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to send notification: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result._id;
+      const result = await db.collection("notifications").insertOne(notification);
+      
+      console.log('✅ Notification inserted:', result.insertedId);
+      return result.insertedId.toString();
+      
     } catch (error) {
       console.error('NotificationService.send error:', error);
       return null;
@@ -85,21 +79,32 @@ class NotificationService {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Vérification des préférences
+  // Vérification des préférences (direct DB)
   // ──────────────────────────────────────────────────────────────────────────
   async shouldSendNotification(userId: string, category: NotificationCategory): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/notifications/preferences/${userId}`);
-      if (!response.ok) return true;
+      const db = await getDatabase();
       
-      const { preferences } = await response.json();
+      // Convertir userId en ObjectId si possible
+      let objectId;
+      try {
+        objectId = new ObjectId(userId);
+      } catch {
+        objectId = userId;
+      }
+      
+      const user = await db.collection("users").findOne(
+        { _id: objectId },
+        { projection: { notificationPreferences: 1 } }
+      );
       
       // Mapper la catégorie vers la clé de préférence
       const preferenceKey = this.getPreferenceKey(category);
-      return preferences?.[preferenceKey] !== false;
+      return user?.notificationPreferences?.[preferenceKey] !== false;
+      
     } catch (error) {
       console.error('Error checking preferences:', error);
-      return true;
+      return true; // En cas d'erreur, envoyer par défaut
     }
   }
 
@@ -564,6 +569,39 @@ class NotificationService {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // TEMPLATES - PROFILE & AVATAR
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  async sendAvatarUpdated(userId: string, oldAvatarUrl?: string, newAvatarUrl?: string) {
+    return this.send({
+      userId,
+      category: 'SYSTEM',
+      priority: 'LOW',
+      title: '🖼️ Photo de profil mise à jour',
+      message: 'Votre photo de profil a été mise à jour avec succès',
+      actionUrl: '/profile',
+      data: { 
+        action: 'avatar_updated',
+        oldAvatarUrl: oldAvatarUrl || null,
+        newAvatarUrl: newAvatarUrl || null,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+
+  async sendProfileUpdated(userId: string, updatedFields: string[]) {
+    return this.send({
+      userId,
+      category: 'SYSTEM',
+      priority: 'LOW',
+      title: '📝 Profil mis à jour',
+      message: `Les champs suivants ont été mis à jour : ${updatedFields.join(', ')}`,
+      actionUrl: '/profile',
+      data: { action: 'profile_updated', updatedFields }
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Méthodes utilitaires
   // ──────────────────────────────────────────────────────────────────────────
   
@@ -577,17 +615,50 @@ class NotificationService {
 
   async broadcast(template: Omit<SendNotificationOptions, 'userId'>, userFilter?: { role?: string; ids?: string[] }) {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/notifications/broadcast`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template, userFilter }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to broadcast: ${response.status}`);
+      const db = await getDatabase();
+      
+      // Construire le filtre
+      let filter: any = {};
+      
+      if (userFilter?.role) {
+        filter.role = userFilter.role;
       }
-
-      return await response.json();
+      
+      if (userFilter?.ids && userFilter.ids.length > 0) {
+        const objectIds = userFilter.ids.map(id => {
+          try {
+            return new ObjectId(id);
+          } catch {
+            return id;
+          }
+        });
+        filter._id = { $in: objectIds };
+      }
+      
+      // Récupérer les utilisateurs
+      const users = await db.collection("users").find(filter).toArray();
+      
+      // Créer les notifications
+      const notifications = users.map(user => ({
+        userId: user._id.toString(),
+        category: template.category,
+        priority: template.priority,
+        title: template.title,
+        message: template.message,
+        actionUrl: template.actionUrl,
+        image: template.image,
+        data: template.data || {},
+        status: 'UNREAD',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      
+      if (notifications.length > 0) {
+        await db.collection("notifications").insertMany(notifications);
+      }
+      
+      return { success: true, sent: notifications.length };
+      
     } catch (error) {
       console.error('NotificationService.broadcast error:', error);
       throw error;

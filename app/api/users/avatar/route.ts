@@ -138,26 +138,31 @@ export async function POST(request: Request) {
     // 🔔 ENVOYER UNE NOTIFICATION VIA NOTIFICATION SERVICE
     // ──────────────────────────────────────────────────────────────────────────
     try {
-      await notificationService.send({
-        userId: userId.toString(),
-        category: 'SYSTEM',
-        priority: 'LOW',
-        title: lang === 'fr' ? '🖼️ Photo de profil mise à jour' :
-               lang === 'mg' ? '🖼️ Sary momba anao nohavaozina' :
-               '🖼️ Profile picture updated',
-        message: lang === 'fr' ? 'Votre photo de profil a été mise à jour avec succès' :
-                 lang === 'mg' ? 'Nohavaozina soa aman-tsara ny sary momba anao' :
-                 'Your profile picture has been updated successfully',
-        actionUrl: '/profile',
-        data: {
-          entityType: 'profile',
-          action: 'avatar_updated',
-          oldAvatarUrl: user?.avatar || null,
-          newAvatarUrl: (uploadResult as any).secure_url
-        },
-        checkPreferences: true
-      })
-      console.log('✅ Notification sent via NotificationService')
+      await notificationService.sendAvatarUpdated(
+  userId.toString(),
+  user?.avatar, // ancien avatar
+  (uploadResult as any).secure_url // nouveau avatar
+);
+      // await notificationService.send({
+      //   userId: userId.toString(),
+      //   category: 'SYSTEM',
+      //   priority: 'LOW',
+      //   title: lang === 'fr' ? '🖼️ Photo de profil mise à jour' :
+      //          lang === 'mg' ? '🖼️ Sary momba anao nohavaozina' :
+      //          '🖼️ Profile picture updated',
+      //   message: lang === 'fr' ? 'Votre photo de profil a été mise à jour avec succès' :
+      //            lang === 'mg' ? 'Nohavaozina soa aman-tsara ny sary momba anao' :
+      //            'Your profile picture has been updated successfully',
+      //   actionUrl: '/profile',
+      //   data: {
+      //     entityType: 'profile',
+      //     action: 'avatar_updated',
+      //     oldAvatarUrl: user?.avatar || null,
+      //     newAvatarUrl: (uploadResult as any).secure_url
+      //   },
+      //   checkPreferences: true
+      // })
+      // console.log('✅ Notification sent via NotificationService')
     } catch (notifError) {
       console.error('⚠️ NotificationService error:', notifError)
     }
