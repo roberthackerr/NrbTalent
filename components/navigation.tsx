@@ -78,10 +78,8 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", fn)
   }, [])
 
-  // FIX: Close on route change
   useEffect(() => { setMobileOpen(false); setOpenMenu(null) }, [pathname])
 
-  // FIX: Close mega menu on outside click
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
@@ -155,10 +153,10 @@ export function Navigation() {
         {
           title: "Finance & Équipes",
           items: [
-            { href: `/${lang}/dashboard/payment-methods`, label: "Paiements",       description: "Méthodes de paiement & historique", icon: <CreditCard className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/dashboard/referrals`,       label: "Parrainage",       description: "Invitez & gagnez des récompenses",  icon: <GitBranch className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/teams`,                     label: "Équipes",          description: "Gérez vos équipes de travail",      icon: <Users className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/team/contracts`,            label: "Contrats Équipe",  description: "Contrats collectifs & missions",    icon: <Gavel className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/dashboard/payment-methods`, label: "Paiements",      description: "Méthodes de paiement & historique", icon: <CreditCard className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/dashboard/referrals`,       label: "Parrainage",      description: "Invitez & gagnez des récompenses",  icon: <GitBranch className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/teams`,                     label: "Équipes",         description: "Gérez vos équipes de travail",      icon: <Users className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/team/contracts`,            label: "Contrats Équipe", description: "Contrats collectifs & missions",    icon: <Gavel className="h-4 w-4 shrink-0" /> },
           ],
         },
       ],
@@ -171,19 +169,19 @@ export function Navigation() {
         {
           title: "Apprendre & Grandir",
           items: [
-            { href: `/${lang}/dashboard/academy`, label: "Académie",          description: "Formations & certifications",        icon: <Award className="h-4 w-4 shrink-0" />, badge: "Nouveau" },
-            { href: `/${lang}/blog`,              label: "Blog",              description: "Articles & tendances du secteur",    icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/news`,              label: "Actualités",        description: "Dernières nouvelles NRBTalents",     icon: <Bell className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/how-it-works`,      label: "Comment ça marche", description: "Guide complet de la plateforme",     icon: <BookOpen className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/dashboard/academy`, label: "Académie",          description: "Formations & certifications",      icon: <Award className="h-4 w-4 shrink-0" />, badge: "Nouveau" },
+            { href: `/${lang}/blog`,              label: "Blog",              description: "Articles & tendances du secteur",  icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/news`,              label: "Actualités",        description: "Dernières nouvelles NRBTalents",   icon: <Bell className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/how-it-works`,      label: "Comment ça marche", description: "Guide complet de la plateforme",   icon: <BookOpen className="h-4 w-4 shrink-0" /> },
           ],
         },
         {
           title: "Groupes & Réseau",
           items: [
-            { href: `/${lang}/groups`,           label: "Groupes",         description: "Rejoignez des communautés pros",   icon: <Hash className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/groups/create`,    label: "Créer un groupe", description: "Lancez votre propre communauté",  icon: <Layers className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/groups/my-groups`, label: "Mes groupes",     description: "Groupes que vous gérez",          icon: <Users className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/ide`,              label: "IDE Cloud",       description: "Codez directement dans le cloud", icon: <Code2 className="h-4 w-4 shrink-0" />, badge: "Beta" },
+            { href: `/${lang}/groups`,           label: "Groupes",         description: "Rejoignez des communautés pros",  icon: <Hash className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/groups/create`,    label: "Créer un groupe", description: "Lancez votre propre communauté", icon: <Layers className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/groups/my-groups`, label: "Mes groupes",     description: "Groupes que vous gérez",         icon: <Users className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/ide`,              label: "IDE Cloud",       description: "Codez dans le cloud",            icon: <Code2 className="h-4 w-4 shrink-0" />, badge: "Beta" },
           ],
         },
       ],
@@ -205,10 +203,10 @@ export function Navigation() {
         {
           title: "Support & Docs",
           items: [
-            { href: `/${lang}/docs`,    label: "Documentation", description: "API & guides développeurs",    icon: <FileText className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/faq`,     label: "FAQ",           description: "Questions fréquentes",         icon: <HelpCircle className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/contact`, label: "Contact",       description: "Parlez à notre équipe",        icon: <Mail className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/about`,   label: "À propos",      description: "Notre histoire & mission",     icon: <Info className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/docs`,    label: "Documentation", description: "API & guides développeurs", icon: <FileText className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/faq`,     label: "FAQ",           description: "Questions fréquentes",      icon: <HelpCircle className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/contact`, label: "Contact",       description: "Parlez à notre équipe",     icon: <Mail className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/about`,   label: "À propos",      description: "Notre histoire & mission",  icon: <Info className="h-4 w-4 shrink-0" /> },
           ],
         },
       ],
@@ -223,15 +221,10 @@ export function Navigation() {
 
   // ─── Loading skeleton ──────────────────────────────────────────────────────
   if (!dict) return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/95 backdrop-blur-xl border-b border-border/40">
-      <div className="mx-auto max-w-7xl px-4 h-full flex items-center justify-between">
-        <div className="h-8 w-32 bg-muted animate-pulse rounded-xl shrink-0" />
-        <div className="flex gap-2">
-          {[80, 96, 80, 64, 80].map((w, i) => (
-            <div key={i} className="h-7 bg-muted animate-pulse rounded-lg" style={{ width: w }} />
-          ))}
-        </div>
-        <div className="h-8 w-24 bg-muted animate-pulse rounded-xl shrink-0" />
+    <div className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-background/95 backdrop-blur-xl border-b border-border/40">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 h-full flex items-center justify-between">
+        <div className="h-8 w-8 bg-muted animate-pulse rounded-lg shrink-0" />
+        <div className="h-8 w-8 bg-muted animate-pulse rounded-lg shrink-0 lg:hidden" />
       </div>
     </div>
   )
@@ -244,12 +237,11 @@ export function Navigation() {
           ? "bg-background/95 backdrop-blur-xl border-b border-border/40 shadow-lg"
           : "bg-background/90 backdrop-blur-md border-b border-border/30"
       )}>
-        {/* FIX: removed w-full + px on inner div — keep a single padded container */}
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-          <div className="flex h-14 sm:h-16 items-center justify-between gap-3">
+          {/* FIX: gap-2 réduit — évite le débordement qui cache le hamburger */}
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
 
             {/* ── Logo ─────────────────────────────────────────────────────── */}
-            {/* FIX: shrink-0 + min-w-fit so logo NEVER compresses */}
             <Link
               href={`/${lang}`}
               className="flex items-center gap-2 group shrink-0 min-w-fit"
@@ -258,7 +250,13 @@ export function Navigation() {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-md shrink-0">
                 <span className="text-white font-bold text-xs">NRB</span>
               </div>
-              <div className="hidden md:flex flex-col">
+              {/*
+                FIX CRITIQUE : "hidden md:flex" → "hidden lg:flex"
+                Le texte du logo apparaissait à 768px et occupait de la place,
+                poussant le hamburger hors du viewport entre 768–1023px.
+                Maintenant aligné avec le breakpoint lg de tout le reste.
+              */}
+              <div className="hidden lg:flex flex-col">
                 <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent whitespace-nowrap">
                   NRBTalents
                 </span>
@@ -266,15 +264,8 @@ export function Navigation() {
               </div>
             </Link>
 
-            {/* ── Desktop mega nav ──────────────────────────────────────────── */}
-            {/*
-              FIX 1: hidden lg:flex (was md:flex) — prevents layout crush at 768–1023px
-              FIX 2: min-w-0 overflow-hidden — allows flex-1 to shrink properly
-              FIX 3: gap-0.5 instead of gap-1 — gives a little extra breathing room
-            */}
+            {/* ── Desktop mega nav — visible lg+ uniquement ─────────────────── */}
             <div className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0 overflow-hidden">
-
-              {/* Home */}
               <Link
                 href={`/${lang}`}
                 className={cn(
@@ -289,7 +280,6 @@ export function Navigation() {
                 <span className="hidden xl:inline">Accueil</span>
               </Link>
 
-              {/* Mega menus */}
               {Object.entries(megas).map(([key, mega]) => {
                 const isOpen = openMenu === key
                 const anyActive = mega.groups.some(g =>
@@ -299,7 +289,6 @@ export function Navigation() {
                   <button
                     key={key}
                     className={cn(
-                      // FIX: whitespace-nowrap prevents labels wrapping and collapsing
                       "flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0",
                       anyActive || isOpen
                         ? "text-foreground bg-accent/50"
@@ -315,17 +304,11 @@ export function Navigation() {
               })}
             </div>
 
-            {/* ── Desktop right actions ─────────────────────────────────────── */}
-            {/*
-              FIX: hidden lg:flex (was md:flex) — matches the nav breakpoint
-              FIX: shrink-0 min-w-fit — right bar NEVER gets squashed
-              FIX: gap-2 (was gap-1) — prevents elements from touching
-            */}
+            {/* ── Desktop right actions — visible lg+ uniquement ────────────── */}
             <div className="hidden lg:flex items-center gap-2 shrink-0 min-w-fit">
               <SearchCommand />
               <ThemeToggle />
 
-              {/* Language switcher */}
               <div className="relative group">
                 <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 whitespace-nowrap">
                   <Globe className="h-4 w-4 shrink-0" />
@@ -369,20 +352,34 @@ export function Navigation() {
               )}
             </div>
 
-            {/* ── Mobile / tablet actions (shown below lg) ──────────────────── */}
-            {/* FIX: lg:hidden (was md:hidden) — keeps hamburger visible up to 1024px */}
+            {/* ── Hamburger mobile/tablette — visible SOUS lg (0–1023px) ───────
+                FIX: ml-auto pousse le groupe à droite quand le desktop nav
+                est absent (hidden). shrink-0 empêche la compression.
+                h-9 w-9 explicite garantit que le bouton est toujours cliquable.
+            ─────────────────────────────────────────────────────────────────── */}
             <div className="flex items-center gap-1 lg:hidden ml-auto shrink-0">
               <SearchCommand variant="mobile" />
               <ThemeToggle />
+
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-accent/50">
-                    {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-lg hover:bg-accent/50 shrink-0"
+                    aria-label="Ouvrir le menu"
+                  >
+                    {mobileOpen
+                      ? <X className="h-5 w-5" />
+                      : <Menu className="h-5 w-5" />
+                    }
                   </Button>
                 </SheetTrigger>
 
-                {/* FIX: overflow-x-hidden prevents horizontal bleed on small screens */}
-                <SheetContent side="right" className="w-full max-w-[340px] p-0 flex flex-col border-l border-border/60 overflow-x-hidden">
+                <SheetContent
+                  side="right"
+                  className="w-full max-w-[340px] p-0 flex flex-col border-l border-border/60 overflow-x-hidden"
+                >
                   <SheetHeader className="px-5 py-4 border-b border-border/40 shrink-0">
                     <SheetTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -429,7 +426,7 @@ export function Navigation() {
                         <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                       </Link>
 
-                      {/* Mobile mega accordions */}
+                      {/* Accordions */}
                       <Accordion type="single" collapsible className="space-y-1">
                         {Object.entries(megas).map(([key, mega]) => {
                           const anyActive = mega.groups.some(g => g.items.some(i => isActive(i.href)))
@@ -468,7 +465,6 @@ export function Navigation() {
                                             : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
                                         )}
                                       >
-                                        {/* FIX: shrink-0 on icon container — never lets icon squeeze */}
                                         <div className={cn(
                                           "p-1 rounded-md shrink-0",
                                           isActive(item.href)
@@ -477,7 +473,6 @@ export function Navigation() {
                                         )}>
                                           {item.icon}
                                         </div>
-                                        {/* FIX: min-w-0 on text block — allows truncation */}
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2 min-w-0">
                                             <span className="font-medium truncate">{item.label}</span>
@@ -518,7 +513,6 @@ export function Navigation() {
                         })}
                       </Accordion>
 
-                      {/* Meet button */}
                       <div className="pt-1">
                         <MeetButtonCompact />
                       </div>
@@ -532,7 +526,6 @@ export function Navigation() {
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
                               {session.user.name?.charAt(0).toUpperCase() ?? "U"}
                             </div>
-                            {/* FIX: min-w-0 here is critical — without it the name/email overflow the card */}
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm truncate">{session.user.name}</p>
                               <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
@@ -581,7 +574,6 @@ export function Navigation() {
                         </div>
                       )}
 
-                      {/* Legal footer */}
                       <div className="grid grid-cols-2 gap-1 pt-2 border-t border-border/30">
                         {[
                           { href: `/${lang}/terms`,   label: "CGU" },
@@ -612,53 +604,31 @@ export function Navigation() {
         </div>
       </nav>
 
-      {/* ── Mega menu panels ──────────────────────────────────────────────────── */}
+      {/* ── Mega menu panels — desktop uniquement (hidden sous lg) ───────────── */}
       {openMenu && (
         <>
-          {/* Backdrop */}
+          {/* FIX: hidden lg:block — le backdrop n'existe pas sur mobile/tablette */}
           <div
-            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] hidden lg:block"
             onMouseEnter={() => setOpenMenu(null)}
           />
 
-          {/*
-            FIX: Panel wrapper
-            - top-14 sm:top-16 matches the actual navbar height
-            - onMouseLeave on the wrapper (not just the panel) keeps it open
-              while cursor moves from button into panel
-          */}
+          {/* FIX: hidden lg:flex — le panel n'existe pas sur mobile/tablette */}
           <div
-            className="fixed top-14 sm:top-16 left-0 right-0 z-50 flex justify-center px-4 sm:px-6"
+            className="fixed top-14 sm:top-16 left-0 right-0 z-50 justify-center px-4 sm:px-6 hidden lg:flex"
             onMouseLeave={() => setOpenMenu(null)}
           >
-            {/*
-              FIX: Transparent bridge covers the 2–4px gap between navbar bottom
-              and the panel top edge — prevents accidental onMouseLeave flicker.
-            */}
+            {/* Bridge transparent — comble le gap entre navbar et panel */}
             <div className="absolute -top-3 left-0 right-0 h-4 pointer-events-auto" />
 
-            {/*
-              FIX: Panel width
-              - max-w-2xl at md (672px) fits comfortably in 768px viewport
-              - max-w-4xl at lg (896px) is the sweet spot for the grid
-              - max-w-5xl at xl for big screens
-              - w-full ensures it fills available space on small viewports
-            */}
             <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl rounded-2xl border border-border/60 bg-popover/98 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden">
               {(() => {
                 const mega = megas[openMenu]
                 if (!mega) return null
                 return (
                   <div className="flex">
-                    {/*
-                      FIX: Grid inside panel
-                      - grid-cols-1 default (for md viewport where panel is ~600px)
-                      - lg:grid-cols-2 only when viewport >= 1024px
-                      - min-w-0 on the grid itself prevents overflow
-                    */}
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border/40 min-w-0">
                       {mega.groups.map((group) => (
-                        // FIX: min-w-0 on each column prevents text from forcing width
                         <div key={group.title} className="p-5 min-w-0">
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-1">
                             {group.title}
@@ -677,7 +647,6 @@ export function Navigation() {
                                   item.highlight && "ring-1 ring-violet-500/20 hover:ring-violet-500/40"
                                 )}
                               >
-                                {/* FIX: shrink-0 on icon wrapper — icon stays square */}
                                 <div className={cn(
                                   "mt-0.5 p-2 rounded-lg shrink-0 transition-colors",
                                   isActive(item.href)
@@ -688,8 +657,6 @@ export function Navigation() {
                                 )}>
                                   {item.icon}
                                 </div>
-
-                                {/* FIX: min-w-0 on text block — allows label + description to truncate */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-0.5 min-w-0">
                                     <span className={cn(
@@ -721,9 +688,7 @@ export function Navigation() {
                       ))}
                     </div>
 
-                    {/* CTA sidebar */}
                     {mega.cta && (
-                      // FIX: shrink-0 ensures sidebar never compresses
                       <div className="w-48 xl:w-52 shrink-0 border-l border-border/40 bg-gradient-to-b from-accent/20 to-accent/5 p-5 flex flex-col justify-between">
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4">
