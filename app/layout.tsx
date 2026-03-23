@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
@@ -8,6 +8,12 @@ import { Providers } from "@/components/providers"
 import { Suspense } from "react"
 import "./globals.css"
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,  // empêche le zoom automatique iOS
+  userScalable: false,
+}
 export const metadata: Metadata = {
   title: "NRBTalents - Where True Talent Meets Innovation",
   description:
@@ -19,11 +25,7 @@ export const metadata: Metadata = {
   },
 }
 
-// ✅ Ajoute ceci pour corriger le zoom
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-}
+
 
 export default function RootLayout({
   children,
