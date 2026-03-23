@@ -293,7 +293,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7] dark:bg-[#0d0d12]">
+    <div >
       <Navigation />
       <main className="pt-16">
 
