@@ -55,7 +55,7 @@ const pill =
   "text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none"
 const navBtn = (active: boolean) =>
   cn(
-    "relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 select-none cursor-pointer group",
+    "relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 select-none cursor-pointer group flex-shrink-0 whitespace-nowrap",
     active
       ? "text-foreground bg-accent/50"
       : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -230,12 +230,11 @@ export function Navigation() {
   // ─── Loading skeleton ────────────────────────────────────────────────────
   if (!dict) return (
     <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/95 backdrop-blur-xl border-b border-border/40">
-      <div className="mx-auto max-w-7xl px-4 h-full flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         <div className="h-8 w-32 bg-muted animate-pulse rounded-xl" />
-        <div className="flex gap-2">
+        <div className="hidden lg:flex gap-2">
           {[80, 96, 80, 64, 80].map((w, i) => (
-            <div key={i} className={`h-7 w-${w === 80 ? '20' : w === 96 ? '24' : w === 64 ? '16' : '20'} bg-muted animate-pulse rounded-lg`}
-              style={{ width: w }} />
+            <div key={i} className="h-7 bg-muted animate-pulse rounded-lg" style={{ width: w }} />
           ))}
         </div>
         <div className="h-8 w-24 bg-muted animate-pulse rounded-xl" />
@@ -251,12 +250,12 @@ export function Navigation() {
           ? "bg-background/95 backdrop-blur-xl border-b border-border/40 shadow-lg"
           : "bg-background/90 backdrop-blur-md border-b border-border/30"
       )}>
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex h-14 sm:h-16 items-center justify-between gap-4">
+        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2 md:gap-4 min-w-0">
 
             {/* ── Logo ──────────────────────────────────────────────── */}
             <Link href={`/${lang}`}
-              className="flex items-center gap-2 group flex-shrink-0"
+              className="flex items-center gap-2 group flex-shrink-0 min-w-fit"
               onClick={() => setOpenMenu(null)}>
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-md">
                 <span className="text-white font-bold text-xs">NRB</span>
@@ -268,18 +267,19 @@ export function Navigation() {
             </Link>
 
             {/* ── Desktop mega nav ──────────────────────────────────── */}
-            <div className="hidden md:flex items-center gap-1 flex-1">
+            <div className="hidden lg:flex items-center gap-1 flex-1 min-w-0 justify-start">
               {/* Home */}
               <Link href={`/${lang}`}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap",
                   isActive(`/${lang}`)
                     ? "text-foreground bg-accent/50"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
                 )}
                 onClick={() => setOpenMenu(null)}>
                 <Home className="h-4 w-4" />
-                <span className="hidden lg:inline">Accueil</span>
+                <span className="hidden xl:inline">Accueil</span>
+                <span className="xl:hidden">Accueil</span>
               </Link>
 
               {/* Mega menus */}
@@ -292,7 +292,7 @@ export function Navigation() {
                   <button
                     key={key}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                      "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap",
                       anyActive || isOpen
                         ? "text-foreground bg-accent/50"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -300,26 +300,28 @@ export function Navigation() {
                     onClick={() => setOpenMenu(isOpen ? null : key)}
                     onMouseEnter={() => setOpenMenu(key)}
                   >
-                    <span className="hidden lg:inline">{mega.label}</span>
+                    <span className="hidden xl:inline">{mega.label}</span>
+                    <span className="xl:hidden">{mega.label.slice(0, 6)}</span>
                     <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
                   </button>
                 )
               })}
 
-              {/* Meet               <MeetButtonCompact />*/}
-
+              {/* Meet button - commented out as requested */}
+              {/* <MeetButtonCompact /> */}
             </div>
 
             {/* ── Desktop right actions ─────────────────────────────── */}
-            <div className="hidden md:flex items-center gap-1 flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-1 flex-shrink-0 min-w-fit">
               <SearchCommand />
               <ThemeToggle />
 
               {/* Lang */}
               <div className="relative group">
-                <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40">
+                <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 flex-shrink-0">
                   <Globe className="h-4 w-4" />
-                  <span className="hidden lg:inline uppercase text-xs">{lang}</span>
+                  <span className="hidden xl:inline uppercase text-xs">{lang}</span>
+                  <span className="xl:hidden uppercase text-[10px]">{lang}</span>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 <div className="absolute right-0 top-full mt-1.5 w-40 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 overflow-hidden z-50">
@@ -337,14 +339,14 @@ export function Navigation() {
                 </div>
               </div>
 
-              <div className="h-5 w-px bg-border/60 mx-1" />
+              <div className="h-5 w-px bg-border/60 mx-1 flex-shrink-0" />
 
               {!session?.user ? (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Button variant="ghost" size="sm" asChild className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm hidden sm:flex">
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <Button variant="ghost" size="sm" asChild className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm hidden sm:flex whitespace-nowrap">
                     <Link href={`/${lang}/auth/signin`}>Connexion</Link>
                   </Button>
-                  <Button size="sm" asChild className="h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 border-0">
+                  <Button size="sm" asChild className="h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-violet-600 whitespace-nowrap">
                     <Link href={`/${lang}/auth/signup`}>
                       <Rocket className="h-3.5 w-3.5 sm:mr-1.5" />
                       <span className="hidden sm:inline">S'inscrire</span>
@@ -352,21 +354,23 @@ export function Navigation() {
                   </Button>
                 </div>
               ) : (
-                <UserMenu dict={dict} lang={lang} />
+                <div className="flex-shrink-0">
+                  <UserMenu dict={dict} lang={lang} />
+                </div>
               )}
             </div>
 
             {/* ── Mobile actions ────────────────────────────────────── */}
-            <div className="flex items-center gap-1 md:hidden ml-auto">
+            <div className="flex items-center gap-1 lg:hidden ml-auto flex-shrink-0">
               <SearchCommand variant="mobile" />
               <ThemeToggle />
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-accent/50">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-accent/50 flex-shrink-0">
                     {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-full max-w-[340px] p-0 flex flex-col border-l border-border/60">
+                <SheetContent side="right" className="w-[85vw] max-w-[380px] p-0 flex flex-col border-l border-border/60">
                   <SheetHeader className="px-5 py-4 border-b border-border/40 flex-shrink-0">
                     <SheetTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -577,16 +581,16 @@ export function Navigation() {
             className="fixed top-16 left-0 right-0 z-50 flex justify-center px-4"
             onMouseLeave={() => setOpenMenu(null)}
           >
-            <div className="w-full max-w-[95vw] sm:max-w-3xl lg:max-w-5xl  rounded-2xl border border-border/60 bg-popover/98 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden">
+            <div className="w-full max-w-[90vw] sm:max-w-[85vw] md:max-w-4xl lg:max-w-6xl xl:max-w-7xl rounded-2xl border border-border/60 bg-popover/98 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden">
               {(() => {
                 const mega = megas[openMenu]
                 if (!mega) return null
                 return (
-                  <div className="flex">
+                  <div className="flex flex-col sm:flex-row">
                     {/* Groups */}
-                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-0 divide-x divide-border/40">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/40 min-w-0">
                       {mega.groups.map((group) => (
-                        <div key={group.title} className="p-5">
+                        <div key={group.title} className="p-4 md:p-5">
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-1">
                             {group.title}
                           </p>
@@ -615,7 +619,7 @@ export function Navigation() {
                                   {item.icon}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-0.5">
+                                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                     <span className={cn(
                                       "text-sm font-semibold transition-colors",
                                       isActive(item.href) ? "text-foreground" : "text-foreground/80 group-hover/item:text-foreground"
@@ -645,7 +649,7 @@ export function Navigation() {
 
                     {/* CTA sidebar */}
                     {mega.cta && (
-                      <div className="w-52 flex-shrink-0 border-l border-border/40 bg-gradient-to-b from-accent/20 to-accent/5 p-5 flex flex-col justify-between">
+                      <div className="w-full sm:w-48 lg:w-52 xl:w-56 flex-shrink-0 border-t sm:border-t-0 sm:border-l border-border/40 bg-gradient-to-b from-accent/20 to-accent/5 p-4 md:p-5 flex flex-col justify-between">
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4">
                             Action rapide
@@ -653,8 +657,8 @@ export function Navigation() {
                           <Link href={mega.cta.href} onClick={() => setOpenMenu(null)}
                             className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 transition-all hover:shadow-violet-500/35 hover:scale-[1.02] active:scale-[0.98]">
                             {mega.cta.icon}
-                            <span>{mega.cta.label}</span>
-                            <ArrowRight className="h-3.5 w-3.5 ml-auto" />
+                            <span className="truncate">{mega.cta.label}</span>
+                            <ArrowRight className="h-3.5 w-3.5 ml-auto flex-shrink-0" />
                           </Link>
                         </div>
                         <div className="mt-6 p-3 rounded-xl bg-gradient-to-br from-blue-500/5 to-violet-500/5 border border-blue-500/10">
