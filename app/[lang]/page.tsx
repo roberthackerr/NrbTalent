@@ -306,8 +306,8 @@ export default function HomePage() {
         lang={lang} 
       />
       <div className="mt-8 flex justify-center gap-4">
-          <MeetButtonHero dict={dict} lang={lang} />
-          {/* Autres boutons... */}
+          
+          {/* Autres boutons... <MeetButtonHero dict={dict} lang={lang} /> */}
         </div>
         <StatsOverview dict={dict} />
         <QuickActions user={session?.user} onIDEClick={() => setShowIDE(true)} dict={dict} />
