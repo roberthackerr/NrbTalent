@@ -249,7 +249,7 @@ export function Navigation() {
               className="flex items-center gap-2 group shrink-0 min-w-fit"
               onClick={() => setOpenMenu(null)}
             >
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-md shrink-0">
+              <div className="h-8 w-8  flex items-center justify-center ">
                  <Image 
                   src={`/logo.png?v=${Date.now()}`} 
                   alt="NRBTalents" 
