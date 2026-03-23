@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { UserMenu } from "@/components/user-menu"
-import { SearchCommand } from "@/components/search-command"
+//import { SearchCommand } from "@/components/search-command"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -306,7 +306,8 @@ export function Navigation() {
 
             {/* ── Desktop right actions — visible lg+ uniquement ────────────── */}
             <div className="hidden lg:flex items-center gap-2 shrink-0 min-w-fit">
-              <SearchCommand />
+               {/* ── Desktop right actions — visible lg+ uniquement ────────────── <SearchCommand />*/}
+              
               <ThemeToggle />
 
               <div className="relative group">
@@ -356,9 +357,9 @@ export function Navigation() {
                 FIX: ml-auto pousse le groupe à droite quand le desktop nav
                 est absent (hidden). shrink-0 empêche la compression.
                 h-9 w-9 explicite garantit que le bouton est toujours cliquable.
-            ─────────────────────────────────────────────────────────────────── */}
+            ─────────────────────────────────────────────────────────────────── <SearchCommand variant="mobile" />*/}
             <div className="flex items-center gap-1 lg:hidden ml-auto shrink-0">
-              <SearchCommand variant="mobile" />
+              
               <ThemeToggle />
 
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
