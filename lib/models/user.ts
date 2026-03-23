@@ -204,7 +204,12 @@ export interface UserPreferences {
  */
 export interface User {
   onboardingRoleCompleted?: boolean
-
+      language?: 'fr' | 'en' | 'mg'
+      preferences?: {
+        language?: 'fr' | 'en' | 'mg'
+        theme?: 'light' | 'dark' | 'system'
+        notifications?: any
+      }
   // ========== SYSTEM FIELDS ==========
   /** MongoDB ObjectId (automatically generated) */
   _id: ObjectId
@@ -320,7 +325,7 @@ export interface User {
 verificationCodeExpiry?: any
   // ========== PREFERENCES ==========
   /** User preferences */
-  preferences?: UserPreferences
+ // preferences?: UserPreferences
 
   // ========== PAYMENT INFORMATION ==========
   /** Stripe customer ID (for payments) */

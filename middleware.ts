@@ -4,8 +4,6 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from 'next/server'
 import { locales, defaultLocale } from '@/lib/i18n/config'
 import { getToken } from 'next-auth/jwt'
-import { getDatabase } from '@/lib/mongodb'
-import { ObjectId } from 'mongodb'
 
 // Routes publiques (accessibles sans authentification)
 const publicRoutes = [
@@ -63,48 +61,6 @@ export const config = {
   ],
 }
 
-// Cache pour la langue utilisateur (pour éviter trop d'appels DB)
-const userLanguageCache = new Map<string, { lang: string, timestamp: number }>()
-const CACHE_TTL = 60 * 1000 // 1 minute
-
-// Récupérer la langue préférée de l'utilisateur depuis la base de données avec cache
-async function getUserPreferredLanguage(userId: string): Promise<string> {
-  try {
-    // Vérifier le cache
-    const cached = userLanguageCache.get(userId)
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.lang
-    }
-
-    const db = await getDatabase()
-    const user = await db.collection("users").findOne(
-      { _id: new ObjectId(userId) },
-      { projection: { language: 1, 'preferences.language': 1 } }
-    )
-    
-    const userLang = user?.language || user?.preferences?.language
-    const result = userLang && locales.includes(userLang as any) ? userLang : defaultLocale
-    
-    // Mettre en cache
-    userLanguageCache.set(userId, { lang: result, timestamp: Date.now() })
-    
-    return result
-  } catch (error) {
-    console.error('Error fetching user language:', error)
-    return defaultLocale
-  }
-}
-
-// Nettoyer le cache périodiquement
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, value] of userLanguageCache.entries()) {
-    if (now - value.timestamp > CACHE_TTL) {
-      userLanguageCache.delete(key)
-    }
-  }
-}, CACHE_TTL)
-
 // Middleware pour la langue (avec support des préférences utilisateur)
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -132,15 +88,20 @@ export async function middleware(request: NextRequest) {
   // Récupérer le token pour l'utilisateur connecté
   const token = await getToken({ req: request })
   
-  // Si l'utilisateur est connecté, utiliser sa langue préférée
+  // Récupérer la langue préférée depuis:
+  // 1. Le token (si l'utilisateur est connecté)
+  // 2. Le cookie (pour la persistance entre sessions)
+  // 3. La langue du navigateur (en dernier recours)
   let preferredLocale = currentLocale
+  
   if (token?.sub) {
-    try {
-      const userLang = await getUserPreferredLanguage(token.sub)
-      preferredLocale = userLang
-    } catch (error) {
-      console.error('Error getting user language:', error)
+    // Essayer de récupérer la langue depuis le cookie d'abord
+    const cookieLang = request.cookies.get('preferred-language')?.value
+    if (cookieLang && locales.includes(cookieLang as any)) {
+      preferredLocale = cookieLang
     }
+    // Note: La langue du token sera mise à jour via la session
+    // lors de la première connexion ou lors du changement de langue
   }
 
   // Redirection vers la langue préférée si nécessaire
@@ -148,8 +109,8 @@ export async function middleware(request: NextRequest) {
     // Déterminer la langue à utiliser
     let targetLocale = preferredLocale
     
-    // Si pas d'utilisateur connecté, utiliser la langue du navigateur
-    if (!token?.sub) {
+    // Si pas d'utilisateur connecté et pas de cookie, utiliser la langue du navigateur
+    if (!token?.sub && !request.cookies.get('preferred-language')?.value) {
       const acceptLanguage = request.headers.get('accept-language')
       const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
       targetLocale = locales.includes(browserLocale as any) ? browserLocale : defaultLocale
@@ -175,7 +136,7 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Si l'utilisateur est connecté et que la langue dans l'URL ne correspond pas à sa préférence
+  // Si l'utilisateur est connecté et que la langue dans l'URL ne correspond pas au cookie
   if (token?.sub && pathnameHasLocale && currentLocale !== preferredLocale) {
     // Ne pas rediriger si c'est une route API
     if (!pathname.startsWith('/api')) {
