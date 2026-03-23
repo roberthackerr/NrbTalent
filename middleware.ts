@@ -1,7 +1,11 @@
+// middleware.ts
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from 'next/server'
 import { locales, defaultLocale } from '@/lib/i18n/config'
+import { getToken } from 'next-auth/jwt'
+import { getDatabase } from '@/lib/mongodb'
+import { ObjectId } from 'mongodb'
 
 // Routes publiques (accessibles sans authentification)
 const publicRoutes = [
@@ -16,7 +20,17 @@ const publicRoutes = [
   '/about',
   '/contact',
   '/pricing',
-  '/legal'
+  '/legal',
+  '/talents',
+  '/gigs',
+  '/projects',
+  '/ai-matching',
+  '/blog',
+  '/faq',
+  '/how-it-works',
+  '/privacy',
+  '/terms',
+  '/cookies'
 ]
 
 // Routes qui ne nécessitent pas de vérification d'email
@@ -25,6 +39,14 @@ const noEmailVerifyRoutes = [
   '/auth/verify-email',
   '/auth/forgot-password',
   '/auth/reset-password'
+]
+
+// Routes API qui ne nécessitent pas d'authentification
+const publicApiRoutes = [
+  '/api/auth',
+  '/api/webhooks',
+  '/api/health',
+  '/api/public'
 ]
 
 export const config = {
@@ -41,14 +63,57 @@ export const config = {
   ],
 }
 
-// Middleware pour la langue
-export function middleware(request: NextRequest) {
+// Cache pour la langue utilisateur (pour éviter trop d'appels DB)
+const userLanguageCache = new Map<string, { lang: string, timestamp: number }>()
+const CACHE_TTL = 60 * 1000 // 1 minute
+
+// Récupérer la langue préférée de l'utilisateur depuis la base de données avec cache
+async function getUserPreferredLanguage(userId: string): Promise<string> {
+  try {
+    // Vérifier le cache
+    const cached = userLanguageCache.get(userId)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.lang
+    }
+
+    const db = await getDatabase()
+    const user = await db.collection("users").findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { language: 1, 'preferences.language': 1 } }
+    )
+    
+    const userLang = user?.language || user?.preferences?.language
+    const result = userLang && locales.includes(userLang as any) ? userLang : defaultLocale
+    
+    // Mettre en cache
+    userLanguageCache.set(userId, { lang: result, timestamp: Date.now() })
+    
+    return result
+  } catch (error) {
+    console.error('Error fetching user language:', error)
+    return defaultLocale
+  }
+}
+
+// Nettoyer le cache périodiquement
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, value] of userLanguageCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      userLanguageCache.delete(key)
+    }
+  }
+}, CACHE_TTL)
+
+// Middleware pour la langue (avec support des préférences utilisateur)
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
-  // Ignorer les fichiers statiques
+  // Ignorer les fichiers statiques et API spéciales
   if (
     pathname.startsWith('/_next') ||
-    pathname.includes('.')
+    pathname.includes('.') ||
+    pathname.startsWith('/api/ws')
   ) {
     return NextResponse.next()
   }
@@ -58,15 +123,78 @@ export function middleware(request: NextRequest) {
     locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )
 
-  // Rediriger vers la locale par défaut si pas de locale
+  // Récupérer la langue depuis l'URL si présente
+  let currentLocale = defaultLocale
+  if (pathnameHasLocale) {
+    currentLocale = pathname.split('/')[1] as typeof locales[number]
+  }
+
+  // Récupérer le token pour l'utilisateur connecté
+  const token = await getToken({ req: request })
+  
+  // Si l'utilisateur est connecté, utiliser sa langue préférée
+  let preferredLocale = currentLocale
+  if (token?.sub) {
+    try {
+      const userLang = await getUserPreferredLanguage(token.sub)
+      preferredLocale = userLang
+    } catch (error) {
+      console.error('Error getting user language:', error)
+    }
+  }
+
+  // Redirection vers la langue préférée si nécessaire
   if (!pathnameHasLocale && !pathname.startsWith('/api')) {
-    const acceptLanguage = request.headers.get('accept-language')
-    const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
-    const locale = locales.includes(browserLocale as any) ? browserLocale : defaultLocale
+    // Déterminer la langue à utiliser
+    let targetLocale = preferredLocale
     
-    return NextResponse.redirect(
-      new URL(`/${locale}${pathname}`, request.url)
-    )
+    // Si pas d'utilisateur connecté, utiliser la langue du navigateur
+    if (!token?.sub) {
+      const acceptLanguage = request.headers.get('accept-language')
+      const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
+      targetLocale = locales.includes(browserLocale as any) ? browserLocale : defaultLocale
+    }
+    
+    // Construire la nouvelle URL
+    const newUrl = new URL(`/${targetLocale}${pathname}`, request.url)
+    
+    // Préserver les paramètres de recherche
+    request.nextUrl.searchParams.forEach((value, key) => {
+      newUrl.searchParams.set(key, value)
+    })
+    
+    const response = NextResponse.redirect(newUrl)
+    
+    // Ajouter un cookie pour la langue
+    response.cookies.set('preferred-language', targetLocale, {
+      maxAge: 60 * 60 * 24 * 30, // 30 jours
+      path: '/',
+      sameSite: 'lax'
+    })
+    
+    return response
+  }
+
+  // Si l'utilisateur est connecté et que la langue dans l'URL ne correspond pas à sa préférence
+  if (token?.sub && pathnameHasLocale && currentLocale !== preferredLocale) {
+    // Ne pas rediriger si c'est une route API
+    if (!pathname.startsWith('/api')) {
+      const newPathname = pathname.replace(`/${currentLocale}`, `/${preferredLocale}`)
+      const newUrl = new URL(newPathname, request.url)
+      
+      request.nextUrl.searchParams.forEach((value, key) => {
+        newUrl.searchParams.set(key, value)
+      })
+      
+      const response = NextResponse.redirect(newUrl)
+      response.cookies.set('preferred-language', preferredLocale, {
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+        sameSite: 'lax'
+      })
+      
+      return response
+    }
   }
 
   return NextResponse.next()
@@ -74,28 +202,38 @@ export function middleware(request: NextRequest) {
 
 // Middleware d'authentification
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
-    const lang = path.split('/')[1] // Récupérer la langue depuis l'URL
+    const lang = path.split('/')[1] || defaultLocale
 
     // Extraire le chemin sans la langue
-    const pathWithoutLang = path.replace(/^\/[^\/]+/, '')
+    const pathWithoutLang = path.replace(/^\/[^\/]+/, '') || '/'
+
+    // Vérifier si c'est une route API publique
+    const isPublicApiRoute = publicApiRoutes.some(route => 
+      pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
+    )
 
     // Vérifier si la route est publique
     const isPublicRoute = publicRoutes.some(route => 
-      pathWithoutLang.startsWith(route) || pathWithoutLang === route
+      pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
 
     // Vérifier si la route nécessite une vérification d'email
     const needsEmailVerification = !noEmailVerifyRoutes.some(route => 
-      pathWithoutLang.startsWith(route)
+      pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
+
+    // Si c'est une route API publique, autoriser sans vérification
+    if (isPublicApiRoute) {
+      return NextResponse.next()
+    }
 
     // Si c'est une route publique, autoriser l'accès
     if (isPublicRoute) {
       // Rediriger vers le dashboard si déjà connecté et sur page auth
-      if (token && (pathWithoutLang.startsWith('/auth'))) {
+      if (token && (pathWithoutLang.startsWith('/auth') || pathWithoutLang === '/auth')) {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
       return NextResponse.next()
@@ -110,14 +248,12 @@ export default withAuth(
 
     // Vérifier si l'email est vérifié (sauf pour certaines routes)
     if (needsEmailVerification && !token.emailVerified) {
-      // Stocker l'email pour la page de vérification
       const response = NextResponse.redirect(
         new URL(`/${lang}/auth/verify-email-prompt`, req.url)
       )
       
-      // Ajouter l'email dans un cookie pour la page de vérification
       response.cookies.set('pendingVerificationEmail', token.email as string, {
-        maxAge: 60 * 5, // 5 minutes
+        maxAge: 60 * 5,
         path: '/',
         sameSite: 'lax'
       })
@@ -125,20 +261,23 @@ export default withAuth(
       return response
     }
 
+    // Récupérer le rôle de l'utilisateur depuis le token
+    const userRole = token.role as string
+
     // Role-based access pour les routes dashboard
     if (pathWithoutLang.startsWith('/dashboard')) {
       // Dashboard client
-      if (pathWithoutLang.startsWith('/dashboard/client') && token.role !== 'client') {
+      if (pathWithoutLang.startsWith('/dashboard/client') && userRole !== 'client') {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
 
       // Dashboard freelance
-      if (pathWithoutLang.startsWith('/dashboard/freelance') && token.role !== 'freelance') {
+      if (pathWithoutLang.startsWith('/dashboard/freelance') && userRole !== 'freelance') {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
 
       // Dashboard admin
-      if (pathWithoutLang.startsWith('/dashboard/admin') && token.role !== 'admin') {
+      if (pathWithoutLang.startsWith('/dashboard/admin') && userRole !== 'admin') {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
 
@@ -153,17 +292,39 @@ export default withAuth(
       return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
     }
 
-    // Sécuriser les connexions WebSocket
-    if (path.startsWith('/api/ws')) {
-      const origin = req.headers.get('origin')
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || []
-      
-      if (origin && !allowedOrigins.includes(origin) && process.env.NODE_ENV === 'production') {
-        return new NextResponse('Origin not allowed', { status: 403 })
+    // Protection des routes admin
+    if (pathWithoutLang.startsWith('/admin') && userRole !== 'admin') {
+      return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
+    }
+
+    // Protection des routes API privées
+    if (pathWithoutLang.startsWith('/api') && !isPublicApiRoute && !isPublicRoute) {
+      // Vérifier les permissions pour les API
+      if (pathWithoutLang.startsWith('/api/admin') && userRole !== 'admin') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Admin access required' },
+          { status: 403 }
+        )
       }
     }
 
-    return NextResponse.next()
+    // Ajouter des headers de sécurité
+    const response = NextResponse.next()
+    
+    // Ajouter la langue dans les headers pour les composants serveur
+    response.headers.set('x-user-language', lang)
+    
+    // Ajouter l'ID utilisateur dans les headers pour les logs
+    if (token?.sub) {
+      response.headers.set('x-user-id', token.sub)
+    }
+    
+    // Ajouter le rôle utilisateur dans les headers
+    if (userRole) {
+      response.headers.set('x-user-role', userRole)
+    }
+
+    return response
   },
   {
     callbacks: {

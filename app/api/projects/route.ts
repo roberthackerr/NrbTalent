@@ -1,11 +1,11 @@
-// api/projects/route.ts - Version corrigée
-
+// app/api/projects/route.ts - Version avec notifications multilingues
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { z } from "zod"
+import { notificationService } from "@/services/NotificationService"
 
 // Configuration
 const DEFAULT_PAGE = 1
@@ -84,6 +84,183 @@ const GetProjectsQuerySchema = z.object({
     })
 })
 
+// Schéma de validation pour POST
+const CreateProjectSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().min(1).max(5000),
+  category: z.string().min(1),
+  subcategory: z.string().optional().default(""),
+  skills: z.array(z.string()).min(1).max(20),
+  budget: z.object({
+    min: z.number().min(0).max(MAX_BUDGET),
+    max: z.number().min(0).max(MAX_BUDGET),
+    type: z.enum(["fixed", "hourly"]),
+    currency: z.string().default("USD"),
+    originalCurrency: z.string().optional(),
+    exchangeRate: z.number().optional()
+  }),
+  deadline: z.string().refine(val => {
+    return !isNaN(Date.parse(val));
+  }, { message: "Invalid date format" }),
+  status: z.enum(["draft", "open"]).default("draft"),
+  visibility: z.enum(["public", "private"]).optional().default("public"),
+  tags: z.array(z.string()).optional().default([]),
+  location: z.object({
+    remote: z.boolean().default(true),
+    country: z.string().optional(),
+    city: z.string().optional(),
+    timezone: z.string().optional()
+  }).optional().default({ remote: true }),
+  metadata: z.object({}).optional().default({})
+})
+
+// Helper pour récupérer la langue d'un utilisateur
+async function getUserLanguage(userId: string): Promise<'fr' | 'en' | 'mg'> {
+  try {
+    const db = await getDatabase()
+    let objectId
+    try {
+      objectId = new ObjectId(userId)
+    } catch {
+      return 'fr'
+    }
+    const user = await db.collection("users").findOne(
+      { _id: objectId },
+      { projection: { language: 1, preferences: 1 } }
+    )
+    const userLang = user?.language || user?.preferences?.language || 'fr'
+    return userLang === 'fr' || userLang === 'en' || userLang === 'mg' ? userLang : 'fr'
+  } catch {
+    return 'fr'
+  }
+}
+
+// Messages multilingues pour les notifications
+const notificationMessages = {
+  projectCreated: {
+    fr: {
+      title: "📋 Projet publié",
+      message: (title: string) => `Votre projet "${title}" a été publié avec succès`
+    },
+    en: {
+      title: "📋 Project published",
+      message: (title: string) => `Your project "${title}" has been published successfully`
+    },
+    mg: {
+      title: "📋 Tetikasa navoaka",
+      message: (title: string) => `Nivoaka soa aman-tsara ny tetikasanao "${title}"`
+    }
+  },
+  newProjectAvailable: {
+    fr: {
+      title: "📋 Nouveau projet disponible",
+      message: (title: string, skills: string[]) => `"${title}" - ${skills.slice(0, 3).join(', ')}`
+    },
+    en: {
+      title: "📋 New project available",
+      message: (title: string, skills: string[]) => `"${title}" - ${skills.slice(0, 3).join(', ')}`
+    },
+    mg: {
+      title: "📋 Tetikasa vaovao misy",
+      message: (title: string, skills: string[]) => `"${title}" - ${skills.slice(0, 3).join(', ')}`
+    }
+  },
+  projectStatusChanged: {
+    fr: {
+      open: { title: "📋 Projet ouvert", message: (title: string) => `Le projet "${title}" est maintenant ouvert aux candidatures` },
+      inProgress: { title: "🚀 Projet en cours", message: (title: string) => `Le projet "${title}" est maintenant en cours de réalisation` },
+      completed: { title: "✅ Projet terminé", message: (title: string) => `Le projet "${title}" est terminé. N'oubliez pas de laisser un avis !` },
+      cancelled: { title: "❌ Projet annulé", message: (title: string) => `Le projet "${title}" a été annulé` },
+      updated: { title: "📝 Projet mis à jour", message: (title: string) => `Le projet "${title}" a été mis à jour` }
+    },
+    en: {
+      open: { title: "📋 Project open", message: (title: string) => `Project "${title}" is now open for applications` },
+      inProgress: { title: "🚀 Project in progress", message: (title: string) => `Project "${title}" is now in progress` },
+      completed: { title: "✅ Project completed", message: (title: string) => `Project "${title}" is completed. Don't forget to leave a review!` },
+      cancelled: { title: "❌ Project cancelled", message: (title: string) => `Project "${title}" has been cancelled` },
+      updated: { title: "📝 Project updated", message: (title: string) => `Project "${title}" has been updated` }
+    },
+    mg: {
+      open: { title: "📋 Tetikasa misokatra", message: (title: string) => `Misokatra ho an'ny fangatahana ny tetikasa "${title}"` },
+      inProgress: { title: "🚀 Tetikasa mitohy", message: (title: string) => `Mitohy ny tetikasa "${title}"` },
+      completed: { title: "✅ Tetikasa vita", message: (title: string) => `Vita ny tetikasa "${title}". Aza adino ny mamela hevitra!` },
+      cancelled: { title: "❌ Tetikasa nofoanana", message: (title: string) => `Nofoanana ny tetikasa "${title}"` },
+      updated: { title: "📝 Tetikasa nohavaozina", message: (title: string) => `Nohavaozina ny tetikasa "${title}"` }
+    }
+  },
+  projectDeleted: {
+    fr: {
+      title: "🗑️ Projet supprimé",
+      message: (title: string) => `Votre projet "${title}" a été supprimé`
+    },
+    en: {
+      title: "🗑️ Project deleted",
+      message: (title: string) => `Your project "${title}" has been deleted`
+    },
+    mg: {
+      title: "🗑️ Tetikasa voafafa",
+      message: (title: string) => `Nofafana ny tetikasanao "${title}"`
+    }
+  },
+  projectDeletedForApplicant: {
+    fr: {
+      title: "🗑️ Projet supprimé",
+      message: (title: string) => `Le projet "${title}" auquel vous avez postulé a été supprimé`
+    },
+    en: {
+      title: "🗑️ Project deleted",
+      message: (title: string) => `The project "${title}" you applied to has been deleted`
+    },
+    mg: {
+      title: "🗑️ Tetikasa voafafa",
+      message: (title: string) => `Nofafana ny tetikasa "${title}" nangatahanao`
+    }
+  }
+}
+
+// Helper pour envoyer une notification multilingue
+async function sendMultilingualNotification(
+  userId: string,
+  templateKey: keyof typeof notificationMessages,
+  data: any,
+  subKey?: string
+) {
+  try {
+    const userLang = await getUserLanguage(userId)
+    const messages = notificationMessages[templateKey]
+    
+    let title: string
+    let message: string
+    
+    if (subKey && messages[subKey as keyof typeof messages]) {
+      const subMessages = messages[subKey as keyof typeof messages] as any
+      title = subMessages[userLang]?.title || subMessages.fr.title
+      message = subMessages[userLang]?.message(data.title || data) || subMessages.fr.message(data.title || data)
+    } else {
+      const msg = messages[userLang] || messages.fr
+      title = msg.title
+      message = typeof msg.message === 'function' ? msg.message(data.title || data) : msg.message
+    }
+    
+    return await notificationService.send({
+      userId,
+      category: 'ORDER',
+      priority: templateKey === 'projectStatusChanged' && data.status === 'completed' ? 'HIGH' : 'MEDIUM',
+      title,
+      message,
+      actionUrl: `/projects/${data.projectId}`,
+      data: {
+        entityId: data.projectId,
+        entityType: 'project',
+        ...data
+      }
+    })
+  } catch (error) {
+    console.error('Error sending multilingual notification:', error)
+    return null
+  }
+}
+
 // Helper functions
 const validateObjectId = (id: string): ObjectId | null => {
   try {
@@ -94,13 +271,8 @@ const validateObjectId = (id: string): ObjectId | null => {
 }
 
 const buildFilter = (data: z.infer<typeof GetProjectsQuerySchema>) => {
-  const filter: any = { status: data.status }
+  const filter: any = { status: "open" }
 
-  // IMPORTANT: Filtrer seulement les projets "open" par défaut
-  // Si vous voulez voir tous les statuts, retirez cette ligne
-  filter.status = "open"
-
-  // Category filter - CORRIGÉ: Chercher aussi dans subcategory
   if (data.category) {
     filter.$or = [
       { category: data.category },
@@ -108,12 +280,10 @@ const buildFilter = (data: z.infer<typeof GetProjectsQuerySchema>) => {
     ]
   }
 
-  // Skills filter - CORRIGÉ: Utiliser $all au lieu de $in
   if (data.skills && data.skills.length > 0) {
     filter.skills = { $all: data.skills }
   }
 
-  // Budget filter - CORRIGÉ: Chercher dans budget.min et budget.max
   if (data.budgetMin > MIN_BUDGET || data.budgetMax < MAX_BUDGET) {
     filter.$and = [
       { "budget.min": { $gte: data.budgetMin } },
@@ -121,24 +291,21 @@ const buildFilter = (data: z.infer<typeof GetProjectsQuerySchema>) => {
     ]
   }
 
-  // Budget type filter
   if (data.type) {
     filter["budget.type"] = data.type
   }
 
-  // Search filter - CORRIGÉ: Amélioré
   if (data.search) {
     const searchRegex = { $regex: data.search, $options: "i" }
     filter.$or = [
       { title: searchRegex },
       { description: searchRegex },
-      { "skills": searchRegex }, // Recherche dans les compétences
-      { category: searchRegex }, // Recherche dans la catégorie
-      { subcategory: searchRegex } // Recherche dans la sous-catégorie
+      { "skills": searchRegex },
+      { category: searchRegex },
+      { subcategory: searchRegex }
     ]
   }
 
-  // Client filter
   if (data.clientId) {
     const clientId = validateObjectId(data.clientId)
     if (clientId) {
@@ -146,10 +313,7 @@ const buildFilter = (data: z.infer<typeof GetProjectsQuerySchema>) => {
     }
   }
 
-  // Filtre par défaut pour éviter les projets vides
   filter.title = { $exists: true, $ne: "" }
-  
-  console.log("🔍 Filter built:", JSON.stringify(filter, null, 2))
   return filter
 }
 
@@ -179,22 +343,16 @@ const buildSortOptions = (sortBy: string, sortOrder: string) => {
   return sortOptions
 }
 
-// GET - Récupérer les projets avec pagination et filtres
+// GET - Récupérer les projets
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const params = Object.fromEntries(searchParams.entries())
 
-    // Validation des paramètres
     const validationResult = GetProjectsQuerySchema.safeParse(params)
     if (!validationResult.success) {
-      console.error("❌ Validation error:", validationResult.error.issues)
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Invalid query parameters",
-          details: validationResult.error.issues 
-        },
+        { success: false, error: "Invalid query parameters", details: validationResult.error.issues },
         { status: 400 }
       )
     }
@@ -202,21 +360,13 @@ export async function GET(request: Request) {
     const query = validationResult.data
     const db = await getDatabase()
     
-    // Construire le filtre
     const filter = buildFilter(query)
     const skip = (query.page - 1) * query.limit
-    
-    // Construire les options de tri
     const sortOptions = buildSortOptions(query.sortBy, query.sortOrder)
 
-    console.log(`📊 Fetching projects: page=${query.page}, limit=${query.limit}, skip=${skip}`)
-    console.log(`🎯 Filter:`, JSON.stringify(filter, null, 2))
-    console.log(`📈 Sort: ${query.sortBy} ${query.sortOrder}`)
-
-    // Exécuter les requêtes
     const [projects, totalCount] = await Promise.all([
       db.collection("projects")
-        .find({visibility: "public", ...filter})
+        .find({ visibility: "public", ...filter })
         .sort(sortOptions)
         .skip(skip)
         .limit(query.limit)
@@ -224,36 +374,18 @@ export async function GET(request: Request) {
       db.collection("projects").countDocuments(filter)
     ])
 
-    console.log(`✅ Found ${projects.length} projects out of ${totalCount}`)
-
-    // Récupérer les informations des clients si nécessaire
     if (projects.length > 0) {
-      const clientIds = projects
-        .map(p => p.clientId)
-        .filter(id => id)
-        .map(id => id.toString())
-      
-      const uniqueClientIds = [...new Set(clientIds)]
+      const clientIds = projects.map(p => p.clientId).filter(id => id)
+      const uniqueClientIds = [...new Set(clientIds.map(id => id.toString()))]
       
       if (uniqueClientIds.length > 0) {
         const objectIds = uniqueClientIds.map(id => new ObjectId(id))
         const clients = await db.collection("users")
           .find({ _id: { $in: objectIds } })
-          .project({ 
-            _id: 1, 
-            name: 1, 
-            avatar: 1, 
-            title: 1,
-            rating: 1,
-            completedProjects: 1 
-          })
+          .project({ _id: 1, name: 1, avatar: 1, title: 1, rating: 1, completedProjects: 1 })
           .toArray()
 
-        const clientMap = new Map(
-          clients.map(client => [client._id.toString(), client])
-        )
-
-        // Enrichir les projets avec les informations client
+        const clientMap = new Map(clients.map(client => [client._id.toString(), client]))
         projects.forEach(project => {
           if (project.clientId) {
             project.client = clientMap.get(project.clientId.toString())
@@ -288,29 +420,21 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error("❌ Error fetching projects:", error)
-    
     return NextResponse.json(
-      { 
-        success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error" 
-      },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     )
   }
 }
 
-// POST - Créer un nouveau projet
+// POST - Créer un projet
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Authentication required" 
-        },
+        { success: false, error: "Authentication required" },
         { status: 401 }
       )
     }
@@ -318,10 +442,7 @@ export async function POST(request: Request) {
     const userRole = (session.user as any).role
     if (userRole !== "client") {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Only clients can create projects" 
-        },
+        { success: false, error: "Only clients can create projects" },
         { status: 403 }
       )
     }
@@ -331,53 +452,15 @@ export async function POST(request: Request) {
       body = await request.json()
     } catch {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Invalid JSON format" 
-        },
+        { success: false, error: "Invalid JSON format" },
         { status: 400 }
       )
     }
 
-// Replace the existing CreateProjectSchema with this:
-const CreateProjectSchema = z.object({
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(5000),
-  category: z.string().min(1),
-  subcategory: z.string().optional().default(""),
-  skills: z.array(z.string()).min(1).max(20),
-  budget: z.object({
-    min: z.number().min(0).max(MAX_BUDGET),
-    max: z.number().min(0).max(MAX_BUDGET),
-    type: z.enum(["fixed", "hourly"]),
-    currency: z.string().default("USD"),
-    originalCurrency: z.string().optional(),
-    exchangeRate: z.number().optional()
-  }),
-  deadline: z.string().refine(val => {
-    // Accept both date string and ISO datetime
-    return !isNaN(Date.parse(val));
-  }, { message: "Invalid date format" }),
-  status: z.enum(["draft", "open"]).default("draft"),
-  visibility: z.enum(["public", "private"]).optional().default("public"),
-  tags: z.array(z.string()).optional().default([]),
-  location: z.object({
-    remote: z.boolean().default(true),
-    country: z.string().optional(),
-    city: z.string().optional(),
-    timezone: z.string().optional()
-  }).optional().default({ remote: true }),
-  metadata: z.object({}).optional().default({})
-})
-
     const validationResult = CreateProjectSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Validation failed",
-          details: validationResult.error.errors 
-        },
+        { success: false, error: "Validation failed", details: validationResult.error.errors },
         { status: 400 }
       )
     }
@@ -394,16 +477,49 @@ const CreateProjectSchema = z.object({
       views: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
-      subcategory: "",
-      tags: [],
-      location: { remote: true },
-      metadata: {}
     }
 
     const result = await db.collection("projects").insertOne(projectDocument)
 
     if (!result.insertedId) {
       throw new Error("Failed to insert project")
+    }
+
+    // 📢 NOTIFICATION MULTILINGUE: Projet créé
+    await sendMultilingualNotification(
+      clientId.toString(),
+      'projectCreated',
+      { title: projectData.title, projectId: result.insertedId.toString() }
+    )
+
+    // Si le projet est public, notifier les freelancers intéressés
+    if (projectData.visibility === "public" && projectData.status === "open") {
+      try {
+        const freelancers = await db.collection("users")
+          .find({
+            role: "freelance",
+            skills: { $in: projectData.skills },
+            "preferences.notifications.newProjects": { $ne: false }
+          })
+          .project({ _id: 1 })
+          .limit(50)
+          .toArray()
+
+        if (freelancers.length > 0) {
+          await Promise.all(
+            freelancers.map(freelancer => 
+              sendMultilingualNotification(
+                freelancer._id.toString(),
+                'newProjectAvailable',
+                { title: projectData.title, skills: projectData.skills, projectId: result.insertedId.toString() }
+              )
+            )
+          )
+          console.log(`📢 Notified ${freelancers.length} freelancers in their preferred language`)
+        }
+      } catch (broadcastError) {
+        console.error('⚠️ Failed to notify freelancers:', broadcastError)
+      }
     }
 
     return NextResponse.json(
@@ -420,29 +536,132 @@ const CreateProjectSchema = z.object({
 
   } catch (error) {
     console.error("❌ Error creating project:", error)
-    
     return NextResponse.json(
-      { 
-        success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error" 
-      },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     )
   }
 }
 
-// DELETE - Supprimer les parties inutiles
+// PUT - Mettre à jour un projet
+export async function PUT(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { projectId, status, ...updates } = body
+
+    if (!projectId || !ObjectId.isValid(projectId)) {
+      return NextResponse.json(
+        { success: false, error: "Valid project ID is required" },
+        { status: 400 }
+      )
+    }
+
+    const db = await getDatabase()
+    const userId = new ObjectId((session.user as any).id)
+    const userRole = (session.user as any).role
+
+    const project = await db.collection("projects").findOne({
+      _id: new ObjectId(projectId)
+    })
+
+    if (!project) {
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      )
+    }
+
+    const isOwner = project.clientId.toString() === userId.toString()
+    const isAdmin = userRole === "admin"
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized to update this project" },
+        { status: 403 }
+      )
+    }
+
+    const oldStatus = project.status
+    const updateData = {
+      ...updates,
+      ...(status && { status }),
+      updatedAt: new Date()
+    }
+
+    await db.collection("projects").updateOne(
+      { _id: new ObjectId(projectId) },
+      { $set: updateData }
+    )
+
+    // 📢 NOTIFICATION MULTILINGUE: Changement de statut
+    if (status && status !== oldStatus) {
+      const statusKey = status as keyof typeof notificationMessages.projectStatusChanged.fr
+      
+      // Notifier le client
+      await sendMultilingualNotification(
+        project.clientId.toString(),
+        'projectStatusChanged',
+        { title: project.title, projectId, status, oldStatus },
+        statusKey
+      )
+
+      // Si le projet est annulé, notifier les candidats
+      if (status === 'cancelled' && project.applications?.length > 0) {
+        const applicantIds = project.applications.map((app: any) => app.freelancerId)
+        await Promise.all(
+          applicantIds.map(applicantId =>
+            sendMultilingualNotification(
+              applicantId,
+              'projectStatusChanged',
+              { title: project.title, projectId, status: 'cancelled' },
+              'cancelled'
+            )
+          )
+        )
+      }
+
+      // Si le projet est terminé, notifier le freelancer sélectionné
+      if (status === 'completed' && project.selectedFreelancerId) {
+        await sendMultilingualNotification(
+          project.selectedFreelancerId.toString(),
+          'projectStatusChanged',
+          { title: project.title, projectId, status: 'completed' },
+          'completed'
+        )
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Project updated successfully"
+    })
+
+  } catch (error) {
+    console.error("❌ Error updating project:", error)
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Supprimer un projet
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Authentication required" 
-        },
+        { success: false, error: "Authentication required" },
         { status: 401 }
       )
     }
@@ -452,10 +671,7 @@ export async function DELETE(request: Request) {
     
     if (!projectId || !ObjectId.isValid(projectId)) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Valid project ID is required" 
-        },
+        { success: false, error: "Valid project ID is required" },
         { status: 400 }
       )
     }
@@ -464,42 +680,57 @@ export async function DELETE(request: Request) {
     const userId = new ObjectId((session.user as any).id)
     const userRole = (session.user as any).role
 
-    // Vérifier l'existence
     const project = await db.collection("projects").findOne({
       _id: new ObjectId(projectId)
     })
 
     if (!project) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Project not found" 
-        },
+        { success: false, error: "Project not found" },
         { status: 404 }
       )
     }
 
-    // Vérifier les permissions
     const isOwner = project.clientId.toString() === userId.toString()
     const isAdmin = userRole === "admin"
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: "Unauthorized to delete this project" 
-        },
+        { success: false, error: "Unauthorized to delete this project" },
         { status: 403 }
       )
     }
 
-    // Supprimer le projet
+    const projectTitle = project.title
+    const applicantIds = project.applications?.map((app: any) => app.freelancerId) || []
+
     const result = await db.collection("projects").deleteOne({
       _id: new ObjectId(projectId)
     })
 
     if (result.deletedCount === 0) {
       throw new Error("Failed to delete project")
+    }
+
+    // 📢 NOTIFICATION MULTILINGUE: Projet supprimé
+    // Notifier le client
+    await sendMultilingualNotification(
+      project.clientId.toString(),
+      'projectDeleted',
+      { title: projectTitle, projectId }
+    )
+
+    // Notifier les candidats
+    if (applicantIds.length > 0) {
+      await Promise.all(
+        applicantIds.map(applicantId =>
+          sendMultilingualNotification(
+            applicantId,
+            'projectDeletedForApplicant',
+            { title: projectTitle, projectId }
+          )
+        )
+      )
     }
 
     return NextResponse.json({
@@ -509,13 +740,8 @@ export async function DELETE(request: Request) {
 
   } catch (error) {
     console.error("❌ Error deleting project:", error)
-    
     return NextResponse.json(
-      { 
-        success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error" 
-      },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     )
   }
