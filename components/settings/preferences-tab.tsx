@@ -1,17 +1,19 @@
+// components/dashboard/settings/PreferencesTab.tsx (version corrigée)
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Globe, Palette, Sun, Moon, Languages, Check } from "lucide-react"
+import { Globe, Palette, Sun, Moon, Languages, Check, Loader2 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import type { Locale } from '@/lib/i18n/config'
 import { locales, localeNames, localeFlags } from '@/lib/i18n/config'
+import { useSession } from "next-auth/react"
+import { toast } from "sonner"
 
-// Liste des langues disponibles (maintenant basée sur la config i18n)
+// Liste des langues disponibles
 const LANGUAGES = locales.map(code => ({
   code,
   name: localeNames[code as Locale],
@@ -29,9 +31,11 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useParams()
+  const { data: session, update: updateSession } = useSession()
   
   const [mounted, setMounted] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState<Locale>(lang)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -48,9 +52,63 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
     return currentTheme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
   }
 
-  const handleLanguageSelect = (langCode: string) => {
+  // 👈 NOUVELLE FONCTION: Sauvegarder la langue dans le profil
+  const saveLanguageToProfile = async (newLang: Locale) => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'preferences',
+          data: {
+            language: newLang,
+            ...(session?.user?.preferences || {})
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save language preference')
+      }
+
+      const result = await response.json()
+      
+      // Mettre à jour la session
+      await updateSession({
+        ...session,
+        user: {
+          ...session?.user,
+          language: newLang
+        }
+      })
+
+      toast.success(
+        newLang === 'fr' ? 'Langue enregistrée' :
+        newLang === 'en' ? 'Language saved' :
+        'Voatahiry ny fiteny'
+      )
+
+      return true
+    } catch (error) {
+      console.error('Error saving language:', error)
+      toast.error(
+        lang === 'fr' ? 'Erreur lors de l\'enregistrement' :
+        lang === 'en' ? 'Error saving language' :
+        'Nisy hadisoana nandritra ny fitehirizana'
+      )
+      return false
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleLanguageSelect = async (langCode: string) => {
     const newLang = langCode as Locale
     setSelectedLanguage(newLang)
+    
+    // 👈 SAUVEGARDER LA LANGUE DANS LE PROFIL
+    await saveLanguageToProfile(newLang)
     
     // Changer la langue dans l'URL
     const segments = pathname.split('/')
@@ -88,12 +146,17 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Sélecteur de langue personnalisé */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">
                 {dict?.preferences?.selectedLanguage || "Langue sélectionnée"}
               </Label>
+              {isSaving && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Sauvegarde...</span>
+                </div>
+              )}
             </div>
             
             {/* Grille des langues */}
@@ -102,6 +165,7 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
                 <Button
                   key={language.code}
                   variant={selectedLanguage === language.code ? "default" : "outline"}
+                  disabled={isSaving}
                   className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
                     selectedLanguage === language.code 
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' 
@@ -111,8 +175,11 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{language.flag}</span>
-                    {selectedLanguage === language.code && (
+                    {selectedLanguage === language.code && !isSaving && (
                       <Check className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                    )}
+                    {isSaving && selectedLanguage === language.code && (
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     )}
                   </div>
                   <div className="text-xs font-medium leading-tight">
@@ -150,10 +217,22 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
               Les projets et les messages des clients resteront dans leur langue d'origine.
             </p>
           </div>
+
+          {/* Indicateur de sauvegarde */}
+          {session?.user?.language && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="text-xs text-green-800 dark:text-green-400 flex items-center gap-2">
+                <Check className="h-3 w-3" />
+                {lang === 'fr' ? 'Votre préférence de langue a été sauvegardée' :
+                 lang === 'en' ? 'Your language preference has been saved' :
+                 'Voatahiry ny safidinao momba ny fiteny'}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Section Apparence */}
+      {/* Section Apparence (inchangée) */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-lg">

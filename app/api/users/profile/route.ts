@@ -96,7 +96,22 @@ export async function PATCH(request: Request) {
     }
 
     switch (section) {
-      
+      case 'preferences':
+        // Mettre à jour les préférences
+        if (data.language) {
+          // Sauvegarder aussi dans le champ language principal pour faciliter l'accès
+          updateOperation.$set = {
+            ...updateOperation.$set,
+            preferences: data,
+            language: data.language  // 👈 SAUVEGARDER DANS LE CHAMP PRINCIPAL
+          }
+        } else {
+          updateOperation.$set = {
+            ...updateOperation.$set,
+            preferences: data
+          }
+        }
+        break
       // ------------------------------
       // ONBOARDING COMPLETED
       // ------------------------------

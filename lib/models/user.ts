@@ -448,6 +448,12 @@ export interface UserResponseDTO {
  * Stored in separate collection or embedded
  */
 export interface VerificationToken {
+    language?: 'fr' | 'en' | 'mg'  // 👈 AJOUTER CETTE PROPRIÉTÉ
+  preferences?: {
+    language?: 'fr' | 'en' | 'mg'  // 👈 AUSSI DANS LES PRÉFÉRENCES
+    theme?: 'light' | 'dark' | 'system'
+    notifications?: any
+  }
   /** Unique token identifier */
   _id: ObjectId
   /** User ID */

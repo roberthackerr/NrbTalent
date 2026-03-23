@@ -24,6 +24,12 @@ declare module "next-auth" {
       onboardingRoleCompleted: boolean
       avatar?: string | null
       emailVerified?: boolean | null
+        language?: 'fr' | 'en' | 'mg'  // 👈 AJOUTER CETTE PROPRIÉTÉ
+  preferences?: {
+    language?: 'fr' | 'en' | 'mg'  // 👈 AUSSI DANS LES PRÉFÉRENCES
+    theme?: 'light' | 'dark' | 'system'
+    notifications?: any
+  }
     }
   }
 
