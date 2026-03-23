@@ -111,50 +111,50 @@ export function UserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {/* 🔔 Notifications */}
       <NotificationBell />
 
       {/* 💬 Messages Dropdown séparé */}
       <DropdownMenu open={messagesOpen} onOpenChange={setMessagesOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative h-9 w-9">
-            <MessageCircle className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
+          <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-lg hover:bg-accent/50 transition-colors">
+            <MessageCircle className="h-4.5 w-4.5" />
+            <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-semibold rounded-full flex items-center justify-center shadow-lg">
               2
             </span>
           </Button>
         </DropdownMenuTrigger>
         
         <DropdownMenuContent 
-          className="w-96 max-h-[80vh] overflow-hidden" 
+          className="w-96 max-h-[80vh] overflow-hidden rounded-xl border-0 shadow-2xl" 
           align="end" 
           forceMount
         >
           {/* En-tête Messages */}
-          <DropdownMenuLabel className="p-4 border-b">
-            <div className="flex items-center justify-between">
+          <DropdownMenuLabel className="p-4 border-b border-border/50 bg-gradient-to-r from-background/50 to-background/30">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-lg">Messages</h3>
-                <p className="text-sm text-muted-foreground">
-                  {recentConversations.length} conversations
+                <h3 className="font-bold text-lg">Messages</h3>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {recentConversations.length} conversations actives
                 </p>
               </div>
-              <Button size="sm" asChild>
-                <Link href="/messages" className="flex items-center gap-2">
+              <Button size="sm" asChild className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 shadow-md hover:shadow-lg transition-all h-8">
+                <Link href="/messages" className="flex items-center gap-1.5">
                   <Plus className="h-4 w-4" />
-                  Nouveau
+                  <span className="hidden sm:inline text-xs font-semibold">Nouveau</span>
                 </Link>
               </Button>
             </div>
             
             {/* Barre de recherche */}
             <div className="relative mt-3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
               <input
                 type="text"
-                placeholder="Rechercher une conversation..."
-                className="w-full pl-10 pr-4 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Rechercher..."
+                className="w-full pl-10 pr-4 py-2 text-sm border border-border/50 rounded-lg bg-accent/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
           </DropdownMenuLabel>
@@ -254,42 +254,42 @@ export function UserMenu() {
       {/* 👤 Menu utilisateur simplifié */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 px-2 rounded-full gap-2 hover:bg-accent/50">
-            <Avatar className="h-8 w-8 border-2 border-background">
+          <Button variant="ghost" className="relative h-9 px-2 rounded-lg gap-2 hover:bg-accent/50 transition-colors duration-200 border border-border/20 hover:border-border/50">
+            <Avatar className="h-8 w-8 border-2 border-background/50">
               <AvatarImage src={user.image || ""} alt={user.name || ""} />
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 text-white text-xs font-bold">
                 {user.name?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
             
             {/* Info utilisateur - visible sur desktop */}
             <div className="hidden sm:flex flex-col items-start">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
-              <p className="text-xs text-muted-foreground leading-none capitalize">
+              <p className="text-sm font-semibold leading-tight">{user.name}</p>
+              <p className="text-xs text-muted-foreground leading-tight capitalize font-medium">
                 {user.role || 'Utilisateur'}
               </p>
             </div>
             
-            <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70 hidden sm:block transition-transform group-hover:translate-x-0.5" />
           </Button>
         </DropdownMenuTrigger>
         
-        <DropdownMenuContent className="w-64" align="end" forceMount>
+        <DropdownMenuContent className="w-72 rounded-xl border-0 shadow-2xl" align="end" forceMount>
           {/* En-tête utilisateur */}
-          <DropdownMenuLabel className="p-4">
+          <DropdownMenuLabel className="p-4 bg-gradient-to-r from-background/50 to-background/30 border-b border-border/50">
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-12 w-12 border-2 border-border/30">
                 <AvatarImage src={user.image || ""} alt={user.name || ""} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 text-white font-bold text-sm">
                   {user.name?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Briefcase className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground capitalize">
+                <p className="text-sm font-bold truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate font-medium">{user.email}</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Briefcase className="h-3.5 w-3.5 text-muted-foreground/70" />
+                  <span className="text-xs text-muted-foreground capitalize font-semibold">
                     {user.role || 'Utilisateur'}
                   </span>
                 </div>
@@ -300,26 +300,26 @@ export function UserMenu() {
           <DropdownMenuSeparator />
 
           {/* Navigation principale */}
-          <div className="p-1">
-            <DropdownMenuItem asChild>
-              <Link href={dashboardUrl} className="cursor-pointer flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                <span>Tableau de bord</span>
+          <div className="p-1.5 space-y-0.5">
+            <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
+              <Link href={dashboardUrl} className="flex items-center gap-3 py-2.5">
+                <LayoutDashboard className="h-4.5 w-4.5 text-blue-600" />
+                <span className="font-semibold">Tableau de bord</span>
               </Link>
             </DropdownMenuItem>
             
-            <DropdownMenuItem asChild>
-              <Link href="/profile" className="cursor-pointer flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>Mon profil</span>
+            <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
+              <Link href="/profile" className="flex items-center gap-3 py-2.5">
+                <User className="h-4.5 w-4.5 text-violet-600" />
+                <span className="font-semibold">Mon profil</span>
               </Link>
             </DropdownMenuItem>
             
-            <DropdownMenuItem asChild>
-              <Link href="/messages" className="cursor-pointer flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                <span>Messages</span>
-                <span className="ml-auto h-5 w-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+            <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer">
+              <Link href="/messages" className="flex items-center gap-3 py-2.5">
+                <MessageCircle className="h-4.5 w-4.5 text-purple-600" />
+                <span className="font-semibold">Messages</span>
+                <span className="ml-auto h-5 w-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-md">
                   2
                 </span>
               </Link>
@@ -329,27 +329,27 @@ export function UserMenu() {
           <DropdownMenuSeparator />
 
           {/* Paramètres et Déconnexion */}
-          <div className="p-1">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="cursor-pointer flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <span>Paramètres</span>
+          <div className="p-1.5 space-y-0.5 border-t border-border/50">
+            <DropdownMenuItem asChild className="rounded-lg hover:bg-accent/60 transition-colors cursor-pointer mt-1.5">
+              <Link href="/dashboard/settings" className="flex items-center gap-3 py-2.5">
+                <Settings className="h-4.5 w-4.5 text-amber-600" />
+                <span className="font-semibold">Paramètres</span>
               </Link>
             </DropdownMenuItem>
             
             <DropdownMenuItem 
               onClick={() => signOut({ callbackUrl: "/" })} 
-              className="cursor-pointer text-red-600 focus:text-red-600 flex items-center gap-2"
+              className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-100/20 focus:text-red-600 flex items-center gap-3 py-2.5 rounded-lg transition-colors"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Se déconnecter</span>
+              <LogOut className="h-4.5 w-4.5" />
+              <span className="font-semibold">Se déconnecter</span>
             </DropdownMenuItem>
           </div>
 
           {/* Footer avec version */}
-          <div className="p-3 border-t">
-            <p className="text-xs text-muted-foreground text-center">
-              NRB Talents v1.0
+          <div className="p-3 border-t border-border/50 bg-muted/30 text-center rounded-b-xl">
+            <p className="text-xs text-muted-foreground font-semibold">
+              NRB Talents <span className="text-blue-600 font-bold">v1.0</span>
             </p>
           </div>
         </DropdownMenuContent>

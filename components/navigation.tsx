@@ -55,10 +55,10 @@ const pill =
   "text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none"
 const navBtn = (active: boolean) =>
   cn(
-    "relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 select-none cursor-pointer group",
+    "relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 select-none cursor-pointer group",
     active
-      ? "text-foreground"
-      : "text-muted-foreground hover:text-foreground"
+      ? "text-foreground bg-accent/50"
+      : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
   )
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -248,42 +248,42 @@ export function Navigation() {
       <nav className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-background/98 backdrop-blur-2xl border-b border-border/60 shadow-[0_1px_20px_rgba(0,0,0,0.08)]"
-          : "bg-background/95 backdrop-blur-xl border-b border-border/30"
+          ? "bg-background/95 backdrop-blur-3xl border-b border-border/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+          : "bg-gradient-to-b from-background/98 to-background/95 backdrop-blur-2xl border-b border-border/20"
       )}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex h-16 items-center gap-4">
+        <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+          <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-4">
 
             {/* ── Logo ──────────────────────────────────────────────── */}
             <Link href={`/${lang}`}
-              className="flex items-center gap-2.5 group flex-shrink-0"
+              className="flex items-center gap-2 sm:gap-2.5 group flex-shrink-0"
               onClick={() => setOpenMenu(null)}>
               <div className="relative">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:shadow-violet-500/40 transition-shadow">
-                  <span className="text-white font-black text-xs tracking-tight">NRB</span>
+                <div className="h-8 sm:h-9 w-8 sm:w-9 rounded-xl bg-gradient-to-br from-blue-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:shadow-violet-500/50 transition-all duration-300 group-hover:scale-105">
+                  <span className="text-white font-black text-[10px] sm:text-xs tracking-tighter">NRB</span>
                 </div>
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400 to-purple-600 opacity-0 group-hover:opacity-20 blur-sm transition-opacity" />
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400 to-purple-600 opacity-0 group-hover:opacity-30 blur-md transition-opacity duration-300" />
               </div>
-              <div className="hidden sm:flex flex-col leading-none">
-                <span className="text-base font-black bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
+              <div className="hidden sm:flex flex-col leading-tight">
+                <span className="text-sm sm:text-base font-black bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
                   NRBTalents
                 </span>
-                <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium mt-0.5 opacity-75">
                   {t("navigation.tagline", "Freelance Platform")}
                 </span>
               </div>
             </Link>
 
             {/* ── Desktop mega nav ──────────────────────────────────── */}
-            <div className="hidden lg:flex items-center gap-0.5 flex-1">
+            <div className="hidden lg:flex items-center gap-1 flex-1">
               {/* Home */}
               <Link href={`/${lang}`}
                 className={navBtn(isActive(`/${lang}`))}
                 onClick={() => setOpenMenu(null)}>
-                <Home className="h-3.5 w-3.5" />
-                <span>Accueil</span>
+                <Home className="h-4 w-4" />
+                <span className="hidden xl:inline">Accueil</span>
                 {isActive(`/${lang}`) && (
-                  <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
+                  <span className="absolute bottom-0.5 left-2 right-2 h-1 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
                 )}
               </Link>
 
@@ -300,13 +300,13 @@ export function Navigation() {
                     onClick={() => setOpenMenu(isOpen ? null : key)}
                     onMouseEnter={() => setOpenMenu(key)}
                   >
-                    <span>{mega.label}</span>
+                    <span className="hidden xl:inline">{mega.label}</span>
                     <ChevronDown className={cn(
-                      "h-3 w-3 transition-transform duration-200",
+                      "h-4 w-4 transition-transform duration-200",
                       isOpen && "rotate-180"
                     )} />
                     {(anyActive) && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
+                      <span className="absolute bottom-0.5 left-2 right-2 h-1 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
                     )}
                   </button>
                 )
@@ -317,16 +317,16 @@ export function Navigation() {
             </div>
 
             {/* ── Desktop right actions ─────────────────────────────── */}
-            <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
               <SearchCommand />
               <ThemeToggle />
 
               {/* Lang */}
               <div className="relative group">
-                <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all">
-                  <Globe className="h-3.5 w-3.5" />
-                  <span className="uppercase">{lang}</span>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
+                <button className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all duration-200">
+                  <Globe className="h-4 w-4" />
+                  <span className="uppercase tracking-wider">{lang}</span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                 </button>
                 <div className="absolute right-0 top-full mt-1.5 w-40 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 overflow-hidden z-50">
                   {languages.map((l) => (
@@ -347,13 +347,13 @@ export function Navigation() {
 
               {!session?.user ? (
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" asChild className="h-8 px-3 text-sm">
+                  <Button variant="ghost" size="sm" asChild className="h-9 px-3 text-sm font-medium hover:bg-accent/50 transition-colors">
                     <Link href={`/${lang}/auth/signin`}>Connexion</Link>
                   </Button>
                   <Button size="sm" asChild
-                    className="h-8 px-4 text-sm bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 shadow-md shadow-violet-500/20 border-0">
+                    className="h-9 px-4 text-sm font-semibold bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 hover:from-blue-700 hover:via-violet-700 hover:to-purple-700 shadow-lg shadow-violet-500/30 border-0 transition-all duration-200 hover:shadow-violet-500/50 hover:scale-105">
                     <Link href={`/${lang}/auth/signup`}>
-                      <Rocket className="h-3.5 w-3.5 mr-1.5" />
+                      <Rocket className="h-4 w-4 mr-1.5" />
                       S'inscrire
                     </Link>
                   </Button>
@@ -364,12 +364,12 @@ export function Navigation() {
             </div>
 
             {/* ── Mobile actions ────────────────────────────────────── */}
-            <div className="flex items-center gap-1.5 lg:hidden ml-auto">
+            <div className="flex items-center gap-1 lg:hidden ml-auto">
               <SearchCommand variant="mobile" />
               <ThemeToggle />
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg hover:bg-accent/50">
                     {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                   </Button>
                 </SheetTrigger>
