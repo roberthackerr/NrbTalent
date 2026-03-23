@@ -306,8 +306,8 @@ export function Navigation() {
                 )
               })}
 
-              {/* Meet */}
-              <MeetButtonCompact />
+              {/* Meet               <MeetButtonCompact />*/}
+
             </div>
 
             {/* ── Desktop right actions ─────────────────────────────── */}
