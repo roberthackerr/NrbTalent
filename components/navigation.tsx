@@ -577,14 +577,14 @@ export function Navigation() {
             className="fixed top-16 left-0 right-0 z-50 flex justify-center px-4"
             onMouseLeave={() => setOpenMenu(null)}
           >
-            <div className="w-full max-w-5xl rounded-2xl border border-border/60 bg-popover/98 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden">
+            <div className="w-full max-w-[95vw] sm:max-w-3xl lg:max-w-5xl  rounded-2xl border border-border/60 bg-popover/98 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden">
               {(() => {
                 const mega = megas[openMenu]
                 if (!mega) return null
                 return (
                   <div className="flex">
                     {/* Groups */}
-                    <div className="flex-1 grid grid-cols-2 gap-0 divide-x divide-border/40">
+                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-0 divide-x divide-border/40">
                       {mega.groups.map((group) => (
                         <div key={group.title} className="p-5">
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-1">
