@@ -11,9 +11,9 @@ import {
   Briefcase, BookOpen, Layers, CreditCard, UserCheck, BarChart3,
   Bell, Hash, GitBranch, Package, Cpu, ScrollText, Gavel,
   Mail, Info, ArrowRight, ShoppingBag, GraduationCap, Headphones,
-  Search
+  Search, Heart
 } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { UserMenu } from "@/components/user-menu"
 import { SearchCommand } from "@/components/search-command"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -25,20 +25,6 @@ import {
 } from "@/components/ui/sheet"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
-
-// ─── Types ─────────────────────────────────────────────────────────────────
-interface MegaItem {
-  href: string
-  label: string
-  description: string
-  icon: React.ReactNode
-  badge?: string
-}
-
-interface MegaGroup {
-  title: string
-  items: MegaItem[]
-}
 
 // ─── Component ────────────────────────────────────────────────────────────
 export function Navigation() {
@@ -93,48 +79,66 @@ export function Navigation() {
     window.location.href = `/${code}/${rest}`
   }
 
-  // ─── Navigation items for mobile ───────────────────────────────────────
-  const mobileNavItems = [
-    { href: `/${lang}`, label: "Accueil", icon: <Home className="h-5 w-5" /> },
-    { href: `/${lang}/talents`, label: "Talents", icon: <Users className="h-5 w-5" /> },
-    { href: `/${lang}/gigs`, label: "Services", icon: <Zap className="h-5 w-5" /> },
-    { href: `/${lang}/projects`, label: "Projets", icon: <Rocket className="h-5 w-5" /> },
-    { href: `/${lang}/ai-matching`, label: "AI Matching", icon: <Sparkles className="h-5 w-5" /> },
+  // ─── Navigation items for desktop ──────────────────────────────────────
+  const desktopNavItems = [
+    { href: `/${lang}`, label: "Accueil", icon: <Home className="h-4 w-4" /> },
+    { href: `/${lang}/talents`, label: "Talents", icon: <Users className="h-4 w-4" /> },
+    { href: `/${lang}/gigs`, label: "Services", icon: <Zap className="h-4 w-4" /> },
+    { href: `/${lang}/projects`, label: "Projets", icon: <Rocket className="h-4 w-4" /> },
+    { href: `/${lang}/ai-matching`, label: "AI Matching", icon: <Sparkles className="h-4 w-4" /> },
   ]
 
-  // ─── Marketplace items for mobile accordion ────────────────────────────
-  const marketplaceItems = [
-    { href: `/${lang}/talents`, label: "Talents", desc: "Parcourir tous les freelances", icon: <Users className="h-4 w-4" /> },
-    { href: `/${lang}/freelancers`, label: "Freelancers", desc: "Profils vérifiés", icon: <UserCheck className="h-4 w-4" /> },
-    { href: `/${lang}/ai-matching`, label: "AI Matching", desc: "Trouver le profil parfait", icon: <Sparkles className="h-4 w-4" />, badge: "AI" },
-    { href: `/${lang}/gigs`, label: "Gigs", desc: "Services proposés", icon: <Zap className="h-4 w-4" /> },
-    { href: `/${lang}/projects`, label: "Projets", desc: "Missions & appels d'offres", icon: <Briefcase className="h-4 w-4" /> },
-  ]
-
-  // ─── Workspace items for mobile accordion ──────────────────────────────
-  const workspaceItems = [
-    { href: `/${lang}/dashboard`, label: "Tableau de bord", desc: "Vue d'ensemble", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { href: `/${lang}/dashboard/messages`, label: "Messages", desc: "Conversations", icon: <MessageCircle className="h-4 w-4" /> },
-    { href: `/${lang}/calendar`, label: "Calendrier", desc: "Planifier", icon: <Calendar className="h-4 w-4" /> },
-    { href: `/${lang}/contracts`, label: "Contrats", desc: "Accords juridiques", icon: <ScrollText className="h-4 w-4" /> },
-    { href: `/${lang}/dashboard/payment-methods`, label: "Paiements", desc: "Méthodes de paiement", icon: <CreditCard className="h-4 w-4" /> },
-  ]
-
-  // ─── Community items for mobile accordion ──────────────────────────────
-  const communityItems = [
-    { href: `/${lang}/dashboard/academy`, label: "Académie", desc: "Formations", icon: <GraduationCap className="h-4 w-4" />, badge: "New" },
-    { href: `/${lang}/blog`, label: "Blog", desc: "Articles", icon: <TrendingUp className="h-4 w-4" /> },
-    { href: `/${lang}/groups`, label: "Groupes", desc: "Communautés pros", icon: <Hash className="h-4 w-4" /> },
-    { href: `/${lang}/ide`, label: "IDE Cloud", desc: "Codez dans le cloud", icon: <Code2 className="h-4 w-4" />, badge: "Beta" },
-  ]
-
-  // ─── Enterprise items for mobile accordion ─────────────────────────────
-  const enterpriseItems = [
-    { href: `/${lang}/enterprise`, label: "Solutions Entreprise", desc: "Pour grandes organisations", icon: <Building className="h-4 w-4" /> },
-    { href: `/${lang}/pricing`, label: "Tarifs", desc: "Plans & abonnements", icon: <DollarSign className="h-4 w-4" /> },
-    { href: `/${lang}/docs`, label: "Documentation", desc: "API & guides", icon: <FileText className="h-4 w-4" /> },
-    { href: `/${lang}/faq`, label: "FAQ", desc: "Questions fréquentes", icon: <HelpCircle className="h-4 w-4" /> },
-    { href: `/${lang}/contact`, label: "Contact", desc: "Parlez à notre équipe", icon: <Headphones className="h-4 w-4" /> },
+  // ─── Mobile navigation items (full list for hamburger) ─────────────────
+  const mobileNavSections = [
+    {
+      title: "Navigation principale",
+      items: [
+        { href: `/${lang}`, label: "Accueil", icon: <Home className="h-5 w-5" /> },
+        { href: `/${lang}/talents`, label: "Talents", icon: <Users className="h-5 w-5" /> },
+        { href: `/${lang}/gigs`, label: "Services", icon: <Zap className="h-5 w-5" /> },
+        { href: `/${lang}/projects`, label: "Projets", icon: <Rocket className="h-5 w-5" /> },
+        { href: `/${lang}/ai-matching`, label: "AI Matching", icon: <Sparkles className="h-5 w-5" /> },
+      ],
+    },
+    {
+      title: "Marketplace",
+      items: [
+        { href: `/${lang}/talents`, label: "Talents", icon: <Users className="h-4 w-4" />, desc: "Parcourir tous les freelances" },
+        { href: `/${lang}/freelancers`, label: "Freelancers", icon: <UserCheck className="h-4 w-4" />, desc: "Profils vérifiés" },
+        { href: `/${lang}/ai-matching`, label: "AI Matching", icon: <Sparkles className="h-4 w-4" />, desc: "Trouver le profil parfait", badge: "AI" },
+        { href: `/${lang}/gigs`, label: "Gigs", icon: <Zap className="h-4 w-4" />, desc: "Services proposés" },
+        { href: `/${lang}/projects`, label: "Projets", icon: <Briefcase className="h-4 w-4" />, desc: "Missions & appels d'offres" },
+      ],
+    },
+    {
+      title: "Espace de travail",
+      items: [
+        { href: `/${lang}/dashboard`, label: "Tableau de bord", icon: <LayoutDashboard className="h-4 w-4" />, desc: "Vue d'ensemble" },
+        { href: `/${lang}/dashboard/messages`, label: "Messages", icon: <MessageCircle className="h-4 w-4" />, desc: "Conversations" },
+        { href: `/${lang}/calendar`, label: "Calendrier", icon: <Calendar className="h-4 w-4" />, desc: "Planifier" },
+        { href: `/${lang}/contracts`, label: "Contrats", icon: <ScrollText className="h-4 w-4" />, desc: "Accords juridiques" },
+        { href: `/${lang}/dashboard/payment-methods`, label: "Paiements", icon: <CreditCard className="h-4 w-4" />, desc: "Méthodes de paiement" },
+      ],
+    },
+    {
+      title: "Communauté",
+      items: [
+        { href: `/${lang}/dashboard/academy`, label: "Académie", icon: <GraduationCap className="h-4 w-4" />, desc: "Formations", badge: "New" },
+        { href: `/${lang}/blog`, label: "Blog", icon: <TrendingUp className="h-4 w-4" />, desc: "Articles" },
+        { href: `/${lang}/groups`, label: "Groupes", icon: <Hash className="h-4 w-4" />, desc: "Communautés pros" },
+        { href: `/${lang}/ide`, label: "IDE Cloud", icon: <Code2 className="h-4 w-4" />, desc: "Codez dans le cloud", badge: "Beta" },
+      ],
+    },
+    {
+      title: "Entreprise",
+      items: [
+        { href: `/${lang}/enterprise`, label: "Solutions Entreprise", icon: <Building className="h-4 w-4" />, desc: "Pour grandes organisations" },
+        { href: `/${lang}/pricing`, label: "Tarifs", icon: <DollarSign className="h-4 w-4" />, desc: "Plans & abonnements" },
+        { href: `/${lang}/docs`, label: "Documentation", icon: <FileText className="h-4 w-4" />, desc: "API & guides" },
+        { href: `/${lang}/faq`, label: "FAQ", icon: <HelpCircle className="h-4 w-4" />, desc: "Questions fréquentes" },
+        { href: `/${lang}/contact`, label: "Contact", icon: <Headphones className="h-4 w-4" />, desc: "Parlez à notre équipe" },
+      ],
+    },
   ]
 
   const externalLinks = [
@@ -183,26 +187,40 @@ export function Navigation() {
               </span>
             </Link>
 
-            {/* ─── CENTER - Search on mobile, empty on desktop ────────────── */}
-            <div className="flex-1 flex justify-center">
-              {/* Mobile: search button only */}
-              <div className="sm:hidden">
-                <SearchCommand variant="mobile" />
-              </div>
+            {/* ─── DESKTOP NAVIGATION (visible sur tablette et desktop) ───── */}
+            <div className="hidden sm:flex items-center gap-1 flex-1 justify-center">
+              {desktopNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                    isActive(item.href)
+                      ? "text-foreground bg-accent/30"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/20"
+                  )}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
             </div>
 
             {/* ─── RIGHT ACTIONS ─────────────────────────────────────────── */}
             <div className="flex items-center gap-1">
 
-              {/* Desktop search */}
+              {/* Search - visible sur desktop et mobile */}
               <div className="hidden sm:block">
                 <SearchCommand />
+              </div>
+              <div className="sm:hidden">
+                <SearchCommand variant="mobile" />
               </div>
 
               {/* Theme toggle */}
               <ThemeToggle />
 
-              {/* Language selector - visible on all screens */}
+              {/* Language selector */}
               <div className="relative group">
                 <button className="flex items-center gap-0.5 px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
                   <Globe className="h-4 w-4" />
@@ -227,10 +245,10 @@ export function Navigation() {
                 </div>
               </div>
 
-              {/* User menu - visible on all screens */}
+              {/* User menu */}
               <UserMenu dict={dict} lang={lang} />
 
-              {/* Mobile menu button */}
+              {/* Mobile menu button - visible uniquement sur mobile */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg sm:hidden">
@@ -239,7 +257,7 @@ export function Navigation() {
                 </SheetTrigger>
 
                 <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 flex flex-col">
-                  {/* Header with logo and close */}
+                  {/* Header */}
                   <SheetHeader className="px-4 py-3 border-b flex-shrink-0">
                     <SheetTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -255,7 +273,8 @@ export function Navigation() {
                   </SheetHeader>
 
                   {/* Scrollable content */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto pb-20">
+                    
                     {/* User info if logged in */}
                     {session?.user && (
                       <div className="p-4 border-b">
@@ -274,165 +293,52 @@ export function Navigation() {
                       </div>
                     )}
 
-                    {/* Main navigation links */}
-                    <div className="p-3 space-y-1">
-                      {mobileNavItems.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                            isActive(item.href)
-                              ? "bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-foreground border-l-2 border-blue-500"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                          )}
-                        >
-                          <div className={cn(
-                            "p-1.5 rounded-lg",
-                            isActive(item.href) ? "bg-blue-500/20 text-blue-600" : "bg-accent/40"
-                          )}>
-                            {item.icon}
-                          </div>
-                          <span>{item.label}</span>
-                          <ChevronRight className="h-3.5 w-3.5 ml-auto opacity-50" />
-                        </Link>
-                      ))}
-                    </div>
-
-                    {/* Marketplace section */}
-                    <div className="px-3 pt-2">
-                      <details className="group">
-                        <summary className="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent/30">
-                          <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded-lg bg-accent/40">
-                              <Building className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm font-medium">Marketplace</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-                        </summary>
-                        <div className="pl-9 pt-1 pb-2 space-y-1">
-                          {marketplaceItems.map((item) => (
+                    {/* ALL MOBILE NAVIGATION SECTIONS */}
+                    {mobileNavSections.map((section, idx) => (
+                      <div key={idx} className="px-3 pt-4 first:pt-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-2 mb-2">
+                          {section.title}
+                        </p>
+                        <div className="space-y-1">
+                          {section.items.map((item) => (
                             <Link
                               key={item.href}
                               href={item.href}
                               onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent/50"
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
+                                isActive(item.href)
+                                  ? "bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-foreground border-l-2 border-blue-500"
+                                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                              )}
                             >
-                              <div className="p-1 rounded-md bg-accent/30">{item.icon}</div>
+                              <div className={cn(
+                                "p-1.5 rounded-lg",
+                                isActive(item.href) ? "bg-blue-500/20 text-blue-600" : "bg-accent/40"
+                              )}>
+                                {item.icon}
+                              </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-1">
-                                  <span>{item.label}</span>
-                                  {item.badge && <span className={pill + " bg-blue-500/20 text-blue-600"}>{item.badge}</span>}
+                                  <span className="font-medium">{item.label}</span>
+                                  {(item as any).badge && (
+                                    <span className={pill + " bg-blue-500/20 text-blue-600"}>{ (item as any).badge }</span>
+                                  )}
                                 </div>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                {(item as any).desc && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{(item as any).desc}</p>
+                                )}
                               </div>
+                              <ChevronRight className="h-3.5 w-3.5 opacity-50" />
                             </Link>
                           ))}
                         </div>
-                      </details>
-                    </div>
-
-                    {/* Workspace section */}
-                    <div className="px-3 pt-1">
-                      <details className="group">
-                        <summary className="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent/30">
-                          <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded-lg bg-accent/40">
-                              <LayoutDashboard className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm font-medium">Espace de travail</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-                        </summary>
-                        <div className="pl-9 pt-1 pb-2 space-y-1">
-                          {workspaceItems.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent/50"
-                            >
-                              <div className="p-1 rounded-md bg-accent/30">{item.icon}</div>
-                              <div className="flex-1">
-                                <span>{item.label}</span>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </details>
-                    </div>
-
-                    {/* Community section */}
-                    <div className="px-3 pt-1">
-                      <details className="group">
-                        <summary className="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent/30">
-                          <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded-lg bg-accent/40">
-                              <Users className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm font-medium">Communauté</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-                        </summary>
-                        <div className="pl-9 pt-1 pb-2 space-y-1">
-                          {communityItems.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent/50"
-                            >
-                              <div className="p-1 rounded-md bg-accent/30">{item.icon}</div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-1">
-                                  <span>{item.label}</span>
-                                  {item.badge && <span className={pill + " bg-purple-500/20 text-purple-600"}>{item.badge}</span>}
-                                </div>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </details>
-                    </div>
-
-                    {/* Enterprise section */}
-                    <div className="px-3 pt-1">
-                      <details className="group">
-                        <summary className="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer hover:bg-accent/30">
-                          <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded-lg bg-accent/40">
-                              <Building className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm font-medium">Entreprise</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-                        </summary>
-                        <div className="pl-9 pt-1 pb-2 space-y-1">
-                          {enterpriseItems.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent/50"
-                            >
-                              <div className="p-1 rounded-md bg-accent/30">{item.icon}</div>
-                              <div className="flex-1">
-                                <span>{item.label}</span>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </details>
-                    </div>
+                      </div>
+                    ))}
 
                     {/* External platforms */}
-                    <div className="px-3 pt-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-3 mb-2">
+                    <div className="px-3 pt-6">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-2 mb-2">
                         Plateformes partenaires
                       </p>
                       <div className="space-y-1">
@@ -443,18 +349,20 @@ export function Navigation() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => setMobileOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-accent/50 text-muted-foreground hover:text-foreground"
                           >
-                            {link.icon}
+                            <div className="p-1.5 rounded-lg bg-accent/40">
+                              {link.icon}
+                            </div>
                             <span>{link.name}</span>
-                            <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+                            <ExternalLink className="h-3.5 w-3.5 ml-auto opacity-50" />
                           </a>
                         ))}
                       </div>
                     </div>
 
                     {/* Auth section */}
-                    <div className="p-4 border-t mt-3">
+                    <div className="p-4 border-t mt-4">
                       {session?.user ? (
                         <Button
                           variant="destructive"
@@ -487,7 +395,7 @@ export function Navigation() {
                     </div>
 
                     {/* Footer links */}
-                    <div className="px-4 pb-4">
+                    <div className="px-4 pb-6">
                       <div className="flex flex-wrap justify-center gap-3 text-xs text-muted-foreground">
                         <Link href={`/${lang}/terms`} onClick={() => setMobileOpen(false)} className="hover:text-foreground">CGU</Link>
                         <Link href={`/${lang}/privacy`} onClick={() => setMobileOpen(false)} className="hover:text-foreground">Confidentialité</Link>
