@@ -145,7 +145,7 @@ export function Navigation() {
   const megas: Record<string, MegaMenu> = {
     marketplace: {
       label: t("navigation.marketplace", "Marketplace"),
-      cta: { label: t("navigation.postProject", "Poster un projet"), href: `/${lang}/projects/create`, icon: <Rocket className="h-3.5 w-3.5" /> },
+      cta: { label: t("navigation.postProject", " Poster un projet"), href: `/${lang}/projects/create`, icon: <Rocket className="h-3.5 w-3.5" /> },
       groups: [
         {
           title: t("navigation.findTalents", "Trouver des talents"),
