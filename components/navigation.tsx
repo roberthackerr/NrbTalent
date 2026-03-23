@@ -8,7 +8,8 @@ import {
   MessageCircle, User, LayoutDashboard, LogOut, Building,
   ChevronDown, ChevronRight, Home, Globe, Briefcase, 
   Award, Code2, Calendar, DollarSign, Shield, Star,
-  TrendingUp, Video, FileText, HelpCircle, ExternalLink
+  TrendingUp, Video, FileText, HelpCircle, ExternalLink,
+  CheckCircle2
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { UserMenu } from "@/components/user-menu"
