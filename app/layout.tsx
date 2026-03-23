@@ -19,6 +19,12 @@ export const metadata: Metadata = {
   },
 }
 
+// ✅ Ajoute ceci pour corriger le zoom
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
