@@ -293,7 +293,7 @@ export default function HomePage() {
   }
 
   return (
-    <div >
+    <div className="min-h-screen bg-[#f4f5f7] dark:bg-[#0d0d12]">
       <Navigation />
       <main className="pt-16">
 
@@ -306,8 +306,8 @@ export default function HomePage() {
         lang={lang} 
       />
       <div className="mt-8 flex justify-center gap-4">
-          
-          {/* Autres boutons... <MeetButtonHero dict={dict} lang={lang} /> */}
+          <MeetButtonHero dict={dict} lang={lang} />
+          {/* Autres boutons... */}
         </div>
         <StatsOverview dict={dict} />
         <QuickActions user={session?.user} onIDEClick={() => setShowIDE(true)} dict={dict} />
