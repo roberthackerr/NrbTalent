@@ -1,7 +1,7 @@
 // app/[lang]/dashboard/freelance/applications/page.tsx
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -93,7 +93,7 @@ interface ApplicationStats {
 }
 
 export default function MyApplicationsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
   const lang = params.lang as Locale
@@ -115,18 +115,15 @@ export default function MyApplicationsPage() {
 
   const itemsPerPage = 10
 
+  // Charger le dictionnaire
   useEffect(() => {
+    console.log('🔤 Loading dictionary for language:', lang)
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
-  useEffect(() => {
-    if (dict && session) {
-      fetchApplications()
-      fetchStats()
-    }
-  }, [dict, session, searchTerm, statusFilter, sortBy, sortOrder, currentPage])
-
-  const fetchApplications = async () => {
+  // Fonctions avec useCallback pour éviter les re-créations
+  const fetchApplications = useCallback(async () => {
+    console.log('🔄 Fetching applications with params:', { currentPage, searchTerm, statusFilter, sortBy, sortOrder })
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -138,33 +135,65 @@ export default function MyApplicationsPage() {
         sortOrder,
       })
 
-      const response = await fetch(`/api/applications/my?${params}`)
+      const url = `/api/applications/my?${params}`
+      console.log('📡 API URL:', url)
+      
+      const response = await fetch(url)
+      console.log('📡 Response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
-        setApplications(data.applications)
-        setTotalPages(data.pagination.totalPages)
+        console.log('✅ Applications received:', data.applications?.length)
+        setApplications(data.applications || [])
+        setTotalPages(data.pagination?.totalPages || 1)
       } else {
-        throw new Error("Failed to fetch applications")
+        const error = await response.json()
+        console.error('❌ API error:', error)
+        throw new Error(error.error || "Failed to fetch applications")
       }
     } catch (error) {
-      console.error("Error fetching applications:", error)
+      console.error("❌ Error fetching applications:", error)
       toast.error(dict?.applications?.errors?.fetchFailed || "Erreur lors du chargement de vos candidatures")
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, searchTerm, statusFilter, sortBy, sortOrder, itemsPerPage, dict])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    console.log('📊 Fetching stats...')
     try {
       const response = await fetch("/api/applications/my/stats")
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Stats received:', data.stats)
         setStats(data.stats)
       }
     } catch (error) {
       console.error("Error fetching stats:", error)
     }
-  }
+  }, [])
+
+  // Effet principal - attend que le dictionnaire ET la session soient prêts
+  useEffect(() => {
+    console.log('📢 Effect triggered - dict:', !!dict, 'session status:', status, 'session user:', !!session?.user)
+    
+    if (dict && session?.user) {
+      console.log('✅ Both dict and session ready, fetching data...')
+      fetchApplications()
+      fetchStats()
+    } else if (status === 'unauthenticated') {
+      console.log('🔐 User not authenticated')
+      setLoading(false)
+    }
+  }, [dict, session, status, fetchApplications, fetchStats])
+
+  // Effet pour les changements de filtres
+  useEffect(() => {
+    if (dict && session?.user) {
+      console.log('🔄 Filters changed, refetching...')
+      fetchApplications()
+    }
+  }, [searchTerm, statusFilter, sortBy, sortOrder, currentPage, dict, session, fetchApplications])
 
   const handleWithdraw = async (applicationId: string) => {
     setWithdrawingId(applicationId)
@@ -237,12 +266,19 @@ export default function MyApplicationsPage() {
     return type
   }
 
-  if (!dict) {
+  // Afficher un loader pendant le chargement initial
+  if (!dict || status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
         <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
       </div>
     )
+  }
+
+  // Rediriger si non authentifié
+  if (status === 'unauthenticated') {
+    router.push(`/${lang}/auth/signin`)
+    return null
   }
 
   return (
@@ -269,7 +305,7 @@ export default function MyApplicationsPage() {
         </div>
 
         <div className="p-4 md:p-6 lg:p-8">
-          {/* Header */}
+          {/* Header - reste identique */}
           <div className="mb-6 md:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -296,9 +332,10 @@ export default function MyApplicationsPage() {
             </div>
           </div>
 
-          {/* Statistics Cards */}
+          {/* Statistics Cards - reste identique */}
           {stats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              {/* ... contenu identique ... */}
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
@@ -579,7 +616,7 @@ export default function MyApplicationsPage() {
         </div>
       </div>
 
-      {/* Application Details Dialog */}
+      {/* Application Details Dialog - reste identique */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-purple-200 dark:border-purple-800">
           {selectedApplication && (
