@@ -100,15 +100,15 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
-
-    const gigId = params.id
+ const  {id} =await params
+    const gigId=id
     const body = await request.json()
     const { 
       title, 
