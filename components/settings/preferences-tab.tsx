@@ -24,9 +24,10 @@ const LANGUAGES = locales.map(code => ({
 interface PreferencesTabProps {
   dict: any
   lang: Locale
+  onLanguageChange?: (newLang: Locale) => void
 }
 
-export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
+export function PreferencesTab({ dict, lang, onLanguageChange }: PreferencesTabProps) {
   const { theme, setTheme, systemTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
@@ -52,7 +53,7 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
     return currentTheme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
   }
 
-  // 👈 NOUVELLE FONCTION: Sauvegarder la langue dans le profil
+  // Sauvegarder la langue dans le profil
   const saveLanguageToProfile = async (newLang: Locale) => {
     setIsSaving(true)
     try {
@@ -105,16 +106,22 @@ export function PreferencesTab({ dict, lang }: PreferencesTabProps) {
 
   const handleLanguageSelect = async (langCode: string) => {
     const newLang = langCode as Locale
-    setSelectedLanguage(newLang)
     
-    // 👈 SAUVEGARDER LA LANGUE DANS LE PROFIL
+    // Sauvegarder dans le profil
     await saveLanguageToProfile(newLang)
     
     // Changer la langue dans l'URL
     const segments = pathname.split('/')
     segments[1] = newLang
     const newPathname = segments.join('/')
+    
+    // Rediriger vers la nouvelle URL
     router.push(newPathname)
+    
+    // Notifier le parent du changement
+    if (onLanguageChange) {
+      onLanguageChange(newLang)
+    }
   }
 
   const getThemeText = () => {
