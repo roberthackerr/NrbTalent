@@ -11,11 +11,9 @@ import {
   Briefcase, BookOpen, Layers, CreditCard, UserCheck, BarChart3,
   Bell, Hash, GitBranch, Package, Cpu, ScrollText, Gavel, Cookie,
   Mail, Info, ArrowRight, Zap as ZapIcon,
-  
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { UserMenu } from "@/components/user-menu"
-//import { SearchCommand } from "@/components/search-command"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -30,6 +28,8 @@ import { MeetButtonCompact } from "./meet/MeetButton"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import Image from "next/image"
+import { NotificationsDropdown } from "@/components/notifications-dropdown"
+import { MessagesDropdown } from "@/components/messages-dropdown"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MegaItem {
@@ -112,103 +112,103 @@ export function Navigation() {
     window.location.href = `/${code}/${rest}`
   }
 
-  // ── Mega menu definitions ──────────────────────────────────────────────────
+  // ── Mega menu definitions avec traductions ──────────────────────────────────
   const megas: Record<string, MegaMenu> = {
     marketplace: {
-      label: "Marketplace",
-      cta: { label: "Poster un projet", href: `/${lang}/projects/create`, icon: <Rocket className="h-3.5 w-3.5 shrink-0" /> },
+      label: t("navigation.marketplace", "Marketplace"),
+      cta: { label: t("navigation.postProject", "Poster un projet"), href: `/${lang}/projects/create`, icon: <Rocket className="h-3.5 w-3.5 shrink-0" /> },
       groups: [
         {
-          title: "Trouver des talents",
+          title: t("navigation.findTalents", "Trouver des talents"),
           items: [
-            { href: `/${lang}/talents`,            label: "Talents",              description: "Parcourir tous les freelances",        icon: <Users className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/freelancers`,         label: "Freelancers",          description: "Profils vérifiés & disponibles",       icon: <UserCheck className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/ai-matching`,         label: "AI Matching",          description: "Trouver le profil parfait par IA",     icon: <Sparkles className="h-4 w-4 shrink-0" />, badge: "IA", highlight: true },
-            { href: `/${lang}/ai-matching/clients`, label: "Matching Clients",     description: "Recommandations pour clients",         icon: <Sparkles className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/talents`,            label: t("navigations.talents", "Talents"),              description: t("navigations.talentsDesc", "Parcourir tous les freelances"),        icon: <Users className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/freelancers`,         label: t("navigations.freelancers", "Freelancers"),          description: t("navigations.freelancersDesc", "Profils vérifiés & disponibles"),       icon: <UserCheck className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/ai-matching`,         label: t("navigations.aiMatching", "AI Matching"),          description: t("navigations.aiMatchingDesc", "Trouver le profil parfait par IA"),     icon: <Sparkles className="h-4 w-4 shrink-0" />, badge: "AI", highlight: true },
+            { href: `/${lang}/ai-matching/clients`, label: t("navigations.matchingClients", "Matching Clients"),     description: t("navigations.matchingClientsDesc", "Recommandations pour clients"),         icon: <Sparkles className="h-4 w-4 shrink-0" /> },
           ],
         },
         {
-          title: "Trouver du travail",
+          title: t("navigations.findWork", "Trouver du travail"),
           items: [
-            { href: `/${lang}/gigs`,                    label: "Gigs",                description: "Services proposés par des pros",     icon: <Zap className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/gigs/create`,             label: "Créer un Gig",        description: "Proposez vos services",              icon: <Package className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/projects`,                label: "Projets",             description: "Missions & appels d'offres",         icon: <Briefcase className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/ai-matching/freelancers`, label: "Matching Freelances", description: "Projets correspondant à vos skills", icon: <Cpu className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/gigs`,                    label: t("navigations.gigs", "Gigs"),                description: t("navigations.gigsDesc", "Services proposés par des pros"),     icon: <Zap className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/gigs/create`,             label: t("navigations.createGig", "Créer un Gig"),        description: t("navigations.createGigDesc", "Proposez vos services"),              icon: <Package className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/projects`,                label: t("navigations.projects", "Projets"),             description: t("navigations.projectsDesc", "Missions & appels d'offres"),         icon: <Briefcase className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/ai-matching/freelancers`, label: t("navigations.matchingFreelancers", "Matching Freelances"), description: t("navigations.matchingFreelancersDesc", "Projets correspondant à vos skills"), icon: <Cpu className="h-4 w-4 shrink-0" /> },
           ],
         },
       ],
     },
 
     workspace: {
-      label: "Espace de travail",
-      cta: { label: "Mon Dashboard", href: `/${lang}/dashboard`, icon: <LayoutDashboard className="h-3.5 w-3.5 shrink-0" /> },
+      label: t("navigations.workspace", "Espace de travail"),
+      cta: { label: t("navigations.myDashboard", "Mon Dashboard"), href: `/${lang}/dashboard`, icon: <LayoutDashboard className="h-3.5 w-3.5 shrink-0" /> },
       groups: [
         {
-          title: "Gestion",
+          title: t("navigations.management", "Gestion"),
           items: [
-            { href: `/${lang}/messages`, label: "Messages",   description: "Conversations & notifications",      icon: <MessageCircle className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/calendar`,           label: "Calendrier", description: "Planifier vos rendez-vous",          icon: <Calendar className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/contracts`,          label: "Contrats",   description: "Gérez vos accords juridiques",       icon: <ScrollText className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/orders`,             label: "Commandes",  description: "Suivi des commandes actives",        icon: <Package className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/messages`, label: t("navigations.messages", "Messages"),   description: t("navigations.messagesDesc", "Conversations & notifications"),      icon: <MessageCircle className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/calendar`,           label: t("navigations.calendar", "Calendrier"), description: t("navigations.calendarDesc", "Planifier vos rendez-vous"),          icon: <Calendar className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/contracts`,          label: t("navigations.contracts", "Contrats"),   description: t("navigations.contractsDesc", "Gérez vos accords juridiques"),       icon: <ScrollText className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/orders`,             label: t("navigations.orders", "Commandes"),  description: t("navigations.ordersDesc", "Suivi des commandes actives"),        icon: <Package className="h-4 w-4 shrink-0" /> },
           ],
         },
         {
-          title: "Finance & Équipes",
+          title: t("navigations.financeTeams", "Finance & Équipes"),
           items: [
-            { href: `/${lang}/dashboard/payment-methods`, label: "Paiements",      description: "Méthodes de paiement & historique", icon: <CreditCard className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/dashboard/referrals`,       label: "Parrainage",      description: "Invitez & gagnez des récompenses",  icon: <GitBranch className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/teams`,                     label: "Équipes",         description: "Gérez vos équipes de travail",      icon: <Users className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/team/contracts`,            label: "Contrats Équipe", description: "Contrats collectifs & missions",    icon: <Gavel className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/dashboard/payment-methods`, label: t("navigations.payments", "Paiements"),      description: t("navigations.paymentsDesc", "Méthodes de paiement & historique"), icon: <CreditCard className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/dashboard/referrals`,       label: t("navigations.referrals", "Parrainage"),      description: t("navigations.referralsDesc", "Invitez & gagnez des récompenses"),  icon: <GitBranch className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/teams`,                     label: t("navigations.teams", "Équipes"),         description: t("navigations.teamsDesc", "Gérez vos équipes de travail"),      icon: <Users className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/team/contracts`,            label: t("navigations.teamContracts", "Contrats Équipe"), description: t("navigations.teamContractsDesc", "Contrats collectifs & missions"),    icon: <Gavel className="h-4 w-4 shrink-0" /> },
           ],
         },
       ],
     },
 
     community: {
-      label: "Communauté",
-      cta: { label: "Voir tous les groupes", href: `/${lang}/groups`, icon: <Hash className="h-3.5 w-3.5 shrink-0" /> },
+      label: t("navigations.community", "Communauté"),
+      cta: { label: t("navigations.viewAllGroups", "Voir tous les groupes"), href: `/${lang}/groups`, icon: <Hash className="h-3.5 w-3.5 shrink-0" /> },
       groups: [
         {
-          title: "Apprendre & Grandir",
+          title: t("navigations.learnGrow", "Apprendre & Grandir"),
           items: [
-            { href: `/${lang}/dashboard/academy`, label: "Académie",          description: "Formations & certifications",      icon: <Award className="h-4 w-4 shrink-0" />, badge: "Nouveau" },
-            { href: `/${lang}/blog`,              label: "Blog",              description: "Articles & tendances du secteur",  icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/news`,              label: "Actualités",        description: "Dernières nouvelles NRBTalents",   icon: <Bell className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/how-it-works`,      label: "Comment ça marche", description: "Guide complet de la plateforme",   icon: <BookOpen className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/dashboard/academy`, label: t("navigations.academy", "Académie"),          description: t("navigations.academyDesc", "Formations & certifications"),      icon: <Award className="h-4 w-4 shrink-0" />, badge: "Nouveau" },
+            { href: `/${lang}/blog`,              label: t("navigations.blog", "Blog"),              description: t("navigations.blogDesc", "Articles & tendances du secteur"),  icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/news`,              label: t("navigations.news", "Actualités"),        description: t("navigations.newsDesc", "Dernières nouvelles NRBTalents"),   icon: <Bell className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/how-it-works`,      label: t("navigations.howItWorks", "Comment ça marche"), description: t("navigations.howItWorksDesc", "Guide complet de la plateforme"),   icon: <BookOpen className="h-4 w-4 shrink-0" /> },
           ],
         },
         {
-          title: "Groupes & Réseau",
+          title: t("navigations.groupsNetwork", "Groupes & Réseau"),
           items: [
-            { href: `/${lang}/groups`,           label: "Groupes",         description: "Rejoignez des communautés pros",  icon: <Hash className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/groups/create`,    label: "Créer un groupe", description: "Lancez votre propre communauté", icon: <Layers className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/groups/my-groups`, label: "Mes groupes",     description: "Groupes que vous gérez",         icon: <Users className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/ide`,              label: "IDE Cloud",       description: "Codez dans le cloud",            icon: <Code2 className="h-4 w-4 shrink-0" />, badge: "Beta" },
+            { href: `/${lang}/groups`,           label: t("navigations.groups", "Groupes"),         description: t("navigations.groupsDesc", "Rejoignez des communautés pros"),  icon: <Hash className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/groups/create`,    label: t("navigations.createGroup", "Créer un groupe"), description: t("navigations.createGroupDesc", "Lancez votre propre communauté"), icon: <Layers className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/groups/my-groups`, label: t("navigations.myGroups", "Mes groupes"),     description: t("navigations.myGroupsDesc", "Groupes que vous gérez"),         icon: <Users className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/ide`,              label: t("navigations.cloudIDE", "IDE Cloud"),       description: t("navigations.cloudIDEDesc", "Codez dans le cloud"),            icon: <Code2 className="h-4 w-4 shrink-0" />, badge: "Beta" },
           ],
         },
       ],
     },
 
     enterprise: {
-      label: "Entreprise",
-      cta: { label: "Contacter les ventes", href: `/${lang}/contact-sales`, icon: <Mail className="h-3.5 w-3.5 shrink-0" /> },
+      label: t("navigations.enterprise", "Entreprise"),
+      cta: { label: t("navigations.contactSales", "Contacter les ventes"), href: `/${lang}/contact-sales`, icon: <Mail className="h-3.5 w-3.5 shrink-0" /> },
       groups: [
         {
-          title: "Solutions",
+          title: t("navigations.solutions", "Solutions"),
           items: [
-            { href: `/${lang}/enterprise`,         label: "Solutions Entreprise", description: "Pour les grandes organisations", icon: <Building className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/teams/dashboard`,    label: "Dashboard Équipe",     description: "Vue d'ensemble de votre équipe", icon: <BarChart3 className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/pricing`,            label: "Tarifs",               description: "Plans & abonnements",            icon: <DollarSign className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/admin/verification`, label: "Vérification Admin",   description: "Accès administration",           icon: <Shield className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/enterprise`,         label: t("navigations.enterpriseSolutions", "Solutions Entreprise"), description: t("navigations.enterpriseSolutionsDesc", "Pour les grandes organisations"), icon: <Building className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/teams/dashboard`,    label: t("navigations.teamDashboard", "Dashboard Équipe"),     description: t("navigations.teamDashboardDesc", "Vue d'ensemble de votre équipe"), icon: <BarChart3 className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/pricing`,            label: t("navigations.pricing", "Tarifs"),               description: t("navigations.pricingDesc", "Plans & abonnements"),            icon: <DollarSign className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/admin/verification`, label: t("navigations.adminVerification", "Vérification Admin"),   description: t("navigations.adminVerificationDesc", "Accès administration"),           icon: <Shield className="h-4 w-4 shrink-0" /> },
           ],
         },
         {
-          title: "Support & Docs",
+          title: t("navigations.supportDocs", "Support & Docs"),
           items: [
-            { href: `/${lang}/docs`,    label: "Documentation", description: "API & guides développeurs", icon: <FileText className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/faq`,     label: "FAQ",           description: "Questions fréquentes",      icon: <HelpCircle className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/contact`, label: "Contact",       description: "Parlez à notre équipe",     icon: <Mail className="h-4 w-4 shrink-0" /> },
-            { href: `/${lang}/about`,   label: "À propos",      description: "Notre histoire & mission",  icon: <Info className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/docs`,    label: t("navigations.documentation", "Documentation"), description: t("navigations.documentationDesc", "API & guides développeurs"), icon: <FileText className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/faq`,     label: t("navigations.faq", "FAQ"),           description: t("navigations.faqDesc", "Questions fréquentes"),      icon: <HelpCircle className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/contact`, label: t("navigations.contact", "Contact"),       description: t("navigations.contactDesc", "Parlez à notre équipe"),     icon: <Mail className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/about`,   label: t("navigations.about", "À propos"),      description: t("navigations.aboutDesc", "Notre histoire & mission"),  icon: <Info className="h-4 w-4 shrink-0" /> },
           ],
         },
       ],
@@ -240,7 +240,6 @@ export function Navigation() {
           : "bg-background/90 backdrop-blur-md border-b border-border/30"
       )}>
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-          {/* FIX: gap-2 réduit — évite le débordement qui cache le hamburger */}
           <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
 
             {/* ── Logo ─────────────────────────────────────────────────────── */}
@@ -249,8 +248,8 @@ export function Navigation() {
               className="flex items-center gap-2 group shrink-0 min-w-fit"
               onClick={() => setOpenMenu(null)}
             >
-              <div className="h-8 w-8  flex items-center justify-center ">
-                 <Image 
+              <div className="h-8 w-8 flex items-center justify-center">
+                <Image 
                   src={`/logo.png?v=${Date.now()}`} 
                   alt="NRBTalents" 
                   width={32} 
@@ -258,12 +257,6 @@ export function Navigation() {
                   className="h-8 w-8 transition-transform group-hover:scale-110" 
                 />
               </div>
-              {/*
-                FIX CRITIQUE : "hidden md:flex" → "hidden lg:flex"
-                Le texte du logo apparaissait à 768px et occupait de la place,
-                poussant le hamburger hors du viewport entre 768–1023px.
-                Maintenant aligné avec le breakpoint lg de tout le reste.
-              */}
               <div className="hidden lg:flex flex-col">
                 <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent whitespace-nowrap">
                   NRBTalents
@@ -285,7 +278,7 @@ export function Navigation() {
                 onClick={() => setOpenMenu(null)}
               >
                 <Home className="h-4 w-4 shrink-0" />
-                <span className="hidden xl:inline">Accueil</span>
+                <span className="hidden xl:inline">{t("navigations.home", "Accueil")}</span>
               </Link>
 
               {Object.entries(megas).map(([key, mega]) => {
@@ -314,9 +307,9 @@ export function Navigation() {
 
             {/* ── Desktop right actions — visible lg+ uniquement ────────────── */}
             <div className="hidden lg:flex items-center gap-2 shrink-0 min-w-fit">
-               {/* ── Desktop right actions — visible lg+ uniquement ────────────── <SearchCommand />*/}
-              
               <ThemeToggle />
+              <NotificationsDropdown />
+              <MessagesDropdown />
 
               <div className="relative group">
                 <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 whitespace-nowrap">
@@ -347,12 +340,12 @@ export function Navigation() {
               {!session?.user ? (
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" asChild className="h-8 px-3 text-sm whitespace-nowrap">
-                    <Link href={`/${lang}/auth/signin`}>Connexion</Link>
+                    <Link href={`/${lang}/auth/signin`}>{t("navigations.signin", "Connexion")}</Link>
                   </Button>
                   <Button size="sm" asChild className="h-8 px-3 text-sm bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 border-0 whitespace-nowrap">
                     <Link href={`/${lang}/auth/signup`}>
                       <Rocket className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                      S'inscrire
+                      {t("navigations.signup", "S'inscrire")}
                     </Link>
                   </Button>
                 </div>
@@ -361,12 +354,13 @@ export function Navigation() {
               )}
             </div>
 
-            {/* ── Hamburger mobile/tablette — visible SOUS lg (0–1023px) ───────
-                FIX: ml-auto pousse le groupe à droite quand le desktop nav
-                est absent (hidden). shrink-0 empêche la compression.
-                h-9 w-9 explicite garantit que le bouton est toujours cliquable.
-            ─────────────────────────────────────────────────────────────────── <SearchCommand variant="mobile" />*/}
+            {/* ── Hamburger mobile/tablette — visible SOUS lg (0–1023px) ─────── */}
             <div className="flex items-center gap-1 lg:hidden ml-auto shrink-0">
+              {/* Notifications et messages sur mobile */}
+              <div className="flex items-center gap-1 mr-1">
+                <NotificationsDropdown />
+                <MessagesDropdown />
+              </div>
               
               <ThemeToggle />
 
@@ -431,7 +425,7 @@ export function Navigation() {
                         <div className="p-1.5 rounded-lg bg-accent/50 shrink-0">
                           <Home className="h-4 w-4" />
                         </div>
-                        <span className="flex-1 min-w-0 truncate">Accueil</span>
+                        <span className="flex-1 min-w-0 truncate">{t("navigations.home", "Accueil")}</span>
                         <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                       </Link>
 
@@ -527,7 +521,7 @@ export function Navigation() {
                       </div>
                     </div>
 
-                    {/* User section */}
+                    {/* User section mobile */}
                     <div className="px-3 pb-4 pt-2 border-t border-border/40 space-y-3 mt-2">
                       {session?.user ? (
                         <>
@@ -542,10 +536,10 @@ export function Navigation() {
                           </div>
                           <div className="grid grid-cols-2 gap-1.5">
                             {[
-                              { href: `/${lang}/dashboard`,          icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: "Dashboard" },
-                              { href: `/${lang}/profile`,            icon: <User className="h-3.5 w-3.5" />,            label: "Profil" },
-                              { href: `/${lang}/messages`, icon: <MessageCircle className="h-3.5 w-3.5" />,   label: "Messages" },
-                              { href: `/${lang}/dashboard/settings`, icon: <Settings className="h-3.5 w-3.5" />,        label: "Paramètres" },
+                              { href: `/${lang}/dashboard`,          icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: t("navigations.dashboard", "Dashboard") },
+                              { href: `/${lang}/profile`,            icon: <User className="h-3.5 w-3.5" />,            label: t("navigations.profile", "Profil") },
+                              { href: `/${lang}/messages`, icon: <MessageCircle className="h-3.5 w-3.5" />,   label: t("navigations.messages", "Messages") },
+                              { href: `/${lang}/dashboard/settings`, icon: <Settings className="h-3.5 w-3.5" />,        label: t("navigations.settings", "Paramètres") },
                             ].map(({ href, icon, label }) => (
                               <Button key={href} variant="outline" size="sm" asChild
                                 className="h-auto py-2.5 flex-col gap-1 text-[11px] border-border/60">
@@ -563,7 +557,7 @@ export function Navigation() {
                             onClick={() => { signOut({ callbackUrl: `/${lang}` }); setMobileOpen(false) }}
                           >
                             <LogOut className="h-3.5 w-3.5 shrink-0" />
-                            {t("navigation.logout", "Déconnexion")}
+                            {t("navigations.logout", "Déconnexion")}
                           </Button>
                         </>
                       ) : (
@@ -571,13 +565,13 @@ export function Navigation() {
                           <Button asChild className="w-full h-10 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 border-0 shadow-lg shadow-violet-500/20">
                             <Link href={`/${lang}/auth/signup`} onClick={() => setMobileOpen(false)}>
                               <Rocket className="h-4 w-4 mr-2 shrink-0" />
-                              {t("navigation.signup", "S'inscrire gratuitement")}
+                              {t("navigations.signup", "S'inscrire gratuitement")}
                             </Link>
                           </Button>
                           <Button variant="outline" asChild className="w-full h-9 border-border/60">
                             <Link href={`/${lang}/auth/signin`} onClick={() => setMobileOpen(false)}>
                               <User className="h-3.5 w-3.5 mr-2 shrink-0" />
-                              {t("navigation.signin", "Se connecter")}
+                              {t("navigations.signin", "Se connecter")}
                             </Link>
                           </Button>
                         </div>
@@ -585,10 +579,10 @@ export function Navigation() {
 
                       <div className="grid grid-cols-2 gap-1 pt-2 border-t border-border/30">
                         {[
-                          { href: `/${lang}/terms`,   label: "CGU" },
-                          { href: `/${lang}/privacy`, label: "Confidentialité" },
-                          { href: `/${lang}/cookies`, label: "Cookies" },
-                          { href: `/${lang}/contact`, label: "Contact" },
+                          { href: `/${lang}/terms`,   label: t("legal.terms", "CGU") },
+                          { href: `/${lang}/privacy`, label: t("legal.privacy", "Confidentialité") },
+                          { href: `/${lang}/cookies`, label: t("legal.cookies", "Cookies") },
+                          { href: `/${lang}/contact`, label: t("navigations.contact", "Contact") },
                         ].map(({ href, label }) => (
                           <Link
                             key={href}
@@ -616,18 +610,15 @@ export function Navigation() {
       {/* ── Mega menu panels — desktop uniquement (hidden sous lg) ───────────── */}
       {openMenu && (
         <>
-          {/* FIX: hidden lg:block — le backdrop n'existe pas sur mobile/tablette */}
           <div
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] hidden lg:block"
             onMouseEnter={() => setOpenMenu(null)}
           />
 
-          {/* FIX: hidden lg:flex — le panel n'existe pas sur mobile/tablette */}
           <div
             className="fixed top-14 sm:top-16 left-0 right-0 z-50 justify-center px-4 sm:px-6 hidden lg:flex"
             onMouseLeave={() => setOpenMenu(null)}
           >
-            {/* Bridge transparent — comble le gap entre navbar et panel */}
             <div className="absolute -top-3 left-0 right-0 h-4 pointer-events-auto" />
 
             <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl rounded-2xl border border-border/60 bg-popover/98 backdrop-blur-2xl shadow-2xl shadow-black/15 overflow-hidden">
@@ -701,7 +692,7 @@ export function Navigation() {
                       <div className="w-48 xl:w-52 shrink-0 border-l border-border/40 bg-gradient-to-b from-accent/20 to-accent/5 p-5 flex flex-col justify-between">
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-4">
-                            Action rapide
+                            {t("navigations.quickAction", "Action rapide")}
                           </p>
                           <Link
                             href={mega.cta.href}
@@ -716,7 +707,7 @@ export function Navigation() {
                         <div className="mt-6 p-3 rounded-xl bg-gradient-to-br from-blue-500/5 to-violet-500/5 border border-blue-500/10">
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             <span className="font-semibold text-foreground block mb-1">NRBTalents</span>
-                            La plateforme freelance de référence pour la communauté tech africaine.
+                            {t("navigations.taglineDescription", "La plateforme freelance de référence pour la communauté tech africaine.")}
                           </p>
                         </div>
                       </div>
