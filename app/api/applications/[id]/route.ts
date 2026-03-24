@@ -7,17 +7,19 @@ import { ObjectId } from "mongodb"
 import { z } from "zod"
 
 const UpdateApplicationSchema = z.object({
-  status: z.enum(["accepted", "rejected", "pending"])
+  status: z.enum(["accepted", "rejected", "pending", "withdrawn"])
 })
 
-export async function PATCH(request: Request,  { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
-    const {id}=await params
+    
+    const { id } = await params
+    
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "ID de candidature invalide" }, { status: 400 })
     }
@@ -35,7 +37,8 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
     const { status } = validationResult.data
     const db = await getDatabase()
     const applicationId = new ObjectId(id)
-    const clientId = new ObjectId((session.user as any).id)
+    const userId = new ObjectId((session.user as any).id)
+    const userRole = (session.user as any).role
 
     // Récupérer la candidature avec les infos du projet
     const application = await db.collection("applications").findOne({
@@ -46,13 +49,26 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Candidature non trouvée" }, { status: 404 })
     }
 
-    // Vérifier que l'utilisateur est le client du projet
     const project = await db.collection("projects").findOne({
-      _id: application.projectId,
-      clientId
+      _id: application.projectId
     })
 
     if (!project) {
+      return NextResponse.json({ error: "Projet associé non trouvé" }, { status: 404 })
+    }
+
+    // Vérifier les permissions selon le statut et le rôle
+    let isAuthorized = false
+
+    if (status === "withdrawn") {
+      // Seul le freelance peut retirer sa propre candidature
+      isAuthorized = application.freelancerId.toString() === userId.toString()
+    } else {
+      // Pour accepter/rejeter, seul le client peut le faire
+      isAuthorized = project.clientId.toString() === userId.toString()
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: "Accès non autorisé à cette candidature" }, 
         { status: 403 }
@@ -73,6 +89,82 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
     if (result.modifiedCount === 0) {
       return NextResponse.json({ error: "Échec de la mise à jour" }, { status: 500 })
     }
+  const notificationMessages = {
+        withdrawn: {
+          fr: {
+            title: "📝 Candidature retirée",
+            message: `Vous avez retiré votre candidature pour "${project.title}"`
+          },
+          en: {
+            title: "📝 Application withdrawn",
+            message: `You have withdrawn your application for "${project.title}"`
+          },
+          mg: {
+            title: "📝 Nofoanana ny fangatahana",
+            message: `Nofoananao ny fangatahanao ho an'ny tetikasa "${project.title}"`
+          }
+        },
+        accepted: {
+          fr: {
+            title: "🎉 Candidature acceptée !",
+            message: `Votre candidature pour "${project.title}" a été acceptée. Budget: ${application.proposedBudget} ${project.budget?.currency || '€'}`
+          },
+          en: {
+            title: "🎉 Application accepted!",
+            message: `Your application for "${project.title}" has been accepted. Budget: ${application.proposedBudget} ${project.budget?.currency || '€'}`
+          },
+          mg: {
+            title: "🎉 Neken'ny mpampiasa ny fangatahanao!",
+            message: `Neken'ny mpampiasa ny fangatahanao ho an'ny tetikasa "${project.title}". Vidin'ny tetikasa: ${application.proposedBudget} ${project.budget?.currency || '€'}`
+          }
+        },
+        rejected: {
+          fr: {
+            title: "❌ Candidature non retenue",
+            message: `Votre candidature pour "${project.title}" n'a pas été retenue.`
+          },
+          en: {
+            title: "❌ Application rejected",
+            message: `Your application for "${project.title}" has been rejected.`
+          },
+          mg: {
+            title: "❌ Nolavina ny fangatahanao",
+            message: `Nolavina ny fangatahanao ho an'ny tetikasa "${project.title}".`
+          }
+        }
+      }
+    // 📢 NOTIFICATION selon le statut
+    try {
+      const userLang = (session.user as any).language || 'fr'
+
+      const messages = notificationMessages[status as keyof typeof notificationMessages]
+      if (messages) {
+        const msg = messages[userLang as keyof typeof messages] || messages.fr
+        
+        await db.collection("notifications").insertOne({
+          userId: status === "withdrawn" ? application.freelancerId : application.freelancerId,
+          category: "ORDER",
+          priority: status === "accepted" ? "HIGH" : "MEDIUM",
+          title: msg.title,
+          message: msg.message,
+          actionUrl: `/projects/${application.projectId}`,
+          data: {
+            entityType: "application",
+            action: status,
+            applicationId: applicationId.toString(),
+            projectId: application.projectId.toString(),
+            projectTitle: project.title,
+            proposedBudget: application.proposedBudget,
+            timestamp: new Date().toISOString()
+          },
+          status: "UNREAD",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+      }
+    } catch (notifError) {
+      console.error("Failed to send notification:", notifError)
+    }
 
     // Si la candidature est acceptée, mettre à jour le projet
     if (status === "accepted") {
@@ -80,7 +172,7 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
         { _id: application.projectId },
         {
           $set: {
-            freelancerId: application.freelancerId,
+            selectedFreelancerId: application.freelancerId,
             status: "in-progress",
             updatedAt: new Date()
           }
@@ -102,18 +194,7 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
         }
       )
 
-      // Notification pour le freelancer accepté
-      await db.collection("notifications").insertOne({
-        userId: application.freelancerId,
-        type: "application_accepted",
-        title: "Candidature acceptée !",
-        message: `Votre candidature pour "${project.title}" a été acceptée. Budget: ${application.proposedBudget} ${project.budget.currency}`,
-        projectId: application.projectId,
-        read: false,
-        createdAt: new Date()
-      })
-
-      // Notifications pour les freelancers rejetés
+      // Notifier les freelancers rejetés
       const rejectedApplications = await db.collection("applications").find({
         projectId: application.projectId,
         _id: { $ne: applicationId },
@@ -121,20 +202,36 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
       }).toArray()
 
       for (const app of rejectedApplications) {
+        const userLang = await getUserLanguage(app.freelancerId.toString())
+        const messages = notificationMessages .rejected[userLang as keyof typeof notificationMessages.rejected] || notificationMessages.rejected.fr
+        
         await db.collection("notifications").insertOne({
           userId: app.freelancerId,
-          type: "application_rejected",
-          title: "Candidature non retenue",
-          message: `Votre candidature pour "${project.title}" n'a pas été retenue.`,
-          projectId: application.projectId,
-          read: false,
-          createdAt: new Date()
+          category: "ORDER",
+          priority: "MEDIUM",
+          title: messages.title,
+          message: messages.message,
+          actionUrl: `/projects/${application.projectId}`,
+          data: {
+            entityType: "application",
+            action: "rejected",
+            projectId: application.projectId.toString(),
+            projectTitle: project.title
+          },
+          status: "UNREAD",
+          createdAt: new Date(),
+          updatedAt: new Date()
         })
       }
     }
 
     return NextResponse.json({
-      message: `Candidature ${status === 'accepted' ? 'acceptée' : 'rejetée'} avec succès`,
+      success: true,
+      message: status === "withdrawn" 
+        ? "Candidature retirée avec succès" 
+        : status === "accepted" 
+          ? "Candidature acceptée avec succès" 
+          : "Candidature rejetée avec succès",
       applicationId: id,
       status
     })
@@ -148,6 +245,20 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
   }
 }
 
+// Helper pour récupérer la langue de l'utilisateur
+async function getUserLanguage(userId: string): Promise<'fr' | 'en' | 'mg'> {
+  try {
+    const db = await getDatabase()
+    const user = await db.collection("users").findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { language: 1, preferences: 1 } }
+    )
+    const userLang = user?.language || user?.preferences?.language || 'fr'
+    return userLang === 'fr' || userLang === 'en' || userLang === 'mg' ? userLang : 'fr'
+  } catch {
+    return 'fr'
+  }
+}
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)

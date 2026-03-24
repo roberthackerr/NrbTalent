@@ -167,29 +167,29 @@ export default function MyApplicationsPage() {
   }
 
   const handleWithdraw = async (applicationId: string) => {
-    setWithdrawingId(applicationId)
-    try {
-      const response = await fetch(`/api/applications/${applicationId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "withdrawn" }),
-      })
+  setWithdrawingId(applicationId)
+  try {
+    const response = await fetch(`/api/applications/${applicationId}`, {
+      method: "PATCH", 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "withdrawn" }),
+    })
 
-      if (response.ok) {
-        toast.success(dict?.applications?.success?.withdrawn || "Candidature retirée avec succès")
-        fetchApplications()
-        fetchStats()
-      } else {
-        throw new Error("Failed to withdraw application")
-      }
-    } catch (error) {
-      console.error("Error withdrawing application:", error)
-      toast.error(dict?.applications?.errors?.withdrawFailed || "Erreur lors du retrait de la candidature")
-    } finally {
-      setWithdrawingId(null)
+    if (response.ok) {
+      toast.success(dict?.applications?.success?.withdrawn || "Candidature retirée avec succès")
+      fetchApplications()
+      fetchStats()
+    } else {
+      const error = await response.json()
+      throw new Error(error.error || "Failed to withdraw application")
     }
+  } catch (error) {
+    console.error("Error withdrawing application:", error)
+    toast.error(dict?.applications?.errors?.withdrawFailed || "Erreur lors du retrait de la candidature")
+  } finally {
+    setWithdrawingId(null)
   }
-
+}
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pending: {
