@@ -38,7 +38,7 @@ export default function OnboardingPage() {
     
     // Vérifier si l'utilisateur a déjà complété l'onboarding
     if (session?.user?.onboardingCompleted) {
-      router.push(`/${lang}/dashboard`)
+      router.push(`/${lang}`)
     }
   }, [session, router, lang])
 

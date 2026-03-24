@@ -1,4 +1,143 @@
 {
+   "gigs_edit": {
+    "title": "Modifier le service",
+    "subtitle": "Modifiez les informations de votre service",
+    "saveChanges": "Enregistrer les modifications",
+    "updateSuccess": "Service mis à jour avec succès!",
+    "deleteSuccess": "Service supprimé avec succès",
+    "deleteError": "Erreur lors de la suppression du service",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible.",
+    "notFound": "Service non trouvé",
+    "notFoundDesc": "Le service que vous cherchez n'existe pas ou a été supprimé",
+    "viewAll": "Voir tous les services",
+    "status": {
+      "active": "Actif",
+      "draft": "Brouillon",
+      "paused": "En pause",
+      "deleted": "Supprimé"
+    },
+    "details": {
+      "status": "Statut",
+      "created": "Créé le",
+      "lastUpdated": "Dernière mise à jour",
+      "views": "Vues",
+      "ordersCount": "Commandes",
+      "rating": "Note",
+      "description": "Description",
+      "whatsIncluded": "Ce qui est inclus",
+      "requirements": "Prérequis",
+      "aboutSeller": "À propos du vendeur",
+      "memberSince": "Membre depuis",
+      "responseTime": "Temps de réponse",
+      "languages": "Langues",
+      "contactSeller": "Contacter le vendeur",
+      "orderNow": "Commander maintenant",
+      "share": "Partager",
+      "report": "Signaler"
+    },
+    "steps": {
+      "basic": {
+        "title": "Informations de base",
+        "description": "Décrivez votre service"
+      },
+      "pricing": {
+        "title": "Prix et délais",
+        "description": "Définissez votre tarification"
+      },
+      "gallery": {
+        "title": "Galerie d'images",
+        "description": "Ajoutez des images à votre service"
+      },
+      "features": {
+        "title": "Ce qui est inclus",
+        "description": "Listez les fonctionnalités"
+      },
+      "requirements": {
+        "title": "Prérequis",
+        "description": "Informations nécessaires"
+      },
+      "review": {
+        "title": "Vérification",
+        "description": "Vérifiez votre service"
+      }
+    },
+    "form": {
+      "title": "Titre du service",
+      "titlePlaceholder": "Ex: Création de site web WordPress professionnel avec design responsive",
+      "description": "Description détaillée",
+      "descriptionPlaceholder": "Décrivez en détail ce que vous proposez, vos compétences, votre expérience, les bénéfices pour le client...",
+      "category": "Catégorie",
+      "selectCategory": "Sélectionnez une catégorie",
+      "subcategory": "Sous-catégorie",
+      "selectSubcategory": "Sélectionnez une sous-catégorie",
+      "keywords": "Mots-clés",
+      "addKeyword": "Ajouter un mot-clé (Appuyez sur Entrée)",
+      "suggestions": "Suggestions",
+      "price": "Prix de base",
+      "minimum": "Minimum",
+      "economical": "Économique",
+      "standard": "Standard",
+      "premium": "Premium",
+      "deliveryTime": "Délai de livraison",
+      "days": "jours",
+      "revisions": "Nombre de révisions incluses",
+      "noRevisions": "Aucune révision incluse",
+      "oneRevision": "1 révision incluse",
+      "revisionsCount": "{count} révisions incluses",
+      "premiumService": "Service Premium",
+      "premiumDesc": "Mettez en avant votre service",
+      "privateService": "Service Privé",
+      "privateDesc": "Visible uniquement sur invitation",
+      "dragDrop": "Glissez-déposez vos images ici",
+      "clickToSelect": "ou cliquez pour sélectionner des fichiers",
+      "selectImages": "Sélectionner des images",
+      "uploadedImages": "Images téléchargées",
+      "confirmDeleteAll": "Êtes-vous sûr de vouloir supprimer toutes les images ?",
+      "feature": "Fonctionnalité",
+      "addFeature": "Ajouter une fonctionnalité",
+      "requirement": "Prérequis",
+      "addRequirement": "Ajouter un prérequis",
+      "features": "Fonctionnalités",
+      "images": "Images"
+    },
+    "errors": {
+      "loadCategories": "Erreur lors du chargement des catégories",
+      "titleRequired": "Le titre est requis",
+      "titleMinLength": "Le titre doit contenir au moins 10 caractères",
+      "descriptionRequired": "La description est requise",
+      "descriptionMinLength": "La description doit contenir au moins 50 caractères",
+      "categoryRequired": "La catégorie est requise",
+      "priceMin": "Le prix minimum est de 5€",
+      "deliveryTimeMin": "Le délai de livraison doit être d'au moins 1 jour",
+      "imagesRequired": "Ajoutez au moins une image à votre service",
+      "featuresRequired": "Ajoutez au moins une fonctionnalité",
+      "invalidImages": "Veuillez sélectionner des images valides (max 5MB par image)",
+      "maxImages": "Maximum 10 images autorisées",
+      "uploadFailed": "Erreur lors du téléchargement des images",
+      "loginRequired": "Veuillez vous connecter pour modifier ce service",
+      "updateFailed": "Erreur lors de la mise à jour du service",
+      "deleteFailed": "Erreur lors de la suppression du service",
+      "gigNotFound": "Service non trouvé"
+    },
+    "success": {
+      "imagesUploaded": "{count} image(s) téléchargée(s) avec succès",
+      "updated": "Service mis à jour avec succès!",
+      "deleted": "Service supprimé avec succès!"
+    },
+    "buttons": {
+      "previous": "Précédent",
+      "next": "Suivant",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "delete": "Supprimer",
+      "deleting": "Suppression...",
+      "cancel": "Annuler",
+      "back": "Retour",
+      "viewAll": "Voir tous les services"
+    },
+    "loading": "Chargement du service...",
+    "progress": "Progression"
+  },
   "navigation": {
     "home": "Accueil",
     "homeDesc": "Page d'accueil",

@@ -1,4 +1,143 @@
 {
+   "gigs_edit": {
+    "title": "Hanova ny serivisy",
+    "subtitle": "Avao ny fampahalalana momba ny serivisinao",
+    "saveChanges": "Tehirizo ny fanovana",
+    "updateSuccess": "Vita soa aman-tsara ny fanovana ny serivisy!",
+    "deleteSuccess": "Vita soa aman-tsara ny famafana ny serivisy",
+    "deleteError": "Nisy hadisoana tamin'ny famafana ny serivisy",
+    "confirmDelete": "Tena azonao antoka ve ny hamafa ity serivisy ity? Tsy azo averina intsony ity hetsika ity.",
+    "notFound": "Tsy hita ny serivisy",
+    "notFoundDesc": "Ny serivisy tadiavinao dia tsy misy na efa voafafa",
+    "viewAll": "Jereo ny serivisy rehetra",
+    "status": {
+      "active": "Miasa",
+      "draft": "Volavola",
+      "paused": "Nampiato",
+      "deleted": "Voafafa"
+    },
+    "details": {
+      "status": "Toe-javatra",
+      "created": "Noforonina tamin'ny",
+      "lastUpdated": "Nohavaozina farany",
+      "views": "Fijerena",
+      "ordersCount": "Baiko",
+      "rating": "Naoty",
+      "description": "Famaritana",
+      "whatsIncluded": "Izay tafiditra",
+      "requirements": "Fepetra ilaina",
+      "aboutSeller": "Momba ny mpivarotra",
+      "memberSince": "Mpikambana hatramin'ny",
+      "responseTime": "Fotoana valiny",
+      "languages": "Fiteny",
+      "contactSeller": "Mifandraisa amin'ny mpivarotra",
+      "orderNow": "Baiko izao",
+      "share": "Zarao",
+      "report": "Tatovy"
+    },
+    "steps": {
+      "basic": {
+        "title": "Fampahalalana fototra",
+        "description": "Amarito ny serivisinao"
+      },
+      "pricing": {
+        "title": "Vidiny sy fe-potoana",
+        "description": "Farito ny vidininao"
+      },
+      "gallery": {
+        "title": "Galeria sary",
+        "description": "Ampio sary amin'ny serivisinao"
+      },
+      "features": {
+        "title": "Izay tafiditra",
+        "description": "Lisiro ny toetra"
+      },
+      "requirements": {
+        "title": "Fepetra ilaina",
+        "description": "Fampahalalana ilaina"
+      },
+      "review": {
+        "title": "Fanamarinana",
+        "description": "Hamarinina ny serivisinao"
+      }
+    },
+    "form": {
+      "title": "Lohatenin'ny serivisy",
+      "titlePlaceholder": "Ohatra: Famoronana tranonkala WordPress matihanina miaraka amin'ny endrika mora ampiasaina",
+      "description": "Famaritana antsipirihany",
+      "descriptionPlaceholder": "Amarito amin'ny antsipiriany ny zavatra atolotrao, ny fahaizanao, ny traikefanao, ary ny tombony ho an'ny mpanjifa...",
+      "category": "Sokajy",
+      "selectCategory": "Misafidiana sokajy",
+      "subcategory": "Sokajy kely",
+      "selectSubcategory": "Misafidiana sokajy kely",
+      "keywords": "Teny fototra",
+      "addKeyword": "Ampio teny fototra (Tsindrio Enter)",
+      "suggestions": "Soso-kevitra",
+      "price": "Vidiny fototra",
+      "minimum": "Farafahakeliny",
+      "economical": "Moramora",
+      "standard": "Mahazatra",
+      "premium": "Premium",
+      "deliveryTime": "Fotoana fanaterana",
+      "days": "andro",
+      "revisions": "Isan'ny fanitsiana tafiditra",
+      "noRevisions": "Tsy misy fanitsiana tafiditra",
+      "oneRevision": "1 fanitsiana tafiditra",
+      "revisionsCount": "{count} fanitsiana tafiditra",
+      "premiumService": "Serivisy Premium",
+      "premiumDesc": "Asongadino ny serivisinao",
+      "privateService": "Serivisy manokana",
+      "privateDesc": "Hita amin'ny fanasana ihany",
+      "dragDrop": "Atsipazo eto ny sarinao",
+      "clickToSelect": "na tsindrio hisafidy rakitra",
+      "selectImages": "Misafidiana sary",
+      "uploadedImages": "Sary nampidirina",
+      "confirmDeleteAll": "Tena azonao antoka ve ny hamafa ny sary rehetra?",
+      "feature": "Toetra",
+      "addFeature": "Ampio toetra",
+      "requirement": "Fepetra",
+      "addRequirement": "Ampio fepetra",
+      "features": "Toetra",
+      "images": "Sary"
+    },
+    "errors": {
+      "loadCategories": "Nisy hadisoana tamin'ny fampidirana sokajy",
+      "titleRequired": "Ilaina ny lohateny",
+      "titleMinLength": "Ny lohateny dia tsy maintsy misy 10 tarehintsoratra farafahakeliny",
+      "descriptionRequired": "Ilaina ny famaritana",
+      "descriptionMinLength": "Ny famaritana dia tsy maintsy misy 50 tarehintsoratra farafahakeliny",
+      "categoryRequired": "Ilaina ny sokajy",
+      "priceMin": "Ny vidiny farafahakeliny dia 5€",
+      "deliveryTimeMin": "Ny fotoana fanaterana dia tsy maintsy 1 andro farafahakeliny",
+      "imagesRequired": "Ampio sary iray farafahakeliny amin'ny serivisinao",
+      "featuresRequired": "Ampio toetra iray farafahakeliny",
+      "invalidImages": "Mifidiana sary azo ekena azafady (max 5MB isaky ny sary)",
+      "maxImages": "Sary 10 farafahakeliny no azo",
+      "uploadFailed": "Nisy hadisoana tamin'ny fampidirana sary",
+      "loginRequired": "Midira azafady mba hanovana ity serivisy ity",
+      "updateFailed": "Nisy hadisoana tamin'ny fanovana serivisy",
+      "deleteFailed": "Nisy hadisoana tamin'ny famafana serivisy",
+      "gigNotFound": "Tsy hita ny serivisy"
+    },
+    "success": {
+      "imagesUploaded": "Vita soa aman-tsara ny fampidirana sary {count}",
+      "updated": "Vita soa aman-tsara ny fanovana serivisy!",
+      "deleted": "Vita soa aman-tsara ny famafana serivisy!"
+    },
+    "buttons": {
+      "previous": "Teo aloha",
+      "next": "Manaraka",
+      "save": "Tehirizo",
+      "saving": "Tehirizina...",
+      "delete": "Fafao",
+      "deleting": "Fafana...",
+      "cancel": "Ampio",
+      "back": "Miverina",
+      "viewAll": "Jereo ny serivisy rehetra"
+    },
+    "loading": "Fampidirana ny serivisy...",
+    "progress": "Fivoarana"
+  },
    "navigation": {
     "home": "Fandraisana",
     "homeDesc": "Pejy fandraisana",

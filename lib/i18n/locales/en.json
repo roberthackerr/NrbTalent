@@ -1,4 +1,143 @@
 {
+  "gigs_edit": {
+    "title": "Edit Service",
+    "subtitle": "Update your service information",
+    "saveChanges": "Save Changes",
+    "updateSuccess": "Service updated successfully!",
+    "deleteSuccess": "Service deleted successfully",
+    "deleteError": "Error deleting service",
+    "confirmDelete": "Are you sure you want to delete this service? This action cannot be undone.",
+    "notFound": "Service not found",
+    "notFoundDesc": "The service you're looking for doesn't exist or has been deleted",
+    "viewAll": "View all services",
+    "status": {
+      "active": "Active",
+      "draft": "Draft",
+      "paused": "Paused",
+      "deleted": "Deleted"
+    },
+    "details": {
+      "status": "Status",
+      "created": "Created on",
+      "lastUpdated": "Last updated",
+      "views": "Views",
+      "ordersCount": "Orders",
+      "rating": "Rating",
+      "description": "Description",
+      "whatsIncluded": "What's included",
+      "requirements": "Requirements",
+      "aboutSeller": "About the seller",
+      "memberSince": "Member since",
+      "responseTime": "Response time",
+      "languages": "Languages",
+      "contactSeller": "Contact seller",
+      "orderNow": "Order now",
+      "share": "Share",
+      "report": "Report"
+    },
+    "steps": {
+      "basic": {
+        "title": "Basic Information",
+        "description": "Describe your service"
+      },
+      "pricing": {
+        "title": "Pricing & Delivery",
+        "description": "Set your pricing"
+      },
+      "gallery": {
+        "title": "Image Gallery",
+        "description": "Add images to your service"
+      },
+      "features": {
+        "title": "What's Included",
+        "description": "List the features"
+      },
+      "requirements": {
+        "title": "Requirements",
+        "description": "Necessary information"
+      },
+      "review": {
+        "title": "Review",
+        "description": "Review your service"
+      }
+    },
+    "form": {
+      "title": "Service Title",
+      "titlePlaceholder": "Ex: Professional WordPress website creation with responsive design",
+      "description": "Detailed Description",
+      "descriptionPlaceholder": "Describe in detail what you offer, your skills, experience, and the benefits for the client...",
+      "category": "Category",
+      "selectCategory": "Select a category",
+      "subcategory": "Subcategory",
+      "selectSubcategory": "Select a subcategory",
+      "keywords": "Keywords",
+      "addKeyword": "Add keyword (Press Enter)",
+      "suggestions": "Suggestions",
+      "price": "Base Price",
+      "minimum": "Minimum",
+      "economical": "Economical",
+      "standard": "Standard",
+      "premium": "Premium",
+      "deliveryTime": "Delivery Time",
+      "days": "days",
+      "revisions": "Number of revisions included",
+      "noRevisions": "No revisions included",
+      "oneRevision": "1 revision included",
+      "revisionsCount": "{count} revisions included",
+      "premiumService": "Premium Service",
+      "premiumDesc": "Highlight your service",
+      "privateService": "Private Service",
+      "privateDesc": "Visible by invitation only",
+      "dragDrop": "Drag and drop your images here",
+      "clickToSelect": "or click to select files",
+      "selectImages": "Select images",
+      "uploadedImages": "Uploaded images",
+      "confirmDeleteAll": "Are you sure you want to delete all images?",
+      "feature": "Feature",
+      "addFeature": "Add a feature",
+      "requirement": "Requirement",
+      "addRequirement": "Add a requirement",
+      "features": "Features",
+      "images": "Images"
+    },
+    "errors": {
+      "loadCategories": "Error loading categories",
+      "titleRequired": "Title is required",
+      "titleMinLength": "Title must be at least 10 characters",
+      "descriptionRequired": "Description is required",
+      "descriptionMinLength": "Description must be at least 50 characters",
+      "categoryRequired": "Category is required",
+      "priceMin": "Minimum price is €5",
+      "deliveryTimeMin": "Delivery time must be at least 1 day",
+      "imagesRequired": "Add at least one image to your service",
+      "featuresRequired": "Add at least one feature",
+      "invalidImages": "Please select valid images (max 5MB per image)",
+      "maxImages": "Maximum 10 images allowed",
+      "uploadFailed": "Error uploading images",
+      "loginRequired": "Please log in to edit this service",
+      "updateFailed": "Error updating service",
+      "deleteFailed": "Error deleting service",
+      "gigNotFound": "Service not found"
+    },
+    "success": {
+      "imagesUploaded": "{count} image(s) uploaded successfully",
+      "updated": "Service updated successfully!",
+      "deleted": "Service deleted successfully!"
+    },
+    "buttons": {
+      "previous": "Previous",
+      "next": "Next",
+      "save": "Save",
+      "saving": "Saving...",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "cancel": "Cancel",
+      "back": "Back",
+      "viewAll": "View all services"
+    },
+    "loading": "Loading service...",
+    "progress": "Progress"
+  },
   "navigation": {
     "home": "Home",
     "homeDesc": "Home page",
