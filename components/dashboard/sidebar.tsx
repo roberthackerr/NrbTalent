@@ -1,7 +1,8 @@
+// components/dashboard/sidebar.tsx
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -16,18 +17,14 @@ import {
   TrendingUp,
   GraduationCap,
   Building,
-  Target,
   Calendar,
   Wallet,
   Shield,
   Zap,
   Search,
   FolderOpen,
-  CheckCircle,
-  XCircle,
   Clock,
   BarChart3,
-  HeartHandshake,
   Rocket,
   Crown,
   Workflow,
@@ -39,13 +36,19 @@ import {
   BookOpen,
   HelpCircle,
   DollarSign,
-  Mail,
-  Phone,
-  Globe,
   ChevronDown,
   ChevronRight,
   Folder,
-  FolderPlus,
+  Package,
+  Eye,
+  ShoppingBag,
+  Sparkles,
+  Gem,
+  PlayCircle,
+  UserCheck,
+  Target,
+  Handshake,
+  CheckCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
@@ -54,7 +57,6 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { OrdersButton } from "../orders/OrdersButton"
 
 interface SidebarProps {
   role: "freelance" | "client"
@@ -66,6 +68,11 @@ interface UserStats {
   completedProjects?: number
   totalEarnings?: number
   unreadMessages?: number
+  activeGigs?: number
+  totalOrders?: number
+  totalViews?: number
+  openProjects?: number
+  totalApplications?: number
 }
 
 interface MenuItem {
@@ -75,20 +82,22 @@ interface MenuItem {
   description?: string
   badge?: string
   count?: number
-  variant?: "primary"
+  variant?: "primary" | "premium"
   exact?: boolean
   children?: MenuItem[]
 }
 
 export function DashboardSidebar({ role }: SidebarProps) {
   const pathname = usePathname()
+  const params = useParams()
+  const lang = params.lang as string
   const [userStats, setUserStats] = useState<UserStats>({})
   const [userData, setUserData] = useState<any>(null)
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
     fetchUserData()
-    // Expand menus based on current path
     const currentMenu = findCurrentMenu(pathname)
     if (currentMenu) {
       expandParentMenus(currentMenu)
@@ -120,10 +129,7 @@ export function DashboardSidebar({ role }: SidebarProps) {
     })
   }
 
-  const expandParentMenus = (menu: MenuItem) => {
-    // This would recursively expand parent menus
-    // For now, we'll handle it in the menu structure
-  }
+  const expandParentMenus = (menu: MenuItem) => {}
 
   const findCurrentMenu = (currentPath: string): MenuItem | null => {
     const searchMenus = (menus: MenuItem[]): MenuItem | null => {
@@ -142,143 +148,30 @@ export function DashboardSidebar({ role }: SidebarProps) {
   }
 
   const getMenuStructure = (): MenuItem[] => {
-    return [
+    // Menu commun aux deux rôles
+    const commonMenus: MenuItem[] = [
       {
-        href: "/dashboard",
+        href: `/${lang}/dashboard`,
         label: "Tableau de Bord",
         icon: LayoutDashboard,
         description: "Vue d'ensemble",
         exact: true
       },
       {
-        href: "/projects",
-        label: "Projets",
-        icon: Briefcase,
-        description: "Gestion des projets",
-        children: [
-          {
-            href: "/projects",
-            label: "Découvrir Projets",
-            icon: Search,
-            description: "Parcourir les projets"
-          },
-          {
-            href: "/projects/create",
-            label: "Créer Projet",
-            icon: Plus,
-            description: "Publier un nouveau projet",
-            variant: "primary"
-          },
-          {
-            href: role === "freelance" ? "/dashboard/freelance/projects" : "/dashboard/client/projects",
-            label: "Mes Projets",
-            icon: FolderOpen,
-            description: "Projets suivis et actifs",
-            count: userStats.activeProjects
-          },
-          {
-            href: "/projects/apply",
-            label: "Postuler",
-            icon: FileText,
-            description: "Candidater aux projets"
-          }
-        ]
-      },
-      {
-        href: "/ai-matching",
-        label: "Matching IA",
-        icon: Zap,
-        description: "Intelligence artificielle",
-        badge: "AI",
-        children: [
-          {
-            href: "/ai-matching",
-            label: "Vue d'ensemble",
-            icon: Zap,
-            description: "Tableau de bord IA"
-          },
-          {
-            href: "/ai-matching/freelancers",
-            label: "Pour Freelancers",
-            icon: User,
-            description: "Projets recommandés"
-          },
-          {
-            href: "/ai-matching/clients",
-            label: "Pour Clients",
-            icon: Building,
-            description: "Talents recommandés"
-          },
-          {
-            href: "/test/aimatching",
-            label: "Test Matching",
-            icon: Lightbulb,
-            description: "Tester l'algorithme",
-            badge: "Test"
-          }
-        ]
-      },
-      {
-        href: "/freelancers",
-        label: "Talents",
-        icon: Users,
-        description: "Découvrir les freelancers",
-        children: [
-          {
-            href: "/freelancers",
-            label: "Explorer Talents",
-            icon: Search,
-            description: "Parcourir les profils"
-          },
-          {
-            href: "/talents",
-            label: "Top Talents",
-            icon: Star,
-            description: "Meilleurs freelancers"
-          }
-        ]
-      },
-      {
-        href: "/gigs",
-        label: "Services",
-        icon: Star,
-        description: "Services prédéfinis",
-        children: [
-          {
-            href: "/gigs",
-            label: "Découvrir Services",
-            icon: Search,
-            description: "Parcourir les gigs"
-          },
-          {
-            href: "/gigs/create",
-            label: "Créer Service",
-            icon: Plus,
-            description: "Publier un nouveau gig"
-          },
-          {
-            href: "/services",
-            label: "Catégories",
-            icon: Folder,
-            description: "Services par catégorie"
-          }
-        ]
-      },
-      {
-        href: "/messages",
+        href: `/${lang}/messages`,
         label: "Messagerie",
         icon: MessageSquare,
         description: "Communications",
         count: userStats.unreadMessages,
         children: [
           {
-            href: "/messages",
+            href: `/${lang}/messages`,
             label: "Conversations",
             icon: MessageSquare,
             description: "Mes messages"
           },
           {
-            href: "/messages/new",
+            href: `/${lang}/messages/new`,
             label: "Nouveau Message",
             icon: Plus,
             description: "Démarrer une conversation"
@@ -286,155 +179,314 @@ export function DashboardSidebar({ role }: SidebarProps) {
         ]
       },
       {
-        href: "/dashboard/workspace",
-        label: "Workspace",
-        icon: Workflow,
-        description: "Espace de travail",
-        badge: "Beta",
-        children: [
-          {
-            href: "/dashboard/workspace",
-            label: "Mes Workspaces",
-            icon: Workflow,
-            description: "Espaces de travail"
-          },
-          {
-            href: "/ide",
-            label: "IDE en Ligne",
-            icon: Code,
-            description: "Éditeur de code",
-            badge: "Nouveau"
-          },
-          {
-            href: "/meet",
-            label: "Vidéo Conférence",
-            icon: Video,
-            description: "Appels et réunions"
-          }
-        ]
-      },
-      {
-        href: "/dashboard/academy",
-        label: "Academy",
-        icon: GraduationCap,
-        description: "Formation et développement",
-        children: [
-          {
-            href: "/dashboard/academy",
-            label: "Cours",
-            icon: GraduationCap,
-            description: "Formations disponibles"
-          },
-          {
-            href: "/dashboard/skill-tests",
-            label: "Tests Compétences",
-            icon: Award,
-            description: "Certifications"
-          },
-          {
-            href: "/blog",
-            label: "Blog",
-            icon: BookOpen,
-            description: "Articles et actualités"
-          }
-        ]
-      },
-      {
-        href: "/dashboard/analytics",
-        label: "Analytics",
-        icon: BarChart3,
-        description: "Statistiques et suivi",
-        children: [
-          {
-            href: "/dashboard/analytics",
-            label: "Tableau de Bord",
-            icon: BarChart3,
-            description: "Vue d'ensemble"
-          },
-          {
-            href: "/dashboard/tracking",
-            label: "Suivi Temps",
-            icon: Clock,
-            description: "Tracking du travail"
-          },
-          {
-            href: role === "freelance" ? "/dashboard/freelance/applications" : "/dashboard/client/proposals",
-            label: "Candidatures",
-            icon: FileText,
-            description: "Suivi des postulations",
-            count: userStats.pendingApplications
-          }
-        ]
-      },
-      {
-        href: "/orders",
-        label: "Paiements",
-        icon: DollarSign,
-        description: "Commandes et facturation",
-        children: [
-          {
-            href: "/orders",
-            label: "Commandes",
-            icon: DollarSign,
-            description: "Historique des paiements"
-          },
-          {
-            href: "/dashboard/referrals",
-            label: "Parrainage",
-            icon: Users,
-            description: "Programme de référencement"
-          },
-          {
-            href: "/pricing",
-            label: "Tarifs",
-            icon: Crown,
-            description: "Plans et abonnements"
-          }
-        ]
-      },
-      {
-        href: "/dashboard/settings",
+        href: `/${lang}/dashboard/settings`,
         label: "Paramètres",
         icon: Settings,
         description: "Configuration du compte",
         children: [
           {
-            href: "/profile",
+            href: `/${lang}/profile`,
             label: "Mon Profil",
             icon: User,
             description: "Profil public"
           },
           {
-            href: "/dashboard/settings",
+            href: `/${lang}/dashboard/settings`,
             label: "Paramètres",
             icon: Settings,
             description: "Configuration compte"
-          },
-          {
-            href: "/onboarding",
-            label: "Onboarding",
-            icon: Rocket,
-            description: "Compléter mon profil"
           }
         ]
       }
     ]
+
+    // Menu spécifique FREELANCE
+    const freelanceMenus: MenuItem[] = [
+      {
+        href: `/${lang}/gigs`,
+        label: "Mes Services",
+        icon: Package,
+        description: "Gérez vos services",
+        badge: "Star",
+        children: [
+          {
+            href: `/${lang}/dashboard/freelance/gigs`,
+            label: "Tous mes services",
+            icon: Package,
+            description: "Liste complète",
+            count: userStats.activeGigs
+          },
+          {
+            href: `/${lang}/gigs/create`,
+            label: "Créer un service",
+            icon: Plus,
+            description: "Nouveau service",
+            variant: "primary"
+          },
+          {
+            href: `/${lang}/gigs`,
+            label: "Explorer les services",
+            icon: Search,
+            description: "Découvrir"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/projects`,
+        label: "Projets",
+        icon: Briefcase,
+        description: "Opportunités",
+        children: [
+          {
+            href: `/${lang}/projects`,
+            label: "Découvrir Projets",
+            icon: Search,
+            description: "Parcourir"
+          },
+          {
+            href: `/${lang}/dashboard/freelance/applications`,
+            label: "Mes candidatures",
+            icon: FileText,
+            description: "Suivi des postulations",
+            count: userStats.pendingApplications
+          },
+          {
+            href: `/${lang}/dashboard/freelance/projects`,
+            label: "Projets en cours",
+            icon: FolderOpen,
+            description: "Projets actifs",
+            count: userStats.activeProjects
+          }
+        ]
+      },
+      {
+        href: `/${lang}/ai-matching/freelancers`,
+        label: "Matching IA",
+        icon: Sparkles,
+        description: "Projets recommandés",
+        badge: "AI",
+        children: [
+          {
+            href: `/${lang}/ai-matching/freelancers`,
+            label: "Projets recommandés",
+            icon: Target,
+            description: "Basé sur vos compétences"
+          },
+          {
+            href: `/${lang}/ai-matching`,
+            label: "Tableau de bord IA",
+            icon: BarChart3,
+            description: "Analyse des matchs"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/orders`,
+        label: "Commandes",
+        icon: ShoppingBag,
+        description: "Suivi des ventes",
+        count: userStats.totalOrders,
+        children: [
+          {
+            href: `/${lang}/orders`,
+            label: "Commandes reçues",
+            icon: ShoppingBag,
+            description: "À traiter"
+          },
+          {
+            href: `/${lang}/dashboard/freelance/earnings`,
+            label: "Gains",
+            icon: DollarSign,
+            description: "Mes revenus",
+            count: userStats.totalEarnings
+          }
+        ]
+      },
+      {
+        href: `/${lang}/dashboard/academy`,
+        label: "Academy",
+        icon: GraduationCap,
+        description: "Formation",
+        children: [
+          {
+            href: `/${lang}/dashboard/academy`,
+            label: "Cours",
+            icon: GraduationCap,
+            description: "Formations disponibles"
+          },
+          {
+            href: `/${lang}/dashboard/skill-tests`,
+            label: "Tests Compétences",
+            icon: Award,
+            description: "Certifications"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/dashboard/analytics`,
+        label: "Analytics",
+        icon: BarChart3,
+        description: "Performances",
+        badge: "Beta",
+        children: [
+          {
+            href: `/${lang}/dashboard/analytics`,
+            label: "Statistiques",
+            icon: TrendingUp,
+            description: "Vues et commandes",
+            count: userStats.totalViews
+          },
+          {
+            href: `/${lang}/dashboard/tracking`,
+            label: "Suivi Temps",
+            icon: Clock,
+            description: "Tracking du travail"
+          }
+        ]
+      }
+    ]
+
+    // Menu spécifique CLIENT
+    const clientMenus: MenuItem[] = [
+      {
+        href: `/${lang}/projects`,
+        label: "Mes Projets",
+        icon: Briefcase,
+        description: "Gestion des projets",
+        children: [
+          {
+            href: `/${lang}/projects/create`,
+            label: "Publier un projet",
+            icon: Plus,
+            description: "Nouveau projet",
+            variant: "primary"
+          },
+          {
+            href: `/${lang}/dashboard/client/projects`,
+            label: "Projets ouverts",
+            icon: FolderOpen,
+            description: "En cours",
+            count: userStats.openProjects
+          },
+          {
+            href: `/${lang}/dashboard/client/proposals`,
+            label: "Candidatures",
+            icon: Users,
+            description: "Propositions reçues",
+            count: userStats.totalApplications
+          },
+          {
+            href: `/${lang}/dashboard/client/completed`,
+            label: "Projets terminés",
+            icon: CheckCircle,
+            description: "Historique",
+            count: userStats.completedProjects
+          }
+        ]
+      },
+      {
+        href: `/${lang}/freelancers`,
+        label: "Talents",
+        icon: Users,
+        description: "Trouver des freelances",
+        children: [
+          {
+            href: `/${lang}/freelancers`,
+            label: "Explorer Talents",
+            icon: Search,
+            description: "Parcourir les profils"
+          },
+          {
+            href: `/${lang}/talents`,
+            label: "Top Talents",
+            icon: Star,
+            description: "Meilleurs freelancers"
+          },
+          {
+            href: `/${lang}/ai-matching/clients`,
+            label: "Matching IA",
+            icon: Sparkles,
+            description: "Talents recommandés",
+            badge: "AI"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/gigs`,
+        label: "Services",
+        icon: Package,
+        description: "Services prédéfinis",
+        children: [
+          {
+            href: `/${lang}/gigs`,
+            label: "Découvrir Services",
+            icon: Search,
+            description: "Parcourir les gigs"
+          },
+          {
+            href: `/${lang}/gigs/categories`,
+            label: "Catégories",
+            icon: Folder,
+            description: "Services par catégorie"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/orders`,
+        label: "Commandes",
+        icon: ShoppingBag,
+        description: "Suivi des achats",
+        count: userStats.totalOrders,
+        children: [
+          {
+            href: `/${lang}/orders`,
+            label: "Commandes en cours",
+            icon: ShoppingBag,
+            description: "Suivi"
+          },
+          {
+            href: `/${lang}/dashboard/client/payments`,
+            label: "Facturation",
+            icon: Wallet,
+            description: "Historique"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/dashboard/workspace`,
+        label: "Workspace",
+        icon: Workflow,
+        description: "Espace collaboratif",
+        badge: "Beta",
+        children: [
+          {
+            href: `/${lang}/ide`,
+            label: "IDE en Ligne",
+            icon: Code,
+            description: "Éditeur de code"
+          },
+          {
+            href: `/${lang}/meet`,
+            label: "Vidéo Conférence",
+            icon: Video,
+            description: "Réunions"
+          }
+        ]
+      },
+      {
+        href: `/${lang}/dashboard/referrals`,
+        label: "Parrainage",
+        icon: Handshake,
+        description: "Programme de recommandation"
+      }
+    ]
+
+    return [...commonMenus, ...(role === "freelance" ? freelanceMenus : clientMenus)]
   }
 
   const getUserInitials = () => {
     if (!userData?.name) return "U"
     return userData.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
-  }
-
-  const getPlanBadge = () => {
-    const plan = userData?.plan || 'free'
-    const plans = {
-      free: { label: 'Gratuit', color: 'bg-gray-100 text-gray-800' },
-      pro: { label: 'PRO', color: 'bg-blue-100 text-blue-800' },
-      business: { label: 'Business', color: 'bg-purple-100 text-purple-800' },
-      enterprise: { label: 'Enterprise', color: 'bg-green-100 text-green-800' }
-    }
-    return plans[plan as keyof typeof plans] || plans.free
   }
 
   const isLinkActive = (link: MenuItem) => {
@@ -454,43 +506,41 @@ export function DashboardSidebar({ role }: SidebarProps) {
     return (
       <div key={menu.href} className="select-none">
         <div className={cn(
-          "flex items-center gap-2 rounded-lg transition-all duration-200",
+          "flex items-center gap-2 rounded-xl transition-all duration-200",
           level === 0 ? "mb-1" : "mb-0.5"
         )}>
-          {/* Toggle button for parent items */}
           {hasChildren && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 hover:bg-transparent"
+              className="h-7 w-7 p-0 hover:bg-purple-100 dark:hover:bg-purple-800/50"
               onClick={() => toggleMenu(menu.label)}
             >
               {isExpanded ? (
-                <ChevronDown className="h-3 w-3 text-gray-500" />
+                <ChevronDown className="h-3 w-3 text-purple-500" />
               ) : (
-                <ChevronRight className="h-3 w-3 text-gray-500" />
+                <ChevronRight className="h-3 w-3 text-purple-500" />
               )}
             </Button>
           )}
           
-          {/* Spacer for child items */}
           {!hasChildren && level > 0 && (
-            <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-1 h-1 bg-gray-300 rounded-full" />
+            <div className="w-7 h-7 flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-400 to-fuchsia-400" />
             </div>
           )}
 
-          {/* Menu item link */}
           <Link
             href={menu.href}
             className={cn(
-              "group flex flex-1 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
+              "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/25"
+                ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg shadow-purple-500/25"
                 : isChildActive
-                  ? "bg-blue-50 text-blue-600 border border-blue-100"
-                  : "text-gray-700 hover:bg-blue-50 hover:text-blue-600 border border-transparent hover:border-blue-100",
-              menu.variant === "primary" && "bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700",
+                  ? "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-300 border border-transparent hover:border-purple-200 dark:hover:border-purple-800",
+              menu.variant === "primary" && "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/25",
+              menu.variant === "premium" && "bg-gradient-to-r from-amber-500 to-orange-500 text-white",
               level > 0 && "ml-2"
             )}
             onClick={(e) => {
@@ -501,28 +551,30 @@ export function DashboardSidebar({ role }: SidebarProps) {
             }}
           >
             <div className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
+              "flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200",
               isActive 
                 ? "bg-white/20" 
                 : menu.variant === "primary" 
                   ? "bg-white/20" 
                   : isChildActive
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 group-hover:bg-blue-100 group-hover:text-blue-600"
+                    ? "bg-purple-100 dark:bg-purple-800/50 text-purple-600 dark:text-purple-400"
+                    : "bg-slate-100 dark:bg-slate-800 group-hover:bg-purple-100 dark:group-hover:bg-purple-800/50 group-hover:text-purple-600 dark:group-hover:text-purple-400"
             )}>
               <Icon className={cn(
                 "h-4 w-4",
-                isActive || menu.variant === "primary" ? "text-white" : isChildActive ? "text-blue-600" : "text-gray-600"
+                isActive || menu.variant === "primary" || menu.variant === "premium" ? "text-white" : isChildActive ? "text-purple-600 dark:text-purple-400" : "text-slate-500 dark:text-slate-400"
               )} />
             </div>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="truncate">{menu.label}</span>
                 {menu.badge && (
-                  <Badge variant="secondary" className={cn(
-                    "text-xs",
-                    isActive ? "bg-white/20 text-white" : "bg-blue-100 text-blue-700"
+                  <Badge className={cn(
+                    "text-[10px] px-1.5 py-0.5",
+                    isActive 
+                      ? "bg-white/20 text-white" 
+                      : "bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white"
                   )}>
                     {menu.badge}
                   </Badge>
@@ -530,8 +582,8 @@ export function DashboardSidebar({ role }: SidebarProps) {
               </div>
               {menu.description && (
                 <p className={cn(
-                  "text-xs truncate mt-0.5",
-                  isActive ? "text-blue-100" : "text-gray-500"
+                  "text-[11px] truncate mt-0.5",
+                  isActive ? "text-purple-100" : "text-slate-500 dark:text-slate-400"
                 )}>
                   {menu.description}
                 </p>
@@ -539,9 +591,11 @@ export function DashboardSidebar({ role }: SidebarProps) {
             </div>
 
             {menu.count !== undefined && menu.count > 0 && (
-              <Badge variant="default" className={cn(
-                "ml-auto text-xs min-w-6 h-6 flex items-center justify-center",
-                isActive ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+              <Badge className={cn(
+                "ml-auto text-xs min-w-5 h-5 flex items-center justify-center rounded-full",
+                isActive 
+                  ? "bg-white text-purple-600" 
+                  : "bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white"
               )}>
                 {menu.count > 99 ? "99+" : menu.count}
               </Badge>
@@ -549,10 +603,9 @@ export function DashboardSidebar({ role }: SidebarProps) {
           </Link>
         </div>
 
-        {/* Child items */}
         {hasChildren && isExpanded && (
           <div className={cn(
-            "ml-4 space-y-1 border-l border-gray-200",
+            "ml-4 space-y-1 border-l-2 border-purple-200 dark:border-purple-800",
             level === 0 ? "mt-1" : "mt-0.5"
           )}>
             {menu.children!.map(child => renderMenuItem(child, level + 1))}
@@ -562,99 +615,131 @@ export function DashboardSidebar({ role }: SidebarProps) {
     )
   }
 
+  // Statistiques spécifiques selon le rôle
+  const freelanceStats = [
+    { label: "Services actifs", value: userStats.activeGigs || 0, icon: Package, color: "from-purple-500 to-fuchsia-500" },
+    { label: "Commandes", value: userStats.totalOrders || 0, icon: ShoppingBag, color: "from-emerald-500 to-teal-500" },
+    { label: "Vues totales", value: userStats.totalViews || 0, icon: Eye, color: "from-blue-500 to-cyan-500" },
+    { label: "Gains", value: `${userStats.totalEarnings || 0}€`, icon: DollarSign, color: "from-amber-500 to-orange-500" }
+  ]
+
+  const clientStats = [
+    { label: "Projets ouverts", value: userStats.openProjects || 0, icon: Briefcase, color: "from-purple-500 to-fuchsia-500" },
+    { label: "Candidatures", value: userStats.totalApplications || 0, icon: Users, color: "from-emerald-500 to-teal-500" },
+    { label: "Projets terminés", value: userStats.completedProjects || 0, icon: CheckCircle, color: "from-blue-500 to-cyan-500" },
+    { label: "Dépensé", value: `${userStats.totalEarnings || 0}€`, icon: Wallet, color: "from-amber-500 to-orange-500" }
+  ]
+
+  const currentStats = role === "freelance" ? freelanceStats : clientStats
+
   return (
-    <div className="flex h-screen flex-col w-80 border-r border-gray-200 bg-white/95 backdrop-blur-sm flex-shrink-0">
-      {/* Header avec logo et infos utilisateur */}
-      <div className="border-b border-gray-200 p-6 flex-shrink-0">
+    <div className={cn(
+      "flex h-screen flex-col border-r transition-all duration-300",
+      "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
+      "border-purple-100 dark:border-purple-900/50",
+      isCollapsed ? "w-20" : "w-80"
+    )}>
+      {/* Header avec logo */}
+      <div className="border-b border-purple-100 dark:border-purple-900/50 p-5 flex-shrink-0">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 ">
-            <Image src={"/logo.png"} width={40} height={40} alt="logo.png"/>
-          </div>
-          <div>
-            <Link href="/" className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-              NRB<span className="text-blue-600">Talents</span>
-            </Link>
-            <p className="text-xs text-gray-500 mt-1">Plateforme Freelance</p>
-          </div>
-        </div>
-        <div className="sidebar">
-  <h3>Mon activité</h3>
-  <OrdersButton 
-    variant="outline" 
-    size="sm"
-  //  dict={dict}
-   // lang={lang}
-    className="w-full justify-start"
-  />
-</div>
-        {/* Carte utilisateur */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-          <div className="flex items-center gap-3 mb-3">
-            <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-              <AvatarImage src={userData?.avatar} />
-              <AvatarFallback className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 truncate">{userData?.name || "Utilisateur"}</h3>
-              <p className="text-sm text-gray-600 capitalize">{role === "freelance" ? "Freelancer" : "Client"}</p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl blur opacity-50" />
+            <div className="relative w-10 h-10 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-sm">NRB</span>
             </div>
           </div>
-          
-   
+          {!isCollapsed && (
+            <div>
+              <Link href={`/${lang}`} className="text-xl font-bold bg-gradient-to-r from-purple-700 to-fuchsia-700 dark:from-purple-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
+                NRBTalents
+              </Link>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                {role === "freelance" ? "Freelancer" : "Client"}
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Carte utilisateur */}
+        {!isCollapsed && (
+          <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-950/50 dark:to-fuchsia-950/50 rounded-xl p-3 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 border-2 border-white shadow-md ring-2 ring-purple-200 dark:ring-purple-800">
+                <AvatarImage src={userData?.avatar} />
+                <AvatarFallback className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm">
+                  {userData?.name || "Utilisateur"}
+                </h3>
+                <p className="text-xs text-purple-600 dark:text-purple-400 capitalize">
+                  {role === "freelance" ? "🎨 Freelance" : "🏢 Client"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Navigation principale avec structure arborescente */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      {/* Statistiques rapides */}
+      {!isCollapsed && (
+        <div className="p-4 border-b border-purple-100 dark:border-purple-900/50">
+          <h3 className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-3">
+            {role === "freelance" ? "📊 Mon activité" : "📊 Mon activité"}
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            {currentStats.map((stat, idx) => {
+              const StatIcon = stat.icon
+              return (
+                <div key={idx} className="bg-gradient-to-br from-purple-50/50 to-fuchsia-50/50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-lg p-2 border border-purple-100 dark:border-purple-800">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded-lg bg-gradient-to-r ${stat.color} flex items-center justify-center`}>
+                      <StatIcon className="h-3 w-3 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{stat.value}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Navigation principale */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {getMenuStructure().map(menu => renderMenuItem(menu))}
       </div>
 
-      {/* Footer avec notifications et déconnexion */}
-      <div className="border-t border-gray-200 p-4 bg-gray-50/50 flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
+      {/* Footer */}
+      <div className="border-t border-purple-100 dark:border-purple-900/50 p-4 bg-gradient-to-b from-transparent to-purple-50/30 dark:to-purple-950/20 flex-shrink-0">
+        <div className="flex items-center justify-between">
           <NotificationsDropdown />
-          
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="text-gray-600 hover:text-red-600 hover:bg-red-50"
+            onClick={() => signOut({ callbackUrl: `/${lang}` })}
+            className="text-slate-600 dark:text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Déconnexion
+            {!isCollapsed && "Déconnexion"}
           </Button>
         </div>
         
-        {/* Stats rapides */}
-        <div className="bg-white rounded-lg p-3 border border-gray-200">
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {role === "freelance" ? (
-              <>
-                <div className="text-center">
-                  <div className="font-semibold text-gray-900">{userStats.activeProjects || 0}</div>
-                  <div className="text-gray-500">Projets actifs</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-gray-900">{userStats.pendingApplications || 0}</div>
-                  <div className="text-gray-500">En attente</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-center">
-                  <div className="font-semibold text-gray-900">{userStats.activeProjects || 0}</div>
-                  <div className="text-gray-500">Projets ouverts</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-gray-900">{userStats.pendingApplications || 0}</div>
-                  <div className="text-gray-500">Candidatures</div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        {/* Bouton de collapse */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full mt-3 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+        >
+          <ChevronRight className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
+          {!isCollapsed && "Réduire le menu"}
+        </Button>
       </div>
     </div>
   )
