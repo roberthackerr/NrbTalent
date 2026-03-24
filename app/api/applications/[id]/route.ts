@@ -135,7 +135,7 @@ export async function PATCH(request: Request,  { params }: { params: Promise<{ i
 
     return NextResponse.json({
       message: `Candidature ${status === 'accepted' ? 'acceptée' : 'rejetée'} avec succès`,
-      applicationId: params.id,
+      applicationId: id,
       status
     })
 
