@@ -1,4 +1,76 @@
 {
+   "my_gigs": {
+    "title": "Ny serivisiko",
+    "subtitle": "Tantano ny serivisinao ary araho ny fahombiazany",
+    "createNew": "Hamorona serivisy",
+    "createFirst": "Hamorona serivisy voalohany",
+    "searchPlaceholder": "Mitady serivisy...",
+    "filterStatus": "Toe-javatra",
+    "allStatus": "Rehetra",
+    "sortBy": "Mandamina amin'ny",
+    "servicesList": "Lisitry ny serivisy",
+    "services": "serivisy",
+    "tableDescription": "Tantano ny serivisinao ary araho ny fahombiazany",
+    "emptyTitle": "Tsy misy serivisy",
+    "emptyDescription": "Mbola tsy namorona serivisy ianao",
+    "orders": "baiko",
+    "page": "Pejy",
+    "previous": "Teo aloha",
+    "next": "Manaraka",
+    "topPerforming": "Serivisy mandeha tsara indrindra",
+    "topPerformingDesc": "Ny serivisinao izay mahazo fijerena sy baiko betsaka indrindra",
+    "status": {
+      "active": "Miasa",
+      "draft": "Volavola",
+      "paused": "Nampiato",
+      "deleted": "Voafafa"
+    },
+    "stats": {
+      "totalServices": "Serivisy rehetra",
+      "active": "miasa",
+      "draft": "volavola",
+      "totalViews": "Fijerena rehetra",
+      "allTime": "Fotoana rehetra",
+      "totalOrders": "Baiko rehetra",
+      "completed": "baiko vita",
+      "totalEarnings": "Vola azo rehetra",
+      "averageRating": "naoty antonony"
+    },
+    "sort": {
+      "createdAt": "Daty namoronana",
+      "views": "Fijerena",
+      "orders": "Baiko",
+      "price": "Vidiny"
+    },
+    "table": {
+      "service": "Serivisy",
+      "category": "Sokajy",
+      "price": "Vidiny",
+      "views": "Fijerena",
+      "orders": "Baiko",
+      "rating": "Naoty",
+      "status": "Toe-javatra"
+    },
+    "actions": "Hetsika",
+    "view": "Jereo",
+    "edit": "Hanova",
+    "pause": "Ampiasao vonjimaika",
+    "activate": "Ampiasao indray",
+    "publish": "Navoaka",
+    "delete": "Fafao",
+    "confirmDelete": "Tena azonao antoka ve ny hamafa \"{title}\"? Tsy azo averina intsony ity hetsika ity.",
+    "errors": {
+      "fetchFailed": "Nisy hadisoana tamin'ny fampidirana serivisy",
+      "statusUpdateFailed": "Nisy hadisoana tamin'ny fanovana ny toe-javatra",
+      "deleteFailed": "Nisy hadisoana tamin'ny famafana serivisy"
+    },
+    "success": {
+      "activated": "Serivisy navoaka indray",
+      "paused": "Serivisy nampiasaina vonjimaika",
+      "updated": "Serivisy nohavaozina",
+      "deleted": "Serivisy voafafa soa aman-tsara"
+    }
+  },
    "gigs_edit": {
     "title": "Hanova ny serivisy",
     "subtitle": "Avao ny fampahalalana momba ny serivisinao",
