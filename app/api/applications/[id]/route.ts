@@ -6,8 +6,9 @@ import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { z } from "zod"
 
+// Schéma pour la mise à jour du statut
 const UpdateApplicationSchema = z.object({
-  status: z.enum(["accepted", "rejected", "pending", "withdrawn"])
+  status: z.enum(["accepted", "rejected", "pending"])
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -38,7 +39,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const db = await getDatabase()
     const applicationId = new ObjectId(id)
     const userId = new ObjectId((session.user as any).id)
-    const userRole = (session.user as any).role
 
     // Récupérer la candidature avec les infos du projet
     const application = await db.collection("applications").findOne({
@@ -57,18 +57,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Projet associé non trouvé" }, { status: 404 })
     }
 
-    // Vérifier les permissions selon le statut et le rôle
-    let isAuthorized = false
-
-    if (status === "withdrawn") {
-      // Seul le freelance peut retirer sa propre candidature
-      isAuthorized = application.freelancerId.toString() === userId.toString()
-    } else {
-      // Pour accepter/rejeter, seul le client peut le faire
-      isAuthorized = project.clientId.toString() === userId.toString()
-    }
-
-    if (!isAuthorized) {
+    // Vérifier que l'utilisateur est le client du projet
+    const isClient = project.clientId.toString() === userId.toString()
+    if (!isClient) {
       return NextResponse.json(
         { error: "Accès non autorisé à cette candidature" }, 
         { status: 403 }
@@ -89,21 +80,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (result.modifiedCount === 0) {
       return NextResponse.json({ error: "Échec de la mise à jour" }, { status: 500 })
     }
-  const notificationMessages = {
-        withdrawn: {
-          fr: {
-            title: "📝 Candidature retirée",
-            message: `Vous avez retiré votre candidature pour "${project.title}"`
-          },
-          en: {
-            title: "📝 Application withdrawn",
-            message: `You have withdrawn your application for "${project.title}"`
-          },
-          mg: {
-            title: "📝 Nofoanana ny fangatahana",
-            message: `Nofoananao ny fangatahanao ho an'ny tetikasa "${project.title}"`
-          }
-        },
+     const notificationMessages = {
         accepted: {
           fr: {
             title: "🎉 Candidature acceptée !",
@@ -133,16 +110,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           }
         }
       }
+
     // 📢 NOTIFICATION selon le statut
     try {
       const userLang = (session.user as any).language || 'fr'
-
+      
+ 
       const messages = notificationMessages[status as keyof typeof notificationMessages]
       if (messages) {
         const msg = messages[userLang as keyof typeof messages] || messages.fr
         
         await db.collection("notifications").insertOne({
-          userId: status === "withdrawn" ? application.freelancerId : application.freelancerId,
+          userId: application.freelancerId,
           category: "ORDER",
           priority: status === "accepted" ? "HIGH" : "MEDIUM",
           title: msg.title,
@@ -203,7 +182,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
       for (const app of rejectedApplications) {
         const userLang = await getUserLanguage(app.freelancerId.toString())
-        const messages = notificationMessages .rejected[userLang as keyof typeof notificationMessages.rejected] || notificationMessages.rejected.fr
+        const messages = notificationMessages.rejected[userLang as keyof typeof notificationMessages.rejected] || notificationMessages.rejected.fr
         
         await db.collection("notifications").insertOne({
           userId: app.freelancerId,
@@ -227,17 +206,144 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({
       success: true,
-      message: status === "withdrawn" 
-        ? "Candidature retirée avec succès" 
-        : status === "accepted" 
-          ? "Candidature acceptée avec succès" 
-          : "Candidature rejetée avec succès",
+      message: status === "accepted" 
+        ? "Candidature acceptée avec succès" 
+        : "Candidature rejetée avec succès",
       applicationId: id,
       status
     })
 
   } catch (error) {
     console.error("Erreur mise à jour candidature:", error)
+    return NextResponse.json(
+      { error: "Erreur interne du serveur" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+    }
+    
+    const { id } = await params
+    
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "ID de candidature invalide" }, { status: 400 })
+    }
+
+    const db = await getDatabase()
+    const applicationId = new ObjectId(id)
+    const userId = new ObjectId((session.user as any).id)
+
+    // Récupérer la candidature
+    const application = await db.collection("applications").findOne({
+      _id: applicationId
+    })
+
+    if (!application) {
+      return NextResponse.json({ error: "Candidature non trouvée" }, { status: 404 })
+    }
+
+    // Vérifier que l'utilisateur est le propriétaire de la candidature (freelancer)
+    const isOwner = application.freelancerId.toString() === userId.toString()
+    
+    if (!isOwner) {
+      return NextResponse.json(
+        { error: "Vous ne pouvez pas supprimer cette candidature" }, 
+        { status: 403 }
+      )
+    }
+
+    // Vérifier que la candidature est encore en attente
+    if (application.status !== "pending") {
+      return NextResponse.json(
+        { error: "Vous ne pouvez pas supprimer une candidature déjà traitée" }, 
+        { status: 400 }
+      )
+    }
+
+    // Récupérer les détails du projet pour la notification
+    const project = await db.collection("projects").findOne({
+      _id: application.projectId
+    })
+
+    // Supprimer la candidature physiquement
+    const result = await db.collection("applications").deleteOne({
+      _id: applicationId
+    })
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Échec de la suppression" }, { status: 500 })
+    }
+
+    // Décrémenter le compteur de candidatures du projet
+    if (project) {
+      await db.collection("projects").updateOne(
+        { _id: application.projectId },
+        {
+          $inc: { applicationCount: -1 },
+          $set: { updatedAt: new Date() }
+        }
+      )
+    }
+
+    // 📢 NOTIFICATION DE SUPPRESSION
+    try {
+      const userLang = (session.user as any).language || 'fr'
+      
+      const deleteMessages = {
+        fr: {
+          title: "🗑️ Candidature supprimée",
+          message: `Vous avez supprimé votre candidature pour "${project?.title || 'le projet'}"`
+        },
+        en: {
+          title: "🗑️ Application deleted",
+          message: `You have deleted your application for "${project?.title || 'the project'}"`
+        },
+        mg: {
+          title: "🗑️ Nofafana ny fangatahana",
+          message: `Nofafanao ny fangatahanao ho an'ny tetikasa "${project?.title || 'ny tetikasa'}"`
+        }
+      }
+
+      const msg = deleteMessages[userLang as keyof typeof deleteMessages] || deleteMessages.fr
+
+      await db.collection("notifications").insertOne({
+        userId: userId.toString(),
+        category: "ORDER",
+        priority: "MEDIUM",
+        title: msg.title,
+        message: msg.message,
+        actionUrl: `/projects/${application.projectId}`,
+        data: {
+          entityType: "application",
+          action: "delete",
+          applicationId: applicationId.toString(),
+          projectId: application.projectId.toString(),
+          projectTitle: project?.title,
+          timestamp: new Date().toISOString()
+        },
+        status: "UNREAD",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+    } catch (notifError) {
+      console.error("Failed to send deletion notification:", notifError)
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Candidature supprimée avec succès",
+      applicationId: id
+    })
+
+  } catch (error) {
+    console.error("Erreur suppression candidature:", error)
     return NextResponse.json(
       { error: "Erreur interne du serveur" },
       { status: 500 }
