@@ -1,4 +1,5 @@
-// components/dashboard/sidebar.tsx
+// components/dashboard/sidebar.tsx - Version corrigée pour mobile
+
 "use client"
 
 import Link from "next/link"
@@ -676,10 +677,10 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
 
   // Contenu de la sidebar
   const sidebarContent = (
-    <>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header avec logo */}
       <div className="border-b border-purple-100 dark:border-purple-900/50 p-5 flex-shrink-0">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl blur opacity-50" />
             <div className="relative w-10 h-10 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -697,9 +698,11 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
             </div>
           )}
         </div>
+      </div>
 
-        {/* Carte utilisateur */}
-        {!isCollapsed && (
+      {/* Carte utilisateur */}
+      {!isCollapsed && (
+        <div className="p-4 border-b border-purple-100 dark:border-purple-900/50 flex-shrink-0">
           <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-950/50 dark:to-fuchsia-950/50 rounded-xl p-3 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-white shadow-md ring-2 ring-purple-200 dark:ring-purple-800">
@@ -718,12 +721,12 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Statistiques rapides */}
       {!isCollapsed && (
-        <div className="p-4 border-b border-purple-100 dark:border-purple-900/50">
+        <div className="p-4 border-b border-purple-100 dark:border-purple-900/50 flex-shrink-0">
           <h3 className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-3">
             {role === "freelance" ? "📊 Mon activité" : "📊 Mon activité"}
           </h3>
@@ -781,7 +784,7 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
           </Button>
         )}
       </div>
-    </>
+    </div>
   )
 
   // Rendu pour mobile (avec overlay)
@@ -804,9 +807,9 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
           "w-80"
         )}>
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             {/* Header avec bouton de fermeture */}
-            <div className="flex items-center justify-between p-4 border-b border-purple-100 dark:border-purple-900/50">
+            <div className="flex items-center justify-between p-4 border-b border-purple-100 dark:border-purple-900/50 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xs">NRB</span>
