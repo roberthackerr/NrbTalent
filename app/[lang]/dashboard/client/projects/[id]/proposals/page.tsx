@@ -28,7 +28,9 @@ import {
   TrendingUp,
   Shield,
   Award,
-  Menu
+  Menu,
+  Users2,
+  Building2
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -512,14 +514,25 @@ export default function ProposalsPage() {
         </div>
 
         <div className="p-4 md:p-6 lg:p-8">
-          {/* Header */}
+          {/* Header avec bouton pour voir les propositions d'équipe */}
           <div className="mb-8">
-            <Button variant="ghost" asChild className="mb-4 gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400">
-              <Link href={`/${lang}/dashboard/client/projects`}>
-                <ArrowLeft className="h-4 w-4" />
-                {dict?.proposals?.backToProjects || "Retour aux projets"}
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <Button variant="ghost" asChild className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 w-fit">
+                <Link href={`/${lang}/dashboard/client/projects`}>
+                  <ArrowLeft className="h-4 w-4" />
+                  {dict?.proposals?.backToProjects || "Retour aux projets"}
+                </Link>
+              </Button>
+              
+              {/* Bouton pour voir les propositions d'équipe */}
+              <Button
+                onClick={() => router.push(`/${lang}/projects/${projectId}/applications`)}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-purple-500/25 gap-2"
+              >
+                <Users2 className="h-4 w-4" />
+                {dict?.proposals?.viewTeamProposals || "Voir les propositions d'équipe"}
+              </Button>
+            </div>
             
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
               <div>
@@ -555,7 +568,7 @@ export default function ProposalsPage() {
                   )}
                 </div>
               </div>
-              <Badge className={cn (
+              <Badge className={cn(
                 "w-fit",
                 project.status === 'open' 
                   ? "bg-emerald-100 text-emerald-700 border-emerald-200" 

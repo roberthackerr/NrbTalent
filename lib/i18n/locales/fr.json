@@ -1,4 +1,7 @@
 {
+   "proposals": {
+    "viewTeamProposals": "Voir les propositions d'équipe"
+  },
   "my_gigs": {
     "title": "Mes services",
     "subtitle": "Gérez vos services et suivez leurs performances",
