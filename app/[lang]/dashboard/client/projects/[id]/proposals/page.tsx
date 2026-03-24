@@ -298,7 +298,7 @@ export default function ProposalsPage() {
                     </h3>
                     {freelancer?.rating && (
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                        <Star className="h-4 w-4 fill-amber-500 text-amber-500 " />
                         <span className="font-medium text-slate-900 dark:text-slate-100">{freelancer.rating}</span>
                         <span className="text-sm text-slate-500">
                           ({freelancer.completedProjects || 0} projets)
