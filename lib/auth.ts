@@ -294,16 +294,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       try {
         if (user) {
-          token.id = user.id
-          token.role = user.role as "freelance" | "client" | "admin"
-          token.onboardingRoleCompleted = user.onboardingRoleCompleted ?? false
-          token.onboardingCompleted = user.onboardingCompleted ?? false
-          token.email = user.email!
-          token.name = user.name
-          token.avatar = user.avatar
-          token.emailVerified = user.emailVerified ?? false
-          token.language = (user as any).language || 'fr'
-        }
+      token.id = user.id
+      token.role = user.role as "freelance" | "client" | "admin"
+      token.onboardingRoleCompleted = user.onboardingRoleCompleted ?? false
+      token.onboardingCompleted = user.onboardingCompleted ?? false
+      token.email = user.email!
+      token.name = user.name
+      token.avatar = user.avatar
+      token.emailVerified = user.emailVerified ?? false
+      // 👈 CRUCIAL: Récupérer la langue depuis user
+      token.language = (user as any).language || (user as any).preferences?.language || 'fr'
+          }
 
         if (trigger === "update" && session) {
           const db = await getDatabase()
@@ -350,8 +351,7 @@ export const authOptions: NextAuthOptions = {
           session.user.avatar = token.avatar || null
           session.user.emailVerified = token.emailVerified || false
           session.user.language = token.language || 'fr'
-          
-          // Ajouter les préférences si disponibles
+      // Ajouter les préférences si disponibles
           if (token.preferences) {
             session.user.preferences = token.preferences
           }

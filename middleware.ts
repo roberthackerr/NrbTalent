@@ -1,11 +1,11 @@
-// middleware.ts
+// middleware.ts - Version corrigée avec lecture du token.language
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from 'next/server'
 import { locales, defaultLocale } from '@/lib/i18n/config'
 import { getToken } from 'next-auth/jwt'
 
-// Routes publiques (accessibles sans authentification)
+// Routes publiques
 const publicRoutes = [
   '/auth/signin',
   '/auth/signup',
@@ -31,7 +31,6 @@ const publicRoutes = [
   '/cookies'
 ]
 
-// Routes qui ne nécessitent pas de vérification d'email
 const noEmailVerifyRoutes = [
   '/auth/verify-email-prompt',
   '/auth/verify-email',
@@ -39,7 +38,6 @@ const noEmailVerifyRoutes = [
   '/auth/reset-password'
 ]
 
-// Routes API qui ne nécessitent pas d'authentification
 const publicApiRoutes = [
   '/api/auth',
   '/api/webhooks',
@@ -49,23 +47,14 @@ const publicApiRoutes = [
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (public directory)
-     * - api/ws (WebSocket connections)
-     */
     '/((?!_next/static|_next/image|favicon.ico|public|api/ws).*)',
   ],
 }
 
-// Middleware pour la langue (avec support des préférences utilisateur)
+// Middleware pour la langue
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
-  // Ignorer les fichiers statiques et API spéciales
   if (
     pathname.startsWith('/_next') ||
     pathname.includes('.') ||
@@ -74,12 +63,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Vérifier si le chemin commence par une locale supportée
   const pathnameHasLocale = locales.some(
     locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )
 
-  // Récupérer la langue depuis l'URL si présente
   let currentLocale = defaultLocale
   if (pathnameHasLocale) {
     currentLocale = pathname.split('/')[1] as typeof locales[number]
@@ -88,47 +75,49 @@ export async function middleware(request: NextRequest) {
   // Récupérer le token pour l'utilisateur connecté
   const token = await getToken({ req: request })
   
-  // Récupérer la langue préférée depuis:
-  // 1. Le token (si l'utilisateur est connecté)
-  // 2. Le cookie (pour la persistance entre sessions)
-  // 3. La langue du navigateur (en dernier recours)
+  // 👈 CRUCIAL: Récupérer la langue depuis le token
   let preferredLocale = currentLocale
   
-  if (token?.sub) {
-    // Essayer de récupérer la langue depuis le cookie d'abord
+  // Priorité 1: Langue dans le token (de l'utilisateur connecté)
+  if (token?.language && locales.includes(token.language as any)) {
+    preferredLocale = token.language
+  }
+  // Priorité 2: Cookie (fallback)
+  else if (request.cookies.get('preferred-language')?.value) {
     const cookieLang = request.cookies.get('preferred-language')?.value
     if (cookieLang && locales.includes(cookieLang as any)) {
       preferredLocale = cookieLang
     }
-    // Note: La langue du token sera mise à jour via la session
-    // lors de la première connexion ou lors du changement de langue
+  }
+  // Priorité 3: Langue du navigateur (si pas d'utilisateur connecté)
+  else if (!token?.sub && !pathnameHasLocale) {
+    const acceptLanguage = request.headers.get('accept-language')
+    const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
+    if (browserLocale && locales.includes(browserLocale as any)) {
+      preferredLocale = browserLocale
+    }
   }
 
-  // Redirection vers la langue préférée si nécessaire
+  console.log('🔍 Language detection:', {
+    tokenLang: token?.language,
+    preferredLocale,
+    currentLocale,
+    pathnameHasLocale,
+    hasToken: !!token
+  })
+
+  // Redirection vers la langue préférée
   if (!pathnameHasLocale && !pathname.startsWith('/api')) {
-    // Déterminer la langue à utiliser
-    let targetLocale = preferredLocale
+    const newUrl = new URL(`/${preferredLocale}${pathname}`, request.url)
     
-    // Si pas d'utilisateur connecté et pas de cookie, utiliser la langue du navigateur
-    if (!token?.sub && !request.cookies.get('preferred-language')?.value) {
-      const acceptLanguage = request.headers.get('accept-language')
-      const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
-      targetLocale = locales.includes(browserLocale as any) ? browserLocale : defaultLocale
-    }
-    
-    // Construire la nouvelle URL
-    const newUrl = new URL(`/${targetLocale}${pathname}`, request.url)
-    
-    // Préserver les paramètres de recherche
     request.nextUrl.searchParams.forEach((value, key) => {
       newUrl.searchParams.set(key, value)
     })
     
     const response = NextResponse.redirect(newUrl)
     
-    // Ajouter un cookie pour la langue
-    response.cookies.set('preferred-language', targetLocale, {
-      maxAge: 60 * 60 * 24 * 30, // 30 jours
+    response.cookies.set('preferred-language', preferredLocale, {
+      maxAge: 60 * 60 * 24 * 30,
       path: '/',
       sameSite: 'lax'
     })
@@ -136,11 +125,10 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Si l'utilisateur est connecté et que la langue dans l'URL ne correspond pas au cookie
-  if (token?.sub && pathnameHasLocale && currentLocale !== preferredLocale) {
-    // Ne pas rediriger si c'est une route API
+  // Si l'utilisateur est connecté et la langue ne correspond pas
+  if (token?.language && pathnameHasLocale && currentLocale !== token.language) {
     if (!pathname.startsWith('/api')) {
-      const newPathname = pathname.replace(`/${currentLocale}`, `/${preferredLocale}`)
+      const newPathname = pathname.replace(`/${currentLocale}`, `/${token.language}`)
       const newUrl = new URL(newPathname, request.url)
       
       request.nextUrl.searchParams.forEach((value, key) => {
@@ -148,7 +136,7 @@ export async function middleware(request: NextRequest) {
       })
       
       const response = NextResponse.redirect(newUrl)
-      response.cookies.set('preferred-language', preferredLocale, {
+      response.cookies.set('preferred-language', token.language, {
         maxAge: 60 * 60 * 24 * 30,
         path: '/',
         sameSite: 'lax'
@@ -168,46 +156,37 @@ export default withAuth(
     const path = req.nextUrl.pathname
     const lang = path.split('/')[1] || defaultLocale
 
-    // Extraire le chemin sans la langue
     const pathWithoutLang = path.replace(/^\/[^\/]+/, '') || '/'
 
-    // Vérifier si c'est une route API publique
     const isPublicApiRoute = publicApiRoutes.some(route => 
       pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
 
-    // Vérifier si la route est publique
     const isPublicRoute = publicRoutes.some(route => 
       pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
 
-    // Vérifier si la route nécessite une vérification d'email
     const needsEmailVerification = !noEmailVerifyRoutes.some(route => 
       pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
 
-    // Si c'est une route API publique, autoriser sans vérification
     if (isPublicApiRoute) {
       return NextResponse.next()
     }
 
-    // Si c'est une route publique, autoriser l'accès
     if (isPublicRoute) {
-      // Rediriger vers le dashboard si déjà connecté et sur page auth
       if (token && (pathWithoutLang.startsWith('/auth') || pathWithoutLang === '/auth')) {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
       return NextResponse.next()
     }
 
-    // Vérifier si l'utilisateur est authentifié
     if (!token) {
       const signInUrl = new URL(`/${lang}/auth/signin`, req.url)
       signInUrl.searchParams.set('callbackUrl', path)
       return NextResponse.redirect(signInUrl)
     }
 
-    // Vérifier si l'email est vérifié (sauf pour certaines routes)
     if (needsEmailVerification && !token.emailVerified) {
       const response = NextResponse.redirect(
         new URL(`/${lang}/auth/verify-email-prompt`, req.url)
@@ -222,45 +201,35 @@ export default withAuth(
       return response
     }
 
-    // Récupérer le rôle de l'utilisateur depuis le token
     const userRole = token.role as string
 
-    // Role-based access pour les routes dashboard
     if (pathWithoutLang.startsWith('/dashboard')) {
-      // Dashboard client
       if (pathWithoutLang.startsWith('/dashboard/client') && userRole !== 'client') {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
 
-      // Dashboard freelance
       if (pathWithoutLang.startsWith('/dashboard/freelance') && userRole !== 'freelance') {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
 
-      // Dashboard admin
       if (pathWithoutLang.startsWith('/dashboard/admin') && userRole !== 'admin') {
         return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
       }
 
-      // Vérifier si l'onboarding est complété
       if (!token.onboardingCompleted && !pathWithoutLang.startsWith('/onboarding')) {
         return NextResponse.redirect(new URL(`/${lang}/onboarding`, req.url))
       }
     }
 
-    // Protection des routes onboarding
     if (pathWithoutLang.startsWith('/onboarding') && token.onboardingCompleted) {
       return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
     }
 
-    // Protection des routes admin
     if (pathWithoutLang.startsWith('/admin') && userRole !== 'admin') {
       return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
     }
 
-    // Protection des routes API privées
     if (pathWithoutLang.startsWith('/api') && !isPublicApiRoute && !isPublicRoute) {
-      // Vérifier les permissions pour les API
       if (pathWithoutLang.startsWith('/api/admin') && userRole !== 'admin') {
         return NextResponse.json(
           { error: 'Unauthorized - Admin access required' },
@@ -269,18 +238,13 @@ export default withAuth(
       }
     }
 
-    // Ajouter des headers de sécurité
     const response = NextResponse.next()
-    
-    // Ajouter la langue dans les headers pour les composants serveur
     response.headers.set('x-user-language', lang)
     
-    // Ajouter l'ID utilisateur dans les headers pour les logs
     if (token?.sub) {
       response.headers.set('x-user-id', token.sub)
     }
     
-    // Ajouter le rôle utilisateur dans les headers
     if (userRole) {
       response.headers.set('x-user-role', userRole)
     }
