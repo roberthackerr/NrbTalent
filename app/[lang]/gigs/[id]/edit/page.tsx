@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress"
 import { 
   Plus, X, ArrowLeft, Zap, ChevronRight, ChevronLeft, Upload, 
   Image as ImageIcon, Star, Clock, RotateCcw, Eye, EyeOff,
-  Loader2, CheckCircle2, AlertCircle, Save, Trash2, Edit
+  Loader2, CheckCircle2, AlertCircle, Save, Trash2
 } from "lucide-react"
 import { toast } from "sonner"
 import { CreateGigInput } from "@/types/gig"
@@ -120,7 +120,6 @@ export default function EditGigPage() {
           const data = await response.json()
           setGig(data.gig)
           
-          // Remplir le formulaire avec les données existantes
           setFormData({
             title: data.gig.title || "",
             description: data.gig.description || "",
@@ -138,12 +137,12 @@ export default function EditGigPage() {
           setIsPrivate(data.gig.isPrivate || false)
         } else {
           const error = await response.json()
-          toast.error(error.error || "Erreur lors du chargement du service")
+          toast.error(error.error || dict?.gigs_edit?.errors?.gigNotFound || "Service non trouvé")
           router.push(`/${lang}/gigs`)
         }
       } catch (error) {
         console.error('Error fetching gig:', error)
-        toast.error("Erreur lors du chargement du service")
+        toast.error(dict?.gigs_edit?.errors?.gigNotFound || "Service non trouvé")
         router.push(`/${lang}/gigs`)
       } finally {
         setIsLoadingGig(false)
@@ -155,14 +154,14 @@ export default function EditGigPage() {
     }
   }, [gigId, dict, lang, router])
 
-  // Définir les étapes avec le dictionnaire
+  // Définir les étapes avec le dictionnaire gigs_edit
   const STEPS = dict ? [
-    { id: 'basic', title: dict.gigs?.steps?.basic || 'Informations de base', description: dict.gigs?.steps?.basicDesc || 'Décrivez votre service' },
-    { id: 'pricing', title: dict.gigs?.steps?.pricing || 'Prix et délais', description: dict.gigs?.steps?.pricingDesc || 'Définissez votre tarification' },
-    { id: 'gallery', title: dict.gigs?.steps?.gallery || 'Galerie d\'images', description: dict.gigs?.steps?.galleryDesc || 'Ajoutez des images à votre service' },
-    { id: 'features', title: dict.gigs?.steps?.features || 'Ce qui est inclus', description: dict.gigs?.steps?.featuresDesc || 'Listez les fonctionnalités' },
-    { id: 'requirements', title: dict.gigs?.steps?.requirements || 'Prérequis', description: dict.gigs?.steps?.requirementsDesc || 'Informations nécessaires' },
-    { id: 'review', title: dict.gigs?.steps?.review || 'Vérification', description: dict.gigs?.steps?.reviewDesc || 'Vérifiez votre service' }
+    { id: 'basic', title: dict.gigs_edit?.steps?.basic?.title || 'Informations de base', description: dict.gigs_edit?.steps?.basic?.description || 'Décrivez votre service' },
+    { id: 'pricing', title: dict.gigs_edit?.steps?.pricing?.title || 'Prix et délais', description: dict.gigs_edit?.steps?.pricing?.description || 'Définissez votre tarification' },
+    { id: 'gallery', title: dict.gigs_edit?.steps?.gallery?.title || 'Galerie d\'images', description: dict.gigs_edit?.steps?.gallery?.description || 'Ajoutez des images à votre service' },
+    { id: 'features', title: dict.gigs_edit?.steps?.features?.title || 'Ce qui est inclus', description: dict.gigs_edit?.steps?.features?.description || 'Listez les fonctionnalités' },
+    { id: 'requirements', title: dict.gigs_edit?.steps?.requirements?.title || 'Prérequis', description: dict.gigs_edit?.steps?.requirements?.description || 'Informations nécessaires' },
+    { id: 'review', title: dict.gigs_edit?.steps?.review?.title || 'Vérification', description: dict.gigs_edit?.steps?.review?.description || 'Vérifiez votre service' }
   ] : []
 
   // Remove image
@@ -187,11 +186,11 @@ export default function EditGigPage() {
           setPopularSkills(data.popularSkills || [])
         } else {
           console.error('Failed to fetch categories')
-          toast.error(dict?.gigs_create?.errors?.loadCategories || "Erreur lors du chargement des catégories")
+          toast.error(dict?.gigs_edit?.errors?.loadCategories || "Erreur lors du chargement des catégories")
         }
       } catch (error) {
         console.error('Error fetching categories:', error)
-        toast.error(dict?.gigs_create?.errors?.loadCategories || "Erreur lors du chargement des catégories")
+        toast.error(dict?.gigs_edit?.errors?.loadCategories || "Erreur lors du chargement des catégories")
       } finally {
         setCategoriesLoading(false)
       }
@@ -230,48 +229,48 @@ export default function EditGigPage() {
     switch (currentStep) {
       case 0:
         if (!formData.title.trim()) {
-          toast.error(dict?.gigs_create?.errors?.titleRequired || "Le titre est requis")
+          toast.error(dict?.gigs_edit?.errors?.titleRequired || "Le titre est requis")
           return false
         }
         if (formData.title.length < 10) {
-          toast.error(dict?.gigs_create?.errors?.titleMinLength || "Le titre doit contenir au moins 10 caractères")
+          toast.error(dict?.gigs_edit?.errors?.titleMinLength || "Le titre doit contenir au moins 10 caractères")
           return false
         }
         if (!formData.description.trim()) {
-          toast.error(dict?.gigs_create?.errors?.descriptionRequired || "La description est requise")
+          toast.error(dict?.gigs_edit?.errors?.descriptionRequired || "La description est requise")
           return false
         }
         if (formData.description.length < 50) {
-          toast.error(dict?.gigs_create?.errors?.descriptionMinLength || "La description doit contenir au moins 50 caractères")
+          toast.error(dict?.gigs_edit?.errors?.descriptionMinLength || "La description doit contenir au moins 50 caractères")
           return false
         }
         if (!formData.category) {
-          toast.error(dict?.gigs_create?.errors?.categoryRequired || "La catégorie est requise")
+          toast.error(dict?.gigs_edit?.errors?.categoryRequired || "La catégorie est requise")
           return false
         }
         return true
 
       case 1:
         if (formData.price < 5) {
-          toast.error(dict?.gigs_create?.errors?.priceMin || "Le prix minimum est de 5€")
+          toast.error(dict?.gigs_edit?.errors?.priceMin || "Le prix minimum est de 5€")
           return false
         }
         if (formData.deliveryTime < 1) {
-          toast.error(dict?.gigs_create?.errors?.deliveryTimeMin || "Le délai de livraison doit être d'au moins 1 jour")
+          toast.error(dict?.gigs_edit?.errors?.deliveryTimeMin || "Le délai de livraison doit être d'au moins 1 jour")
           return false
         }
         return true
 
       case 2:
         if (formData.images.length === 0) {
-          toast.error(dict?.gigs_create?.errors?.imagesRequired || "Ajoutez au moins une image à votre service")
+          toast.error(dict?.gigs_edit?.errors?.imagesRequired || "Ajoutez au moins une image à votre service")
           return false
         }
         return true
 
       case 3:
         if (formData.features.filter(f => f.trim()).length === 0) {
-          toast.error(dict?.gigs_create?.errors?.featuresRequired || "Ajoutez au moins une fonctionnalité")
+          toast.error(dict?.gigs_edit?.errors?.featuresRequired || "Ajoutez au moins une fonctionnalité")
           return false
         }
         return true
@@ -288,12 +287,12 @@ export default function EditGigPage() {
     )
 
     if (validFiles.length === 0) {
-      toast.error(dict?.gigs_create?.errors?.invalidImages || "Veuillez sélectionner des images valides (max 5MB par image)")
+      toast.error(dict?.gigs_edit?.errors?.invalidImages || "Veuillez sélectionner des images valides (max 5MB par image)")
       return
     }
 
     if (validFiles.length + formData.images.length > 10) {
-      toast.error(dict?.gigs_create?.errors?.maxImages || "Maximum 10 images autorisées")
+      toast.error(dict?.gigs_edit?.errors?.maxImages || "Maximum 10 images autorisées")
       return
     }
 
@@ -332,11 +331,11 @@ export default function EditGigPage() {
         }
       }
       
-      toast.success(dict?.gigs_create?.success?.imagesUploaded?.replace('{count}', validFiles.length.toString()) || 
+      toast.success(dict?.gigs_edit?.success?.imagesUploaded?.replace('{count}', validFiles.length.toString()) || 
         `${validFiles.length} image(s) téléchargée(s) avec succès`)
     } catch (error) {
       console.error('Error uploading images:', error)
-      toast.error((error as any).message || dict?.gigs_create?.errors?.uploadFailed || "Erreur lors du téléchargement des images")
+      toast.error((error as any).message || dict?.gigs_edit?.errors?.uploadFailed || "Erreur lors du téléchargement des images")
     } finally {
       setUploading(false)
       setUploadProgress(0)
@@ -360,7 +359,7 @@ export default function EditGigPage() {
     e.preventDefault()
     
     if (!session) {
-      toast.error(dict?.gigs_create?.errors?.loginRequired || "Veuillez vous connecter pour modifier ce service")
+      toast.error(dict?.gigs_edit?.errors?.loginRequired || "Veuillez vous connecter pour modifier ce service")
       router.push(`/${lang}/auth/signin`)
       return
     }
@@ -389,21 +388,21 @@ export default function EditGigPage() {
       const data = await response.json()
 
       if (response.ok) {
-        toast.success(dict?.gigs?.updateSuccess || "Service mis à jour avec succès!")
+        toast.success(dict?.gigs_edit?.success?.updated || "Service mis à jour avec succès!")
         router.push(`/${lang}/gigs/${gigId}`)
       } else {
-        throw new Error(data.error || dict?.gigs_create?.errors?.updateFailed || "Erreur lors de la mise à jour")
+        throw new Error(data.error || dict?.gigs_edit?.errors?.updateFailed || "Erreur lors de la mise à jour")
       }
     } catch (error) {
       console.error("Error updating gig:", error)
-      toast.error(dict?.gigs_create?.errors?.updateFailed || "Erreur lors de la mise à jour du service")
+      toast.error(dict?.gigs_edit?.errors?.updateFailed || "Erreur lors de la mise à jour du service")
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async () => {
-    const confirmMessage = dict?.gigs?.confirmDelete || "Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible."
+    const confirmMessage = dict?.gigs_edit?.confirmDelete || "Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible."
     if (!confirm(confirmMessage)) return
 
     setIsDeleting(true)
@@ -413,15 +412,15 @@ export default function EditGigPage() {
       })
 
       if (response.ok) {
-        toast.success(dict?.gigs?.deleteSuccess || "Service supprimé avec succès")
+        toast.success(dict?.gigs_edit?.success?.deleted || "Service supprimé avec succès")
         router.push(`/${lang}/gigs`)
       } else {
         const error = await response.json()
-        throw new Error(error.error || "Erreur lors de la suppression")
+        throw new Error(error.error || dict?.gigs_edit?.errors?.deleteFailed || "Erreur lors de la suppression")
       }
     } catch (error) {
       console.error("Error deleting gig:", error)
-      toast.error(dict?.gigs?.deleteError || "Erreur lors de la suppression du service")
+      toast.error(dict?.gigs_edit?.errors?.deleteFailed || "Erreur lors de la suppression du service")
     } finally {
       setIsDeleting(false)
     }
@@ -514,10 +513,10 @@ export default function EditGigPage() {
             <Zap className="h-10 w-10 text-slate-400" />
           </div>
           <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-            {dict?.gigs_create?.loginRequired || "Connexion requise"}
+            {dict?.gigs_edit?.errors?.loginRequired || "Connexion requise"}
           </h3>
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            {dict?.gigs_create?.loginRequiredDesc || "Vous devez être connecté pour modifier ce service"}
+            {dict?.gigs_edit?.errors?.loginRequired || "Veuillez vous connecter pour modifier ce service"}
           </p>
           <Button onClick={() => router.push(`/${lang}/auth/signin`)}>
             {dict?.common?.signin || "Se connecter"}
@@ -535,13 +534,13 @@ export default function EditGigPage() {
             <AlertCircle className="h-10 w-10 text-red-500" />
           </div>
           <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-            {dict?.gigs?.notFound || "Service non trouvé"}
+            {dict?.gigs_edit?.notFound || "Service non trouvé"}
           </h3>
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            {dict?.gigs?.notFoundDesc || "Le service que vous cherchez n'existe pas ou a été supprimé"}
+            {dict?.gigs_edit?.notFoundDesc || "Le service que vous cherchez n'existe pas ou a été supprimé"}
           </p>
           <Button onClick={() => router.push(`/${lang}/gigs`)}>
-            {dict?.gigs?.viewAll || "Voir tous les services"}
+            {dict?.gigs_edit?.viewAll || "Voir tous les services"}
           </Button>
         </div>
       </div>
@@ -560,11 +559,11 @@ export default function EditGigPage() {
               className="mb-4 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors w-fit"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              {dict?.common?.back || "Retour"}
+              {dict?.gigs_edit?.buttons?.back || "Retour"}
             </Button>
             <div className="flex items-center gap-2">
               <Badge variant={gig.status === 'active' ? 'default' : 'secondary'} className="text-sm">
-                {gig.status === 'active' ? dict?.gigs?.active || "Actif" : dict?.gigs?.draft || "Brouillon"}
+                {gig.status === 'active' ? dict?.gigs_edit?.status?.active || "Actif" : dict?.gigs_edit?.status?.draft || "Brouillon"}
               </Badge>
               {gig.rating > 0 && (
                 <Badge variant="outline" className="flex items-center gap-1">
@@ -578,10 +577,10 @@ export default function EditGigPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
-                {dict?.gigs?.editTitle || "Modifier le service"}
+                {dict?.gigs_edit?.title || "Modifier le service"}
               </h1>
               <p className="text-slate-600 dark:text-slate-400 mt-2">
-                {dict?.gigs?.editSubtitle || "Modifiez les informations de votre service"}
+                {dict?.gigs_edit?.subtitle || "Modifiez les informations de votre service"}
               </p>
             </div>
             <div className="flex gap-2">
@@ -597,7 +596,7 @@ export default function EditGigPage() {
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}
-                {dict?.common?.delete || "Supprimer"}
+                {dict?.gigs_edit?.buttons?.delete || "Supprimer"}
               </Button>
             </div>
           </div>
@@ -643,7 +642,7 @@ export default function EditGigPage() {
             </div>
             <div className="text-right">
               <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
-                {dict?.common?.progress || "Progression"}: {completionPercentage}%
+                {dict?.gigs_edit?.progress || "Progression"}: {completionPercentage}%
               </div>
               <Progress value={completionPercentage} className="w-32 h-2 ml-auto" />
             </div>
@@ -667,7 +666,7 @@ export default function EditGigPage() {
                 <CardContent className="p-6 space-y-6">
                   <div>
                     <Label htmlFor="title" className="flex items-center gap-2 mb-2">
-                      {dict?.gigs_create?.title || "Titre du service"} *
+                      {dict?.gigs_edit?.form?.title || "Titre du service"} *
                       {titleLength > 0 && (
                         <span className={`text-xs ${titleLength < 10 ? 'text-red-500' : 'text-green-500'}`}>
                           ({titleLength}/10+)
@@ -678,21 +677,21 @@ export default function EditGigPage() {
                       id="title"
                       value={formData.title}
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder={dict?.gigs_create?.titlePlaceholder || "Ex: Création de site web WordPress professionnel avec design responsive"}
+                      placeholder={dict?.gigs_edit?.form?.titlePlaceholder || "Ex: Création de site web WordPress professionnel avec design responsive"}
                       className="h-12 text-base sm:text-lg"
                       required
                     />
                     {titleLength > 0 && titleLength < 10 && (
                       <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        {dict?.gigs_create?.errors?.titleMinLength || "Le titre doit contenir au moins 10 caractères"}
+                        {dict?.gigs_edit?.errors?.titleMinLength || "Le titre doit contenir au moins 10 caractères"}
                       </p>
                     )}
                   </div>
 
                   <div>
                     <Label htmlFor="description" className="flex items-center gap-2 mb-2">
-                      {dict?.gigs_create?.description || "Description détaillée"} *
+                      {dict?.gigs_edit?.form?.description || "Description détaillée"} *
                       {descriptionLength > 0 && (
                         <span className={`text-xs ${descriptionLength < 50 ? 'text-red-500' : 'text-green-500'}`}>
                           ({descriptionLength}/50+)
@@ -703,7 +702,7 @@ export default function EditGigPage() {
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder={dict?.gigs_create?.descriptionPlaceholder || "Décrivez en détail ce que vous proposez, vos compétences, votre expérience, les bénéfices pour le client..."}
+                      placeholder={dict?.gigs_edit?.form?.descriptionPlaceholder || "Décrivez en détail ce que vous proposez, vos compétences, votre expérience, les bénéfices pour le client..."}
                       rows={8}
                       className="resize-none"
                       required
@@ -711,14 +710,14 @@ export default function EditGigPage() {
                     {descriptionLength > 0 && descriptionLength < 50 && (
                       <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        {dict?.gigs_create?.errors?.descriptionMinLength || "La description doit contenir au moins 50 caractères"}
+                        {dict?.gigs_edit?.errors?.descriptionMinLength || "La description doit contenir au moins 50 caractères"}
                       </p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="category" className="mb-2">{dict?.gigs_create?.category || "Catégorie"} *</Label>
+                      <Label htmlFor="category" className="mb-2">{dict?.gigs_edit?.form?.category || "Catégorie"} *</Label>
                       <Select
                         value={formData.category}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, category: value, subcategory: "" }))}
@@ -731,7 +730,7 @@ export default function EditGigPage() {
                               <span>{dict?.common?.loading || "Chargement..."}</span>
                             </div>
                           ) : (
-                            <SelectValue placeholder={dict?.gigs_create?.selectCategory || "Sélectionnez une catégorie"} />
+                            <SelectValue placeholder={dict?.gigs_edit?.form?.selectCategory || "Sélectionnez une catégorie"} />
                           )}
                         </SelectTrigger>
                         <SelectContent>
@@ -750,14 +749,14 @@ export default function EditGigPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="subcategory" className="mb-2">{dict?.gigs_create?.subcategory || "Sous-catégorie"}</Label>
+                      <Label htmlFor="subcategory" className="mb-2">{dict?.gigs_edit?.form?.subcategory || "Sous-catégorie"}</Label>
                       <Select
                         value={formData.subcategory}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
                         disabled={!formData.category || categoriesLoading}
                       >
                         <SelectTrigger className="h-12">
-                          <SelectValue placeholder={dict?.gigs_create?.selectSubcategory || "Sélectionnez une sous-catégorie"} />
+                          <SelectValue placeholder={dict?.gigs_edit?.form?.selectSubcategory || "Sélectionnez une sous-catégorie"} />
                         </SelectTrigger>
                         <SelectContent>
                           {getCurrentCategorySubcategories().map((subcat) => (
@@ -771,14 +770,14 @@ export default function EditGigPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="tags" className="mb-2">{dict?.gigs_create?.keywords || "Mots-clés"}</Label>
+                    <Label htmlFor="tags" className="mb-2">{dict?.gigs_edit?.form?.keywords || "Mots-clés"}</Label>
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           value={tagInput}
                           onChange={(e) => setTagInput(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                          placeholder={dict?.gigs_create?.addKeyword || "Ajouter un mot-clé (Appuyez sur Entrée)"}
+                          placeholder={dict?.gigs_edit?.form?.addKeyword || "Ajouter un mot-clé (Appuyez sur Entrée)"}
                           list="skill-suggestions"
                           className="flex-1"
                         />
@@ -795,7 +794,7 @@ export default function EditGigPage() {
                       
                       {suggestedSkills.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs text-slate-500 mr-2">{dict?.gigs_create?.suggestions || "Suggestions"}:</span>
+                          <span className="text-xs text-slate-500 mr-2">{dict?.gigs_edit?.form?.suggestions || "Suggestions"}:</span>
                           {suggestedSkills.map((skill) => (
                             <Badge 
                               key={skill} 
@@ -852,9 +851,9 @@ export default function EditGigPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label htmlFor="price" className="flex items-center gap-2 mb-2">
-                        <span>{dict?.gigs_create?.basePrice || "Prix de base"} (€) *</span>
+                        <span>{dict?.gigs_edit?.form?.price || "Prix de base"} (€) *</span>
                         <Badge variant="outline" className="text-xs">
-                          {dict?.gigs_create?.minimum || "Minimum"}: 5€
+                          {dict?.gigs_edit?.form?.minimum || "Minimum"}: 5€
                         </Badge>
                       </Label>
                       <div className="relative">
@@ -872,9 +871,9 @@ export default function EditGigPage() {
                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">€</span>
                       </div>
                       <div className="flex justify-between text-xs text-slate-500 mt-2">
-                        <span>{dict?.gigs_create?.economical || "Économique"}</span>
-                        <span>{dict?.gigs_create?.standard || "Standard"}</span>
-                        <span>{dict?.gigs_create?.premium || "Premium"}</span>
+                        <span>{dict?.gigs_edit?.form?.economical || "Économique"}</span>
+                        <span>{dict?.gigs_edit?.form?.standard || "Standard"}</span>
+                        <span>{dict?.gigs_edit?.form?.premium || "Premium"}</span>
                       </div>
                       <input
                         type="range"
@@ -890,7 +889,7 @@ export default function EditGigPage() {
                     <div>
                       <Label htmlFor="deliveryTime" className="flex items-center gap-2 mb-2">
                         <Clock className="h-4 w-4" />
-                        {dict?.gigs_create?.deliveryTime || "Délai de livraison"} ({dict?.gigs_create?.days || "jours"}) *
+                        {dict?.gigs_edit?.form?.deliveryTime || "Délai de livraison"} ({dict?.gigs_edit?.form?.days || "jours"}) *
                       </Label>
                       <div className="relative">
                         <Input
@@ -913,7 +912,7 @@ export default function EditGigPage() {
                   <div>
                     <Label htmlFor="revisions" className="flex items-center gap-2 mb-2">
                       <RotateCcw className="h-4 w-4" />
-                      {dict?.gigs_create?.revisions || "Nombre de révisions incluses"} *
+                      {dict?.gigs_edit?.form?.revisions || "Nombre de révisions incluses"} *
                     </Label>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <Input
@@ -928,11 +927,11 @@ export default function EditGigPage() {
                       />
                       <div className="flex-1 text-sm text-slate-600 dark:text-slate-400">
                         {formData.revisions === 0 ? (
-                          dict?.gigs_create?.noRevisions || "Aucune révision incluse"
+                          dict?.gigs_edit?.form?.noRevisions || "Aucune révision incluse"
                         ) : formData.revisions === 1 ? (
-                          dict?.gigs_create?.oneRevision || "1 révision incluse"
+                          dict?.gigs_edit?.form?.oneRevision || "1 révision incluse"
                         ) : (
-                          dict?.gigs_create?.revisionsCount?.replace('{count}', formData.revisions.toString()) || 
+                          dict?.gigs_edit?.form?.revisionsCount?.replace('{count}', formData.revisions.toString()) || 
                           `${formData.revisions} révisions incluses`
                         )}
                       </div>
@@ -944,10 +943,10 @@ export default function EditGigPage() {
                       <div className="space-y-1">
                         <Label htmlFor="premium" className="flex items-center gap-2">
                           <Star className="h-4 w-4 text-yellow-500" />
-                          {dict?.gigs_create?.premiumService || "Service Premium"}
+                          {dict?.gigs_edit?.form?.premiumService || "Service Premium"}
                         </Label>
                         <p className="text-xs text-slate-500">
-                          {dict?.gigs_create?.premiumDesc || "Mettez en avant votre service"}
+                          {dict?.gigs_edit?.form?.premiumDesc || "Mettez en avant votre service"}
                         </p>
                       </div>
                       <Switch
@@ -961,10 +960,10 @@ export default function EditGigPage() {
                       <div className="space-y-1">
                         <Label htmlFor="private" className="flex items-center gap-2">
                           {isPrivate ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          {dict?.gigs_create?.privateService || "Service Privé"}
+                          {dict?.gigs_edit?.form?.privateService || "Service Privé"}
                         </Label>
                         <p className="text-xs text-slate-500">
-                          {dict?.gigs_create?.privateDesc || "Visible uniquement sur invitation"}
+                          {dict?.gigs_edit?.form?.privateDesc || "Visible uniquement sur invitation"}
                         </p>
                       </div>
                       <Switch
@@ -991,7 +990,6 @@ export default function EditGigPage() {
                   <CardDescription>{STEPS[2]?.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
-                  {/* Upload Zone */}
                   <div 
                     className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all duration-300"
                     onClick={() => fileInputRef.current?.click()}
@@ -1012,10 +1010,10 @@ export default function EditGigPage() {
                       </div>
                       <div>
                         <p className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
-                          {dict?.gigs_create?.dragDrop || "Glissez-déposez vos images ici"}
+                          {dict?.gigs_edit?.form?.dragDrop || "Glissez-déposez vos images ici"}
                         </p>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                          {dict?.gigs_create?.clickToSelect || "ou cliquez pour sélectionner des fichiers"}
+                          {dict?.gigs_edit?.form?.clickToSelect || "ou cliquez pour sélectionner des fichiers"}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
                           PNG, JPG, JPEG - 5MB max - 10 images maximum
@@ -1023,12 +1021,11 @@ export default function EditGigPage() {
                       </div>
                       <Button type="button" variant="outline" className="border-2">
                         <ImageIcon className="h-4 w-4 mr-2" />
-                        {dict?.gigs_create?.selectImages || "Sélectionner des images"}
+                        {dict?.gigs_edit?.form?.selectImages || "Sélectionner des images"}
                       </Button>
                     </div>
                   </div>
 
-                  {/* Upload Progress */}
                   {uploading && (
                     <div className="text-center space-y-3">
                       <div className="flex items-center justify-center gap-3">
@@ -1044,12 +1041,11 @@ export default function EditGigPage() {
                     </div>
                   )}
 
-                  {/* Image Gallery Preview */}
                   {formData.images.length > 0 && (
                     <div className="space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <Label className="text-sm font-semibold">
-                          {dict?.gigs_create?.uploadedImages || "Images téléchargées"} ({formData.images.length}/10)
+                          {dict?.gigs_edit?.form?.uploadedImages || "Images téléchargées"} ({formData.images.length}/10)
                         </Label>
                         {formData.images.length > 1 && (
                           <Button
@@ -1057,7 +1053,7 @@ export default function EditGigPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              if (confirm(dict?.gigs_create?.confirmDeleteAll || 'Êtes-vous sûr de vouloir supprimer toutes les images ?')) {
+                              if (confirm(dict?.gigs_edit?.form?.confirmDeleteAll || 'Êtes-vous sûr de vouloir supprimer toutes les images ?')) {
                                 setFormData((prev: any) => ({ ...prev, images: [] }))
                                 toast.success(dict?.common?.allDeleted || "Toutes les images ont été supprimées")
                               }
@@ -1118,7 +1114,7 @@ export default function EditGigPage() {
                       <Input
                         value={feature}
                         onChange={(e) => updateFeature(index, e.target.value)}
-                        placeholder={`${dict?.gigs_create?.feature || "Fonctionnalité"} ${index + 1}`}
+                        placeholder={`${dict?.gigs_edit?.form?.feature || "Fonctionnalité"} ${index + 1}`}
                         className="flex-1"
                       />
                       {formData.features.length > 1 && (
@@ -1135,7 +1131,7 @@ export default function EditGigPage() {
                   ))}
                   <Button type="button" variant="outline" onClick={addFeature} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
-                    {dict?.gigs_create?.addFeature || "Ajouter une fonctionnalité"}
+                    {dict?.gigs_edit?.form?.addFeature || "Ajouter une fonctionnalité"}
                   </Button>
                 </CardContent>
               </Card>
@@ -1159,7 +1155,7 @@ export default function EditGigPage() {
                       <Input
                         value={requirement}
                         onChange={(e) => updateRequirement(index, e.target.value)}
-                        placeholder={`${dict?.gigs_create?.requirement || "Prérequis"} ${index + 1}`}
+                        placeholder={`${dict?.gigs_edit?.form?.requirement || "Prérequis"} ${index + 1}`}
                         className="flex-1"
                       />
                       {formData.requirements.length > 1 && (
@@ -1176,7 +1172,7 @@ export default function EditGigPage() {
                   ))}
                   <Button type="button" variant="outline" onClick={addRequirement} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
-                    {dict?.gigs_create?.addRequirement || "Ajouter un prérequis"}
+                    {dict?.gigs_edit?.form?.addRequirement || "Ajouter un prérequis"}
                   </Button>
                 </CardContent>
               </Card>
@@ -1197,12 +1193,12 @@ export default function EditGigPage() {
                 <CardContent className="p-6 space-y-4">
                   <div className="grid gap-4">
                     <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                      <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_create?.title || "Titre"}</Label>
+                      <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_edit?.form?.title || "Titre"}</Label>
                       <p className="text-slate-900 dark:text-slate-100 mt-1">{formData.title}</p>
                     </div>
                     
                     <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                      <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_create?.category || "Catégorie"}</Label>
+                      <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_edit?.form?.category || "Catégorie"}</Label>
                       <p className="text-slate-900 dark:text-slate-100 mt-1">
                         {formData.category} {formData.subcategory && `> ${formData.subcategory}`}
                       </p>
@@ -1210,20 +1206,20 @@ export default function EditGigPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_create?.price || "Prix"}</Label>
+                        <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_edit?.form?.price || "Prix"}</Label>
                         <p className="text-slate-900 dark:text-slate-100 mt-1 text-lg font-bold">{formData.price}€</p>
                       </div>
                       
                       <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_create?.deliveryTime || "Délai"}</Label>
+                        <Label className="text-sm font-semibold text-slate-500">{dict?.gigs_edit?.form?.deliveryTime || "Délai"}</Label>
                         <p className="text-slate-900 dark:text-slate-100 mt-1">
-                          {formData.deliveryTime} {dict?.gigs_create?.days || "jours"}
+                          {formData.deliveryTime} {dict?.gigs_edit?.form?.days || "jours"}
                         </p>
                       </div>
                     </div>
 
                     <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                      <Label className="text-sm font-semibold text-slate-500 mb-2 block">{dict?.gigs_create?.features || "Fonctionnalités"}</Label>
+                      <Label className="text-sm font-semibold text-slate-500 mb-2 block">{dict?.gigs_edit?.form?.features || "Fonctionnalités"}</Label>
                       <ul className="list-disc list-inside space-y-1">
                         {formData.features.filter(f => f.trim()).map((feature, index) => (
                           <li key={index} className="text-slate-700 dark:text-slate-300">{feature}</li>
@@ -1233,7 +1229,7 @@ export default function EditGigPage() {
 
                     {formData.images.length > 0 && (
                       <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <Label className="text-sm font-semibold text-slate-500 mb-2 block">{dict?.gigs_create?.images || "Images"}</Label>
+                        <Label className="text-sm font-semibold text-slate-500 mb-2 block">{dict?.gigs_edit?.form?.images || "Images"}</Label>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                           {formData.images.slice(0, 6).map((image: any, index) => (
                             <img
@@ -1266,7 +1262,7 @@ export default function EditGigPage() {
                 className="flex items-center justify-center gap-2 border-2 w-full sm:w-auto order-2 sm:order-1"
               >
                 <ChevronLeft className="h-4 w-4" />
-                {dict?.common?.previous || "Précédent"}
+                {dict?.gigs_edit?.buttons?.previous || "Précédent"}
               </Button>
 
               {currentStep < STEPS.length - 1 ? (
@@ -1275,7 +1271,7 @@ export default function EditGigPage() {
                   onClick={nextStep}
                   className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 w-full sm:w-auto order-1 sm:order-2"
                 >
-                  {dict?.common?.next || "Suivant"}
+                  {dict?.gigs_edit?.buttons?.next || "Suivant"}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               ) : (
@@ -1287,12 +1283,12 @@ export default function EditGigPage() {
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      {dict?.common?.saving || "Enregistrement..."}
+                      {dict?.gigs_edit?.buttons?.saving || "Enregistrement..."}
                     </>
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      {dict?.gigs?.saveChanges || "Enregistrer les modifications"}
+                      {dict?.gigs_edit?.saveChanges || "Enregistrer les modifications"}
                     </>
                   )}
                 </Button>
