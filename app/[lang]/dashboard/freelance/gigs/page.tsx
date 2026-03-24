@@ -38,6 +38,7 @@ import { toast } from "sonner"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import { cn } from "@/lib/utils"
+import { DashboardSidebar } from "@/components/dashboard/sidebar"
 
 interface Gig {
   _id: string
@@ -272,7 +273,7 @@ export default function MyGigsPage() {
           {dict?.my_gigs?.createNew || "Créer un service"}
         </Button>
       </div>
-
+       <DashboardSidebar role="freelance" />
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
