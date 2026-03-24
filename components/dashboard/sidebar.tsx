@@ -48,7 +48,9 @@ import {
   UserCheck,
   Target,
   Handshake,
-  CheckCircle
+  CheckCircle,
+  Menu,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
@@ -60,6 +62,8 @@ import Image from "next/image"
 
 interface SidebarProps {
   role: "freelance" | "client"
+  isMobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 interface UserStats {
@@ -87,7 +91,7 @@ interface MenuItem {
   children?: MenuItem[]
 }
 
-export function DashboardSidebar({ role }: SidebarProps) {
+export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const params = useParams()
   const lang = params.lang as string
@@ -95,6 +99,20 @@ export function DashboardSidebar({ role }: SidebarProps) {
   const [userData, setUserData] = useState<any>(null)
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Détecter si on est sur mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth >= 768 && isMobileOpen) {
+        onMobileClose?.()
+      }
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [isMobileOpen, onMobileClose])
 
   useEffect(() => {
     fetchUserData()
@@ -148,7 +166,6 @@ export function DashboardSidebar({ role }: SidebarProps) {
   }
 
   const getMenuStructure = (): MenuItem[] => {
-    // Menu commun aux deux rôles
     const commonMenus: MenuItem[] = [
       {
         href: `/${lang}/dashboard`,
@@ -200,7 +217,6 @@ export function DashboardSidebar({ role }: SidebarProps) {
       }
     ]
 
-    // Menu spécifique FREELANCE
     const freelanceMenus: MenuItem[] = [
       {
         href: `/${lang}/gigs`,
@@ -346,7 +362,6 @@ export function DashboardSidebar({ role }: SidebarProps) {
       }
     ]
 
-    // Menu spécifique CLIENT
     const clientMenus: MenuItem[] = [
       {
         href: `/${lang}/projects`,
@@ -503,6 +518,30 @@ export function DashboardSidebar({ role }: SidebarProps) {
     const isActive = isLinkActive(menu)
     const isChildActive = hasChildren && menu.children!.some(child => isLinkActive(child))
 
+    if (isCollapsed && level === 0 && !isMobile) {
+      return (
+        <div key={menu.href} className="relative group">
+          <Link
+            href={menu.href}
+            className={cn(
+              "flex items-center justify-center rounded-xl px-2 py-2.5 transition-all duration-200",
+              isActive
+                ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg shadow-purple-500/25"
+                : isChildActive
+                  ? "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700"
+            )}
+            title={menu.label}
+          >
+            <Icon className="h-5 w-5" />
+          </Link>
+          <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            {menu.label}
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div key={menu.href} className="select-none">
         <div className={cn(
@@ -547,6 +586,8 @@ export function DashboardSidebar({ role }: SidebarProps) {
               if (hasChildren) {
                 e.preventDefault()
                 toggleMenu(menu.label)
+              } else {
+                onMobileClose?.()
               }
             }}
           >
@@ -566,31 +607,33 @@ export function DashboardSidebar({ role }: SidebarProps) {
               )} />
             </div>
             
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="truncate">{menu.label}</span>
-                {menu.badge && (
-                  <Badge className={cn(
-                    "text-[10px] px-1.5 py-0.5",
-                    isActive 
-                      ? "bg-white/20 text-white" 
-                      : "bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white"
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="truncate">{menu.label}</span>
+                  {menu.badge && (
+                    <Badge className={cn(
+                      "text-[10px] px-1.5 py-0.5",
+                      isActive 
+                        ? "bg-white/20 text-white" 
+                        : "bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white"
+                    )}>
+                      {menu.badge}
+                    </Badge>
+                  )}
+                </div>
+                {menu.description && (
+                  <p className={cn(
+                    "text-[11px] truncate mt-0.5",
+                    isActive ? "text-purple-100" : "text-slate-500 dark:text-slate-400"
                   )}>
-                    {menu.badge}
-                  </Badge>
+                    {menu.description}
+                  </p>
                 )}
               </div>
-              {menu.description && (
-                <p className={cn(
-                  "text-[11px] truncate mt-0.5",
-                  isActive ? "text-purple-100" : "text-slate-500 dark:text-slate-400"
-                )}>
-                  {menu.description}
-                </p>
-              )}
-            </div>
+            )}
 
-            {menu.count !== undefined && menu.count > 0 && (
+            {!isCollapsed && menu.count !== undefined && menu.count > 0 && (
               <Badge className={cn(
                 "ml-auto text-xs min-w-5 h-5 flex items-center justify-center rounded-full",
                 isActive 
@@ -603,7 +646,7 @@ export function DashboardSidebar({ role }: SidebarProps) {
           </Link>
         </div>
 
-        {hasChildren && isExpanded && (
+        {hasChildren && isExpanded && !isCollapsed && (
           <div className={cn(
             "ml-4 space-y-1 border-l-2 border-purple-200 dark:border-purple-800",
             level === 0 ? "mt-1" : "mt-0.5"
@@ -615,7 +658,6 @@ export function DashboardSidebar({ role }: SidebarProps) {
     )
   }
 
-  // Statistiques spécifiques selon le rôle
   const freelanceStats = [
     { label: "Services actifs", value: userStats.activeGigs || 0, icon: Package, color: "from-purple-500 to-fuchsia-500" },
     { label: "Commandes", value: userStats.totalOrders || 0, icon: ShoppingBag, color: "from-emerald-500 to-teal-500" },
@@ -632,13 +674,9 @@ export function DashboardSidebar({ role }: SidebarProps) {
 
   const currentStats = role === "freelance" ? freelanceStats : clientStats
 
-  return (
-    <div className={cn(
-      "flex h-screen flex-col border-r transition-all duration-300",
-      "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
-      "border-purple-100 dark:border-purple-900/50",
-      isCollapsed ? "w-20" : "w-80"
-    )}>
+  // Contenu de la sidebar
+  const sidebarContent = (
+    <>
       {/* Header avec logo */}
       <div className="border-b border-purple-100 dark:border-purple-900/50 p-5 flex-shrink-0">
         <div className="flex items-center gap-3 mb-4">
@@ -730,17 +768,82 @@ export function DashboardSidebar({ role }: SidebarProps) {
           </Button>
         </div>
         
-        {/* Bouton de collapse */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full mt-3 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
-        >
-          <ChevronRight className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
-          {!isCollapsed && "Réduire le menu"}
-        </Button>
+        {/* Bouton de collapse (visible uniquement sur desktop) */}
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="w-full mt-3 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+          >
+            <ChevronRight className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
+            {!isCollapsed && "Réduire le menu"}
+          </Button>
+        )}
       </div>
+    </>
+  )
+
+  // Rendu pour mobile (avec overlay)
+  if (isMobile) {
+    return (
+      <>
+        {/* Overlay */}
+        {isMobileOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={onMobileClose}
+          />
+        )}
+        
+        {/* Sidebar mobile */}
+        <div className={cn(
+          "fixed top-0 left-0 h-full z-50 transition-transform duration-300 ease-in-out md:hidden",
+          "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
+          "border-r border-purple-100 dark:border-purple-900/50",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
+          "w-80"
+        )}>
+          <div className="flex flex-col h-full">
+            {/* Header avec bouton de fermeture */}
+            <div className="flex items-center justify-between p-4 border-b border-purple-100 dark:border-purple-900/50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">NRB</span>
+                </div>
+                <span className="font-bold text-lg bg-gradient-to-r from-purple-700 to-fuchsia-700 bg-clip-text text-transparent">
+                  NRBTalents
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onMobileClose}
+                className="h-8 w-8 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-800"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Contenu scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              {sidebarContent}
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // Rendu pour desktop
+  return (
+    <div className={cn(
+      "hidden md:flex h-screen flex-col border-r transition-all duration-300",
+      "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
+      "border-purple-100 dark:border-purple-900/50",
+      isCollapsed ? "w-20" : "w-80"
+    )}>
+      {sidebarContent}
     </div>
   )
 }

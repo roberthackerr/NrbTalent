@@ -36,10 +36,9 @@ import {
 } from "@/components/ui/dialog"
 import {
   Eye, Search, MoreVertical, Calendar, DollarSign, Clock, 
-  CheckCircle2, XCircle, Loader2, Briefcase, MapPin, 
+  CheckCircle2, XCircle, Loader2, Briefcase, 
   User, FileText, Star, TrendingUp, AlertCircle, Trash2,
-  Bookmark, BookmarkCheck, ExternalLink, Building, Filter,
-  ChevronDown, ChevronRight, LayoutDashboard, Archive, Users
+  ExternalLink, Building, Archive, Menu
 } from "lucide-react"
 import { toast } from "sonner"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
@@ -112,6 +111,7 @@ export default function MyApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const itemsPerPage = 10
 
@@ -167,28 +167,29 @@ export default function MyApplicationsPage() {
   }
 
   const handleWithdraw = async (applicationId: string) => {
-  setWithdrawingId(applicationId)
-  try {
-    const response = await fetch(`/api/applications/${applicationId}`, {
-      method: "DELETE", // 👈 Changer de PATCH à DELETE
-      headers: { "Content-Type": "application/json" },
-    })
+    setWithdrawingId(applicationId)
+    try {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      })
 
-    if (response.ok) {
-      toast.success(dict?.applications?.success?.withdrawn || "Candidature supprimée avec succès")
-      fetchApplications()
-      fetchStats()
-    } else {
-      const error = await response.json()
-      throw new Error(error.error || "Failed to delete application")
+      if (response.ok) {
+        toast.success(dict?.applications?.success?.withdrawn || "Candidature supprimée avec succès")
+        fetchApplications()
+        fetchStats()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to delete application")
+      }
+    } catch (error) {
+      console.error("Error deleting application:", error)
+      toast.error(dict?.applications?.errors?.withdrawFailed || "Erreur lors de la suppression de la candidature")
+    } finally {
+      setWithdrawingId(null)
     }
-  } catch (error) {
-    console.error("Error deleting application:", error)
-    toast.error(dict?.applications?.errors?.withdrawFailed || "Erreur lors de la suppression de la candidature")
-  } finally {
-    setWithdrawingId(null)
   }
-}
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pending: {
@@ -247,24 +248,40 @@ export default function MyApplicationsPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
       {/* Sidebar */}
-      <DashboardSidebar role="freelance" />
+      <DashboardSidebar 
+        role="freelance" 
+        isMobileOpen={isSidebarOpen}
+        onMobileClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6 md:p-8">
+        {/* Mobile menu button */}
+        <div className="md:hidden fixed top-4 left-4 z-50">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsSidebarOpen(true)}
+            className="bg-white/80 backdrop-blur-sm border-purple-200 shadow-lg"
+          >
+            <Menu className="h-5 w-5 text-purple-600" />
+          </Button>
+        </div>
+
+        <div className="p-4 md:p-6 lg:p-8">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl shadow-lg shadow-purple-500/25">
-                    <FileText className="h-6 w-6 text-white" />
+                    <FileText className="h-5 w-5 md:h-6 md:w-6 text-white" />
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-700 via-fuchsia-700 to-pink-700 dark:from-purple-300 dark:via-fuchsia-300 dark:to-pink-300 bg-clip-text text-transparent">
+                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-700 via-fuchsia-700 to-pink-700 dark:from-purple-300 dark:via-fuchsia-300 dark:to-pink-300 bg-clip-text text-transparent">
                     {dict?.applications?.title || "Mes candidatures"}
                   </h1>
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 ml-11">
+                <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 ml-11">
                   {dict?.applications?.subtitle || "Suivez l'état de vos candidatures aux projets"}
                 </p>
               </div>
@@ -281,58 +298,58 @@ export default function MyApplicationsPage() {
 
           {/* Statistics Cards */}
           {stats && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-                <CardContent className="p-4">
+                <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-purple-600 dark:text-purple-400">{dict?.applications?.stats?.total || "Total"}</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.total}</p>
+                      <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.total}</p>
                     </div>
-                    <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-white" />
+                    <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
+                      <FileText className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-                <CardContent className="p-4">
+                <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-amber-600 dark:text-amber-400">{dict?.applications?.stats?.pending || "En attente"}</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.pending}</p>
+                      <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.pending}</p>
                     </div>
-                    <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-white" />
+                    <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
+                      <Clock className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-                <CardContent className="p-4">
+                <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-emerald-600 dark:text-emerald-400">{dict?.applications?.stats?.accepted || "Acceptées"}</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.accepted}</p>
+                      <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.accepted}</p>
                     </div>
-                    <div className="h-10 w-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
+                    <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-                <CardContent className="p-4">
+                <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-purple-600 dark:text-purple-400">{dict?.applications?.stats?.totalBudget || "Budget proposé"}</p>
-                      <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.totalProposedBudget.toLocaleString()}€</p>
+                      <p className="text-sm md:text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">{stats.totalProposedBudget.toLocaleString()}€</p>
                     </div>
-                    <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-white" />
+                    <div className="h-8 w-8 md:h-10 md:w-10 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
+                      <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </div>
                   </div>
                 </CardContent>
@@ -341,9 +358,9 @@ export default function MyApplicationsPage() {
           )}
 
           {/* Filters */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10 mb-8">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10 mb-6 md:mb-8">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
@@ -357,7 +374,7 @@ export default function MyApplicationsPage() {
                 </div>
                 <div className="flex gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px] border-purple-200 dark:border-purple-800">
+                    <SelectTrigger className="w-[130px] md:w-[140px] border-purple-200 dark:border-purple-800">
                       <SelectValue placeholder={dict?.applications?.filterStatus || "Statut"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -369,7 +386,7 @@ export default function MyApplicationsPage() {
                     </SelectContent>
                   </Select>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[140px] border-purple-200 dark:border-purple-800">
+                    <SelectTrigger className="w-[130px] md:w-[140px] border-purple-200 dark:border-purple-800">
                       <SelectValue placeholder={dict?.applications?.sortBy || "Trier par"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -387,14 +404,14 @@ export default function MyApplicationsPage() {
           <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
             <CardHeader className="pb-3 border-b border-purple-100 dark:border-purple-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg bg-gradient-to-r from-purple-700 to-fuchsia-700 dark:from-purple-300 dark:to-fuchsia-300 bg-clip-text text-transparent">
+                <CardTitle className="text-base md:text-lg bg-gradient-to-r from-purple-700 to-fuchsia-700 dark:from-purple-300 dark:to-fuchsia-300 bg-clip-text text-transparent">
                   {dict?.applications?.listTitle || "Mes candidatures"}
                 </CardTitle>
-                <p className="text-sm text-purple-600 dark:text-purple-400">
+                <p className="text-xs md:text-sm text-purple-600 dark:text-purple-400">
                   {applications.length} {dict?.applications?.applications || "candidatures"}
                 </p>
               </div>
-              <CardDescription className="text-slate-500">
+              <CardDescription className="text-xs md:text-sm text-slate-500">
                 {dict?.applications?.tableDescription || "Liste des projets auxquels vous avez postulé"}
               </CardDescription>
             </CardHeader>
@@ -405,13 +422,13 @@ export default function MyApplicationsPage() {
                 </div>
               ) : applications.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="h-20 w-20 bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-800/30 dark:to-fuchsia-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <FileText className="h-10 w-10 text-purple-400" />
+                  <div className="h-16 w-16 md:h-20 md:w-20 bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-800/30 dark:to-fuchsia-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-8 w-8 md:h-10 md:w-10 text-purple-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  <h3 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
                     {dict?.applications?.emptyTitle || "Aucune candidature"}
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400 mb-6">
+                  <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-6">
                     {dict?.applications?.emptyDescription || "Vous n'avez pas encore postulé à des projets"}
                   </p>
                   <Button onClick={() => router.push(`/${lang}/projects`)} className="bg-gradient-to-r from-purple-600 to-fuchsia-600">
@@ -425,11 +442,11 @@ export default function MyApplicationsPage() {
                     <Table>
                       <TableHeader className="bg-purple-50/50 dark:bg-purple-900/20">
                         <TableRow className="border-purple-100 dark:border-purple-800">
-                          <TableHead className="text-purple-700 dark:text-purple-300">{dict?.applications?.table?.project || "Projet"}</TableHead>
-                          <TableHead className="hidden sm:table-cell text-purple-700 dark:text-purple-300">{dict?.applications?.table?.budget || "Budget proposé"}</TableHead>
-                          <TableHead className="hidden md:table-cell text-purple-700 dark:text-purple-300">{dict?.applications?.table?.client || "Client"}</TableHead>
-                          <TableHead className="hidden lg:table-cell text-purple-700 dark:text-purple-300">{dict?.applications?.table?.date || "Date"}</TableHead>
-                          <TableHead className="text-purple-700 dark:text-purple-300">{dict?.applications?.table?.status || "Statut"}</TableHead>
+                          <TableHead className="text-purple-700 dark:text-purple-300 text-xs md:text-sm">{dict?.applications?.table?.project || "Projet"}</TableHead>
+                          <TableHead className="hidden sm:table-cell text-purple-700 dark:text-purple-300 text-xs md:text-sm">{dict?.applications?.table?.budget || "Budget proposé"}</TableHead>
+                          <TableHead className="hidden md:table-cell text-purple-700 dark:text-purple-300 text-xs md:text-sm">{dict?.applications?.table?.client || "Client"}</TableHead>
+                          <TableHead className="hidden lg:table-cell text-purple-700 dark:text-purple-300 text-xs md:text-sm">{dict?.applications?.table?.date || "Date"}</TableHead>
+                          <TableHead className="text-purple-700 dark:text-purple-300 text-xs md:text-sm">{dict?.applications?.table?.status || "Statut"}</TableHead>
                           <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -441,7 +458,7 @@ export default function MyApplicationsPage() {
                           }}>
                             <TableCell className="font-medium">
                               <div>
-                                <p className="line-clamp-1 text-slate-900 dark:text-slate-100 font-semibold">{app.projectTitle}</p>
+                                <p className="line-clamp-1 text-slate-900 dark:text-slate-100 font-semibold text-sm md:text-base">{app.projectTitle}</p>
                                 <div className="flex flex-wrap items-center gap-2 mt-1">
                                   <div className="flex items-center gap-1 text-xs text-slate-500">
                                     <Briefcase className="h-3 w-3" />
@@ -457,7 +474,7 @@ export default function MyApplicationsPage() {
                               </div>
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
-                              <span className="font-semibold text-purple-600 dark:text-purple-400">{app.proposedBudget}€</span>
+                              <span className="font-semibold text-purple-600 dark:text-purple-400 text-sm md:text-base">{app.proposedBudget}€</span>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                               <div className="flex items-center gap-2">
@@ -529,8 +546,8 @@ export default function MyApplicationsPage() {
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-between gap-4 mt-4 pt-4 border-t border-purple-100 dark:border-purple-800 px-6 py-4">
-                      <p className="text-sm text-slate-500">
+                    <div className="flex items-center justify-between gap-4 mt-4 pt-4 border-t border-purple-100 dark:border-purple-800 px-4 md:px-6 py-4">
+                      <p className="text-xs md:text-sm text-slate-500">
                         {dict?.applications?.page || "Page"} {currentPage} / {totalPages}
                       </p>
                       <div className="flex gap-2">
