@@ -128,7 +128,7 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
       const response = await fetch('/api/users/profile')
       if (response.ok) {
         const data = await response.json()
-        setUserData(data.user)
+        setUserData(data)
         setUserStats(data.stats || {})
       }
     } catch (error) {
@@ -679,15 +679,7 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
   const sidebarContent = (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header avec logo */}
-      <div className="border-b border-purple-100 dark:border-purple-900/50 p-5 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl blur opacity-50" />
-         
-          </div>
 
-        </div>
-      </div>
 
       {/* Carte utilisateur */}
       {!isCollapsed && (
