@@ -1,3 +1,4 @@
+// app/api/gigs/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -11,8 +12,8 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    const  {id} =await params
-    const gigId=id
+    const { id } = await params
+    const gigId = id
 
     // Validation de l'ID
     if (!ObjectId.isValid(gigId)) {
@@ -26,13 +27,12 @@ export async function GET(
         { 
           $match: { 
             _id: new ObjectId(gigId),
-            // L'utilisateur peut voir les gigs actifs OU ses propres drafts
             $or: [
               { status: 'active' },
               session ? { 
                 status: 'draft', 
                 createdBy: new ObjectId((session.user as any).id) 
-              } : { status: 'active' } // Les non-connectés ne voient que les actifs
+              } : { status: 'active' }
             ]
           } 
         },
@@ -57,7 +57,6 @@ export async function GET(
           $addFields: {
             rating: { $avg: '$reviews.rating' },
             reviewsCount: { $size: '$reviews' },
-            // Calculer les commandes complétées
             ordersCount: {
               $size: {
                 $filter: {
@@ -75,7 +74,7 @@ export async function GET(
             'seller.email': 0,
             'seller.createdAt': 0,
             'seller.updatedAt': 0,
-            'reviews': 0 // On ne retourne pas tous les reviews détaillés ici
+            'reviews': 0
           }
         }
       ])
@@ -107,8 +106,9 @@ export async function PUT(
     if (!session) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
- const  {id} =await params
-    const gigId=id
+
+    const { id } = await params
+    const gigId = id
     const body = await request.json()
     const { 
       title, 
@@ -169,7 +169,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Aucune modification effectuée' }, { status: 400 })
     }
 
-    // 📢 ENVOYER UNE NOTIFICATION DE MISE À JOUR
+    // 📢 NOTIFICATION DE MISE À JOUR
     try {
       const userLang = (session.user as any).language || 'fr'
       
@@ -214,6 +214,7 @@ export async function PUT(
     }
 
     return NextResponse.json({ 
+      success: true,
       message: 'Service mis à jour avec succès',
       gig: { ...existingGig, ...updateData, _id: gigId }
     })
@@ -225,7 +226,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -233,7 +234,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    const gigId = params.id
+    const { id } = await params
+    const gigId = id
 
     // Validation de l'ID
     if (!ObjectId.isValid(gigId)) {
@@ -253,6 +255,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Service non trouvé ou accès refusé' }, { status: 404 })
     }
 
+    // Sauvegarder le titre pour la notification
+    const gigTitle = gig.title
+
     // Supprimer le gig
     const result = await db.collection('gigs').deleteOne({
       _id: new ObjectId(gigId)
@@ -262,18 +267,62 @@ export async function DELETE(
       return NextResponse.json({ error: 'Erreur lors de la suppression' }, { status: 500 })
     }
 
-    // Optionnel : Supprimer aussi les reviews associées
+    // Supprimer les reviews associées
     await db.collection('reviews').deleteMany({
       gigId: gigId
     })
 
-    // Optionnel : Supprimer les commandes associées ou les marquer comme annulées
+    // Marquer les commandes associées comme annulées
     await db.collection('orders').updateMany(
       { gigId: gigId },
-      { $set: { status: 'cancelled' } }
+      { $set: { status: 'cancelled', cancelledAt: new Date() } }
     )
 
+    // 📢 NOTIFICATION DE SUPPRESSION
+    try {
+      const userLang = (session.user as any).language || 'fr'
+      
+      const deleteMessages = {
+        fr: {
+          title: '🗑️ Service supprimé',
+          message: `Votre service "${gigTitle}" a été supprimé avec succès`
+        },
+        en: {
+          title: '🗑️ Service deleted',
+          message: `Your service "${gigTitle}" has been deleted successfully`
+        },
+        mg: {
+          title: '🗑️ Serivisy voafafa',
+          message: `Nofafana soa aman-tsara ny serivisy "${gigTitle}"`
+        }
+      }
+
+      const messages = deleteMessages[userLang as keyof typeof deleteMessages] || deleteMessages.fr
+
+      await notificationService.send({
+        userId: userId.toString(),
+        category: 'SYSTEM',
+        priority: 'MEDIUM',
+        title: messages.title,
+        message: messages.message,
+        actionUrl: '/dashboard/freelance/gigs',
+        data: {
+          entityType: 'gig',
+          action: 'delete',
+          gigId,
+          gigTitle,
+          timestamp: new Date().toISOString()
+        },
+        checkPreferences: true
+      })
+
+      console.log(`✅ Gig deletion notification sent to user: ${userId}`)
+    } catch (notifError) {
+      console.error('⚠️ Failed to send deletion notification:', notifError)
+    }
+
     return NextResponse.json({ 
+      success: true,
       message: 'Service supprimé avec succès'
     })
   } catch (error) {

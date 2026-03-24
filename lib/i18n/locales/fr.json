@@ -1,4 +1,76 @@
 {
+  "my_gigs": {
+    "title": "Mes services",
+    "subtitle": "Gérez vos services et suivez leurs performances",
+    "createNew": "Créer un service",
+    "createFirst": "Créer votre premier service",
+    "searchPlaceholder": "Rechercher un service...",
+    "filterStatus": "Statut",
+    "allStatus": "Tous",
+    "sortBy": "Trier par",
+    "servicesList": "Liste des services",
+    "services": "services",
+    "tableDescription": "Gérez vos services, suivez leurs performances",
+    "emptyTitle": "Aucun service",
+    "emptyDescription": "Vous n'avez pas encore créé de service",
+    "orders": "cmd",
+    "page": "Page",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "topPerforming": "Services les plus performants",
+    "topPerformingDesc": "Vos services qui génèrent le plus de vues et de commandes",
+    "status": {
+      "active": "Actif",
+      "draft": "Brouillon",
+      "paused": "En pause",
+      "deleted": "Supprimé"
+    },
+    "stats": {
+      "totalServices": "Total services",
+      "active": "actifs",
+      "draft": "brouillons",
+      "totalViews": "Vues totales",
+      "allTime": "Toutes périodes",
+      "totalOrders": "Commandes totales",
+      "completed": "commandes complétées",
+      "totalEarnings": "Gains totaux",
+      "averageRating": "note moyenne"
+    },
+    "sort": {
+      "createdAt": "Date de création",
+      "views": "Vues",
+      "orders": "Commandes",
+      "price": "Prix"
+    },
+    "table": {
+      "service": "Service",
+      "category": "Catégorie",
+      "price": "Prix",
+      "views": "Vues",
+      "orders": "Commandes",
+      "rating": "Note",
+      "status": "Statut"
+    },
+    "actions": "Actions",
+    "view": "Voir",
+    "edit": "Modifier",
+    "pause": "Mettre en pause",
+    "activate": "Activer",
+    "publish": "Publier",
+    "delete": "Supprimer",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{title}\" ? Cette action est irréversible.",
+    "errors": {
+      "fetchFailed": "Erreur lors du chargement des services",
+      "statusUpdateFailed": "Erreur lors de la mise à jour du statut",
+      "deleteFailed": "Erreur lors de la suppression du service"
+    },
+    "success": {
+      "activated": "Service activé",
+      "paused": "Service mis en pause",
+      "updated": "Service mis à jour",
+      "deleted": "Service supprimé avec succès"
+    }
+  },
    "gigs_edit": {
     "title": "Modifier le service",
     "subtitle": "Modifiez les informations de votre service",

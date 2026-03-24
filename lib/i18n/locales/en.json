@@ -1,4 +1,77 @@
 {
+  
+   "my_gigs": {
+    "title": "My Services",
+    "subtitle": "Manage your services and track their performance",
+    "createNew": "Create a service",
+    "createFirst": "Create your first service",
+    "searchPlaceholder": "Search for a service...",
+    "filterStatus": "Status",
+    "allStatus": "All",
+    "sortBy": "Sort by",
+    "servicesList": "Services List",
+    "services": "services",
+    "tableDescription": "Manage your services and track their performance",
+    "emptyTitle": "No services",
+    "emptyDescription": "You haven't created any services yet",
+    "orders": "orders",
+    "page": "Page",
+    "previous": "Previous",
+    "next": "Next",
+    "topPerforming": "Top Performing Services",
+    "topPerformingDesc": "Your services that generate the most views and orders",
+    "status": {
+      "active": "Active",
+      "draft": "Draft",
+      "paused": "Paused",
+      "deleted": "Deleted"
+    },
+    "stats": {
+      "totalServices": "Total services",
+      "active": "active",
+      "draft": "drafts",
+      "totalViews": "Total views",
+      "allTime": "All time",
+      "totalOrders": "Total orders",
+      "completed": "completed orders",
+      "totalEarnings": "Total earnings",
+      "averageRating": "average rating"
+    },
+    "sort": {
+      "createdAt": "Creation date",
+      "views": "Views",
+      "orders": "Orders",
+      "price": "Price"
+    },
+    "table": {
+      "service": "Service",
+      "category": "Category",
+      "price": "Price",
+      "views": "Views",
+      "orders": "Orders",
+      "rating": "Rating",
+      "status": "Status"
+    },
+    "actions": "Actions",
+    "view": "View",
+    "edit": "Edit",
+    "pause": "Pause",
+    "activate": "Activate",
+    "publish": "Publish",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+    "errors": {
+      "fetchFailed": "Error loading services",
+      "statusUpdateFailed": "Error updating status",
+      "deleteFailed": "Error deleting service"
+    },
+    "success": {
+      "activated": "Service activated",
+      "paused": "Service paused",
+      "updated": "Service updated",
+      "deleted": "Service deleted successfully"
+    }
+  },
   "gigs_edit": {
     "title": "Edit Service",
     "subtitle": "Update your service information",
