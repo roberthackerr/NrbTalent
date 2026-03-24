@@ -170,22 +170,21 @@ export default function MyApplicationsPage() {
   setWithdrawingId(applicationId)
   try {
     const response = await fetch(`/api/applications/${applicationId}`, {
-      method: "PATCH", 
+      method: "DELETE", // 👈 Changer de PATCH à DELETE
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "withdrawn" }),
     })
 
     if (response.ok) {
-      toast.success(dict?.applications?.success?.withdrawn || "Candidature retirée avec succès")
+      toast.success(dict?.applications?.success?.withdrawn || "Candidature supprimée avec succès")
       fetchApplications()
       fetchStats()
     } else {
       const error = await response.json()
-      throw new Error(error.error || "Failed to withdraw application")
+      throw new Error(error.error || "Failed to delete application")
     }
   } catch (error) {
-    console.error("Error withdrawing application:", error)
-    toast.error(dict?.applications?.errors?.withdrawFailed || "Erreur lors du retrait de la candidature")
+    console.error("Error deleting application:", error)
+    toast.error(dict?.applications?.errors?.withdrawFailed || "Erreur lors de la suppression de la candidature")
   } finally {
     setWithdrawingId(null)
   }
