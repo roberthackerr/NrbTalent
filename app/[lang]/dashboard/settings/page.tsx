@@ -1,3 +1,4 @@
+// app/[lang]/dashboard/settings/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -30,11 +31,26 @@ export default function SettingsPage() {
   const [dict, setDict] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("general")
   const [isMounted, setIsMounted] = useState(false)
+  const [currentLang, setCurrentLang] = useState<Locale>(lang)
 
+  // Recharger le dictionnaire quand la langue change
   useEffect(() => {
     setIsMounted(true)
-    getDictionarySafe(lang).then(setDict)
+    getDictionarySafe(currentLang).then(setDict)
+  }, [currentLang])
+
+  // Mettre à jour la langue quand les params changent
+  useEffect(() => {
+    setCurrentLang(lang)
   }, [lang])
+
+  // Fonction appelée quand la langue change dans PreferencesTab
+  const handleLanguageChange = (newLang: Locale) => {
+    setCurrentLang(newLang)
+    // Mettre à jour l'URL pour refléter le changement
+    const newUrl = `/${newLang}/dashboard/settings`
+    window.location.href = newUrl
+  }
 
   if (!isMounted || !dict) {
     return (
@@ -49,29 +65,30 @@ export default function SettingsPage() {
     )
   }
 
-const tabs = [
-  { id: "general", label: dict.settings.tabs.general, icon: User },
-  { id: "skills", label: dict.settings.tabs.skills, icon: Zap },
-  { id: "portfolio", label: dict.settings.tabs.portfolio, icon: Briefcase },
-  { id: "education", label: dict.settings.tabs.education, icon: GraduationCap }, // Nouveau
-  { id: "languages", label: dict.settings.tabs.languages, icon: Languages }, // Nouveau
-  { id: "security", label: dict.settings.tabs.security, icon: Lock },
-  { id: "verification", label: dict.settings.tabs.verification, icon: ShieldCheck },
-  { id: "notifications", label: dict.settings.tabs.notifications, icon: Bell },
-  { id: "preferences", label: dict.settings.tabs.preferences, icon: Globe },
-  { id: "billing", label: dict.settings.tabs.billing, icon: CreditCard },
-  { id: "account", label: dict.settings.tabs.account, icon: Trash2 },
-]
+  const tabs = [
+    { id: "general", label: dict.settings.tabs.general, icon: User },
+    { id: "skills", label: dict.settings.tabs.skills, icon: Zap },
+    { id: "portfolio", label: dict.settings.tabs.portfolio, icon: Briefcase },
+    { id: "education", label: dict.settings.tabs.education, icon: GraduationCap },
+    { id: "languages", label: dict.settings.tabs.languages, icon: Languages },
+    { id: "security", label: dict.settings.tabs.security, icon: Lock },
+    { id: "verification", label: dict.settings.tabs.verification, icon: ShieldCheck },
+    { id: "notifications", label: dict.settings.tabs.notifications, icon: Bell },
+    { id: "preferences", label: dict.settings.tabs.preferences, icon: Globe },
+    { id: "billing", label: dict.settings.tabs.billing, icon: CreditCard },
+    { id: "account", label: dict.settings.tabs.account, icon: Trash2 },
+  ]
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20">
       <div className="flex-1 flex">
-        {/* Sidebar des paramètres - now receives dict and lang */}
+        {/* Sidebar des paramètres */}
         <SettingsSidebar 
           activeTab={activeTab} 
           onTabChange={setActiveTab}
           tabs={tabs}
           dict={dict}
-          lang={lang}
+          lang={currentLang}
         />
 
         {/* Contenu principal */}
@@ -79,7 +96,7 @@ const tabs = [
           <div className="container mx-auto p-6 max-w-4xl">
             {/* Language Switcher */}
             <div className="flex justify-end mb-4">
-              <LanguageSwitcher lang={lang} />
+              <LanguageSwitcher lang={currentLang} />
             </div>
 
             <div className="mb-8">
@@ -114,17 +131,23 @@ const tabs = [
 
             {/* Contenu des onglets */}
             <div className="space-y-6">
-         {activeTab === "general" && <GeneralTab user={user} dict={dict} lang={lang} />}
-  {activeTab === "skills" && <SkillsTab user={user} dict={dict.onboardingPage.skills} lang={lang} />}
-  {activeTab === "portfolio" && <PortfolioTab user={user} dict={dict} lang={lang} />}
-  {activeTab === "education" && <EducationTab user={user} dict={dict} lang={lang} onUpdate={() => {}} />}
-  {activeTab === "languages" && <LanguagesTab user={user} dict={dict} lang={lang} onUpdate={() => {}} />}
-  {activeTab === "security" && <SecurityTab dict={dict} lang={lang} />}
-  {activeTab === "verification" && <VerificationTab user={user} dict={dict} lang={lang} />}
-  {activeTab === "notifications" && <NotificationsTab dict={dict} lang={lang} />}
-  {activeTab === "preferences" && <PreferencesTab dict={dict} lang={lang} />}
-  {activeTab === "billing" && <BillingTab dict={dict} lang={lang} />}
-  {activeTab === "account" && <AccountTab dict={dict} lang={lang} />}
+              {activeTab === "general" && <GeneralTab user={user} dict={dict} lang={currentLang} />}
+              {activeTab === "skills" && <SkillsTab user={user} dict={dict.onboardingPage.skills} lang={currentLang} />}
+              {activeTab === "portfolio" && <PortfolioTab user={user} dict={dict} lang={currentLang} />}
+              {activeTab === "education" && <EducationTab user={user} dict={dict} lang={currentLang} onUpdate={() => {}} />}
+              {activeTab === "languages" && <LanguagesTab user={user} dict={dict} lang={currentLang} onUpdate={() => {}} />}
+              {activeTab === "security" && <SecurityTab dict={dict} lang={currentLang} />}
+              {activeTab === "verification" && <VerificationTab user={user} dict={dict} lang={currentLang} />}
+              {activeTab === "notifications" && <NotificationsTab dict={dict} lang={currentLang} />}
+              {activeTab === "preferences" && (
+                <PreferencesTab 
+                  dict={dict} 
+                  lang={currentLang} 
+                  onLanguageChange={handleLanguageChange}
+                />
+              )}
+              {activeTab === "billing" && <BillingTab dict={dict} lang={currentLang} />}
+              {activeTab === "account" && <AccountTab dict={dict} lang={currentLang} />}
             </div>
           </div>
         </main>
