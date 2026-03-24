@@ -146,7 +146,7 @@ export function Navigation() {
         {
           title: "Gestion",
           items: [
-            { href: `/${lang}/dashboard/messages`, label: "Messages",   description: "Conversations & notifications",      icon: <MessageCircle className="h-4 w-4 shrink-0" /> },
+            { href: `/${lang}/messages`, label: "Messages",   description: "Conversations & notifications",      icon: <MessageCircle className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/calendar`,           label: "Calendrier", description: "Planifier vos rendez-vous",          icon: <Calendar className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/contracts`,          label: "Contrats",   description: "Gérez vos accords juridiques",       icon: <ScrollText className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/orders`,             label: "Commandes",  description: "Suivi des commandes actives",        icon: <Package className="h-4 w-4 shrink-0" /> },
@@ -544,7 +544,7 @@ export function Navigation() {
                             {[
                               { href: `/${lang}/dashboard`,          icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: "Dashboard" },
                               { href: `/${lang}/profile`,            icon: <User className="h-3.5 w-3.5" />,            label: "Profil" },
-                              { href: `/${lang}/dashboard/messages`, icon: <MessageCircle className="h-3.5 w-3.5" />,   label: "Messages" },
+                              { href: `/${lang}/messages`, icon: <MessageCircle className="h-3.5 w-3.5" />,   label: "Messages" },
                               { href: `/${lang}/dashboard/settings`, icon: <Settings className="h-3.5 w-3.5" />,        label: "Paramètres" },
                             ].map(({ href, icon, label }) => (
                               <Button key={href} variant="outline" size="sm" asChild

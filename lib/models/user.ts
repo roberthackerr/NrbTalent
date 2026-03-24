@@ -516,7 +516,8 @@ export function toUserResponseDTO(user: User): UserResponseDTO {
     onboardingCompleted: user.onboardingCompleted || false,
     preferences: user.preferences,
     createdAt: user.createdAt,
-    updatedAt: user.updatedAt
+    updatedAt: user.updatedAt,
+    language:user.language
   }
 }
 
