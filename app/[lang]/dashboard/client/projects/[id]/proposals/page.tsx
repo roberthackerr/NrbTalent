@@ -27,15 +27,7 @@ import {
   Sparkles,
   TrendingUp,
   Shield,
-  Award,
-  Menu,
-  Loader2,
-  Filter,
-  Search,
-  Crown,
-  Target,
-  Building2,
-  AlertCircle
+  Award
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -44,24 +36,6 @@ import { useRouter, useParams } from "next/navigation"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 interface Skill {
   id: string
@@ -136,15 +110,6 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true)
   const [processingAction, setProcessingAction] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<string>("newest")
-  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [acceptDialogOpen, setAcceptDialogOpen] = useState(false)
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
-  const [feedback, setFeedback] = useState("")
-  const [activeTab, setActiveTab] = useState("pending")
 
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -170,9 +135,6 @@ export default function ProposalsPage() {
       const data = await response.json()
       setProject(data.project)
       setApplications(Array.isArray(data.applications) ? data.applications : [])
-      if (data.applications?.length > 0) {
-        setSelectedApplication(data.applications[0])
-      }
     } catch (error) {
       console.error("Error fetching project applications:", error)
       toast.error(dict?.proposals?.errors?.fetchFailed || "Erreur lors du chargement des candidatures")
@@ -189,7 +151,7 @@ export default function ProposalsPage() {
       const response = await fetch(`/api/applications/${applicationId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, message: feedback }),
+        body: JSON.stringify({ status }),
       })
       
       if (response.ok) {
@@ -200,10 +162,6 @@ export default function ProposalsPage() {
         setApplications(prev => prev.map(app =>
           app._id === applicationId ? { ...app, status } : app
         ))
-        
-        setAcceptDialogOpen(false)
-        setRejectDialogOpen(false)
-        setFeedback("")
         
         if (status === 'accepted') {
           const acceptedApp = applications.find(a => a._id === applicationId)
@@ -217,8 +175,6 @@ export default function ProposalsPage() {
             router.push(`/${lang}/projects/${projectId}/onboarding`)
           }, 1500)
         }
-        
-        fetchProjectWithApplications()
       } else {
         const errorData = await response.json()
         toast.error(errorData.error || dict?.proposals?.errors?.updateFailed || "Erreur lors de la mise à jour")
@@ -248,56 +204,14 @@ export default function ProposalsPage() {
     return <FileText className="h-4 w-4 text-purple-500" />
   }
 
-  const getStatusBadge = (status: string) => {
-    const config = {
-      pending: { label: dict?.proposals?.status?.pending || "En attente", className: "bg-amber-100 text-amber-700 border-amber-200", icon: <Clock className="h-3 w-3" /> },
-      accepted: { label: dict?.proposals?.status?.accepted || "Acceptée", className: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: <CheckCircle2 className="h-3 w-3" /> },
-      rejected: { label: dict?.proposals?.status?.rejected || "Rejetée", className: "bg-rose-100 text-rose-700 border-rose-200", icon: <X className="h-3 w-3" /> }
-    }
-    const c = config[status as keyof typeof config] || config.pending
-    return <Badge className={`flex items-center gap-1 w-fit border ${c.className}`}>{c.icon}{c.label}</Badge>
-  }
-
-  const getApplicationScore = (app: Application) => {
-    let score = 0
-    if (app.freelancer?.rating && app.freelancer.rating >= 4.5) score += 30
-    if (app.freelancer?.completedProjects && app.freelancer.completedProjects > 10) score += 20
-    if (app.freelancer?.successRate && app.freelancer.successRate > 90) score += 25
-    return score
-  }
-
-  const filteredApplications = applications
-    .filter(app => {
-      if (activeTab !== 'all' && app.status !== activeTab) return false
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const matchesName = app.freelancer?.name?.toLowerCase().includes(query) || false
-        const matchesSkills = app.freelancer?.skills?.some(s => s.name.toLowerCase().includes(query)) || false
-        if (!matchesName && !matchesSkills) return false
-      }
-      return true
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'newest': return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        case 'oldest': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        case 'budget-high': return b.proposedBudget - a.proposedBudget
-        case 'budget-low': return a.proposedBudget - b.proposedBudget
-        case 'rating': return (b.freelancer?.rating || 0) - (a.freelancer?.rating || 0)
-        default: return 0
-      }
-    })
-
-  const pendingApps = applications.filter(app => app.status === "pending")
-  const acceptedApps = applications.filter(app => app.status === "accepted")
-  const rejectedApps = applications.filter(app => app.status === "rejected")
-
   if (loading || !dict) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
         <DashboardSidebar role="client" isMobileOpen={isSidebarOpen} onMobileClose={() => setIsSidebarOpen(false)} />
-        <main className="flex-1 overflow-y-auto flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+        <main className="flex-1 overflow-y-auto">
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent"></div>
+          </div>
         </main>
       </div>
     )
@@ -332,6 +246,249 @@ export default function ProposalsPage() {
     )
   }
 
+  const pendingApps = applications.filter(app => app.status === "pending")
+  const acceptedApps = applications.filter(app => app.status === "accepted")
+  const rejectedApps = applications.filter(app => app.status === "rejected")
+
+  const renderApplicationCard = (app: Application, type: 'pending' | 'accepted' | 'rejected') => {
+    const isAccepted = type === 'accepted'
+    const isRejected = type === 'rejected'
+    const freelancer = app.freelancer
+
+    return (
+      <Card key={app._id} className={cn(
+        "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10 hover:shadow-xl transition-all",
+        isAccepted && "border-l-4 border-l-emerald-500",
+        isRejected && "opacity-70"
+      )}>
+        <CardContent className="p-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Avatar et infos freelance */}
+            <div className="flex-shrink-0">
+              <Avatar 
+                className="h-20 w-20 border-2 border-purple-200 dark:border-purple-800 shadow-md cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => navigateToProfile(app.freelancerId)}
+              >
+                <AvatarImage src={freelancer?.avatar} />
+                <AvatarFallback className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold text-xl">
+                  {freelancer?.name?.charAt(0) || 'F'}
+                </AvatarFallback>
+              </Avatar>
+              {freelancer?.verified && (
+                <div className="flex justify-center mt-1">
+                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Vérifié
+                  </Badge>
+                </div>
+              )}
+            </div>
+
+            {/* Contenu principal */}
+            <div className="flex-1 min-w-0">
+              {/* En-tête */}
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 
+                      className="text-xl font-semibold text-slate-900 dark:text-slate-100 cursor-pointer hover:text-purple-600 transition-colors"
+                      onClick={() => navigateToProfile(app.freelancerId)}
+                    >
+                      {freelancer?.name || 'Freelancer'}
+                    </h3>
+                    {freelancer?.rating && (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-amber-500 text-amber-500 " />
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{freelancer.rating}</span>
+                        <span className="text-sm text-slate-500">
+                          ({freelancer.completedProjects || 0} projets)
+                        </span>
+                      </div>
+                    )}
+                    {freelancer?.successRate && (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        {freelancer.successRate}% succès
+                      </Badge>
+                    )}
+                  </div>
+                  {freelancer?.title && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{freelancer.title}</p>
+                  )}
+                  {freelancer?.location && (
+                    <div className="flex items-center gap-1 text-sm text-slate-500 mt-1">
+                      <MapPin className="h-3 w-3" />
+                      {freelancer.location}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isAccepted && (
+                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      {dict?.proposals?.status?.accepted || "Acceptée"}
+                    </Badge>
+                  )}
+                  {isRejected && (
+                    <Badge className="bg-slate-100 text-slate-700 border-slate-200 gap-1">
+                      <X className="h-3 w-3" />
+                      {dict?.proposals?.status?.rejected || "Rejetée"}
+                    </Badge>
+                  )}
+                  {!isAccepted && !isRejected && (
+                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1">
+                      <Clock className="h-3 w-3" />
+                      {dict?.proposals?.status?.pending || "En attente"}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Compétences */}
+              {freelancer?.skills && freelancer.skills.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {freelancer.skills.slice(0, 5).map((skill, index) => (
+                    <Badge key={skill.id || index} variant="outline" className="text-xs border-purple-200 dark:border-purple-800">
+                      {skill.name}
+                    </Badge>
+                  ))}
+                  {freelancer.skills.length > 5 && (
+                    <Badge variant="secondary" className="text-xs">
+                      +{freelancer.skills.length - 5}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {/* Détails de la proposition */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
+                  <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-400 mb-1">
+                    <DollarSign className="h-4 w-4" />
+                    <span>{dict?.proposals?.proposedBudget || "Budget proposé"}</span>
+                  </div>
+                  <p className="text-xl font-bold text-purple-900 dark:text-purple-300">
+                    {app.proposedBudget?.toLocaleString()} {project.budget.currency}
+                  </p>
+                  <p className="text-xs text-purple-600 dark:text-purple-500 mt-1">
+                    {project.budget.type === 'fixed' ? 'Forfait fixe' : 'Taux horaire'}
+                  </p>
+                </div>
+               
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800">
+                  <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 mb-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{dict?.proposals?.estimatedDuration || "Durée estimée"}</span>
+                  </div>
+                  <p className="text-xl font-bold text-emerald-900 dark:text-emerald-300">{app.estimatedDuration}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
+                    {dict?.proposals?.deliveryEstimate || "Livraison estimée"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Lettre de motivation */}
+              <div className="mb-4">
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-purple-500" />
+                  {dict?.proposals?.coverLetter || "Lettre de motivation"}
+                </h4>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {app.coverLetter || dict?.proposals?.noCoverLetter || "Aucun message fourni."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pièces jointes */}
+              {app.attachments && app.attachments.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 text-purple-500" />
+                    {dict?.proposals?.attachments || "Pièces jointes"} ({app.attachments.length})
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {app.attachments.map((file, idx) => (
+                      <a
+                        key={idx}
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-purple-100 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all group"
+                      >
+                        {getFileIcon(file.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate group-hover:text-purple-600 transition-colors">
+                            {file.name}
+                          </p>
+                          {file.size && (
+                            <p className="text-xs text-slate-400">{formatFileSize(file.size)}</p>
+                          )}
+                        </div>
+                        <Download className="h-4 w-4 text-slate-400 group-hover:text-purple-500 transition-colors" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              {!isAccepted && !isRejected && (
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <Button
+                    onClick={() => handleApplicationAction(app._id, "accepted")}
+                    disabled={processingAction === app._id}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 gap-2 shadow-lg shadow-emerald-500/25"
+                  >
+                    {processingAction === app._id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+                    {dict?.proposals?.accept || "Accepter"}
+                  </Button>
+                 
+                  <Button
+                    variant="outline"
+                    onClick={() => handleApplicationAction(app._id, "rejected")}
+                    disabled={processingAction === app._id}
+                    className="gap-2 border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                  >
+                    <X className="h-4 w-4" />
+                    {dict?.proposals?.reject || "Refuser"}
+                  </Button>
+                 
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigateToProfile(app.freelancerId)}
+                    className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950/30"
+                  >
+                    <Eye className="h-4 w-4" />
+                    {dict?.proposals?.viewProfile || "Voir le profil"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Date de candidature */}
+              <div className="mt-4 pt-4 border-t border-purple-100 dark:border-purple-800">
+                <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <Calendar className="h-3 w-3" />
+                  {dict?.proposals?.submittedOn || "Candidature reçue le"} {new Date(app.createdAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                  {app.updatedAt !== app.createdAt && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <span>{dict?.proposals?.updatedOn || "Modifiée le"} {new Date(app.updatedAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
       <DashboardSidebar 
@@ -341,18 +498,6 @@ export default function ProposalsPage() {
       />
       
       <main className="flex-1 overflow-y-auto">
-        {/* Mobile menu button */}
-        <div className="md:hidden fixed top-4 left-4 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsSidebarOpen(true)}
-            className="bg-white/80 backdrop-blur-sm border-purple-200 shadow-lg"
-          >
-            <Menu className="h-5 w-5 text-purple-600" />
-          </Button>
-        </div>
-
         <div className="p-4 md:p-6 lg:p-8">
           {/* Header */}
           <div className="mb-8">
@@ -397,7 +542,7 @@ export default function ProposalsPage() {
                   )}
                 </div>
               </div>
-              <Badge className={cn(
+              <Badge className={cn (
                 "w-fit",
                 project.status === 'open' 
                   ? "bg-emerald-100 text-emerald-700 border-emerald-200" 
@@ -408,340 +553,97 @@ export default function ProposalsPage() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-purple-600 dark:text-purple-400">Total candidatures</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{applications.length}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
-                    <Users className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Tabs */}
+          <Tabs defaultValue="pending" className="space-y-6">
+            <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-purple-100 dark:border-purple-800 p-1">
+              <TabsTrigger value="pending" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white">
+                <Clock className="h-4 w-4" />
+                En attente ({pendingApps.length})
+              </TabsTrigger>
+              <TabsTrigger value="accepted" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white">
+                <CheckCircle2 className="h-4 w-4" />
+                Acceptées ({acceptedApps.length})
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white">
+                <X className="h-4 w-4" />
+                Rejetées ({rejectedApps.length})
+              </TabsTrigger>
+            </TabsList>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-amber-600 dark:text-amber-400">En attente</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{pendingApps.length}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TabsContent value="pending" className="space-y-4">
+              {pendingApps.length === 0 ? (
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
+                  <CardContent className="p-12 text-center">
+                    <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Briefcase className="h-10 w-10 text-purple-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                      {dict?.proposals?.noPendingApplications || "Aucune candidature en attente"}
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-6">
+                      {dict?.proposals?.noPendingDesc || "Les candidatures pour votre projet apparaîtront ici."}
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button asChild variant="outline" className="border-purple-200 dark:border-purple-800">
+                        <Link href={`/${lang}/projects/${projectId}/edit`}>
+                          {dict?.proposals?.editProject || "Modifier le projet"}
+                        </Link>
+                      </Button>
+                      <Button asChild className="bg-gradient-to-r from-purple-600 to-fuchsia-600">
+                        <Link href={`/${lang}/dashboard/client/projects`}>
+                          {dict?.proposals?.viewProjects || "Voir mes projets"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                pendingApps.map(app => renderApplicationCard(app, 'pending'))
+              )}
+            </TabsContent>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400">Acceptées</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{acceptedApps.length}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TabsContent value="accepted" className="space-y-4">
+              {acceptedApps.length === 0 ? (
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
+                  <CardContent className="p-12 text-center">
+                    <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                      {dict?.proposals?.noAcceptedApplications || "Aucune candidature acceptée"}
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      {dict?.proposals?.noAcceptedDesc || "Les candidatures que vous acceptez apparaîtront ici."}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                acceptedApps.map(app => renderApplicationCard(app, 'accepted'))
+              )}
+            </TabsContent>
 
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-rose-600 dark:text-rose-400">Rejetées</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{rejectedApps.length}</p>
-                  </div>
-                  <div className="h-10 w-10 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <X className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Filters */}
-          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10 mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-                    <Input
-                      placeholder="Rechercher un candidat..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 border-purple-200 dark:border-purple-800"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[140px] border-purple-200 dark:border-purple-800">
-                      <SelectValue placeholder="Trier par" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Plus récent</SelectItem>
-                      <SelectItem value="oldest">Plus ancien</SelectItem>
-                      <SelectItem value="budget-high">Budget (décroissant)</SelectItem>
-                      <SelectItem value="budget-low">Budget (croissant)</SelectItem>
-                      <SelectItem value="rating">Note</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Applications List */}
-          <div className="space-y-4">
-            {filteredApplications.length === 0 ? (
-              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-                <CardContent className="p-12 text-center">
-                  <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="h-10 w-10 text-purple-500" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                    Aucune candidature
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Aucune candidature ne correspond à vos critères.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredApplications.map((app) => {
-                const score = getApplicationScore(app)
-                return (
-                  <Card 
-                    key={app._id}
-                    className={cn(
-                      "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10 hover:shadow-xl transition-all cursor-pointer",
-                      selectedApplication?._id === app._id && "ring-2 ring-purple-500"
-                    )}
-                    onClick={() => setSelectedApplication(app)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-shrink-0">
-                          <Avatar className="h-16 w-16 border-2 border-purple-200 dark:border-purple-800 shadow-md cursor-pointer hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); navigateToProfile(app.freelancerId) }}>
-                            <AvatarImage src={app.freelancer?.avatar} />
-                            <AvatarFallback className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold text-xl">
-                              {app.freelancer?.name?.charAt(0) || 'F'}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 cursor-pointer hover:text-purple-600 transition-colors" onClick={(e) => { e.stopPropagation(); navigateToProfile(app.freelancerId) }}>
-                                  {app.freelancer?.name || 'Freelancer'}
-                                </h3>
-                                {app.freelancer?.rating && (
-                                  <div className="flex items-center gap-1">
-                                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                                    <span className="font-medium">{app.freelancer.rating}</span>
-                                    <span className="text-sm text-slate-500">({app.freelancer.completedProjects || 0} projets)</span>
-                                  </div>
-                                )}
-                              </div>
-                              {app.freelancer?.title && (
-                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{app.freelancer.title}</p>
-                              )}
-                            </div>
-                            {getStatusBadge(app.status)}
-                          </div>
-
-                          {/* Skills */}
-                          {app.freelancer?.skills && app.freelancer.skills.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {app.freelancer.skills.slice(0, 5).map((skill, index) => (
-                                <Badge key={skill.id || index} variant="outline" className="text-xs border-purple-200 dark:border-purple-800">
-                                  {skill.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Budget and Timeline */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-xl p-3">
-                              <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-400 mb-1">
-                                <DollarSign className="h-4 w-4" />
-                                <span>Budget proposé</span>
-                              </div>
-                              <p className="text-xl font-bold text-purple-900 dark:text-purple-300">
-                                {app.proposedBudget.toLocaleString()} {project.budget.currency}
-                              </p>
-                            </div>
-                            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl p-3">
-                              <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 mb-1">
-                                <Clock className="h-4 w-4" />
-                                <span>Durée estimée</span>
-                              </div>
-                              <p className="text-xl font-bold text-emerald-900 dark:text-emerald-300">{app.estimatedDuration}</p>
-                            </div>
-                          </div>
-
-                          {/* Cover Letter Preview */}
-                          <div className="mb-4">
-                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                              {app.coverLetter}
-                            </p>
-                          </div>
-
-                          {/* Attachments Preview */}
-                          {app.attachments && app.attachments.length > 0 && (
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
-                              <Paperclip className="h-4 w-4" />
-                              <span>{app.attachments.length} pièce(s) jointe(s)</span>
-                            </div>
-                          )}
-
-                          {/* Date */}
-                          <div className="mt-4 text-xs text-slate-500">
-                            Candidature reçue le {new Date(app.createdAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })
-            )}
-          </div>
+            <TabsContent value="rejected" className="space-y-4">
+              {rejectedApps.length === 0 ? (
+                <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
+                  <CardContent className="p-12 text-center">
+                    <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <X className="h-10 w-10 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                      {dict?.proposals?.noRejectedApplications || "Aucune candidature rejetée"}
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      {dict?.proposals?.noRejectedDesc || "Les candidatures que vous refusez apparaîtront ici."}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                rejectedApps.map(app => renderApplicationCard(app, 'rejected'))
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
-
-      {/* Application Details Dialog */}
-      <Dialog open={detailsOpen && selectedApplication !== null} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-purple-200 dark:border-purple-800">
-          {selectedApplication && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl bg-gradient-to-r from-purple-700 to-fuchsia-700 bg-clip-text text-transparent">
-                  Détails de la candidature
-                </DialogTitle>
-                <DialogDescription>
-                  {selectedApplication.freelancer?.name || 'Freelancer'} a postulé à votre projet
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6">
-                {/* Freelancer Info */}
-                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-xl">
-                  <Avatar className="h-16 w-16 border-2 border-white shadow-md">
-                    <AvatarImage src={selectedApplication.freelancer?.avatar} />
-                    <AvatarFallback className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white text-xl">
-                      {selectedApplication.freelancer?.name?.charAt(0) || 'F'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedApplication.freelancer?.name}</h3>
-                    {selectedApplication.freelancer?.title && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{selectedApplication.freelancer.title}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                      <span className="font-medium">{selectedApplication.freelancer?.rating || 'N/A'}</span>
-                      <span className="text-sm text-slate-500">({selectedApplication.freelancer?.completedProjects || 0} projets)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cover Letter */}
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-purple-500" />
-                    Lettre de motivation
-                  </h4>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-                    <p className="whitespace-pre-wrap">{selectedApplication.coverLetter}</p>
-                  </div>
-                </div>
-
-                {/* Proposal Details */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-purple-50 dark:bg-purple-950/30 rounded-xl p-4">
-                    <p className="text-sm text-purple-600 dark:text-purple-400 mb-1">Budget proposé</p>
-                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-300">
-                      {selectedApplication.proposedBudget.toLocaleString()} {project.budget.currency}
-                    </p>
-                  </div>
-                  <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4">
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-1">Durée estimée</p>
-                    <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-300">{selectedApplication.estimatedDuration}</p>
-                  </div>
-                </div>
-
-                {/* Attachments */}
-                {selectedApplication.attachments && selectedApplication.attachments.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-2 flex items-center gap-2">
-                      <Paperclip className="h-4 w-4 text-purple-500" />
-                      Pièces jointes ({selectedApplication.attachments.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedApplication.attachments.map((file, idx) => (
-                        <a
-                          key={idx}
-                          href={file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-purple-100 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all group"
-                        >
-                          {getFileIcon(file.type)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate group-hover:text-purple-600 transition-colors">{file.name}</p>
-                            {file.size && <p className="text-xs text-slate-400">{formatFileSize(file.size)}</p>}
-                          </div>
-                          <Download className="h-4 w-4 text-slate-400 group-hover:text-purple-500" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                {selectedApplication.status === 'pending' && (
-                  <div className="flex gap-3 pt-4 border-t border-purple-100 dark:border-purple-800">
-                    <Button
-                      onClick={() => handleApplicationAction(selectedApplication._id, "accepted")}
-                      disabled={processingAction === selectedApplication._id}
-                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-                    >
-                      {processingAction === selectedApplication._id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                      )}
-                      Accepter
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleApplicationAction(selectedApplication._id, "rejected")}
-                      disabled={processingAction === selectedApplication._id}
-                      className="flex-1 border-rose-200 text-rose-700 hover:bg-rose-50"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Refuser
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
