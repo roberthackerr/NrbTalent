@@ -31,7 +31,8 @@ import {
   Plus, Search, MoreVertical, Edit, Trash2, Eye, EyeOff, 
   TrendingUp, Star, Clock, DollarSign, Package, Zap,
   Loader2, AlertCircle, CheckCircle2, XCircle, PauseCircle,
-  BarChart3, Users, ShoppingBag, ArrowUpRight
+  BarChart3, Users, ShoppingBag, ArrowUpRight,
+  Play
 } from "lucide-react"
 import { toast } from "sonner"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
