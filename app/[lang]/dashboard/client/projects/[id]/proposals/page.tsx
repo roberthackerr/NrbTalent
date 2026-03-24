@@ -35,6 +35,7 @@ import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
+import { cn } from "@/lib/utils"
 
 interface Skill {
   id: string
@@ -541,7 +542,7 @@ export default function ProposalsPage() {
                   )}
                 </div>
               </div>
-              <Badge className={cn(
+              <Badge className={cn (
                 "w-fit",
                 project.status === 'open' 
                   ? "bg-emerald-100 text-emerald-700 border-emerald-200" 
