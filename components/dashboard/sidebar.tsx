@@ -683,20 +683,9 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-xl blur opacity-50" />
-            <div className="relative w-10 h-10 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-sm">NRB</span>
-            </div>
+         
           </div>
-          {!isCollapsed && (
-            <div>
-              <Link href={`/${lang}`} className="text-xl font-bold bg-gradient-to-r from-purple-700 to-fuchsia-700 dark:from-purple-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
-                NRBTalents
-              </Link>
-              <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
-                {role === "freelance" ? "Freelancer" : "Client"}
-              </p>
-            </div>
-          )}
+
         </div>
       </div>
 
@@ -724,32 +713,7 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
         </div>
       )}
 
-      {/* Statistiques rapides */}
-      {!isCollapsed && (
-        <div className="p-4 border-b border-purple-100 dark:border-purple-900/50 flex-shrink-0">
-          <h3 className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-3">
-            {role === "freelance" ? "📊 Mon activité" : "📊 Mon activité"}
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {currentStats.map((stat, idx) => {
-              const StatIcon = stat.icon
-              return (
-                <div key={idx} className="bg-gradient-to-br from-purple-50/50 to-fuchsia-50/50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-lg p-2 border border-purple-100 dark:border-purple-800">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-lg bg-gradient-to-r ${stat.color} flex items-center justify-center`}>
-                      <StatIcon className="h-3 w-3 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{stat.value}</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* Navigation principale */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
