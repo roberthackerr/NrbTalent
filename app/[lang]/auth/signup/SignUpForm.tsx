@@ -78,7 +78,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     setGoogleLoading(true)
     try {
       await signIn('google', { 
-        callbackUrl: `/${lang}/onboarding`,
+        callbackUrl: `/${lang}/onboarding/role`,
         role: role
       })
     } catch (error) {

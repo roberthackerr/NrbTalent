@@ -1,4 +1,4 @@
-// app/api/users/profile/route.ts (version corrigée)
+// app/api/users/profile/route.ts (version corrigée sans groupsAdded)
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -6,6 +6,202 @@ import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import type { User, Skill, Portfolio, Experience } from "@/lib/models/user"
 import { toUserResponseDTO } from "@/lib/models/user"
+
+// Configuration des groupes par défaut
+const DEFAULT_GROUP_SLUGS = [
+  "goupe-blag-mada",  // Votre groupe existant
+  // Ajoutez d'autres slugs ici
+]
+
+// Slugs des groupes basés sur le rôle
+const ROLE_GROUP_SLUGS = {
+  freelance: "freelance-community",
+  client: "client-space"
+}
+
+// Fonction pour ajouter l'utilisateur aux groupes par défaut
+async function addUserToDefaultGroups(
+  db: any,
+  userId: ObjectId,
+  userRole: string,
+  userLang: string = 'fr'
+): Promise<void> {
+  const groupsCollection = db.collection("groups")
+  const groupMembersCollection = db.collection("group_members")
+
+  try {
+    // Vérifier si l'utilisateur est déjà membre d'au moins un groupe
+    const existingMembership = await groupMembersCollection.findOne({ userId })
+    
+    // Si l'utilisateur est déjà membre, ne pas ajouter
+    if (existingMembership) {
+      console.log(`ℹ️ Utilisateur ${userId} déjà membre d'un groupe, skip`)
+      return
+    }
+
+    // 1. Ajouter aux groupes par défaut
+    for (const slug of DEFAULT_GROUP_SLUGS) {
+      const group = await groupsCollection.findOne({ slug })
+      
+      if (!group) {
+        console.warn(`⚠️ Groupe avec slug "${slug}" non trouvé`)
+        continue
+      }
+      
+      const existingMember = await groupMembersCollection.findOne({
+        groupId: group._id,
+        userId: userId
+      })
+      
+      if (!existingMember) {
+        await groupMembersCollection.insertOne({
+          groupId: group._id,
+          userId: userId,
+          role: "member",
+          status: "active",
+          joinedAt: new Date(),
+          activity: {
+            postCount: 0,
+            commentCount: 0,
+            eventAttendance: 0,
+            lastActivity: new Date()
+          },
+          badges: ["new-member"],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        
+        // Mettre à jour les statistiques du groupe
+        await groupsCollection.updateOne(
+          { _id: group._id },
+          { 
+            $inc: { 
+              "stats.totalMembers": 1,
+              "stats.activeMembers": 1
+            },
+            $set: {
+              "stats.lastActivityAt": new Date(),
+              updatedAt: new Date()
+            }
+          }
+        )
+        
+        console.log(`✅ Utilisateur ${userId} ajouté au groupe: ${group.name}`)
+      }
+    }
+    
+    // 2. Ajouter au groupe basé sur le rôle
+    const roleSlug = ROLE_GROUP_SLUGS[userRole === "freelance" ? "freelance" : "client"]
+    if (roleSlug) {
+      const roleGroup = await groupsCollection.findOne({ slug: roleSlug })
+      
+      if (roleGroup) {
+        const existingMember = await groupMembersCollection.findOne({
+          groupId: roleGroup._id,
+          userId: userId
+        })
+        
+        if (!existingMember) {
+          await groupMembersCollection.insertOne({
+            groupId: roleGroup._id,
+            userId: userId,
+            role: "member",
+            status: "active",
+            joinedAt: new Date(),
+            activity: {
+              postCount: 0,
+              commentCount: 0,
+              eventAttendance: 0,
+              lastActivity: new Date()
+            },
+            badges: ["new-member"],
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          
+          await groupsCollection.updateOne(
+            { _id: roleGroup._id },
+            { 
+              $inc: { 
+                "stats.totalMembers": 1,
+                "stats.activeMembers": 1
+              },
+              $set: { updatedAt: new Date() }
+            }
+          )
+          
+          console.log(`✅ Utilisateur ${userId} ajouté au groupe basé sur le rôle: ${roleGroup.name}`)
+        }
+      } else {
+        console.warn(`⚠️ Groupe de rôle avec slug "${roleSlug}" non trouvé`)
+      }
+    }
+    
+    // 3. Envoyer une notification de bienvenue
+    const addedGroups = [] // Pour la notification uniquement
+    // Récupérer les groupes ajoutés pour la notification
+    for (const slug of DEFAULT_GROUP_SLUGS) {
+      const group = await groupsCollection.findOne({ slug })
+      if (group) addedGroups.push(group.name)
+    }
+    if (roleSlug) {
+      const roleGroup = await groupsCollection.findOne({ slug: roleSlug })
+      if (roleGroup) addedGroups.push(roleGroup.name)
+    }
+    
+    if (addedGroups.length > 0) {
+      const notificationMessages = {
+        fr: {
+          title: "🎉 Bienvenue dans la communauté !",
+          message: `Vous avez été ajouté aux groupes suivants : ${addedGroups.join(", ")}. Rejoignez la communauté et commencez à échanger !`
+        },
+        en: {
+          title: "🎉 Welcome to the community!",
+          message: `You've been added to the following groups: ${addedGroups.join(", ")}. Join the community and start connecting!`
+        },
+        mg: {
+          title: "🎉 Tonga soa ao amin'ny vondrom-piarahamonina!",
+          message: `Nampidirina anatin'ireo vondrona ireo ianao: ${addedGroups.join(", ")}. Midira ary manomboka mifanakalo hevitra!`
+        }
+      }
+      
+      const notif = notificationMessages[userLang as keyof typeof notificationMessages] || notificationMessages.fr
+      
+      await db.collection("notifications").insertOne({
+        userId: userId,
+        category: "COMMUNITY",
+        priority: "MEDIUM",
+        title: notif.title,
+        message: notif.message,
+        actionUrl: `/groups`,
+        data: {
+          entityType: "system",
+          action: "welcome",
+          groups: addedGroups
+        },
+        status: "UNREAD",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+    }
+    
+  } catch (error) {
+    console.error("⚠️ Erreur lors de l'ajout aux groupes:", error)
+  }
+}
+
+// Fonction pour récupérer la langue de l'utilisateur
+async function getUserLanguage(db: any, userId: ObjectId): Promise<string> {
+  try {
+    const user = await db.collection("users").findOne(
+      { _id: userId },
+      { projection: { language: 1, preferences: 1 } }
+    )
+    return user?.language || user?.preferences?.language || 'fr'
+  } catch {
+    return 'fr'
+  }
+}
 
 // ============================================
 // GET - Fetch user profile
@@ -97,13 +293,11 @@ export async function PATCH(request: Request) {
 
     switch (section) {
       case 'preferences':
-        // Mettre à jour les préférences
         if (data.language) {
-          // Sauvegarder aussi dans le champ language principal pour faciliter l'accès
           updateOperation.$set = {
             ...updateOperation.$set,
             preferences: data,
-            language: data.language  // 👈 SAUVEGARDER DANS LE CHAMP PRINCIPAL
+            language: data.language
           }
         } else {
           updateOperation.$set = {
@@ -112,9 +306,7 @@ export async function PATCH(request: Request) {
           }
         }
         break
-      // ------------------------------
-      // ONBOARDING COMPLETED
-      // ------------------------------
+
       case 'onboardingCompleted':
         updateOperation.$set = {
           ...updateOperation.$set,
@@ -123,9 +315,6 @@ export async function PATCH(request: Request) {
         console.log("✅ Onboarding completed status updated")
         break
 
-      // ------------------------------
-      // EXPERIENCE
-      // ------------------------------
       case 'experience':
         await ensureFieldExists('experience', [])
         
@@ -156,21 +345,14 @@ export async function PATCH(request: Request) {
         }
         break
 
-      // ------------------------------
-      // EDUCATION (CORRIGÉ)
-      // ------------------------------
       case 'education':
-        // Initialiser le tableau education s'il n'existe pas
         await ensureFieldExists('education', [])
         
         if (data._delete) {
-          // Supprimer une formation
           updateOperation.$pull = { 
             education: { id: data.id } 
           }
         } else if (data.id) {
-          // Mettre à jour une formation existante
-          // Vérifier d'abord si l'élément existe
           const user = await db.collection<User>("users").findOne(
             { _id: userId, "education.id": data.id },
             { projection: { _id: 1 } }
@@ -188,7 +370,6 @@ export async function PATCH(request: Request) {
             arrayFilters = [{ "elem.id": data.id }]
             useArrayFilters = true
           } else {
-            // Si l'élément n'existe pas, l'ajouter
             updateOperation.$push = {
               education: {
                 ...data,
@@ -199,7 +380,6 @@ export async function PATCH(request: Request) {
             }
           }
         } else {
-          // Ajouter une nouvelle formation
           updateOperation.$push = {
             education: {
               ...data,
@@ -211,9 +391,6 @@ export async function PATCH(request: Request) {
         }
         break
 
-      // ------------------------------
-      // PORTFOLIO
-      // ------------------------------
       case 'portfolio':
         await ensureFieldExists('portfolio', [])
         
@@ -222,11 +399,11 @@ export async function PATCH(request: Request) {
             portfolio: { id: data.id } 
           }
         } else if (data.id) {
-          const existingUser = await db.collection<User>("users").findOne(
+          const existingUserPortfolio = await db.collection<User>("users").findOne(
             { _id: userId, "portfolio.id": data.id }
           )
 
-          if (existingUser) {
+          if (existingUserPortfolio) {
             updateOperation.$set = {
               ...updateOperation.$set,
               "portfolio.$[elem]": {
@@ -260,9 +437,6 @@ export async function PATCH(request: Request) {
         }
         break
 
-      // ------------------------------
-      // BASIC INFO
-      // ------------------------------
       case 'basic':
         updateOperation.$set = {
           ...updateOperation.$set,
@@ -270,9 +444,6 @@ export async function PATCH(request: Request) {
         }
         break
 
-      // ------------------------------
-      // PROFESSIONAL INFO
-      // ------------------------------
       case 'professional':
         updateOperation.$set = {
           ...updateOperation.$set,
@@ -283,9 +454,6 @@ export async function PATCH(request: Request) {
         }
         break
 
-      // ------------------------------
-      // SOCIAL LINKS
-      // ------------------------------
       case 'social':
         updateOperation.$set = {
           ...updateOperation.$set,
@@ -293,23 +461,25 @@ export async function PATCH(request: Request) {
         }
         break
 
-      // ------------------------------
-      // PREFERENCES
-      // ------------------------------
-      case 'preferences':
-        updateOperation.$set = {
-          ...updateOperation.$set,
-          preferences: data
-        }
-        break
-
-      // ------------------------------
-      // SKILLS (Alias for professional)
-      // ------------------------------
       case 'skills':
         updateOperation.$set = {
           ...updateOperation.$set,
           skills: data
+        }
+        break
+
+      case 'role':
+        if (data.role && (data.role === "freelance" || data.role === "client")) {
+          updateOperation.$set = {
+            ...updateOperation.$set,
+            role: data.role,
+            onboardingRoleCompleted: data.onboardingRoleCompleted !== undefined ? data.onboardingRoleCompleted : true
+          }
+        } else {
+          return NextResponse.json(
+            { error: "Invalid role" }, 
+            { status: 400 }
+          )
         }
         break
 
@@ -337,12 +507,30 @@ export async function PATCH(request: Request) {
       )
     }
 
-    // Check if user was found
     if (result.matchedCount === 0) {
       return NextResponse.json(
         { error: "User not found" }, 
         { status: 404 }
       )
+    }
+
+    // ============================================
+    // 📌 AJOUTER L'UTILISATEUR AUX GROUPES (si pas encore membre)
+    // ============================================
+    try {
+      // Vérifier si l'utilisateur est déjà membre d'un groupe
+      const groupMembersCollection = db.collection("group_members")
+      const existingMembership = await groupMembersCollection.findOne({ userId })
+      
+      // Si l'utilisateur n'est membre d'aucun groupe, l'ajouter
+      if (!existingMembership) {
+        const userLang = await getUserLanguage(db, userId)
+        const userRole = (await db.collection("users").findOne({ _id: userId }))?.role || "freelance"
+        
+        await addUserToDefaultGroups(db, userId, userRole, userLang)
+      }
+    } catch (groupError) {
+      console.error("⚠️ Erreur lors de l'ajout aux groupes:", groupError)
     }
 
     // ========================================

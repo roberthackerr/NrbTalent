@@ -122,7 +122,7 @@ export default function OnboardingPage() {
         toast.success(dict?.onboardingPage.success || 'Profile setup complete!')
         
         setTimeout(() => {
-          router.push(`/${lang}/dashboard`)
+          router.push(`/${lang}`)
         }, 1500)
       } else {
         throw new Error('Failed to update profile')
