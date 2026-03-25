@@ -113,7 +113,7 @@ export function UserMenu() {
   return (
     <div className="flex items-center gap-1">
       {/* 🔔 Notifications */}
-      <NotificationBell />
+     
 
 
       {/* 👤 Menu utilisateur simplifié */}
