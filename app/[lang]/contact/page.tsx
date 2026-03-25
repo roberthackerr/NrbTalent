@@ -38,7 +38,7 @@ export default function ContactPage() {
               <h3 className="font-semibold mb-2">Email Us</h3>
               <p className="text-sm text-muted-foreground mb-3">Our team will respond within 24 hours</p>
               <a href="mailto:support@nrbtalents.com" className="text-primary hover:underline">
-                support@nrbtalents.com
+                tojlinos@gmail.com
               </a>
             </Card>
 
@@ -60,7 +60,7 @@ export default function ContactPage() {
               <h3 className="font-semibold mb-2">Call Us</h3>
               <p className="text-sm text-muted-foreground mb-3">Mon-Fri from 9am to 6pm EST</p>
               <a href="tel:+1234567890" className="text-primary hover:underline">
-                +1 (234) 567-890
+                +261333332642
               </a>
             </Card>
           </div>
@@ -111,11 +111,10 @@ export default function ContactPage() {
                     <div>
                       <p className="font-semibold mb-1">NRBTalents Headquarters</p>
                       <p className="text-sm text-muted-foreground">
-                        123 Tech Street
+ 
+                        Mahazoarivo, Antsirabe
                         <br />
-                        San Francisco, CA 94105
-                        <br />
-                        United States
+                        Madagascar
                       </p>
                     </div>
                   </div>
