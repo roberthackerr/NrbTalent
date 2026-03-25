@@ -1,9 +1,9 @@
-// /components/groups/CreatePostForm.tsx - VERSION AVEC UPLOAD
+// components/groups/CreatePostForm.tsx
 'use client'
 
 import { useState, useRef } from 'react'
 import { 
-  X, Type, Calendar, Briefcase, Users, MessageSquare, Hash, 
+  X, Type, Calendar, Briefcase, MessageSquare, Hash, 
   Image as ImageIcon, Paperclip, XCircle, Upload, FileText 
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,11 +18,11 @@ import Image from 'next/image'
 
 interface UploadedFile {
   url: string
-  originalName: string
-  type: 'image' | 'document'
-  mimeType: string
+  publicId?: string
+  name: string
+  type: string
   size: number
-  fileName: string
+  thumbnail?: string
 }
 
 interface CreatePostFormProps {
@@ -74,22 +74,36 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
       Array.from(files).forEach(file => {
         formData.append('files', file)
       })
+      // Ajouter le dossier pour organiser les fichiers
+      formData.append('folder', 'groups')
 
-      // Upload vers le serveur
-      const response = await fetch(`/api/groups/${groupId}/posts/upload`, {
+      // Upload vers l'API générale
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       })
 
       if (response.ok) {
         const result = await response.json()
-        setUploadedFiles(prev => [...prev, ...result.files])
-        toast.success(`${result.files.length} fichier(s) uploadé(s)`)
+        // Formater les fichiers pour correspondre à notre interface
+        const newFiles = result.files.map((file: any) => ({
+          url: file.url,
+          publicId: file.publicId,
+          name: file.name,
+          type: file.type.startsWith('image/') ? 'image' : 'document',
+          mimeType: file.type,
+          size: file.size,
+          thumbnail: file.thumbnail
+        }))
+        setUploadedFiles(prev => [...prev, ...newFiles])
+        toast.success(`${result.files.length} fichier(s) uploadé(s) avec succès`)
       } else {
-        toast.error('Erreur lors de l\'upload')
+        const error = await response.json()
+        toast.error(error.error || 'Erreur lors de l\'upload')
       }
     } catch (error) {
-      toast.error('Erreur lors de l\'upload')
+      console.error('Upload error:', error)
+      toast.error('Erreur lors de l\'upload des fichiers')
     } finally {
       setUploading(false)
       if (fileInputRef.current) {
@@ -137,13 +151,26 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
     
     try {
       // Séparer images et documents
-      const images = uploadedFiles.filter(f => f.type === 'image').map(f => f.url)
-      const attachments = uploadedFiles.filter(f => f.type === 'document').map(f => ({
-        url: f.url,
-        name: f.originalName,
-        size: f.size,
-        type: f.mimeType
-      }))
+      const images = uploadedFiles
+        .filter(f => f.type === 'image')
+        .map(f => ({
+          url: f.url,
+          publicId: f.publicId,
+          name: f.name,
+          type: f.mimeType || 'image/jpeg',
+          size: f.size,
+          thumbnail: f.thumbnail
+        }))
+      
+      const attachments = uploadedFiles
+        .filter(f => f.type === 'document')
+        .map(f => ({
+          url: f.url,
+          publicId: f.publicId,
+          name: f.name,
+          type: f.mimeType,
+          size: f.size
+        }))
 
       const postData = {
         type: postType,
@@ -192,7 +219,8 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
         toast.error(error.error || 'Erreur lors de la création')
       }
     } catch (error) {
-      toast.error('Erreur lors de la création')
+      console.error('Create post error:', error)
+      toast.error('Erreur lors de la création du post')
     } finally {
       setLoading(false)
     }
@@ -243,6 +271,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Donnez un titre clair à votre post"
               className="mt-2"
+              maxLength={200}
             />
           </div>
 
@@ -256,7 +285,11 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
               placeholder="Partagez vos pensées, questions ou annonces..."
               rows={6}
               className="mt-2"
+              maxLength={5000}
             />
+            <p className="text-xs text-slate-500 mt-1">
+              {formData.content.length}/5000 caractères
+            </p>
           </div>
 
           {/* Upload de fichiers */}
@@ -273,14 +306,17 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                 className="hidden"
                 id="file-upload"
               />
-              <label htmlFor="file-upload">
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors cursor-pointer">
+              <label htmlFor="file-upload" className="cursor-pointer">
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 hover:bg-slate-50 transition-all">
                   <Upload className="h-8 w-8 text-slate-400 mx-auto mb-3" />
                   <p className="text-sm text-slate-600 mb-2">
                     Glissez-déposez vos fichiers ou cliquez pour sélectionner
                   </p>
                   <p className="text-xs text-slate-500">
                     Images (JPG, PNG, GIF, WEBP) et documents (PDF, DOC, TXT) jusqu'à 10MB
+                  </p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    Max 10 fichiers à la fois
                   </p>
                 </div>
               </label>
@@ -299,6 +335,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                     size="sm"
                     onClick={() => setUploadedFiles([])}
                     disabled={uploading}
+                    className="text-red-500 hover:text-red-700"
                   >
                     Tout supprimer
                   </Button>
@@ -308,15 +345,15 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                   {uploadedFiles.map((file, index) => (
                     <div
                       key={index}
-                      className="relative border rounded-lg p-3 group hover:bg-slate-50 transition-colors"
+                      className="relative border rounded-lg p-3 group hover:bg-slate-50 hover:shadow-md transition-all"
                     >
                       {file.type === 'image' ? (
-                        <div className="aspect-video relative mb-2">
+                        <div className="aspect-video relative mb-2 rounded overflow-hidden">
                           <Image
-                            src={file.url}
-                            alt={file.originalName}
+                            src={file.thumbnail || file.url}
+                            alt={file.name}
                             fill
-                            className="object-cover rounded"
+                            className="object-cover"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           />
                         </div>
@@ -326,8 +363,8 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                         </div>
                       )}
                       
-                      <div className="text-xs truncate" title={file.originalName}>
-                        {file.originalName}
+                      <div className="text-xs truncate font-medium" title={file.name}>
+                        {file.name}
                       </div>
                       <div className="text-xs text-slate-500">
                         {formattedSize(file.size)}
@@ -336,7 +373,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                       >
                         <XCircle className="h-4 w-4" />
                       </button>
@@ -354,7 +391,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
             )}
           </div>
 
-          {/* Tags (reste le même) */}
+          {/* Tags */}
           <div>
             <Label className="mb-2 block">Tags</Label>
             <div className="flex gap-2 mb-3">
@@ -363,7 +400,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Ajouter des tags..."
+                  placeholder="Ajouter des tags (appuyez sur Entrée)..."
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
@@ -389,30 +426,144 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
             
             <div className="flex flex-wrap gap-2">
               {tags.map(tag => (
-                <Badge key={tag} variant="secondary">
+                <Badge key={tag} variant="secondary" className="px-3 py-1">
                   #{tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="ml-2 hover:text-red-500"
+                    className="ml-2 hover:text-red-500 focus:outline-none"
                   >
                     ×
                   </button>
                 </Badge>
               ))}
+              {tags.length === 0 && (
+                <p className="text-sm text-slate-400">Aucun tag ajouté</p>
+              )}
             </div>
           </div>
 
-          {/* Formulaires spécifiques pour événements et offres (reste le même) */}
+          {/* Formulaires spécifiques pour événements */}
           {postType === 'event' && (
             <div className="space-y-4 border-t pt-4">
-              {/* ... ton code existant pour les événements ... */}
+              <h4 className="font-medium">Détails de l'événement</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Titre de l'événement</Label>
+                  <Input
+                    value={formData.eventTitle}
+                    onChange={(e) => setFormData(prev => ({ ...prev, eventTitle: e.target.value }))}
+                    placeholder="Titre de l'événement"
+                  />
+                </div>
+                <div>
+                  <Label>Lieu</Label>
+                  <Input
+                    value={formData.eventLocation}
+                    onChange={(e) => setFormData(prev => ({ ...prev, eventLocation: e.target.value }))}
+                    placeholder="Lieu (ou 'En ligne')"
+                  />
+                </div>
+                <div>
+                  <Label>Date de début</Label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.eventStartDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, eventStartDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Date de fin</Label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.eventEndDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, eventEndDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Description de l'événement</Label>
+                <Textarea
+                  value={formData.eventDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, eventDescription: e.target.value }))}
+                  placeholder="Décrivez l'événement..."
+                  rows={3}
+                />
+              </div>
             </div>
           )}
 
+          {/* Formulaires spécifiques pour offres d'emploi */}
           {postType === 'job' && (
             <div className="space-y-4 border-t pt-4">
-              {/* ... ton code existant pour les offres d'emploi ... */}
+              <h4 className="font-medium">Détails de l'offre</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Poste</Label>
+                  <Input
+                    value={formData.jobTitle}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                    placeholder="Intitulé du poste"
+                  />
+                </div>
+                <div>
+                  <Label>Entreprise</Label>
+                  <Input
+                    value={formData.jobCompany}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobCompany: e.target.value }))}
+                    placeholder="Nom de l'entreprise"
+                  />
+                </div>
+                <div>
+                  <Label>Lieu</Label>
+                  <Input
+                    value={formData.jobLocation}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobLocation: e.target.value }))}
+                    placeholder="Lieu (ou 'Télétravail')"
+                  />
+                </div>
+                <div>
+                  <Label>Type de contrat</Label>
+                  <select
+                    value={formData.jobType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobType: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="full-time">CDI - Temps plein</option>
+                    <option value="part-time">CDI - Temps partiel</option>
+                    <option value="contract">CDD / Contrat</option>
+                    <option value="freelance">Freelance / Indépendant</option>
+                    <option value="internship">Stage</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Salaire minimum (optionnel)</Label>
+                  <Input
+                    type="number"
+                    value={formData.jobSalaryMin}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobSalaryMin: e.target.value }))}
+                    placeholder="Minimum"
+                  />
+                </div>
+                <div>
+                  <Label>Salaire maximum (optionnel)</Label>
+                  <Input
+                    type="number"
+                    value={formData.jobSalaryMax}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jobSalaryMax: e.target.value }))}
+                    placeholder="Maximum"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Description du poste</Label>
+                <Textarea
+                  value={formData.jobDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
+                  placeholder="Description des missions, prérequis, etc..."
+                  rows={4}
+                />
+              </div>
             </div>
           )}
 
@@ -429,8 +580,21 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
             <Button 
               type="submit" 
               disabled={loading || uploading}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              {loading ? 'Publication...' : uploading ? 'Upload en cours...' : 'Publier'}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Publication...
+                </>
+              ) : uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Upload en cours...
+                </>
+              ) : (
+                'Publier'
+              )}
             </Button>
           </div>
         </form>
