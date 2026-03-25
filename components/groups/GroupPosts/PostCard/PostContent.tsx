@@ -44,7 +44,7 @@ export function PostContent({ post }: PostContentProps) {
                 <CarouselItem key={`video-${index}`}>
                   <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-black">
                     <video
-                      src={video}
+                      src={video.url}
                       controls
                       className="w-full h-full object-contain"
                     />
