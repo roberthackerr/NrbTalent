@@ -30,7 +30,7 @@ export function PostContent({ post }: PostContentProps) {
                 <CarouselItem key={`image-${index}`}>
                   <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                     <Image
-                      src={image}
+                      src={image.url}
                       alt={`Image ${index + 1}`}
                       fill
                       className="object-cover"

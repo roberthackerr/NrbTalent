@@ -22,7 +22,7 @@ export interface Post {
   title: string
   content: string
   type: 'discussion' | 'question' | 'event' | 'job' | 'announcement' | 'poll'
-  images?: string[]
+  images?: any[]
   videos?: string[]
   attachments?: PostAttachment[]
   author: PostAuthor
