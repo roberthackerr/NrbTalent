@@ -9,7 +9,7 @@ import { toUserResponseDTO } from "@/lib/models/user"
 
 // Configuration des groupes par défaut
 const DEFAULT_GROUP_SLUGS = [
-  "goupe-blag-mada",  // Votre groupe existant
+  "nrbtalents",  // Votre groupe existant
   // Ajoutez d'autres slugs ici
 ]
 
