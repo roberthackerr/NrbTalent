@@ -45,7 +45,7 @@ interface FeedItem {
   commentCount?: number
   viewCount?:    number
   views?:        number
-  images?:       string[]
+  images?:       any[]
   budget?:  { min: number; max: number; currency: string; type: "fixed" | "hourly" }
   skills?:  string[]
   deadline?: string
@@ -736,7 +736,7 @@ function GroupPostCard({ item, pal, base, index, onClick }: {
                 item.images!.length === 1 ? "w-full aspect-[16/9] rounded-xl" : "aspect-square",
                 item.images!.length === 3 && i === 0 ? "col-span-2" : ""
               )}>
-                <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                <img src={src.url} alt="" className="w-full h-full object-cover" loading="lazy" />
               </div>
             ))}
           </div>
