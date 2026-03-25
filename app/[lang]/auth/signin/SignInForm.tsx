@@ -88,7 +88,7 @@ export default function SignInForm({ dict, lang }: Props) {
     setGoogleLoading(true)
     try {
       await signIn('google', { 
-        callbackUrl: `/${lang}` 
+        callbackUrl: `/${lang}/onboarding/role` 
       })
     } catch (error) {
       toast.error(dict.auth.errors.googleAccount)
