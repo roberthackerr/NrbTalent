@@ -28,8 +28,9 @@ import { MeetButtonCompact } from "./meet/MeetButton"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import Image from "next/image"
-import { NotificationsDropdown } from "@/components/notifications-dropdown"
+
 import { MessagesDropdown } from "@/components/messages-dropdown"
+import { NotificationBell } from "./NotificationBell"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MegaItem {
@@ -308,7 +309,7 @@ export function Navigation() {
             {/* ── Desktop right actions — visible lg+ uniquement ────────────── */}
             <div className="hidden lg:flex items-center gap-2 shrink-0 min-w-fit">
               <ThemeToggle />
-              <NotificationsDropdown />
+              <NotificationBell />
               <MessagesDropdown />
 
               <div className="relative group">
@@ -358,7 +359,7 @@ export function Navigation() {
             <div className="flex items-center gap-1 lg:hidden ml-auto shrink-0">
               {/* Notifications et messages sur mobile */}
               <div className="flex items-center gap-1 mr-1">
-                <NotificationsDropdown />
+                <NotificationBell />
                 <MessagesDropdown />
               </div>
               
