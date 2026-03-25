@@ -1,9 +1,73 @@
-// /app/api/groups/[id]/posts/route.ts
+// app/api/groups/[id]/posts/route.ts
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import cloudinary from "@/lib/cloudinary/config"
+import { v4 as uuidv4 } from "uuid"
+import { notificationService } from "@/services/NotificationService"
+
+// Configuration pour l'upload
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+const ALLOWED_FILE_TYPES = [
+  ...ALLOWED_IMAGE_TYPES,
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'application/zip'
+]
+
+// Fonction d'upload vers Cloudinary
+async function uploadToCloudinary(file: File, groupId: string, userId: string): Promise<any> {
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+  const base64File = `data:${file.type};base64,${buffer.toString('base64')}`
+  
+  const isImage = file.type.startsWith('image/')
+  
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      base64File,
+      {
+        public_id: `groups/${groupId}/posts/${uuidv4()}`,
+        folder: `nrbtalents/groups/${groupId}/posts`,
+        resource_type: isImage ? 'image' : 'raw',
+        transformation: isImage ? [
+          { width: 1200, crop: 'limit', quality: 'auto' }
+        ] : [],
+        tags: ['group-post', groupId, userId],
+        context: {
+          groupId,
+          userId,
+          fileName: file.name,
+          fileType: file.type,
+          uploadedAt: new Date().toISOString()
+        }
+      },
+      (error, result) => {
+        if (error) reject(error)
+        else resolve(result)
+      }
+    )
+  })
+}
+
+// Fonction pour récupérer la langue d'un utilisateur
+async function getUserLanguage(db: any, userId: string): Promise<'fr' | 'en' | 'mg'> {
+  try {
+    const user = await db.collection("users").findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { language: 1, preferences: 1 } }
+    )
+    const userLang = user?.language || user?.preferences?.language || 'fr'
+    return userLang === 'fr' || userLang === 'en' || userLang === 'mg' ? userLang : 'fr'
+  } catch {
+    return 'fr'
+  }
+}
 
 export async function GET(
   request: Request,
@@ -20,7 +84,6 @@ export async function GET(
     const db = await getDatabase()
     const { searchParams } = new URL(request.url)
     
-    // Paramètres de requête
     const type = searchParams.get('type')
     const authorId = searchParams.get('authorId')
     const pinned = searchParams.get('pinned') === 'true'
@@ -29,7 +92,6 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
-    // Vérifier si l'utilisateur est membre du groupe
     const isMember = await db.collection("group_members").findOne({
       groupId: new ObjectId(id),
       userId: new ObjectId((session.user as any).id),
@@ -42,7 +104,6 @@ export async function GET(
       }, { status: 403 })
     }
 
-    // Construire la requête
     const match: any = {
       groupId: new ObjectId(id),
       status: 'published'
@@ -52,7 +113,6 @@ export async function GET(
     if (authorId) match.authorId = new ObjectId(authorId)
     if (pinned) match.isPinned = true
 
-    // Options de tri
     let sortOptions: any = {}
     switch (sortBy) {
       case 'popular':
@@ -65,7 +125,6 @@ export async function GET(
         sortOptions = { isPinned: -1, createdAt: -1 }
     }
 
-    // Pipeline d'agrégation
     const pipeline: any[] = [
       { $match: match },
       { $sort: sortOptions },
@@ -132,13 +191,11 @@ export async function GET(
       }
     ]
 
-    // Exécuter la requête
     const [posts, total] = await Promise.all([
       db.collection("group_posts").aggregate(pipeline).toArray(),
       db.collection("group_posts").countDocuments(match)
     ])
 
-    // Formater les données de retour
     const formattedPosts = posts.map(post => ({
       ...post,
       _id: post._id.toString(),
@@ -185,13 +242,8 @@ export async function POST(
     const db = await getDatabase()
     const userId = new ObjectId((session.user as any).id)
     const userName = session.user?.name || 'Utilisateur'
+    const userAvatar = session.user?.image || null
     
-    console.log('📝 Creating post for group:', {
-      groupId: id,
-      userId: userId.toString(),
-      userName
-    })
-
     // Vérifier si l'utilisateur est membre
     const member = await db.collection("group_members").findOne({
       groupId: new ObjectId(id),
@@ -200,47 +252,90 @@ export async function POST(
     })
 
     if (!member) {
-      console.log('❌ User not member:', userId.toString())
       return NextResponse.json(
         { error: "Vous devez être membre pour poster" },
         { status: 403 }
       )
     }
 
-    console.log('✅ User is member, role:', member.role)
+    // Récupérer le groupe
+    const group = await db.collection("groups").findOne({
+      _id: new ObjectId(id)
+    })
 
-    // Lire les données JSON
-    let postData
-    try {
-      postData = await request.json()
-      console.log('📥 Received post data:', {
-        title: postData.title?.substring(0, 50),
-        type: postData.type,
-        hasImages: !!postData.images?.length,
-        hasAttachments: !!postData.attachments?.length,
-        tagsCount: postData.tags?.length || 0
-      })
-    } catch (jsonError) {
-      console.error('❌ Error parsing JSON:', jsonError)
+    if (!group) {
       return NextResponse.json(
-        { error: "Données JSON invalides" },
-        { status: 400 }
+        { error: "Groupe non trouvé" },
+        { status: 404 }
       )
     }
 
-    // Validation des champs requis
-    if (!postData.title?.trim()) {
+    // Lire les données du formulaire
+    const formData = await request.formData()
+    const title = formData.get('title') as string
+    const content = formData.get('content') as string
+    const type = formData.get('type') as string || 'discussion'
+    const tags = JSON.parse(formData.get('tags') as string || '[]')
+    const files = formData.getAll('files') as File[]
+
+    // Validation
+    if (!title?.trim()) {
       return NextResponse.json(
         { error: "Le titre est requis" },
         { status: 400 }
       )
     }
 
-    if (!postData.content?.trim()) {
+    if (!content?.trim()) {
       return NextResponse.json(
         { error: "Le contenu est requis" },
         { status: 400 }
       )
+    }
+
+    // Upload des fichiers vers Cloudinary
+    const uploadedImages: any[] = []
+    const uploadedAttachments: any[] = []
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+          return NextResponse.json(
+            { error: `Type de fichier non supporté: ${file.name}` },
+            { status: 400 }
+          )
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+          return NextResponse.json(
+            { error: `Fichier trop volumineux: ${file.name} (max 10MB)` },
+            { status: 400 }
+          )
+        }
+
+        try {
+          const uploadResult = await uploadToCloudinary(file, id, userId.toString())
+          const fileData = {
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            name: file.name,
+            type: file.type,
+            size: file.size
+          }
+
+          if (file.type.startsWith('image/')) {
+            uploadedImages.push(fileData)
+          } else {
+            uploadedAttachments.push(fileData)
+          }
+        } catch (uploadError) {
+          console.error('Error uploading file:', uploadError)
+          return NextResponse.json(
+            { error: `Erreur lors de l'upload de ${file.name}` },
+            { status: 500 }
+          )
+        }
+      }
     }
 
     // Créer le post
@@ -248,14 +343,13 @@ export async function POST(
       _id: new ObjectId(),
       groupId: new ObjectId(id),
       authorId: userId,
-      type: postData.type || 'discussion',
-      title: postData.title.trim(),
-      content: postData.content.trim(),
-      excerpt: postData.content.trim().substring(0, 200) + 
-               (postData.content.trim().length > 200 ? '...' : ''),
-      images: postData.images || [], // URLs uploadées via /upload
-      attachments: postData.attachments || [], // Fichiers uploadés via /upload
-      tags: postData.tags || [],
+      type: type,
+      title: title.trim(),
+      content: content.trim(),
+      excerpt: content.trim().substring(0, 200) + (content.trim().length > 200 ? '...' : ''),
+      images: uploadedImages,
+      attachments: uploadedAttachments,
+      tags: tags,
       reactions: [],
       reactionCounts: { 
         like: 0, 
@@ -277,28 +371,131 @@ export async function POST(
       publishedAt: new Date()
     }
 
-    console.log('💾 Saving post to database...')
-    
     // Insérer dans la base de données
     const result = await db.collection("group_posts").insertOne(post)
-    
-    console.log('✅ Post created with ID:', result.insertedId.toString())
 
     // Mettre à jour les statistiques du groupe
-// Mettre à jour les statistiques du groupe
-await db.collection("groups").updateOne(
-  { _id: new ObjectId(id) },
-  { 
-    $inc: { 
-      'stats.totalPosts': 1
-    },
-    $set: { 
-      updatedAt: new Date(),
-      'stats.lastActivityAt': new Date()  // Utiliser $set pour la date
+    await db.collection("groups").updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $inc: { 'stats.totalPosts': 1 },
+        $set: { 
+          updatedAt: new Date(),
+          'stats.lastActivityAt': new Date()
+        }
+      }
+    )
+
+    // ============================================
+    // 📢 ENVOYER DES NOTIFICATIONS AUX MEMBRES DU GROUPE
+    // ============================================
+    try {
+      // Récupérer tous les membres du groupe (sauf l'auteur)
+      const groupMembers = await db.collection("group_members")
+        .find({
+          groupId: new ObjectId(id),
+          userId: { $ne: userId },
+          status: 'active'
+        })
+        .toArray()
+
+      if (groupMembers.length > 0) {
+        // Messages de notification multilingues
+        const notificationMessages = {
+          fr: {
+            title: `📝 Nouveau post dans ${group.name}`,
+            message: `${userName} a publié "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`
+          },
+          en: {
+            title: `📝 New post in ${group.name}`,
+            message: `${userName} published "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`
+          },
+          mg: {
+            title: `📝 Lahatsoratra vaovao ao amin'ny ${group.name}`,
+            message: `${userName} namoaka "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`
+          }
+        }
+
+        // Envoyer les notifications à chaque membre
+        for (const member of groupMembers) {
+          const userLang = await getUserLanguage(db, member.userId.toString())
+          const msg = notificationMessages[userLang] || notificationMessages.fr
+
+          await notificationService.send({
+            userId: member.userId.toString(),
+            category: 'COMMUNITY',
+            priority: 'MEDIUM',
+            title: msg.title,
+            message: msg.message,
+            actionUrl: `/groups/${id}/posts/${post._id}`,
+            data: {
+              entityType: 'group_post',
+              action: 'create',
+              groupId: id,
+              groupName: group.name,
+              postId: post._id.toString(),
+              postTitle: title,
+              authorId: userId.toString(),
+              authorName: userName,
+              authorAvatar: userAvatar,
+              tags: tags,
+              hasImages: uploadedImages.length > 0,
+              hasAttachments: uploadedAttachments.length > 0,
+              timestamp: new Date().toISOString()
+            },
+            checkPreferences: true
+          })
+        }
+
+        console.log(`✅ Notifications envoyées à ${groupMembers.length} membres du groupe`)
+      }
+    } catch (notifError) {
+      console.error('⚠️ Erreur lors de l\'envoi des notifications:', notifError)
     }
-  }
-);
-    console.log('📊 Group stats updated')
+
+    // ============================================
+    // 📢 NOTIFICATION À L'AUTEUR (confirmation)
+    // ============================================
+    try {
+      const userLang = await getUserLanguage(db, userId.toString())
+      const confirmMessages = {
+        fr: {
+          title: "✅ Post publié avec succès",
+          message: `Votre post "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}" a été publié dans ${group.name}`
+        },
+        en: {
+          title: "✅ Post published successfully",
+          message: `Your post "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}" has been published in ${group.name}`
+        },
+        mg: {
+          title: "✅ Navoaka soa aman-tsara ny lahatsoratra",
+          message: `Navoaka tao amin'ny ${group.name} ny lahatsoratrao "${title.substring(0, 50)}${title.length > 50 ? '...' : ''}"`
+        }
+      }
+
+      const msg = confirmMessages[userLang] || confirmMessages.fr
+
+      await notificationService.send({
+        userId: userId.toString(),
+        category: 'SYSTEM',
+        priority: 'LOW',
+        title: msg.title,
+        message: msg.message,
+        actionUrl: `/groups/${id}/posts/${post._id}`,
+        data: {
+          entityType: 'group_post',
+          action: 'create_confirm',
+          groupId: id,
+          groupName: group.name,
+          postId: post._id.toString(),
+          postTitle: title,
+          timestamp: new Date().toISOString()
+        },
+        checkPreferences: true
+      })
+    } catch (notifError) {
+      console.error('⚠️ Erreur lors de l\'envoi de la notification de confirmation:', notifError)
+    }
 
     // Formatage de la réponse
     const response = {
@@ -309,27 +506,17 @@ await db.collection("groups").updateOne(
       author: {
         _id: userId.toString(),
         name: userName,
-        avatar: session.user?.image || null,
+        avatar: userAvatar,
         role: member.role
       }
     }
-
-    console.log('🎉 Post created successfully:', {
-      postId: response._id,
-      title: response.title.substring(0, 30)
-    })
 
     return NextResponse.json(response, { status: 201 })
 
   } catch (error: any) {
     console.error("❌ Error creating post:", error)
-    console.error("Stack trace:", error.stack)
-    
     return NextResponse.json(
-      { 
-        error: "Erreur lors de la création du post",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      },
+      { error: "Erreur lors de la création du post" },
       { status: 500 }
     )
   }
@@ -360,7 +547,6 @@ export async function PUT(
       )
     }
 
-    // Vérifier si l'utilisateur est l'auteur du post ou admin
     const post = await db.collection("group_posts").findOne({
       _id: new ObjectId(postId),
       groupId: new ObjectId(groupId)
@@ -387,7 +573,6 @@ export async function PUT(
 
     const updateData = await request.json()
     
-    // Mettre à jour le post
     await db.collection("group_posts").updateOne(
       { _id: new ObjectId(postId) },
       {
@@ -397,6 +582,51 @@ export async function PUT(
         }
       }
     )
+
+    // ============================================
+    // 📢 NOTIFICATION DE MODIFICATION
+    // ============================================
+    try {
+      const userLang = await getUserLanguage(db, userId.toString())
+      const group = await db.collection("groups").findOne({ _id: new ObjectId(groupId) })
+      
+      const updateMessages = {
+        fr: {
+          title: "✏️ Post modifié",
+          message: `Votre post "${post.title.substring(0, 50)}${post.title.length > 50 ? '...' : ''}" a été modifié`
+        },
+        en: {
+          title: "✏️ Post updated",
+          message: `Your post "${post.title.substring(0, 50)}${post.title.length > 50 ? '...' : ''}" has been updated`
+        },
+        mg: {
+          title: "✏️ Nohavaozina ny lahatsoratra",
+          message: `Nohavaozina ny lahatsoratrao "${post.title.substring(0, 50)}${post.title.length > 50 ? '...' : ''}"`
+        }
+      }
+
+      const msg = updateMessages[userLang] || updateMessages.fr
+
+      await notificationService.send({
+        userId: userId.toString(),
+        category: 'SYSTEM',
+        priority: 'LOW',
+        title: msg.title,
+        message: msg.message,
+        actionUrl: `/groups/${groupId}/posts/${postId}`,
+        data: {
+          entityType: 'group_post',
+          action: 'update',
+          groupId,
+          postId,
+          postTitle: post.title,
+          timestamp: new Date().toISOString()
+        },
+        checkPreferences: true
+      })
+    } catch (notifError) {
+      console.error('⚠️ Erreur lors de l\'envoi de la notification de modification:', notifError)
+    }
 
     return NextResponse.json({
       success: true,
@@ -437,7 +667,6 @@ export async function DELETE(
       )
     }
 
-    // Vérifier les permissions
     const post = await db.collection("group_posts").findOne({
       _id: new ObjectId(postId),
       groupId: new ObjectId(groupId)
@@ -462,6 +691,22 @@ export async function DELETE(
       )
     }
 
+    // Supprimer les fichiers de Cloudinary
+    try {
+      for (const image of post.images || []) {
+        if (image.publicId) {
+          await cloudinary.uploader.destroy(image.publicId)
+        }
+      }
+      for (const attachment of post.attachments || []) {
+        if (attachment.publicId) {
+          await cloudinary.uploader.destroy(attachment.publicId, { resource_type: 'raw' })
+        }
+      }
+    } catch (cloudinaryError) {
+      console.error("Error deleting files from Cloudinary:", cloudinaryError)
+    }
+
     // Soft delete: marquer comme archivé
     await db.collection("group_posts").updateOne(
       { _id: new ObjectId(postId) },
@@ -483,6 +728,51 @@ export async function DELETE(
         $set: { updatedAt: new Date() }
       }
     )
+
+    // ============================================
+    // 📢 NOTIFICATION DE SUPPRESSION
+    // ============================================
+    try {
+      const userLang = await getUserLanguage(db, userId.toString())
+      const group = await db.collection("groups").findOne({ _id: new ObjectId(groupId) })
+      
+      const deleteMessages = {
+        fr: {
+          title: "🗑️ Post supprimé",
+          message: `Votre post "${post.title.substring(0, 50)}${post.title.length > 50 ? '...' : ''}" a été supprimé`
+        },
+        en: {
+          title: "🗑️ Post deleted",
+          message: `Your post "${post.title.substring(0, 50)}${post.title.length > 50 ? '...' : ''}" has been deleted`
+        },
+        mg: {
+          title: "🗑️ Nofafana ny lahatsoratra",
+          message: `Nofafana ny lahatsoratrao "${post.title.substring(0, 50)}${post.title.length > 50 ? '...' : ''}"`
+        }
+      }
+
+      const msg = deleteMessages[userLang] || deleteMessages.fr
+
+      await notificationService.send({
+        userId: userId.toString(),
+        category: 'SYSTEM',
+        priority: 'MEDIUM',
+        title: msg.title,
+        message: msg.message,
+        actionUrl: `/groups/${groupId}`,
+        data: {
+          entityType: 'group_post',
+          action: 'delete',
+          groupId,
+          postId,
+          postTitle: post.title,
+          timestamp: new Date().toISOString()
+        },
+        checkPreferences: true
+      })
+    } catch (notifError) {
+      console.error('⚠️ Erreur lors de l\'envoi de la notification de suppression:', notifError)
+    }
 
     return NextResponse.json({
       success: true,
