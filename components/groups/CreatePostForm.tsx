@@ -4,7 +4,8 @@
 import { useState, useRef } from 'react'
 import { 
   X, Type, Calendar, Briefcase, MessageSquare, Hash, 
-  Image as ImageIcon, Paperclip, XCircle, Upload, FileText 
+  Image as ImageIcon, Paperclip, XCircle, Upload, FileText,
+  Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,7 @@ interface UploadedFile {
   type: string
   size: number
   thumbnail?: string
+  preview?: string
 }
 
 interface CreatePostFormProps {
@@ -37,13 +39,13 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
   const [postType, setPostType] = useState('discussion')
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    type: 'discussion',
     tags: [] as string[],
     // Pour les événements
     eventTitle: '',
@@ -63,57 +65,49 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
     jobCurrency: 'EUR'
   })
 
-  // Gestion de l'upload de fichiers
-  const handleFileUpload = async (files: FileList) => {
+  // Prévisualisation des images
+  const handleFileSelect = (files: FileList) => {
     if (files.length === 0) return
     
-    setUploading(true)
+    const newFiles = Array.from(files)
+    setSelectedFiles(prev => [...prev, ...newFiles])
     
-    try {
-      const formData = new FormData()
-      Array.from(files).forEach(file => {
-        formData.append('files', file)
-      })
-      // Ajouter le dossier pour organiser les fichiers
-      formData.append('folder', 'groups')
-
-      // Upload vers l'API générale
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        // Formater les fichiers pour correspondre à notre interface
-        const newFiles = result.files.map((file: any) => ({
-          url: file.url,
-          publicId: file.publicId,
-          name: file.name,
-          type: file.type.startsWith('image/') ? 'image' : 'document',
-          mimeType: file.type,
-          size: file.size,
-          thumbnail: file.thumbnail
-        }))
-        setUploadedFiles(prev => [...prev, ...newFiles])
-        toast.success(`${result.files.length} fichier(s) uploadé(s) avec succès`)
+    // Créer des prévisualisations pour les images
+    newFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setUploadedFiles(prev => [
+            ...prev,
+            {
+              url: e.target?.result as string,
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              preview: e.target?.result as string
+            }
+          ])
+        }
+        reader.readAsDataURL(file)
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Erreur lors de l\'upload')
+        setUploadedFiles(prev => [
+          ...prev,
+          {
+            url: '',
+            name: file.name,
+            type: file.type,
+            size: file.size
+          }
+        ])
       }
-    } catch (error) {
-      console.error('Upload error:', error)
-      toast.error('Erreur lors de l\'upload des fichiers')
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }
+    })
+    
+    toast.success(`${newFiles.length} fichier(s) sélectionné(s)`)
   }
 
-  // Supprimer un fichier uploadé
+  // Supprimer un fichier sélectionné
   const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
@@ -130,6 +124,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
       const newTags = [...tags, tag.trim()]
       setTags(newTags)
       setFormData(prev => ({ ...prev, tags: newTags }))
+      setTagInput('')
     }
   }
 
@@ -142,73 +137,55 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.title.trim() || !formData.content.trim()) {
-      toast.error('Veuillez remplir tous les champs obligatoires')
+    if (!formData.title.trim()) {
+      toast.error('Veuillez entrer un titre')
+      return
+    }
+
+    if (!formData.content.trim()) {
+      toast.error('Veuillez entrer un contenu')
       return
     }
 
     setLoading(true)
     
     try {
-      // Séparer images et documents
-      const images = uploadedFiles
-        .filter(f => f.type === 'image')
-        .map(f => ({
-          url: f.url,
-          publicId: f.publicId,
-          name: f.name,
-          type: f.mimeType || 'image/jpeg',
-          size: f.size,
-          thumbnail: f.thumbnail
-        }))
+      // Créer FormData pour l'upload des fichiers
+      const formDataToSend = new FormData()
+      formDataToSend.append('title', formData.title)
+      formDataToSend.append('content', formData.content)
+      formDataToSend.append('type', postType)
+      formDataToSend.append('tags', JSON.stringify(formData.tags))
       
-      const attachments = uploadedFiles
-        .filter(f => f.type === 'document')
-        .map(f => ({
-          url: f.url,
-          publicId: f.publicId,
-          name: f.name,
-          type: f.mimeType,
-          size: f.size
-        }))
-
-      const postData = {
-        type: postType,
-        title: formData.title,
-        content: formData.content,
-        tags: formData.tags,
-        images,
-        attachments,
-        ...(postType === 'event' && {
-          event: {
-            title: formData.eventTitle,
-            description: formData.eventDescription,
-            startDate: formData.eventStartDate,
-            endDate: formData.eventEndDate,
-            location: formData.eventLocation,
-            isOnline: formData.eventIsOnline
-          }
-        }),
-        ...(postType === 'job' && {
-          job: {
-            title: formData.jobTitle,
-            company: formData.jobCompany,
-            location: formData.jobLocation,
-            type: formData.jobType,
-            description: formData.jobDescription,
-            salary: formData.jobSalaryMin ? {
-              min: parseFloat(formData.jobSalaryMin),
-              max: parseFloat(formData.jobSalaryMax),
-              currency: formData.jobCurrency
-            } : undefined
-          }
-        })
+      // Ajouter les fichiers
+      selectedFiles.forEach(file => {
+        formDataToSend.append('files', file)
+      })
+      
+      // Ajouter les données spécifiques selon le type
+      if (postType === 'event') {
+        formDataToSend.append('eventTitle', formData.eventTitle)
+        formDataToSend.append('eventDescription', formData.eventDescription)
+        formDataToSend.append('eventStartDate', formData.eventStartDate)
+        formDataToSend.append('eventEndDate', formData.eventEndDate)
+        formDataToSend.append('eventLocation', formData.eventLocation)
+        formDataToSend.append('eventIsOnline', String(formData.eventIsOnline))
+      }
+      
+      if (postType === 'job') {
+        formDataToSend.append('jobTitle', formData.jobTitle)
+        formDataToSend.append('jobCompany', formData.jobCompany)
+        formDataToSend.append('jobLocation', formData.jobLocation)
+        formDataToSend.append('jobType', formData.jobType)
+        formDataToSend.append('jobDescription', formData.jobDescription)
+        if (formData.jobSalaryMin) formDataToSend.append('jobSalaryMin', formData.jobSalaryMin)
+        if (formData.jobSalaryMax) formDataToSend.append('jobSalaryMax', formData.jobSalaryMax)
+        formDataToSend.append('jobCurrency', formData.jobCurrency)
       }
 
       const response = await fetch(`/api/groups/${groupId}/posts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData)
+        body: formDataToSend
       })
 
       if (response.ok) {
@@ -227,11 +204,13 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
   }
 
   return (
-    <Card className="max-w-4xl mx-auto">
+    <Card className="max-w-4xl mx-auto border-0 shadow-xl">
       <CardContent className="pt-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">Créer un nouveau post</h3>
-          <Button variant="ghost" size="sm" onClick={onCancel}>
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-700 to-fuchsia-700 bg-clip-text text-transparent">
+            Créer un nouveau post
+          </h3>
+          <Button variant="ghost" size="sm" onClick={onCancel} className="hover:bg-purple-50">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -239,22 +218,22 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Type de post */}
           <div>
-            <Label className="mb-3 block">Type de post</Label>
+            <Label className="mb-3 block text-purple-700 dark:text-purple-300">Type de post</Label>
             <Tabs value={postType} onValueChange={setPostType}>
-              <TabsList className="grid grid-cols-4">
-                <TabsTrigger value="discussion" className="flex items-center gap-2">
+              <TabsList className="grid grid-cols-4 bg-purple-50 dark:bg-purple-950/30">
+                <TabsTrigger value="discussion" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
                   <MessageSquare className="h-4 w-4" />
                   <span className="hidden sm:inline">Discussion</span>
                 </TabsTrigger>
-                <TabsTrigger value="question" className="flex items-center gap-2">
+                <TabsTrigger value="question" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
                   <Type className="h-4 w-4" />
                   <span className="hidden sm:inline">Question</span>
                 </TabsTrigger>
-                <TabsTrigger value="event" className="flex items-center gap-2">
+                <TabsTrigger value="event" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
                   <Calendar className="h-4 w-4" />
                   <span className="hidden sm:inline">Événement</span>
                 </TabsTrigger>
-                <TabsTrigger value="job" className="flex items-center gap-2">
+                <TabsTrigger value="job" className="flex items-center gap-2 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
                   <Briefcase className="h-4 w-4" />
                   <span className="hidden sm:inline">Offre</span>
                 </TabsTrigger>
@@ -264,37 +243,37 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
 
           {/* Titre */}
           <div>
-            <Label htmlFor="title">Titre *</Label>
+            <Label htmlFor="title" className="text-purple-700 dark:text-purple-300">Titre *</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Donnez un titre clair à votre post"
-              className="mt-2"
+              className="mt-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 focus:ring-purple-500"
               maxLength={200}
             />
           </div>
 
           {/* Contenu */}
           <div>
-            <Label htmlFor="content">Contenu *</Label>
+            <Label htmlFor="content" className="text-purple-700 dark:text-purple-300">Contenu *</Label>
             <Textarea
               id="content"
               value={formData.content}
               onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
               placeholder="Partagez vos pensées, questions ou annonces..."
               rows={6}
-              className="mt-2"
+              className="mt-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 focus:ring-purple-500"
               maxLength={5000}
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-purple-500 mt-1">
               {formData.content.length}/5000 caractères
             </p>
           </div>
 
           {/* Upload de fichiers */}
           <div>
-            <Label className="mb-2 block">Médias et fichiers joints</Label>
+            <Label className="mb-2 block text-purple-700 dark:text-purple-300">Médias et fichiers joints</Label>
             
             <div className="mb-4">
               <input
@@ -302,20 +281,20 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                 type="file"
                 multiple
                 accept="image/*,.pdf,.doc,.docx,.txt"
-                onChange={(e) => handleFileUpload(e.target.files!)}
+                onChange={(e) => handleFileSelect(e.target.files!)}
                 className="hidden"
                 id="file-upload"
               />
               <label htmlFor="file-upload" className="cursor-pointer">
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 hover:bg-slate-50 transition-all">
-                  <Upload className="h-8 w-8 text-slate-400 mx-auto mb-3" />
-                  <p className="text-sm text-slate-600 mb-2">
+                <div className="border-2 border-dashed border-purple-200 dark:border-purple-800 rounded-lg p-8 text-center hover:border-purple-400 hover:bg-purple-50/30 dark:hover:bg-purple-950/20 transition-all">
+                  <Upload className="h-8 w-8 text-purple-400 mx-auto mb-3" />
+                  <p className="text-sm text-purple-600 dark:text-purple-400 mb-2">
                     Glissez-déposez vos fichiers ou cliquez pour sélectionner
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-purple-500 dark:text-purple-500">
                     Images (JPG, PNG, GIF, WEBP) et documents (PDF, DOC, TXT) jusqu'à 10MB
                   </p>
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-purple-400 mt-2">
                     Max 10 fichiers à la fois
                   </p>
                 </div>
@@ -326,16 +305,19 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
             {uploadedFiles.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">
+                  <span className="text-purple-600 dark:text-purple-400">
                     {uploadedFiles.length} fichier(s) • {formattedSize(totalFileSize)}
                   </span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setUploadedFiles([])}
+                    onClick={() => {
+                      setSelectedFiles([])
+                      setUploadedFiles([])
+                    }}
                     disabled={uploading}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
                   >
                     Tout supprimer
                   </Button>
@@ -345,12 +327,12 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                   {uploadedFiles.map((file, index) => (
                     <div
                       key={index}
-                      className="relative border rounded-lg p-3 group hover:bg-slate-50 hover:shadow-md transition-all"
+                      className="relative border border-purple-200 dark:border-purple-800 rounded-lg p-3 group hover:bg-purple-50/30 dark:hover:bg-purple-950/20 hover:shadow-md transition-all"
                     >
-                      {file.type === 'image' ? (
-                        <div className="aspect-video relative mb-2 rounded overflow-hidden">
+                      {file.preview ? (
+                        <div className="aspect-video relative mb-2 rounded overflow-hidden bg-purple-50 dark:bg-purple-950/30">
                           <Image
-                            src={file.thumbnail || file.url}
+                            src={file.preview}
                             alt={file.name}
                             fill
                             className="object-cover"
@@ -358,15 +340,15 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                           />
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center h-24 bg-slate-100 rounded mb-2">
-                          <FileText className="h-12 w-12 text-slate-400" />
+                        <div className="flex items-center justify-center h-24 bg-purple-50 dark:bg-purple-950/30 rounded mb-2">
+                          <FileText className="h-12 w-12 text-purple-400" />
                         </div>
                       )}
                       
-                      <div className="text-xs truncate font-medium" title={file.name}>
+                      <div className="text-xs truncate font-medium text-purple-900 dark:text-purple-300" title={file.name}>
                         {file.name}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-purple-500 dark:text-purple-400">
                         {formattedSize(file.size)}
                       </div>
                       
@@ -382,21 +364,14 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                 </div>
               </div>
             )}
-            
-            {uploading && (
-              <div className="text-center py-4">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <p className="text-sm text-slate-600 mt-2">Upload en cours...</p>
-              </div>
-            )}
           </div>
 
           {/* Tags */}
           <div>
-            <Label className="mb-2 block">Tags</Label>
+            <Label className="mb-2 block text-purple-700 dark:text-purple-300">Tags</Label>
             <div className="flex gap-2 mb-3">
               <div className="relative flex-1">
-                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 h-4 w-4" />
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
@@ -405,20 +380,17 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                     if (e.key === 'Enter') {
                       e.preventDefault()
                       addTag(tagInput)
-                      setTagInput('')
                     }
                   }}
-                  className="pl-9"
+                  className="pl-9 border-purple-200 dark:border-purple-800 focus:border-purple-500"
                 />
               </div>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  addTag(tagInput)
-                  setTagInput('')
-                }}
+                onClick={() => addTag(tagInput)}
                 disabled={!tagInput.trim()}
+                className="border-purple-200 dark:border-purple-800 hover:bg-purple-50"
               >
                 Ajouter
               </Button>
@@ -426,7 +398,7 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
             
             <div className="flex flex-wrap gap-2">
               {tags.map(tag => (
-                <Badge key={tag} variant="secondary" className="px-3 py-1">
+                <Badge key={tag} variant="secondary" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1">
                   #{tag}
                   <button
                     type="button"
@@ -438,56 +410,61 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                 </Badge>
               ))}
               {tags.length === 0 && (
-                <p className="text-sm text-slate-400">Aucun tag ajouté</p>
+                <p className="text-sm text-purple-400">Aucun tag ajouté</p>
               )}
             </div>
           </div>
 
           {/* Formulaires spécifiques pour événements */}
           {postType === 'event' && (
-            <div className="space-y-4 border-t pt-4">
-              <h4 className="font-medium">Détails de l'événement</h4>
+            <div className="space-y-4 border-t border-purple-200 dark:border-purple-800 pt-4">
+              <h4 className="font-medium text-purple-700 dark:text-purple-300">Détails de l'événement</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Titre de l'événement</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Titre de l'événement</Label>
                   <Input
                     value={formData.eventTitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, eventTitle: e.target.value }))}
                     placeholder="Titre de l'événement"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Lieu</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Lieu</Label>
                   <Input
                     value={formData.eventLocation}
                     onChange={(e) => setFormData(prev => ({ ...prev, eventLocation: e.target.value }))}
                     placeholder="Lieu (ou 'En ligne')"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Date de début</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Date de début</Label>
                   <Input
                     type="datetime-local"
                     value={formData.eventStartDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, eventStartDate: e.target.value }))}
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Date de fin</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Date de fin</Label>
                   <Input
                     type="datetime-local"
                     value={formData.eventEndDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, eventEndDate: e.target.value }))}
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
               </div>
               <div>
-                <Label>Description de l'événement</Label>
+                <Label className="text-purple-600 dark:text-purple-400">Description de l'événement</Label>
                 <Textarea
                   value={formData.eventDescription}
                   onChange={(e) => setFormData(prev => ({ ...prev, eventDescription: e.target.value }))}
                   placeholder="Décrivez l'événement..."
                   rows={3}
+                  className="border-purple-200 dark:border-purple-800"
                 />
               </div>
             </div>
@@ -495,39 +472,42 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
 
           {/* Formulaires spécifiques pour offres d'emploi */}
           {postType === 'job' && (
-            <div className="space-y-4 border-t pt-4">
-              <h4 className="font-medium">Détails de l'offre</h4>
+            <div className="space-y-4 border-t border-purple-200 dark:border-purple-800 pt-4">
+              <h4 className="font-medium text-purple-700 dark:text-purple-300">Détails de l'offre</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Poste</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Poste</Label>
                   <Input
                     value={formData.jobTitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
                     placeholder="Intitulé du poste"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Entreprise</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Entreprise</Label>
                   <Input
                     value={formData.jobCompany}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobCompany: e.target.value }))}
                     placeholder="Nom de l'entreprise"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Lieu</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Lieu</Label>
                   <Input
                     value={formData.jobLocation}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobLocation: e.target.value }))}
                     placeholder="Lieu (ou 'Télétravail')"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Type de contrat</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Type de contrat</Label>
                   <select
                     value={formData.jobType}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobType: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border border-purple-200 dark:border-purple-800 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 focus:border-purple-500 focus:ring-purple-500"
                   >
                     <option value="full-time">CDI - Temps plein</option>
                     <option value="part-time">CDI - Temps partiel</option>
@@ -537,60 +517,59 @@ export function CreatePostForm({ groupId, onSuccess, onCancel }: CreatePostFormP
                   </select>
                 </div>
                 <div>
-                  <Label>Salaire minimum (optionnel)</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Salaire minimum</Label>
                   <Input
                     type="number"
                     value={formData.jobSalaryMin}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobSalaryMin: e.target.value }))}
                     placeholder="Minimum"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
                 <div>
-                  <Label>Salaire maximum (optionnel)</Label>
+                  <Label className="text-purple-600 dark:text-purple-400">Salaire maximum</Label>
                   <Input
                     type="number"
                     value={formData.jobSalaryMax}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobSalaryMax: e.target.value }))}
                     placeholder="Maximum"
+                    className="border-purple-200 dark:border-purple-800"
                   />
                 </div>
               </div>
               <div>
-                <Label>Description du poste</Label>
+                <Label className="text-purple-600 dark:text-purple-400">Description du poste</Label>
                 <Textarea
                   value={formData.jobDescription}
                   onChange={(e) => setFormData(prev => ({ ...prev, jobDescription: e.target.value }))}
                   placeholder="Description des missions, prérequis, etc..."
                   rows={4}
+                  className="border-purple-200 dark:border-purple-800"
                 />
               </div>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-purple-200 dark:border-purple-800">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
-              disabled={loading || uploading}
+              disabled={loading}
+              className="border-purple-200 dark:border-purple-800 hover:bg-purple-50"
             >
               Annuler
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || uploading}
-              className="bg-blue-600 hover:bg-blue-700"
+              disabled={loading}
+              className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 shadow-lg shadow-purple-500/25"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Publication...
-                </>
-              ) : uploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Upload en cours...
                 </>
               ) : (
                 'Publier'
