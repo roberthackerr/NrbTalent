@@ -1,4 +1,23 @@
 {
+  "messages": {
+    "messages": "Messages",
+    "conversations": "conversations",
+    "unread": "non lus",
+    "new": "Nouveau",
+    "search": "Rechercher...",
+    "noMessages": "Aucun message",
+    "justNow": "à l'instant",
+    "min": "min",
+    "h": "h",
+    "d": "j",
+    "user": "Utilisateur",
+    "noResults": "Aucun résultat",
+    "noConversations": "Aucune conversation",
+    "tryDifferent": "Essayez une autre recherche",
+    "startNew": "Commencez une nouvelle conversation",
+    "newConversation": "Nouvelle conversation",
+    "viewAll": "Voir tous les messages"
+  },
    "navigations": {
     "home": "Accueil",
     "signin": "Connexion",

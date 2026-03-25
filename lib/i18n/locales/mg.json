@@ -1,4 +1,23 @@
 {
+  "messages": {
+    "messages": "Hafatra",
+    "conversations": "resaka",
+    "unread": "tsy novakiana",
+    "new": "Vaovao",
+    "search": "Mitady...",
+    "noMessages": "Tsy misy hafatra",
+    "justNow": "vao izao",
+    "min": "mn",
+    "h": "ora",
+    "d": "and",
+    "user": "Mpampiasa",
+    "noResults": "Tsy misy valiny",
+    "noConversations": "Tsy misy resaka",
+    "tryDifferent": "Andramo fikarohana hafa",
+    "startNew": "Manomboka resaka vaovao",
+    "newConversation": "Resaka vaovao",
+    "viewAll": "Jereo ny hafatra rehetra"
+  },
   "navigations": {
     "home": "Fandraisana",
     "signin": "Hiditra",

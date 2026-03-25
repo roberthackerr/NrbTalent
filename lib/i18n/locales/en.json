@@ -1,4 +1,23 @@
 {
+  "messages": {
+    "messages": "Messages",
+    "conversations": "conversations",
+    "unread": "unread",
+    "new": "New",
+    "search": "Search...",
+    "noMessages": "No messages",
+    "justNow": "just now",
+    "min": "min",
+    "h": "h",
+    "d": "d",
+    "user": "User",
+    "noResults": "No results",
+    "noConversations": "No conversations",
+    "tryDifferent": "Try a different search",
+    "startNew": "Start a new conversation",
+    "newConversation": "New conversation",
+    "viewAll": "View all messages"
+  },
   "navigations": {
     "home": "Home",
     "signin": "Sign in",

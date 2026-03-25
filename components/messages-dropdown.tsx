@@ -69,6 +69,7 @@ export function MessagesDropdown({ dict, lang = "fr" }: MessagesDropdownProps) {
     return value || fallback
   }
 
+  // Récupérer les vraies conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!session?.user) return
@@ -80,33 +81,19 @@ export function MessagesDropdown({ dict, lang = "fr" }: MessagesDropdownProps) {
           const data = await response.json()
           setConversations(data.conversations || [])
         } else {
-          // Mock data for demo
-          setConversations([
-            {
-              _id: "1",
-              participants: [{ _id: "user1", name: "Marie Dupont", avatar: "" }],
-              lastMessage: { content: "Bonjour, le projet est prêt ?", createdAt: new Date().toISOString() },
-              unreadCount: 2,
-              updatedAt: new Date().toISOString()
-            },
-            {
-              _id: "2",
-              participants: [{ _id: "user2", name: "Jean Martin", avatar: "" }],
-              lastMessage: { content: "Merci pour votre travail !", createdAt: new Date(Date.now() - 3600000).toISOString() },
-              unreadCount: 0,
-              updatedAt: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              _id: "3",
-              participants: [{ _id: "user3", name: "Sophie Bernard", avatar: "" }],
-              lastMessage: { content: "Quand pouvez-vous commencer ?", createdAt: new Date(Date.now() - 86400000).toISOString() },
-              unreadCount: 1,
-              updatedAt: new Date(Date.now() - 86400000).toISOString()
-            }
-          ])
+          // Fallback: essayer l'endpoint principal
+          const fallbackResponse = await fetch('/api/conversations')
+          if (fallbackResponse.ok) {
+            const data = await fallbackResponse.json()
+            setConversations(data.conversations?.slice(0, 5) || [])
+          } else {
+            console.warn('No conversations API available')
+            setConversations([])
+          }
         }
       } catch (error) {
         console.error('Error loading conversations:', error)
+        setConversations([])
       } finally {
         setIsLoading(false)
       }
