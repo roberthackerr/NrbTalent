@@ -66,6 +66,8 @@ import {
   Dev as DevIcon,
   Code as CodeIcon,
   Coffee as CoffeeIcon,
+  ImageIcon,
+  Download,
 } from 'lucide-react'
 import Link from 'next/link'
 import { AIArchitectBadge } from '@/components/projects/AIArchitectBadge'
@@ -110,6 +112,7 @@ interface ProjectData {
     name: string
     url: string
     type: string
+    size:any
   }>
   client?: {
     _id: string
@@ -711,38 +714,96 @@ export default function ProjectDetailsPage() {
               )}
 
               {/* Pièces jointes */}
-              {projectData.attachments && projectData.attachments.length > 0 && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-sky-600" />
-                    {dict?.projects?.attachments || 'Documents du projet'}
-                  </h2>
-                  <div className="grid gap-3">
-                    {projectData.attachments.map((attachment, index) => (
-                      <a
-                        key={index}
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
-                      >
-                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-sky-100 dark:bg-sky-900/30 rounded-lg flex items-center justify-center">
-                          <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-sky-600 dark:text-sky-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate">
-                            {attachment.name}
-                          </p>
-                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-500">{attachment.type}</p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-sky-600 transition-colors" />
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+  {projectData.attachments && projectData.attachments.length > 0 && (
+  <div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
+    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-sky-600" />
+      {dict?.projects?.attachments || 'Documents du projet'}
+    </h2>
+    <div className="grid gap-3">
+      {projectData.attachments.map((attachment, index) => {
+        const isPdf = attachment.type === 'application/pdf' || 
+                      attachment.name?.toLowerCase().endsWith('.pdf')
+        const isImage = attachment.type?.startsWith('image/')
+        
+        return (
+          <div key={index} className="group">
+            <a
+              href={attachment.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={isPdf} // This forces download for PDFs
+              className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center ${
+                isPdf ? 'bg-red-100 dark:bg-red-900/30' : 
+                isImage ? 'bg-green-100 dark:bg-green-900/30' : 
+                'bg-sky-100 dark:bg-sky-900/30'
+              }`}>
+                {isPdf ? (
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
+                ) : isImage ? (
+                  <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
+                ) : (
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-sky-600 dark:text-sky-400" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate">
+                  {attachment.name}
+                </p>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-500">
+                  <span>
+                    {isPdf ? 'PDF Document' : 
+                     isImage ? 'Image' : 
+                     attachment.type?.split('/')[1]?.toUpperCase() || 'File'}
+                  </span>
+                  {attachment.size && (
+                    <>
+                      <span>•</span>
+                      <span>{(attachment.size / 1024).toFixed(1)} KB</span>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-2">
+                {isPdf && (
+                  <span className="text-xs text-slate-400 group-hover:text-sky-600 transition-colors hidden sm:inline">
+                    {dict?.projects?.download || 'Télécharger'}
+                  </span>
+                )}
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-sky-600 transition-colors" />
+              </div>
+            </a>
+            
+            {/* Optional: PDF preview for first PDF */}
+            {isPdf && index === 0 && (
+              <div className="mt-3 pl-14 sm:pl-16">
+                <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 flex items-center justify-between">
+                  <span>{dict?.projects?.preview || 'Aperçu rapide'}</span>
+                  <a
+                    href={attachment.url}
+                    download
+                    className="text-sky-600 hover:underline text-xs flex items-center gap-1"
+                  >
+                    <Download className="w-3 h-3" />
+                    {dict?.projects?.downloadFile || 'Télécharger le fichier'}
+                  </a>
+                </div>
+                <iframe
+                  src={`${attachment.url}#toolbar=0&navpanes=0&scrollbar=0`}
+                  className="w-full h-[200px] sm:h-[300px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50"
+                  title={`Preview of ${attachment.name}`}
+                  loading="lazy"
+                />
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  </div>
+)}
             </div>
 
             {/* Sidebar */}

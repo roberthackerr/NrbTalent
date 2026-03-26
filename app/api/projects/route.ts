@@ -206,10 +206,9 @@ async function uploadAttachmentToCloudinary(attachment: {
     // Ensure base64 has the correct MIME prefix
     let base64WithPrefix = attachment.base64Data
     if (!attachment.base64Data.startsWith('data:')) {
-      // if (isPdf) {
-        //base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
-      // } else 
-      if (isImage) {
+      if (isPdf) {
+        base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
+      } else if (isImage) {
         base64WithPrefix = `data:${attachment.type};base64,${attachment.base64Data}`
       } else {
         base64WithPrefix = `data:application/octet-stream;base64,${attachment.base64Data}`
@@ -225,11 +224,11 @@ async function uploadAttachmentToCloudinary(attachment: {
     }
 
     // ✅ For PDFs, add flags to allow inline viewing
-    // if (isPdf) {
-    //   uploadOptions.flags = 'attachment' // Forces download instead of trying to display
+    if (isPdf) {
+      uploadOptions.flags = 'attachment' // Forces download instead of trying to display
     //   // OR use this for inline viewing:
     //   // uploadOptions.flags = 'attachment:inline'
-    // }
+    }
 
     // For images only, add transformations
     if (isImage) {
