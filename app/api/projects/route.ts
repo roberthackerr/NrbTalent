@@ -195,30 +195,46 @@ async function uploadAttachmentToCloudinary(attachment: {
     const isPdf = attachment.type === 'application/pdf'
     const isImage = attachment.type.startsWith('image/')
     
+    // ✅ Extract file extension
+    const fileExt = attachment.name.split('.').pop()?.toLowerCase() || ''
+    const nameWithoutExt = attachment.name.replace(/\.[^/.]+$/, '')
+    const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_')
+    
+    // ✅ Preserve extension in public_id
+    const publicIdWithExt = `${Date.now()}_${safeName}.${fileExt}`
+    
     // Ensure base64 has the correct MIME prefix
     let base64WithPrefix = attachment.base64Data
     if (!attachment.base64Data.startsWith('data:')) {
-      base64WithPrefix = isPdf 
-        ? `data:application/pdf;base64,${attachment.base64Data}`
-        : `data:${attachment.type};base64,${attachment.base64Data}`
+      if (isPdf) {
+        base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
+      } else if (isImage) {
+        base64WithPrefix = `data:${attachment.type};base64,${attachment.base64Data}`
+      } else {
+        base64WithPrefix = `data:application/octet-stream;base64,${attachment.base64Data}`
+      }
     }
 
     const uploadOptions: Record<string, any> = {
-      folder: 'nrbtalents/projects', // Match verification folder structure
-      public_id: `project_attachments/${Date.now()}_${attachment.name.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+      folder: 'nrbtalents/projects',
+      public_id: publicIdWithExt, // ✅ Now includes .pdf extension
       resource_type: isPdf ? 'raw' : isImage ? 'image' : 'raw',
       access_mode: 'public',
       tags: ['project', 'attachment'],
     }
 
-    // For PDFs, don't add transformation that forces download
-    if (!isPdf) {
+    // For images only, add transformations
+    if (isImage) {
       uploadOptions.transformation = [
         { width: 1200, crop: 'limit', quality: 'auto' }
       ]
     }
 
+    console.log(`📤 Uploading [${attachment.name}] as ${uploadOptions.resource_type} with public_id: ${publicIdWithExt}`)
+    
     const result = await cloudinary.uploader.upload(base64WithPrefix, uploadOptions)
+    
+    console.log(`✅ Uploaded to: ${result.secure_url}`)
     
     return {
       url: result.secure_url,
