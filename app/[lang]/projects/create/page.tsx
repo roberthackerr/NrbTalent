@@ -213,51 +213,95 @@ export default function CreateProjectPage() {
   }
 
   // Gestion de l'upload multiple
-  const handleFileUpload = async (files: FileList) => {
-    if (files.length === 0) return
+// Assurez-vous que la fonction handleFileUpload est correcte
+const handleFileUpload = async (files: FileList) => {
+  if (!files || files.length === 0) return
+  
+  setUploading(true)
+  setUploadProgress(0)
+  
+  const filesArray = Array.from(files)
+  const validFiles: File[] = []
+  const invalidFiles: string[] = []
+  
+  // Valider les fichiers
+  for (const file of filesArray) {
+    // Vérifier le type
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      invalidFiles.push(`${file.name} (type non supporté)`)
+      continue
+    }
     
-    setUploading(true)
-    setUploadProgress(0)
+    // Vérifier la taille
+    if (file.size > MAX_FILE_SIZE) {
+      invalidFiles.push(`${file.name} (taille > 10MB)`)
+      continue
+    }
     
-    const newFiles: UploadedFile[] = []
-    let completed = 0
-    
-    for (const file of Array.from(files)) {
-      // Vérifier le type
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        toast.error(`${file.name}: ${t.invalidFileType || "Type de fichier non supporté"}`)
-        continue
+    validFiles.push(file)
+  }
+  
+  // Afficher les erreurs
+  if (invalidFiles.length > 0) {
+    toast.error(`${invalidFiles.length} fichier(s) ignoré(s):\n${invalidFiles.join('\n')}`)
+  }
+  
+  if (validFiles.length === 0) {
+    setUploading(false)
+    return
+  }
+  
+  const newFiles: UploadedFile[] = []
+  let completed = 0
+  
+  for (const file of validFiles) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'projects')
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed for ${file.name}`)
       }
       
-      // Vérifier la taille
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name}: ${t.fileTooLarge || "Fichier trop volumineux (max 10MB)"}`)
-        continue
-      }
-      
-      // Upload du fichier
-      const uploadedFile = await uploadFile(file)
-      if (uploadedFile) {
-        newFiles.push(uploadedFile)
-      }
+      const result = await response.json()
+      newFiles.push({
+        url: result.url,
+        publicId: result.publicId,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        thumbnail: result.thumbnail
+      })
       
       completed++
-      setUploadProgress((completed / files.length) * 100)
-    }
-    
-    setUploadedFiles(prev => [...prev, ...newFiles])
-    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
-    setUploading(false)
-    setUploadProgress(0)
-    
-    if (newFiles.length > 0) {
-      toast.success(`${newFiles.length} ${t.filesUploaded || "fichier(s) uploadé(s)"}`)
-    }
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      setUploadProgress((completed / validFiles.length) * 100)
+      
+    } catch (error) {
+      console.error(`Error uploading ${file.name}:`, error)
+      toast.error(`Erreur lors de l'upload de ${file.name}`)
     }
   }
+  
+  if (newFiles.length > 0) {
+    setUploadedFiles(prev => [...prev, ...newFiles])
+    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+    toast.success(`${newFiles.length} fichier(s) uploadé(s) avec succès`)
+  }
+  
+  setUploading(false)
+  setUploadProgress(0)
+  
+  // Reset le input file
+  if (fileInputRef.current) {
+    fileInputRef.current.value = ''
+  }
+}
 
   // Supprimer un fichier
   const removeFile = (index: number) => {

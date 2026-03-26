@@ -1,4 +1,4 @@
-// app/api/projects/route.ts - Version avec notifications multilingues
+// app/api/projects/route.ts - Version avec notifications multilingues et gestion des fichiers
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -84,7 +84,7 @@ const GetProjectsQuerySchema = z.object({
     })
 })
 
-// Schéma de validation pour POST
+// Schéma de validation pour POST (avec gestion des fichiers)
 const CreateProjectSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(5000),
@@ -95,7 +95,7 @@ const CreateProjectSchema = z.object({
     min: z.number().min(0).max(MAX_BUDGET),
     max: z.number().min(0).max(MAX_BUDGET),
     type: z.enum(["fixed", "hourly"]),
-    currency: z.string().default("USD"),
+    currency: z.string().default("EUR"),
     originalCurrency: z.string().optional(),
     exchangeRate: z.number().optional()
   }),
@@ -105,13 +105,31 @@ const CreateProjectSchema = z.object({
   status: z.enum(["draft", "open"]).default("draft"),
   visibility: z.enum(["public", "private"]).optional().default("public"),
   tags: z.array(z.string()).optional().default([]),
+  attachments: z.array(z.object({
+    url: z.string(),
+    publicId: z.string(),
+    name: z.string(),
+    type: z.string(),
+    size: z.number(),
+    thumbnail: z.string().optional()
+  })).optional().default([]),
   location: z.object({
     remote: z.boolean().default(true),
     country: z.string().optional(),
     city: z.string().optional(),
     timezone: z.string().optional()
   }).optional().default({ remote: true }),
-  metadata: z.object({}).optional().default({})
+  metadata: z.object({
+    urgency: z.enum(["low", "medium", "high"]).optional().default("medium"),
+    complexity: z.enum(["beginner", "intermediate", "expert"]).optional().default("intermediate"),
+    milestones: z.array(z.object({
+      title: z.string(),
+      amount: z.number(),
+      dueDate: z.string(),
+      description: z.string(),
+      currency: z.string()
+    })).optional().default([])
+  }).optional().default({})
 })
 
 // Helper pour récupérer la langue d'un utilisateur
@@ -475,6 +493,12 @@ export async function POST(request: Request) {
       applications: [],
       applicationCount: 0,
       views: 0,
+      attachments: projectData.attachments || [],
+      metadata: {
+        ...projectData.metadata,
+        createdAt: new Date(),
+        lastActivityAt: new Date()
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -703,6 +727,24 @@ export async function DELETE(request: Request) {
 
     const projectTitle = project.title
     const applicantIds = project.applications?.map((app: any) => app.freelancerId) || []
+
+    // Supprimer les fichiers Cloudinary associés
+    try {
+      const attachments = project.attachments || []
+      for (const attachment of attachments) {
+        if (attachment.publicId) {
+          const cloudinary = await import('cloudinary').then(m => m.v2)
+          cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET
+          })
+          await cloudinary.uploader.destroy(attachment.publicId)
+        }
+      }
+    } catch (cloudinaryError) {
+      console.error('Error deleting files from Cloudinary:', cloudinaryError)
+    }
 
     const result = await db.collection("projects").deleteOne({
       _id: new ObjectId(projectId)
