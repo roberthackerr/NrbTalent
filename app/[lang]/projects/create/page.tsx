@@ -1,8 +1,9 @@
-"use client"
+// app/[lang]/projects/create/page.tsx
+'use client'
 
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,12 +32,22 @@ import {
   Globe,
   Calculator,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Briefcase,
+  MapPin,
+  Clock,
+  Layers,
+  Shield,
+  Eye,
+  EyeOff,
+  HeartHandshake,
+  Settings
 } from "lucide-react"
 import { CurrencySelector } from "@/components/currency/CurrencySelector"
-import { useCurrency } from "@/hooks/useCurrency"
-import { currencyConverter } from "@/lib/currency/converter"
-import { MADAGASCAR_CONFIG } from "@/lib/config/madagascar"
+import { getDictionarySafe } from '@/lib/i18n/dictionaries'
+import type { Locale } from '@/lib/i18n/config'
+import { COUNTRIES } from "@/lib/constants/countries"
 
 interface ProjectFormData {
   title: string
@@ -48,8 +59,6 @@ interface ProjectFormData {
     max: number
     type: "fixed" | "hourly"
     currency: string
-    originalCurrency?: string
-    exchangeRate?: number
   }
   skills: string[]
   deadline: string
@@ -68,9 +77,8 @@ interface ProjectFormData {
     currency: string
   }>
   location: {
-    country?: string
-    city?: string
-    timezone?: string
+    country: string
+    city: string
     remote: boolean
   }
 }
@@ -87,36 +95,45 @@ interface Skill {
   avgBudget: number
 }
 
+// Types de projets
+const PROJECT_TYPES = [
+  { value: "fixed", label: "Prix fixe", icon: DollarSign, description: "Budget défini à l'avance" },
+  { value: "hourly", label: "Taux horaire", icon: Clock, description: "Paiement à l'heure travaillée" }
+]
+
+// Niveaux de complexité
+const COMPLEXITY_LEVELS = [
+  { value: "beginner", label: "Débutant", description: "Tâches simples" },
+  { value: "intermediate", label: "Intermédiaire", description: "Expérience requise" },
+  { value: "expert", label: "Expert", description: "Expertise avancée" }
+]
+
+// Urgences
+const URGENCY_LEVELS = [
+  { value: "low", label: "Normal", color: "bg-green-500" },
+  { value: "medium", label: "Urgent", color: "bg-orange-500" },
+  { value: "high", label: "Très urgent", color: "bg-red-500" }
+]
+
 export default function CreateProjectPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { userCurrency, format, convert, rates, loading: ratesLoading } = useCurrency()
+  const params = useParams()
+  const lang = params.lang as Locale
   
+  const [dict, setDict] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [categories, setCategories] = useState<Category[]>([])
   const [popularSkills, setPopularSkills] = useState<Skill[]>([])
   const [skillInput, setSkillInput] = useState("")
   const [tagInput, setTagInput] = useState("")
+  const [complexity, setComplexity] = useState("intermediate")
+  const [urgency, setUrgency] = useState("low")
+  const [showPreview, setShowPreview] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState("MG")
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // États pour la conversion
-  const [showConversion, setShowConversion] = useState(false)
-  const [convertedPreview, setConvertedPreview] = useState<{
-    userCurrency: string
-    amounts: {
-      min: number
-      max: number
-      hourly?: number
-    }
-  } | null>(null)
-  
-  // États pour les estimations horaires
-  const [estimatedHours, setEstimatedHours] = useState(40)
-
-  // Ref pour éviter les boucles infinies
-  const isConvertingRef = useRef(false)
-  const lastConversionRef = useRef<string>('')
-
   const [formData, setFormData] = useState<ProjectFormData>({
     title: "",
     description: "",
@@ -126,7 +143,7 @@ export default function CreateProjectPage() {
       min: 0,
       max: 0,
       type: "fixed",
-      currency: userCurrency
+      currency: "MGA"
     },
     skills: [],
     deadline: "",
@@ -135,87 +152,16 @@ export default function CreateProjectPage() {
     attachments: [],
     milestones: [],
     location: {
+      country: "MG",
+      city: "",
       remote: true
     }
   })
 
-  // Mettre à jour la devise quand userCurrency change (seulement au début)
+  // Charger le dictionnaire
   useEffect(() => {
-    if (formData.budget.min === 0 && formData.budget.max === 0) {
-      setFormData(prev => ({
-        ...prev,
-        budget: {
-          ...prev.budget,
-          currency: userCurrency
-        }
-      }))
-    }
-  }, [userCurrency])
-
-  // Calculer l'estimation pour les projets horaires
-  useEffect(() => {
-    if (formData.budget.type === "hourly" && formData.budget.min > 0 && !isConvertingRef.current) {
-      const total = formData.budget.min * estimatedHours
-      setFormData(prev => ({
-        ...prev,
-        budget: {
-          ...prev.budget,
-          max: total
-        }
-      }))
-    }
-  }, [estimatedHours, formData.budget.type, formData.budget.min])
-
-  // Calculer la conversion pour l'aperçu (avec debounce)
-  useEffect(() => {
-    const calculateConversion = async () => {
-      // Vérifier si on doit calculer
-      if (isConvertingRef.current) return
-      if (formData.budget.min <= 0) {
-        setConvertedPreview(null)
-        return
-      }
-      if (userCurrency === formData.budget.currency) {
-        setConvertedPreview(null)
-        return
-      }
-
-      // Créer une clé unique pour cette conversion
-      const conversionKey = `${formData.budget.min}-${formData.budget.max}-${formData.budget.currency}-${userCurrency}`
-      if (lastConversionRef.current === conversionKey) return
-      
-      isConvertingRef.current = true
-      lastConversionRef.current = conversionKey
-
-      try {
-        const minConverted = await convert(formData.budget.min, formData.budget.currency, userCurrency)
-        const maxConverted = formData.budget.max > 0 
-          ? await convert(formData.budget.max, formData.budget.currency, userCurrency)
-          : minConverted
-          
-        setConvertedPreview({
-          userCurrency,
-          amounts: {
-            min: minConverted,
-            max: maxConverted,
-            hourly: formData.budget.type === "hourly" ? await convert(formData.budget.min, formData.budget.currency, userCurrency) : undefined
-          }
-        })
-      } catch (error) {
-        console.error("Erreur de conversion:", error)
-        setConvertedPreview(null)
-      } finally {
-        isConvertingRef.current = false
-      }
-    }
-    
-    // Debounce de 500ms
-    const timeoutId = setTimeout(() => {
-      calculateConversion()
-    }, 500)
-    
-    return () => clearTimeout(timeoutId)
-  }, [formData.budget.min, formData.budget.max, formData.budget.currency, formData.budget.type, userCurrency, convert])
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
 
   // Charger les catégories et compétences
   useEffect(() => {
@@ -239,187 +185,99 @@ export default function CreateProjectPage() {
     if (status === "loading") return
     
     if (!session) {
-      router.push("/auth/signin")
+      router.push(`/${lang}/auth/signin`)
       return
     }
 
     if ((session.user as any).role !== "client") {
-      toast.error("Seuls les clients peuvent créer des projets")
-      router.push("/")
+      toast.error(dict?.projects?.errors?.clientOnly || "Seuls les clients peuvent créer des projets")
+      router.push(`/${lang}/`)
     }
-  }, [session, status, router])
+  }, [session, status, router, lang, dict])
+
+  const t = dict?.projects?.create || {}
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleBudgetChange = (field: string, value: number | string) => {
     setFormData(prev => ({
       ...prev,
-      budget: {
-        ...prev.budget,
-        [field]: value
-      }
+      budget: { ...prev.budget, [field]: value }
     }))
-  }
-
-  const handleCurrencyChange = async (newCurrency: string) => {
-    if (isConvertingRef.current) return
-    
-    // Si les montants sont à 0, juste changer la devise
-    if (formData.budget.min === 0 && formData.budget.max === 0) {
-      handleBudgetChange("currency", newCurrency)
-      return
-    }
-
-    // Convertir les montants
-    isConvertingRef.current = true
-    try {
-      const minConverted = await convert(formData.budget.min, formData.budget.currency, newCurrency)
-      const maxConverted = formData.budget.max > 0 
-        ? await convert(formData.budget.max, formData.budget.currency, newCurrency)
-        : minConverted
-      
-      setFormData(prev => ({
-        ...prev,
-        budget: {
-          ...prev.budget,
-          currency: newCurrency,
-          min: Math.round(minConverted),
-          max: Math.round(maxConverted)
-        }
-      }))
-      
-      // Réinitialiser la clé de conversion
-      lastConversionRef.current = ''
-    } catch (error) {
-      console.error("Erreur lors de la conversion:", error)
-      toast.error("Erreur lors de la conversion de devise")
-      handleBudgetChange("currency", newCurrency)
-    } finally {
-      setTimeout(() => {
-        isConvertingRef.current = false
-      }, 100)
-    }
   }
 
   const addSkill = (skill: string) => {
     if (skill && !formData.skills.includes(skill)) {
-      setFormData(prev => ({
-        ...prev,
-        skills: [...prev.skills, skill]
-      }))
+      setFormData(prev => ({ ...prev, skills: [...prev.skills, skill] }))
     }
     setSkillInput("")
   }
 
   const removeSkill = (skillToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
-    }))
+    setFormData(prev => ({ ...prev, skills: prev.skills.filter(skill => skill !== skillToRemove) }))
   }
 
   const addTag = () => {
     if (tagInput && !formData.tags.includes(tagInput)) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagInput]
-      }))
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, tagInput] }))
       setTagInput("")
     }
   }
 
   const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }))
+    setFormData(prev => ({ ...prev, tags: prev.tags.filter(tag => tag !== tagToRemove) }))
   }
 
   const addMilestone = () => {
     setFormData(prev => ({
       ...prev,
-      milestones: [
-        ...prev.milestones,
-        {
-          title: "",
-          amount: 0,
-          dueDate: "",
-          description: "",
-          currency: formData.budget.currency
-        }
-      ]
+      milestones: [...prev.milestones, {
+        title: "",
+        amount: 0,
+        dueDate: "",
+        description: "",
+        currency: formData.budget.currency
+      }]
     }))
   }
 
   const updateMilestone = (index: number, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      milestones: prev.milestones.map((milestone, i) =>
-        i === index ? { ...milestone, [field]: value } : milestone
-      )
+      milestones: prev.milestones.map((m, i) => i === index ? { ...m, [field]: value } : m)
     }))
   }
 
   const removeMilestone = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      milestones: prev.milestones.filter((_, i) => i !== index)
-    }))
+    setFormData(prev => ({ ...prev, milestones: prev.milestones.filter((_, i) => i !== index) }))
   }
 
   const validateStep = (step: number): boolean => {
     switch (step) {
-      case 1:
-        return !!(formData.title && formData.description && formData.category)
-      case 2:
-        return !!(formData.budget.min > 0 && formData.budget.max >= formData.budget.min && formData.deadline)
-      case 3:
-        return !!(formData.skills.length > 0)
-      default:
-        return true
+      case 1: return !!(formData.title && formData.description && formData.category)
+      case 2: return !!(formData.budget.min > 0 && formData.budget.max >= formData.budget.min && formData.deadline)
+      case 3: return !!(formData.skills.length > 0)
+      default: return true
     }
   }
 
   const handleSaveDraft = async () => {
     setLoading(true)
     try {
-      let budgetWithExchange = { ...formData.budget }
-      if (formData.budget.currency !== userCurrency) {
-        const rate = await currencyConverter.convert(1, formData.budget.currency, userCurrency)
-        budgetWithExchange = {
-          ...budgetWithExchange,
-          originalCurrency: formData.budget.currency,
-          exchangeRate: rate.rate
-        }
-      }
-
       const response = await fetch('/api/projects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          budget: budgetWithExchange,
-          status: "draft"
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, status: "draft" })
       })
-
       if (response.ok) {
         const data = await response.json()
-        toast.success("Projet sauvegardé en brouillon")
-        router.push(`/projects/${data.projectId}`)
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "Erreur lors de la sauvegarde")
+        toast.success(t.draftSaved || "Projet sauvegardé en brouillon")
+        router.push(`/${lang}/projects/${data.projectId}`)
       }
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde")
+      toast.error(t.saveError || "Erreur lors de la sauvegarde")
     } finally {
       setLoading(false)
     }
@@ -428,191 +286,174 @@ export default function CreateProjectPage() {
   const handlePublish = async () => {
     setLoading(true)
     try {
-      let budgetWithExchange = { ...formData.budget }
-      if (formData.budget.currency !== userCurrency) {
-        const rate = await currencyConverter.convert(1, formData.budget.currency, userCurrency)
-        budgetWithExchange = {
-          ...budgetWithExchange,
-          originalCurrency: formData.budget.currency,
-          exchangeRate: rate.rate
-        }
-      }
-
-      const projectData = {
-        ...formData,
-        budget: budgetWithExchange,
-        status: "open",
-        metadata: {
-          vatRate: formData.budget.currency === 'MGA' ? MADAGASCAR_CONFIG.taxes.vat : 0,
-          country: formData.location.country || 'MG',
-          timezone: formData.location.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
-        }
-      }
-
       const response = await fetch('/api/projects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, status: "open" })
       })
-
       if (response.ok) {
         const data = await response.json()
-        toast.success("Projet publié avec succès !")
-        router.push(`/projects/${data.projectId}`)
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "Erreur lors de la publication")
+        toast.success(t.published || "Projet publié avec succès !")
+        router.push(`/${lang}/projects/${data.projectId}`)
       }
     } catch (error) {
-      toast.error("Erreur lors de la publication")
+      toast.error(t.publishError || "Erreur lors de la publication")
     } finally {
       setLoading(false)
     }
   }
 
-  const formatBudgetDisplay = (amount: number, currency: string) => {
-    return currencyConverter.formatForDisplay(amount, currency, true)
-  }
-
-  if (status === "loading") {
+  if (!dict) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-blue-950 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* En-tête */}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950 py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header avec gradient */}
         <div className="mb-8">
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="mb-4"
+            className="mb-4 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
+            {t.back || "Retour"}
           </Button>
           
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                Créer un nouveau projet
-              </h1>
-              <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Publiez votre projet et trouvez les meilleurs talents
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl shadow-lg shadow-purple-500/25">
+                  <Briefcase className="h-6 w-6 text-white" />
+                </div>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-700 via-fuchsia-700 to-pink-700 dark:from-purple-300 dark:via-fuchsia-300 dark:to-pink-300 bg-clip-text text-transparent">
+                  {t.title || "Créer un nouveau projet"}
+                </h1>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 ml-11">
+                {t.subtitle || "Publiez votre projet et trouvez les meilleurs talents"}
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                Devise: {userCurrency}
-              </div>
+            <div className="flex flex-wrap gap-3">
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={loading || !formData.title}
-                className="flex items-center gap-2"
+                className="border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30"
               >
-                <Save className="h-4 w-4" />
-                Sauvegarder le brouillon
+                <Save className="h-4 w-4 mr-2" />
+                {t.saveDraft || "Sauvegarder le brouillon"}
               </Button>
               
               <Button
                 onClick={handlePublish}
                 disabled={loading || !validateStep(3)}
-                className="flex items-center gap-2"
+                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 shadow-lg shadow-purple-500/25"
               >
-                <Send className="h-4 w-4" />
-                Publier le projet
+                <Send className="h-4 w-4 mr-2" />
+                {t.publish || "Publier le projet"}
               </Button>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Étapes */}
+          {/* Sidebar - Steps */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
               <CardHeader>
-                <CardTitle className="text-lg">Étapes de création</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                  <Layers className="h-5 w-5" />
+                  {t.steps || "Étapes de création"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { step: 1, title: "Description", description: "Détails du projet" },
-                  { step: 2, title: "Budget & Délai", description: "Financement et timing" },
-                  { step: 3, title: "Compétences", description: "Expertise requise" },
-                  { step: 4, title: "Options avancées", description: "Paramètres supplémentaires" }
-                ].map((item) => (
-                  <div
-                    key={item.step}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                      currentStep === item.step
-                        ? "bg-blue-50 border border-blue-200 dark:bg-blue-950/50 dark:border-blue-800"
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800"
-                    }`}
-                    onClick={() => setCurrentStep(item.step)}
-                  >
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                      currentStep === item.step
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
-                    }`}>
-                      {currentStep > item.step ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        item.step
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{item.title}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {item.description}
+                  { step: 1, title: t.step1Title || "Description", description: t.step1Desc || "Détails du projet", icon: FileText },
+                  { step: 2, title: t.step2Title || "Budget & Délai", description: t.step2Desc || "Financement et timing", icon: DollarSign },
+                  { step: 3, title: t.step3Title || "Compétences", description: t.step3Desc || "Expertise requise", icon: Sparkles },
+                  { step: 4, title: t.step4Title || "Options", description: t.step4Desc || "Paramètres supplémentaires", icon: Settings }
+                ].map((item) => {
+                  const Icon = item.icon
+                  const isActive = currentStep === item.step
+                  const isCompleted = currentStep > item.step
+                  
+                  return (
+                    <div
+                      key={item.step}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                        isActive
+                          ? "bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 border border-purple-200 dark:border-purple-800"
+                          : "hover:bg-purple-50/30 dark:hover:bg-purple-950/20"
+                      }`}
+                      onClick={() => setCurrentStep(item.step)}
+                    >
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${
+                        isActive
+                          ? "bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white shadow-md"
+                          : isCompleted
+                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                      }`}>
+                        {isCompleted ? (
+                          <CheckCircle2 className="h-5 w-5" />
+                        ) : (
+                          <Icon className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className={`font-medium text-sm ${isActive ? "text-purple-700 dark:text-purple-300" : "text-slate-700 dark:text-slate-300"}`}>
+                          {item.title}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {item.description}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </CardContent>
             </Card>
 
-            {/* Aide contextuelle */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+            {/* Tips Card */}
+            <Card className="mt-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2 text-purple-700 dark:text-purple-300">
                   <Zap className="h-4 w-4 text-yellow-500" />
-                  Conseils
+                  {t.tips || "Conseils"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-start gap-2">
-                  <TrendingUp className="h-4 w-4 text-green-500 mt-0.5" />
+                  <TrendingUp className="h-4 w-4 text-emerald-500 mt-0.5" />
                   <div>
-                    <div className="font-medium">Budget en Ariary</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      Fixez votre budget en MGA pour attirer les talents locaux
+                    <div className="font-medium text-slate-800 dark:text-slate-200">{t.tip1Title || "Budget réaliste"}</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-xs">
+                      {t.tip1Desc || "Fixez un budget attractif pour attirer les meilleurs talents"}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <Calculator className="h-4 w-4 text-blue-500 mt-0.5" />
+                  <FileText className="h-4 w-4 text-blue-500 mt-0.5" />
                   <div>
-                    <div className="font-medium">Conversion automatique</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      Les montants sont convertis dans la devise des freelances
+                    <div className="font-medium text-slate-800 dark:text-slate-200">{t.tip2Title || "Description détaillée"}</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-xs">
+                      {t.tip2Desc || "Plus vous êtes précis, plus vous attirerez des candidats qualifiés"}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-purple-500 mt-0.5" />
+                  <Users className="h-4 w-4 text-purple-500 mt-0.5" />
                   <div>
-                    <div className="font-medium">TVA Madagascar</div>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      TVA de {MADAGASCAR_CONFIG.taxes.vat * 100}% appliquée pour les projets en MGA
+                    <div className="font-medium text-slate-800 dark:text-slate-200">{t.tip3Title || "Compétences claires"}</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-xs">
+                      {t.tip3Desc || "Listez les compétences essentielles pour le projet"}
                     </div>
                   </div>
                 </div>
@@ -620,57 +461,49 @@ export default function CreateProjectPage() {
             </Card>
           </div>
 
-          {/* Contenu principal */}
+          {/* Main Content */}
           <div className="lg:col-span-3">
-            <Card>
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
               <CardContent className="p-6">
-                {/* Étape 1: Description du projet */}
+                {/* Step 1: Description */}
                 {currentStep === 1 && (
                   <div className="space-y-6">
                     <div>
-                      <Label htmlFor="title" className="text-base font-semibold">
-                        Titre du projet *
+                      <Label htmlFor="title" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.titleLabel || "Titre du projet"} *
                       </Label>
                       <Input
                         id="title"
                         value={formData.title}
                         onChange={(e) => handleInputChange("title", e.target.value)}
-                        placeholder="Ex: Développement d'une application React Native"
-                        className="mt-2 text-lg"
+                        placeholder={t.titlePlaceholder || "Ex: Développement d'une application React Native"}
+                        className="mt-2 text-lg border-purple-200 dark:border-purple-800 focus:border-purple-500 focus:ring-purple-500"
                       />
-                      <div className="text-sm text-slate-500 mt-1">
-                        Soyez clair et concis. 60 caractères maximum.
-                      </div>
+                      <p className="text-sm text-slate-500 mt-1">{t.titleHelp || "Soyez clair et concis. 60 caractères maximum."}</p>
                     </div>
 
                     <div>
-                      <Label htmlFor="description" className="text-base font-semibold">
-                        Description détaillée *
+                      <Label htmlFor="description" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.descriptionLabel || "Description détaillée"} *
                       </Label>
                       <Textarea
                         id="description"
                         value={formData.description}
                         onChange={(e) => handleInputChange("description", e.target.value)}
-                        placeholder="Décrivez en détail votre projet, vos objectifs, les fonctionnalités attendues..."
+                        placeholder={t.descriptionPlaceholder || "Décrivez en détail votre projet, vos objectifs, les fonctionnalités attendues..."}
                         rows={8}
-                        className="mt-2"
+                        className="mt-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 focus:ring-purple-500"
                       />
-                      <div className="text-sm text-slate-500 mt-1">
-                        Plus votre description est précise, plus vous attirerez des talents qualifiés.
-                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="category" className="text-base font-semibold">
-                          Catégorie *
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.categoryLabel || "Catégorie"} *
                         </Label>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => handleInputChange("category", value)}
-                        >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue placeholder="Sélectionnez une catégorie" />
+                        <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                          <SelectTrigger className="mt-2 border-purple-200 dark:border-purple-800">
+                            <SelectValue placeholder={t.selectCategory || "Sélectionnez une catégorie"} />
                           </SelectTrigger>
                           <SelectContent>
                             {categories.map((category) => (
@@ -683,24 +516,22 @@ export default function CreateProjectPage() {
                       </div>
 
                       <div>
-                        <Label htmlFor="subcategory" className="text-base font-semibold">
-                          Sous-catégorie
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.subcategoryLabel || "Sous-catégorie"}
                         </Label>
                         <Select
                           value={formData.subcategory}
                           onValueChange={(value) => handleInputChange("subcategory", value)}
                           disabled={!formData.category}
                         >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue placeholder="Sélectionnez une sous-catégorie" />
+                          <SelectTrigger className="mt-2 border-purple-200 dark:border-purple-800">
+                            <SelectValue placeholder={t.selectSubcategory || "Sélectionnez une sous-catégorie"} />
                           </SelectTrigger>
                           <SelectContent>
                             {categories
                               .find(cat => cat.name === formData.category)
                               ?.subcategories.map((subcat) => (
-                                <SelectItem key={subcat} value={subcat}>
-                                  {subcat}
-                                </SelectItem>
+                                <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
                               ))}
                           </SelectContent>
                         </Select>
@@ -709,48 +540,35 @@ export default function CreateProjectPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="country" className="text-base font-semibold">
-                          Pays
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.countryLabel || "Pays"}
                         </Label>
                         <Select
                           value={formData.location.country}
-                          onValueChange={(value) => 
-                            handleInputChange("location", {
-                              ...formData.location,
-                              country: value
-                            })
-                          }
+                          onValueChange={(value) => handleInputChange("location", { ...formData.location, country: value })}
                         >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue placeholder="Sélectionnez un pays" />
+                          <SelectTrigger className="mt-2 border-purple-200 dark:border-purple-800">
+                            <SelectValue placeholder={t.selectCountry || "Sélectionnez un pays"} />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="MG">🇲🇬 Madagascar</SelectItem>
-                            <SelectItem value="FR">🇫🇷 France</SelectItem>
-                            <SelectItem value="US">🇺🇸 États-Unis</SelectItem>
-                            <SelectItem value="CA">🇨🇦 Canada</SelectItem>
-                            <SelectItem value="SN">🇸🇳 Sénégal</SelectItem>
-                            <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
-                            <SelectItem value="CM">🇨🇲 Cameroun</SelectItem>
+                          <SelectContent className="max-h-64">
+                            {COUNTRIES.map((country) => (
+                              <SelectItem key={country.code} value={country.code}>
+                                {country.flag} {country.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
-                        <Label htmlFor="city" className="text-base font-semibold">
-                          Ville (Optionnel)
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.cityLabel || "Ville"}
                         </Label>
                         <Input
-                          id="city"
-                          value={formData.location.city || ""}
-                          onChange={(e) => 
-                            handleInputChange("location", {
-                              ...formData.location,
-                              city: e.target.value
-                            })
-                          }
-                          placeholder="Ex: Antananarivo"
-                          className="mt-2"
+                          value={formData.location.city}
+                          onChange={(e) => handleInputChange("location", { ...formData.location, city: e.target.value })}
+                          placeholder={t.cityPlaceholder || "Ex: Antananarivo"}
+                          className="mt-2 border-purple-200 dark:border-purple-800"
                         />
                       </div>
                     </div>
@@ -759,325 +577,244 @@ export default function CreateProjectPage() {
                       <Switch
                         id="remote"
                         checked={formData.location.remote}
-                        onCheckedChange={(checked) => 
-                          handleInputChange("location", {
-                            ...formData.location,
-                            remote: checked
-                          })
-                        }
+                        onCheckedChange={(checked) => handleInputChange("location", { ...formData.location, remote: checked })}
                       />
-                      <Label htmlFor="remote" className="cursor-pointer">
-                        Travail à distance accepté
+                      <Label htmlFor="remote" className="cursor-pointer text-slate-700 dark:text-slate-300">
+                        {t.remoteWork || "Travail à distance accepté"}
                       </Label>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4">
-                      <div className="text-sm text-slate-500">
-                        Étape 1 sur 4
-                      </div>
-                      <Button
-                        onClick={() => setCurrentStep(2)}
-                        disabled={!validateStep(1)}
-                      >
-                        Continuer
+                    <div className="flex justify-between pt-4">
+                      <div className="text-sm text-slate-500">{t.stepCount || "Étape 1 sur 4"}</div>
+                      <Button onClick={() => setCurrentStep(2)} disabled={!validateStep(1)} className="bg-purple-600 hover:bg-purple-700">
+                        {t.continue || "Continuer"}
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Étape 2: Budget et délai */}
+                {/* Step 2: Budget & Deadline */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
                     <div>
-                      <Label className="text-base font-semibold mb-2 block">
-                        Devise du projet
+                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.currencyLabel || "Devise"}
                       </Label>
-                      <div className="flex items-center gap-4">
-                        <div className="w-64">
-                          <CurrencySelector
-                            value={formData.budget.currency}
-                            onChange={handleCurrencyChange}
-                            showFlag={true}
-                            showName={true}
-                            compact={false}
-                          />
-                        </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                          Les freelances verront le montant dans leur devise locale
-                        </div>
-                      </div>
+                      <CurrencySelector
+                        value={formData.budget.currency}
+                        onChange={(currency) => handleBudgetChange("currency", currency)}
+                        className="mt-2"
+                      />
                     </div>
 
                     <div>
-                      <Label className="text-base font-semibold mb-4 block">
-                        Type de budget
+                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300 mb-4 block">
+                        {t.budgetType || "Type de budget"}
                       </Label>
-                      <div className="flex gap-4">
-                        <Button
-                          type="button"
-                          variant={formData.budget.type === "fixed" ? "default" : "outline"}
-                          onClick={() => handleBudgetChange("type", "fixed")}
-                          className="flex-1"
-                        >
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          Prix fixe
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={formData.budget.type === "hourly" ? "default" : "outline"}
-                          onClick={() => handleBudgetChange("type", "hourly")}
-                          className="flex-1"
-                        >
-                          <Users className="h-4 w-4 mr-2" />
-                          Taux horaire
-                        </Button>
+                      <div className="grid grid-cols-2 gap-4">
+                        {PROJECT_TYPES.map((type) => {
+                          const Icon = type.icon
+                          const isSelected = formData.budget.type === type.value
+                          return (
+                            <Button
+                              key={type.value}
+                              type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              onClick={() => handleBudgetChange("type", type.value)}
+                              className={`h-auto py-4 flex flex-col items-center gap-2 ${isSelected ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
+                            >
+                              <Icon className="h-5 w-5" />
+                              <span>{type.label}</span>
+                              <span className="text-xs opacity-80">{type.description}</span>
+                            </Button>
+                          )
+                        })}
                       </div>
                     </div>
 
                     {formData.budget.type === "hourly" ? (
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="hourlyRate" className="text-base font-semibold">
-                            Taux horaire *
-                          </Label>
-                          <div className="flex items-center gap-4 mt-2">
-                            <div className="relative flex-1">
-                              <Input
-                                id="hourlyRate"
-                                type="number"
-                                value={formData.budget.min || ""}
-                                onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
-                                placeholder="0"
-                                className="pr-20"
-                              />
-                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
-                                / heure
-                              </div>
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              en {formData.budget.currency}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="estimatedHours" className="text-base font-semibold">
-                            Estimation d'heures
-                          </Label>
-                          <div className="flex items-center gap-4 mt-2">
+                      <div>
+                        <Label htmlFor="hourlyRate" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.hourlyRate || "Taux horaire"} *
+                        </Label>
+                        <div className="flex items-center gap-4 mt-2">
+                          <div className="relative flex-1">
                             <Input
-                              id="estimatedHours"
+                              id="hourlyRate"
                               type="number"
-                              value={estimatedHours}
-                              onChange={(e) => setEstimatedHours(Number(e.target.value))}
-                              placeholder="40"
-                              className="w-32"
+                              value={formData.budget.min || ""}
+                              onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
+                              placeholder="0"
+                              className="pr-20 border-purple-200 dark:border-purple-800"
                             />
-                            <div className="text-sm text-slate-600">
-                              heures estimées
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
+                              / heure
                             </div>
                           </div>
-                          <div className="text-sm text-slate-500 mt-1">
-                            Budget total estimé: {formatBudgetDisplay(formData.budget.max, formData.budget.currency)}
-                          </div>
+                          <div className="text-sm text-slate-600">en {formData.budget.currency}</div>
                         </div>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {t.hourlyHelp || "Indiquez votre taux horaire, le freelancer vous facturera le temps travaillé"}
+                        </p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="budgetMin" className="text-base font-semibold">
-                            Budget minimum *
+                          <Label htmlFor="budgetMin" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                            {t.budgetMin || "Budget minimum"} *
                           </Label>
                           <div className="relative mt-2">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
                             <Input
                               id="budgetMin"
                               type="number"
                               value={formData.budget.min || ""}
                               onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
                               placeholder="0"
+                              className="pl-10 border-purple-200 dark:border-purple-800"
                             />
                           </div>
                         </div>
-
                         <div>
-                          <Label htmlFor="budgetMax" className="text-base font-semibold">
-                            Budget maximum *
+                          <Label htmlFor="budgetMax" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                            {t.budgetMax || "Budget maximum"} *
                           </Label>
                           <div className="relative mt-2">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
                             <Input
                               id="budgetMax"
                               type="number"
                               value={formData.budget.max || ""}
                               onChange={(e) => handleBudgetChange("max", Number(e.target.value))}
                               placeholder="0"
+                              className="pl-10 border-purple-200 dark:border-purple-800"
                             />
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {convertedPreview && formData.budget.currency !== userCurrency && (
-                      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Calculator className="h-4 w-4 text-blue-500" />
-                              <span className="text-sm font-medium">
-                                Aperçu de la conversion
-                              </span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setShowConversion(!showConversion)}
-                            >
-                              {showConversion ? "Masquer" : "Voir"}
-                            </Button>
-                          </div>
-                          
-                          {showConversion && (
-                            <div className="mt-3 space-y-2 text-sm">
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="text-slate-600">Montant original:</div>
-                                <div className="font-medium text-right">
-                                  {formData.budget.min > 0 && 
-                                    `${formatBudgetDisplay(formData.budget.min, formData.budget.currency)} - ${formatBudgetDisplay(formData.budget.max, formData.budget.currency)}`}
-                                </div>
-                                
-                                <div className="text-slate-600">Taux de change:</div>
-                                <div className="font-medium text-right">
-                                  1 {formData.budget.currency} ≈ {
-                                    formData.budget.min > 0 && Number.isFinite(formData.budget.min)
-                                      ? ((): any => {
-                                          const numer = (convertedPreview.amounts.hourly ?? convertedPreview.amounts.min)
-                                          if (typeof numer !== 'number' || !isFinite(numer)) return '-'
-                                          const rateVal = numer / formData.budget.min
-                                          return Number.isFinite(rateVal) ? rateVal.toFixed(4) : '-'
-                                        })()
-                                      : '-'
-                                  } {userCurrency}
-                                </div>
-                                
-                                <div className="text-slate-600">Dans votre devise:</div>
-                                <div className="font-medium text-right">
-                                  {formatBudgetDisplay(convertedPreview.amounts.min, userCurrency)} - {formatBudgetDisplay(convertedPreview.amounts.max, userCurrency)}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {formData.budget.currency === 'MGA' && formData.budget.min > 0 && (
-                      <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <AlertCircle className="h-4 w-4 text-yellow-500" />
-                            <span className="text-sm font-medium">
-                              TVA Madagascar ({MADAGASCAR_CONFIG.taxes.vat * 100}%)
-                            </span>
-                          </div>
-                          <div className="text-sm text-slate-600">
-                            Une TVA de {MADAGASCAR_CONFIG.taxes.vat * 100}% sera ajoutée au budget final
-                            pour les freelances basés à Madagascar.
-                          </div>
-                          <div className="mt-2 text-sm">
-                            <span className="text-slate-500">Montant TVA: </span>
-                            <span className="font-medium">
-                              {formatBudgetDisplay(formData.budget.max * MADAGASCAR_CONFIG.taxes.vat, 'MGA')}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
                     <div>
-                      <Label htmlFor="deadline" className="text-base font-semibold">
-                        Date limite *
+                      <Label htmlFor="deadline" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.deadline || "Date limite"} *
                       </Label>
                       <div className="relative mt-2">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
                         <Input
                           id="deadline"
                           type="date"
                           value={formData.deadline}
                           onChange={(e) => handleInputChange("deadline", e.target.value)}
-                          className="pl-10"
+                          className="pl-10 border-purple-200 dark:border-purple-800"
                           min={new Date().toISOString().split('T')[0]}
                         />
                       </div>
                     </div>
 
+                    {/* Urgency & Complexity */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.urgency || "Urgence"}
+                        </Label>
+                        <div className="flex gap-2 mt-2">
+                          {URGENCY_LEVELS.map((level) => (
+                            <Button
+                              key={level.value}
+                              type="button"
+                              variant={urgency === level.value ? "default" : "outline"}
+                              onClick={() => setUrgency(level.value)}
+                              className={`flex-1 ${urgency === level.value ? `bg-${level.color} hover:bg-${level.color}` : "border-purple-200 dark:border-purple-800"}`}
+                            >
+                              {level.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.complexity || "Complexité"}
+                        </Label>
+                        <Select value={complexity} onValueChange={setComplexity}>
+                          <SelectTrigger className="mt-2 border-purple-200 dark:border-purple-800">
+                            <SelectValue placeholder={t.selectComplexity || "Sélectionnez un niveau"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COMPLEXITY_LEVELS.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                <div>
+                                  <div>{level.label}</div>
+                                  <div className="text-xs text-slate-500">{level.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Milestones */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <Label className="text-base font-semibold">
-                          Jalons de paiement (Optionnel)
+                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                          {t.milestones || "Jalons de paiement"}
                         </Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addMilestone}
-                        >
+                        <Button type="button" variant="outline" size="sm" onClick={addMilestone} className="border-purple-200 hover:bg-purple-50">
                           <Plus className="h-4 w-4 mr-2" />
-                          Ajouter un jalon
+                          {t.addMilestone || "Ajouter un jalon"}
                         </Button>
                       </div>
 
                       <div className="space-y-4">
                         {formData.milestones.map((milestone, index) => (
-                          <div key={index} className="flex gap-4 items-start p-4 border rounded-lg">
+                          <div key={index} className="flex gap-4 items-start p-4 border border-purple-200 dark:border-purple-800 rounded-xl">
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <Label>Titre du jalon</Label>
+                                <Label>{t.milestoneTitle || "Titre"}</Label>
                                 <Input
                                   value={milestone.title}
                                   onChange={(e) => updateMilestone(index, "title", e.target.value)}
-                                  placeholder="Ex: Maquettes finalisées"
+                                  placeholder={t.milestoneTitlePlaceholder || "Ex: Maquettes finalisées"}
+                                  className="border-purple-200 dark:border-purple-800"
                                 />
                               </div>
                               <div>
-                                <Label>Montant</Label>
+                                <Label>{t.milestoneAmount || "Montant"}</Label>
                                 <div className="flex gap-2">
                                   <Input
                                     type="number"
                                     value={milestone.amount}
                                     onChange={(e) => updateMilestone(index, "amount", Number(e.target.value))}
                                     placeholder="0"
-                                    className="flex-1"
+                                    className="flex-1 border-purple-200 dark:border-purple-800"
                                   />
-                                  <div className="text-sm text-slate-600 flex items-center px-2 border rounded">
+                                  <div className="text-sm text-slate-600 flex items-center px-3 border rounded bg-slate-50 dark:bg-slate-800">
                                     {milestone.currency}
                                   </div>
                                 </div>
                               </div>
                               <div className="md:col-span-2">
-                                <Label>Date d'échéance</Label>
+                                <Label>{t.milestoneDueDate || "Date d'échéance"}</Label>
                                 <Input
                                   type="date"
                                   value={milestone.dueDate}
                                   onChange={(e) => updateMilestone(index, "dueDate", e.target.value)}
                                   min={new Date().toISOString().split('T')[0]}
+                                  className="border-purple-200 dark:border-purple-800"
                                 />
                               </div>
                               <div className="md:col-span-2">
-                                <Label>Description</Label>
+                                <Label>{t.milestoneDescription || "Description"}</Label>
                                 <Textarea
                                   value={milestone.description}
                                   onChange={(e) => updateMilestone(index, "description", e.target.value)}
-                                  placeholder="Description des livrables attendus pour ce jalon..."
+                                  placeholder={t.milestoneDescPlaceholder || "Description des livrables attendus..."}
                                   rows={2}
+                                  className="border-purple-200 dark:border-purple-800"
                                 />
                               </div>
                             </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeMilestone(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
+                            <Button type="button" variant="ghost" size="sm" onClick={() => removeMilestone(index)} className="text-red-500 hover:text-red-700">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1085,85 +822,60 @@ export default function CreateProjectPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentStep(1)}
-                      >
-                        Retour
+                    <div className="flex justify-between pt-4">
+                      <Button variant="outline" onClick={() => setCurrentStep(1)} className="border-purple-200 hover:bg-purple-50">
+                        {t.back || "Retour"}
                       </Button>
-                      <Button
-                        onClick={() => setCurrentStep(3)}
-                        disabled={!validateStep(2)}
-                      >
-                        Continuer
+                      <Button onClick={() => setCurrentStep(3)} disabled={!validateStep(2)} className="bg-purple-600 hover:bg-purple-700">
+                        {t.continue || "Continuer"}
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Étape 3: Compétences requises */}
+                {/* Step 3: Skills */}
                 {currentStep === 3 && (
                   <div className="space-y-6">
                     <div>
-                      <Label className="text-base font-semibold mb-4 block">
-                        Compétences requises *
+                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.skills || "Compétences requises"} *
                       </Label>
-                      
-                      <div className="flex gap-2 mb-4">
+                      <div className="flex gap-2 mb-4 mt-2">
                         <Input
                           value={skillInput}
                           onChange={(e) => setSkillInput(e.target.value)}
-                          placeholder="Rechercher ou ajouter une compétence..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              addSkill(skillInput)
-                            }
-                          }}
+                          placeholder={t.skillPlaceholder || "Rechercher ou ajouter une compétence..."}
+                          onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(skillInput) } }}
+                          className="border-purple-200 dark:border-purple-800"
                         />
-                        <Button
-                          type="button"
-                          onClick={() => addSkill(skillInput)}
-                        >
+                        <Button type="button" onClick={() => addSkill(skillInput)} className="bg-purple-600 hover:bg-purple-700">
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
 
                       <div className="flex flex-wrap gap-2 mb-6">
                         {formData.skills.map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="px-3 py-1 text-sm"
-                          >
+                          <Badge key={skill} variant="secondary" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1.5">
                             {skill}
-                            <button
-                              onClick={() => removeSkill(skill)}
-                              className="ml-2 hover:text-red-500"
-                            >
-                              ×
-                            </button>
+                            <button onClick={() => removeSkill(skill)} className="ml-2 hover:text-red-500">×</button>
                           </Badge>
                         ))}
                       </div>
 
                       <div>
-                        <Label className="text-sm font-medium mb-3 block">
-                          Compétences populaires
+                        <Label className="text-sm font-medium mb-3 block text-purple-600 dark:text-purple-400">
+                          {t.popularSkills || "Compétences populaires"}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                           {popularSkills.slice(0, 15).map((skill) => (
                             <Badge
                               key={skill.skill}
                               variant="outline"
-                              className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                              className="cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 border-purple-200 dark:border-purple-800"
                               onClick={() => addSkill(skill.skill)}
                             >
                               {skill.skill}
-                              <span className="text-xs text-slate-500 ml-1">
-                                ({skill.count})
-                              </span>
+                              <span className="text-xs text-purple-500 ml-1">({skill.count})</span>
                             </Badge>
                           ))}
                         </div>
@@ -1171,223 +883,144 @@ export default function CreateProjectPage() {
                     </div>
 
                     <div>
-                      <Label className="text-base font-semibold mb-4 block">
-                        Tags (Optionnel)
+                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.tags || "Tags"}
                       </Label>
-                      
-                      <div className="flex gap-2 mb-4">
+                      <div className="flex gap-2 mb-4 mt-2">
                         <Input
                           value={tagInput}
                           onChange={(e) => setTagInput(e.target.value)}
-                          placeholder="Ajouter des tags..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              addTag()
-                            }
-                          }}
+                          placeholder={t.tagPlaceholder || "Ajouter des tags..."}
+                          onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+                          className="border-purple-200 dark:border-purple-800"
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={addTag}
-                        >
+                        <Button type="button" variant="outline" onClick={addTag} className="border-purple-200 hover:bg-purple-50">
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
-
                       <div className="flex flex-wrap gap-2">
                         {formData.tags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="outline"
-                            className="px-2 py-1 text-xs"
-                          >
+                          <Badge key={tag} variant="outline" className="border-purple-200 dark:border-purple-800">
                             #{tag}
-                            <button
-                              onClick={() => removeTag(tag)}
-                              className="ml-1 hover:text-red-500"
-                            >
-                              ×
-                            </button>
+                            <button onClick={() => removeTag(tag)} className="ml-1 hover:text-red-500">×</button>
                           </Badge>
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentStep(2)}
-                      >
-                        Retour
+                    <div className="flex justify-between pt-4">
+                      <Button variant="outline" onClick={() => setCurrentStep(2)} className="border-purple-200 hover:bg-purple-50">
+                        {t.back || "Retour"}
                       </Button>
-                      <Button
-                        onClick={() => setCurrentStep(4)}
-                        disabled={!validateStep(3)}
-                      >
-                        Continuer
+                      <Button onClick={() => setCurrentStep(4)} disabled={!validateStep(3)} className="bg-purple-600 hover:bg-purple-700">
+                        {t.continue || "Continuer"}
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Étape 4: Options avancées */}
+                {/* Step 4: Advanced Options */}
                 {currentStep === 4 && (
                   <div className="space-y-6">
                     <div>
-                      <Label className="text-base font-semibold mb-4 block">
-                        Visibilité du projet
+                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300 mb-4 block">
+                        {t.visibility || "Visibilité"}
                       </Label>
-                      <div className="flex gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <Button
                           type="button"
                           variant={formData.visibility === "public" ? "default" : "outline"}
                           onClick={() => handleInputChange("visibility", "public")}
-                          className="flex-1 flex flex-col items-center justify-center h-auto py-4"
+                          className={`h-auto py-4 flex flex-col items-center gap-2 ${formData.visibility === "public" ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
                         >
-                          <Users className="h-4 w-4 mb-2" />
-                          <span>Public</span>
-                          <span className="text-xs opacity-70 mt-1 text-center">
-                            Visible par tous les freelances
-                          </span>
+                          <Globe className="h-5 w-5" />
+                          <span>{t.public || "Public"}</span>
+                          <span className="text-xs opacity-80 text-center">{t.publicDesc || "Visible par tous les freelances"}</span>
                         </Button>
                         <Button
                           type="button"
                           variant={formData.visibility === "private" ? "default" : "outline"}
                           onClick={() => handleInputChange("visibility", "private")}
-                          className="flex-1 flex flex-col items-center justify-center h-auto py-4"
+                          className={`h-auto py-4 flex flex-col items-center gap-2 ${formData.visibility === "private" ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
                         >
-                          <FileText className="h-4 w-4 mb-2" />
-                          <span>Privé</span>
-                          <span className="text-xs opacity-70 mt-1 text-center">
-                            Invitation uniquement
-                          </span>
+                          <Shield className="h-5 w-5" />
+                          <span>{t.private || "Privé"}</span>
+                          <span className="text-xs opacity-80 text-center">{t.privateDesc || "Invitation uniquement"}</span>
                         </Button>
                       </div>
                     </div>
 
                     <div>
-                      <Label className="text-base font-semibold mb-4 block">
-                        Fichiers joints (Optionnel)
+                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+                        {t.attachments || "Fichiers joints"}
                       </Label>
-                      <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-8 text-center">
-                        <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                        <div className="font-medium mb-2">
-                          Glissez-déposez vos fichiers ici
+                      <div className="border-2 border-dashed border-purple-200 dark:border-purple-800 rounded-xl p-8 text-center mt-2 hover:border-purple-400 transition-colors">
+                        <Upload className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                        <div className="font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          {t.dragDrop || "Glissez-déposez vos fichiers ici"}
                         </div>
                         <div className="text-sm text-slate-500 mb-4">
-                          ou cliquez pour parcourir
+                          {t.orClick || "ou cliquez pour parcourir"}
                         </div>
-                        <Button variant="outline">
+                        <Button variant="outline" className="border-purple-200 hover:bg-purple-50">
                           <Upload className="h-4 w-4 mr-2" />
-                          Choisir des fichiers
+                          {t.selectFiles || "Choisir des fichiers"}
                         </Button>
                       </div>
                     </div>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Récapitulatif du projet</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <div className="font-medium text-slate-500">Titre</div>
-                            <div>{formData.title || "Non spécifié"}</div>
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-500">Catégorie</div>
-                            <div>{formData.category || "Non spécifié"}</div>
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-500">Devise</div>
-                            <div className="flex items-center gap-2">
-                              <span>{formData.budget.currency}</span>
-                              {formData.budget.currency === 'MGA' && (
-                                <Badge variant="outline" className="text-xs">
-                                  🇲🇬 Madagascar
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-500">Budget</div>
-                            <div>
-                              {formData.budget.min > 0 ? 
-                                `${formatBudgetDisplay(formData.budget.min, formData.budget.currency)} - ${formatBudgetDisplay(formData.budget.max, formData.budget.currency)} (${formData.budget.type})` 
-                                : "Non spécifié"}
-                              {convertedPreview && (
-                                <div className="text-xs text-slate-500 mt-1">
-                                  ≈ {formatBudgetDisplay(convertedPreview.amounts.min, userCurrency)} - {formatBudgetDisplay(convertedPreview.amounts.max, userCurrency)}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-500">Date limite</div>
-                            <div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "Non spécifié"}</div>
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-500">Localisation</div>
-                            <div>
-                              {formData.location.country ? 
-                                `${formData.location.country}${formData.location.city ? `, ${formData.location.city}` : ''}`
-                                : "Non spécifié"}
-                              {formData.location.remote && (
-                                <Badge variant="outline" className="ml-2 text-xs">
-                                  Remote
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="col-span-2">
-                            <div className="font-medium text-slate-500">Compétences</div>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {formData.skills.map(skill => (
-                                <Badge key={skill} variant="secondary" className="text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    {/* Preview Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowPreview(!showPreview)}
+                      className="w-full border-purple-200 hover:bg-purple-50"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      {showPreview ? t.hidePreview || "Masquer l'aperçu" : t.showPreview || "Afficher l'aperçu"}
+                    </Button>
 
-                    <div className="flex items-center justify-between pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentStep(3)}
-                      >
-                        Retour
+                    {showPreview && (
+                      <Card className="border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/20">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg text-purple-700 dark:text-purple-300">
+                            {t.preview || "Aperçu du projet"}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.title || "Titre"}</div><div>{formData.title || "-"}</div></div>
+                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.category || "Catégorie"}</div><div>{formData.category || "-"}</div></div>
+                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.budget || "Budget"}</div><div>{formData.budget.min > 0 ? `${formData.budget.min} - ${formData.budget.max} ${formData.budget.currency} (${formData.budget.type === "fixed" ? "Fixe" : "Horaire"})` : "-"}</div></div>
+                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.deadline || "Date limite"}</div><div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "-"}</div></div>
+                            <div className="col-span-2"><div className="font-medium text-purple-600 dark:text-purple-400">{t.skills || "Compétences"}</div><div className="flex flex-wrap gap-1 mt-1">{formData.skills.map(s => <Badge key={s} variant="secondary" className="bg-purple-100">{s}</Badge>)}</div></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <div className="flex justify-between pt-4">
+                      <Button variant="outline" onClick={() => setCurrentStep(3)} className="border-purple-200 hover:bg-purple-50">
+                        {t.back || "Retour"}
                       </Button>
                       <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          onClick={handleSaveDraft}
-                          disabled={loading || !formData.title}
-                        >
+                        <Button variant="outline" onClick={handleSaveDraft} disabled={loading || !formData.title} className="border-purple-200 hover:bg-purple-50">
                           <Save className="h-4 w-4 mr-2" />
-                          Sauvegarder le brouillon
+                          {t.saveDraft || "Sauvegarder"}
                         </Button>
-                        <Button
-                          onClick={handlePublish}
-       
-disabled={loading || !validateStep(3)}
->
-<Send className="h-4 w-4 mr-2" />
-Publier le projet
-</Button>
-</div>
-</div>
-</div>
-)}
-</CardContent>
-</Card>
-</div>
-</div>
-</div>
-</div>
-)
+                        <Button onClick={handlePublish} disabled={loading || !validateStep(3)} className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700">
+                          <Send className="h-4 w-4 mr-2" />
+                          {t.publish || "Publier"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
