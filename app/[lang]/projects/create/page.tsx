@@ -401,7 +401,7 @@ const fileToBase64 = (file: File): Promise<string> => {
       if (response.ok) {
         const data = await response.json()
         toast.success(t.published || "Projet publié avec succès !")
-        router.push(`/${lang}/projects/${data.projectId}`)
+         router.push(`/${lang}/projects/${data.data.projectId}`)
       }
     } catch (error) {
       toast.error(t.publishError || "Erreur lors de la publication")

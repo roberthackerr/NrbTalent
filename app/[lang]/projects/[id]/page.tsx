@@ -500,7 +500,7 @@ export default function ProjectDetailsPage() {
                   </button>
                                   <button
                     onClick={() => {
-                      router.push('edit')
+                      router.push(`/${lang}/projects/${id}/edit`);
                     }}
                     className="w-full px-4 py-2 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                   >
@@ -537,6 +537,16 @@ export default function ProjectDetailsPage() {
                   : (dict?.common?.save || 'Sauvegarder')}
                 </span>
               </button>
+                                               <button
+                    onClick={() => {
+                      router.push(`/${lang}/projects/${id}/edit`);
+                    }}
+                    className="w-full px-4 py-2 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    
+                    <Edit className={`w-4 h-4 `} />
+                    {dict?.common?.edit || 'modifier' }
+                  </button>
               
               <AIArchitectBadge
                 projectId={projectData._id}
