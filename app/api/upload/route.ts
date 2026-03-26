@@ -1,4 +1,4 @@
-// app/api/upload/route.ts - Version corrigée
+// app/api/upload/route.ts
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -8,48 +8,38 @@ import { getDatabase } from "@/lib/mongodb"
 import { notificationService } from "@/services/NotificationService"
 
 // Configuration
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const ALLOWED_MIME_TYPES = [
-  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'text/plain', 'text/markdown', 'text/csv',
-  'application/zip', 'application/x-rar-compressed',
-  'application/json', 'application/xml', 'text/html', 'text/css', 'text/javascript', 'application/javascript'
-]
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
+// Messages d'erreur multilingues
 const messages = {
   fr: {
     unauthorized: "Non autorisé",
     noFile: "Aucun fichier fourni",
-    invalidType: "Type de fichier non supporté",
-    tooLarge: "La taille du fichier ne doit pas dépasser 10MB",
+    invalidType: "Le fichier doit être une image (JPEG, PNG, WEBP)",
+    tooLarge: "La taille du fichier ne doit pas dépasser 5MB",
     uploadFailed: "Erreur lors du téléchargement",
     success: "Fichier téléchargé avec succès"
   },
   en: {
     unauthorized: "Unauthorized",
     noFile: "No file provided",
-    invalidType: "File type not supported",
-    tooLarge: "File size must be less than 10MB",
+    invalidType: "File must be an image (JPEG, PNG, WEBP)",
+    tooLarge: "File size must be less than 5MB",
     uploadFailed: "Upload failed",
     success: "File uploaded successfully"
   },
   mg: {
     unauthorized: "Tsy nahazo alalana",
     noFile: "Tsy misy rakitra nampidirina",
-    invalidType: "Karazana rakitra tsy azo ekena",
-    tooLarge: "Tsy mihoatra ny 10MB ny haben'ny rakitra",
+    invalidType: "Ny rakitra dia tsy maintsy sary (JPEG, PNG, WEBP)",
+    tooLarge: "Tsy mihoatra ny 5MB ny haben'ny rakitra",
     uploadFailed: "Tsy nahomby ny fampidirana",
     success: "Vita soa aman-tsara ny fampidirana rakitra"
   }
 }
 
+// Messages de notification multilingues
 const notificationMessages = {
   fr: {
     title: (folder: string) => {
@@ -59,22 +49,20 @@ const notificationMessages = {
         avatar: "🖼️ Photo de profil",
         portfolio: "🎨 Portfolio",
         documents: "📄 Document",
-        messages: "💬 Pièce jointe",
-        groups: "📁 Fichier de groupe"
+        messages: "💬 Pièce jointe"
       }
       return titles[folder] || "📁 Fichier téléchargé"
     },
-    message: (folder: string, fileName: string) => {
+    message: (folder: string) => {
       const msgs: Record<string, string> = {
-        gigs: `L'image "${fileName}" a été téléchargée`,
-        projects: `Le document "${fileName}" a été téléchargé`,
+        gigs: "L'image de votre service a été téléchargée",
+        projects: "Le document de votre projet a été téléchargé",
         avatar: "Votre photo de profil a été mise à jour",
         portfolio: "Votre portfolio a été mis à jour",
-        documents: `Le document "${fileName}" a été téléchargé`,
-        messages: `La pièce jointe "${fileName}" a été téléchargée`,
-        groups: `Le fichier "${fileName}" a été téléchargé`
+        documents: "Votre document a été téléchargé",
+        messages: "Votre pièce jointe a été téléchargée"
       }
-      return msgs[folder] || `Le fichier "${fileName}" a été téléchargé avec succès`
+      return msgs[folder] || "Votre fichier a été téléchargé avec succès"
     }
   },
   en: {
@@ -85,22 +73,20 @@ const notificationMessages = {
         avatar: "🖼️ Profile picture",
         portfolio: "🎨 Portfolio",
         documents: "📄 Document",
-        messages: "💬 Attachment",
-        groups: "📁 Group file"
+        messages: "💬 Attachment"
       }
       return titles[folder] || "📁 File uploaded"
     },
-    message: (folder: string, fileName: string) => {
+    message: (folder: string) => {
       const msgs: Record<string, string> = {
-        gigs: `Image "${fileName}" uploaded`,
-        projects: `Document "${fileName}" uploaded`,
+        gigs: "Your gig image has been uploaded",
+        projects: "Your project document has been uploaded",
         avatar: "Your profile picture has been updated",
         portfolio: "Your portfolio has been updated",
-        documents: `Document "${fileName}" uploaded`,
-        messages: `Attachment "${fileName}" uploaded`,
-        groups: `File "${fileName}" uploaded`
+        documents: "Your document has been uploaded",
+        messages: "Your attachment has been uploaded"
       }
-      return msgs[folder] || `File "${fileName}" uploaded successfully`
+      return msgs[folder] || "Your file has been uploaded successfully"
     }
   },
   mg: {
@@ -111,30 +97,31 @@ const notificationMessages = {
         avatar: "🖼️ Sary momba anao",
         portfolio: "🎨 Portfolio",
         documents: "📄 Antontan-taratasy",
-        messages: "💬 Firaketana",
-        groups: "📁 Rakitra vondrona"
+        messages: "💬 Firaketana"
       }
       return titles[folder] || "📁 Rakitra nampidirina"
     },
-    message: (folder: string, fileName: string) => {
+    message: (folder: string) => {
       const msgs: Record<string, string> = {
-        gigs: `Nampidirina soa aman-tsara ny sarin'ny serivisy "${fileName}"`,
-        projects: `Nampidirina soa aman-tsara ny antontan-taratasin'ny tetikasa "${fileName}"`,
+        gigs: "Nampidirina soa aman-tsara ny sarin'ny serivisinao",
+        projects: "Nampidirina soa aman-tsara ny antontan-taratasin'ny tetikasanao",
         avatar: "Nohavaozina soa aman-tsara ny sary momba anao",
         portfolio: "Nohavaozina soa aman-tsara ny portfolio-nao",
-        documents: `Nampidirina soa aman-tsara ny antontan-taratasy "${fileName}"`,
-        messages: `Nampidirina soa aman-tsara ny firaketana "${fileName}"`,
-        groups: `Nampidirina soa aman-tsara ny rakitra "${fileName}"`
+        documents: "Nampidirina soa aman-tsara ny antontan-taratasinao",
+        messages: "Nampidirina soa aman-tsara ny firaketanao"
       }
-      return msgs[folder] || `Nampidirina soa aman-tsara ny rakitra "${fileName}"`
+      return msgs[folder] || "Nampidirina soa aman-tsara ny rakitrao"
     }
   }
 }
 
+// Récupérer la langue de l'utilisateur depuis la session
 async function getUserLanguage(userId: string, sessionLang?: string): Promise<'fr' | 'en' | 'mg'> {
+  // Si la langue est déjà dans la session, l'utiliser
   if (sessionLang && (sessionLang === 'fr' || sessionLang === 'en' || sessionLang === 'mg')) {
     return sessionLang
   }
+  
   try {
     const db = await getDatabase()
     let objectId
@@ -143,13 +130,19 @@ async function getUserLanguage(userId: string, sessionLang?: string): Promise<'f
     } catch {
       return 'fr'
     }
+    
     const user = await db.collection("users").findOne(
       { _id: objectId },
       { projection: { language: 1, preferences: 1 } }
     )
+    
     const userLang = user?.language || user?.preferences?.language || 'fr'
-    return userLang === 'fr' || userLang === 'en' || userLang === 'mg' ? userLang : 'fr'
-  } catch {
+    if (userLang === 'fr' || userLang === 'en' || userLang === 'mg') {
+      return userLang
+    }
+    return 'fr'
+  } catch (error) {
+    console.error('Error getting user language:', error)
     return 'fr'
   }
 }
@@ -157,7 +150,7 @@ async function getUserLanguage(userId: string, sessionLang?: string): Promise<'f
 export async function POST(request: Request) {
   let userId: string | null = null
   let userLang = 'fr'
-  let folder = 'documents'
+  let folder = 'gigs'
   let uploadSuccess = false
   let uploadedUrl = ''
   let uploadedPublicId = ''
@@ -168,6 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: messages.fr.unauthorized }, { status: 401 })
     }
 
+    // Récupérer l'ID utilisateur
     userId = (session.user as any).id || session.user.email
     if (!userId) {
       return NextResponse.json({ error: messages.fr.unauthorized }, { status: 401 })
@@ -175,79 +169,52 @@ export async function POST(request: Request) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    folder = formData.get('folder') as string || 'documents'
+    folder = formData.get('folder') as string || 'gigs'
 
     if (!file) {
       return NextResponse.json({ error: messages.fr.noFile }, { status: 400 })
     }
 
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      const lang = await getUserLanguage(userId)
-      return NextResponse.json({ error: messages[lang].invalidType }, { status: 400 })
+      return NextResponse.json(
+        { error: messages.fr.invalidType }, 
+        { status: 400 }
+      )
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      const lang = await getUserLanguage(userId)
-      return NextResponse.json({ error: messages[lang].tooLarge }, { status: 400 })
+      return NextResponse.json(
+        { error: messages.fr.tooLarge }, 
+        { status: 400 }
+      )
     }
 
+    // Récupérer la langue de l'utilisateur
     const sessionLang = (session.user as any).language || (session.user as any).preferences?.language
     userLang = await getUserLanguage(userId, sessionLang)
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64File = `data:${file.type};base64,${buffer.toString('base64')}`
-    
-    const isImage = file.type.startsWith('image/')
-    const isPDF = file.type === 'application/pdf'
+    const base64Image = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    // Configuration CRITIQUE pour l'accès public
-    const uploadOptions: any = {
-      public_id: `${folder}/${session.user.id}/${uuidv4()}`,
-      folder: `nrbtalents/${folder}`,
-      resource_type: 'auto', // 👈 CHANGEMENT: 'auto' permet à Cloudinary de détecter automatiquement
-      type: 'upload', // 👈 IMPORTANT: pour un accès public
-      access_mode: 'public', // 👈 RENDRE LE FICHIER PUBLIC
-      tags: [folder, session.user.id],
-      context: {
-        userId: session.user.id,
-        folder: folder,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        uploadedAt: new Date().toISOString()
-      }
-    }
-
-    // Pour les PDF, ajouter des transformations pour forcer l'affichage
-    if (isPDF) {
-      uploadOptions.transformation = [
-        { flags: "attachment" } // Force le téléchargement plutôt que l'affichage
-      ]
-      uploadOptions.format = 'pdf'
-    }
-
-    // Pour les images, ajouter des transformations
-    if (isImage) {
-      uploadOptions.transformation = [
-        { width: 1200, crop: 'limit', quality: 'auto' },
-        { width: 400, crop: 'fill', gravity: 'auto' }
-      ]
-    }
-
-    console.log('📤 Uploading to Cloudinary:', {
-      folder,
-      fileName: file.name,
-      fileType: file.type,
-      resource_type: uploadOptions.resource_type,
-      type: uploadOptions.type,
-      access_mode: uploadOptions.access_mode
-    })
-
+    // Upload vers Cloudinary
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload(
-        base64File,
-        uploadOptions,
+        base64Image,
+        {
+          public_id: `${folder}/${session.user.id}/${uuidv4()}`,
+          folder: `nrbtalents/${folder}`,
+          transformation: [
+            { width: 1200, crop: 'limit', quality: 'auto' },
+            { width: 400, crop: 'fill', gravity: 'auto' }
+          ],
+          tags: [folder, session.user.id],
+          context: {
+            userId: session.user.id,
+            folder: folder,
+            uploadedAt: new Date().toISOString()
+          }
+        },
         (error, result) => {
           if (error) reject(error)
           else resolve(result)
@@ -259,22 +226,19 @@ export async function POST(request: Request) {
     uploadedPublicId = (uploadResult as any).public_id
     uploadSuccess = true
 
-    console.log('✅ Upload successful:', {
-      url: uploadedUrl,
-      publicId: uploadedPublicId,
-      resource_type: (uploadResult as any).resource_type
-    })
+    // Générer l'URL de la miniature
+    const thumbnailUrl = uploadedUrl.replace(
+      '/upload/',
+      '/upload/w_400,h_400,c_fill,g_auto/'
+    )
 
-    let thumbnailUrl: string | undefined
-    if (isImage) {
-      thumbnailUrl = uploadedUrl.replace('/upload/', '/upload/w_400,h_400,c_fill,g_auto/')
-    }
-
-    // Notification
+    // ──────────────────────────────────────────────────────────────────────────
+    // 📢 ENVOYER UNE NOTIFICATION (dans la langue de l'utilisateur)
+    // ──────────────────────────────────────────────────────────────────────────
     try {
       const notifMsgs = notificationMessages[userLang] || notificationMessages.fr
       const title = notifMsgs.title(folder)
-      const message = notifMsgs.message(folder, file.name)
+      const message = notifMsgs.message(folder)
 
       await notificationService.send({
         userId: userId,
@@ -292,11 +256,11 @@ export async function POST(request: Request) {
           fileUrl: uploadedUrl,
           thumbnailUrl: thumbnailUrl,
           folder: folder,
-          isImage: isImage,
           timestamp: new Date().toISOString()
         },
         checkPreferences: true
       })
+      console.log(`✅ Upload notification sent to user: ${userId} for folder: ${folder}`)
     } catch (notifError) {
       console.error('⚠️ Failed to send upload notification:', notifError)
     }
@@ -307,16 +271,15 @@ export async function POST(request: Request) {
       thumbnail: thumbnailUrl,
       publicId: uploadedPublicId,
       folder: folder,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      isImage: isImage,
       message: messages[userLang].success
     })
 
   } catch (error) {
     console.error('❌ Upload error:', error)
     
+    // ──────────────────────────────────────────────────────────────────────────
+    // 📢 ENVOYER UNE NOTIFICATION D'ERREUR
+    // ──────────────────────────────────────────────────────────────────────────
     if (userId && !uploadSuccess) {
       try {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'
@@ -335,6 +298,7 @@ export async function POST(request: Request) {
           },
           checkPreferences: true
         })
+        console.log('❌ Upload error notification sent to user:', userId)
       } catch (notifError) {
         console.error('⚠️ Failed to send upload error notification:', notifError)
       }
@@ -342,7 +306,10 @@ export async function POST(request: Request) {
     
     const errorLang = userId ? userLang : 'fr'
     return NextResponse.json(
-      { success: false, error: messages[errorLang].uploadFailed }, 
+      { 
+        success: false,
+        error: messages[errorLang].uploadFailed 
+      }, 
       { status: 500 }
     )
   }

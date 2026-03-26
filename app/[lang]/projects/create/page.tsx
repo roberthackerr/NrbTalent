@@ -67,6 +67,7 @@ interface UploadedFile {
   size: number
   thumbnail?: string
   progress?: number
+    base64Data?: string  
 }
 
 interface Category {
@@ -216,93 +217,71 @@ export default function CreateProjectPage() {
 // Assurez-vous que la fonction handleFileUpload est correcte
 const handleFileUpload = async (files: FileList) => {
   if (!files || files.length === 0) return
-  
+
   setUploading(true)
   setUploadProgress(0)
-  
+
   const filesArray = Array.from(files)
   const validFiles: File[] = []
   const invalidFiles: string[] = []
-  
-  // Valider les fichiers
+
   for (const file of filesArray) {
-    // Vérifier le type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       invalidFiles.push(`${file.name} (type non supporté)`)
       continue
     }
-    
-    // Vérifier la taille
     if (file.size > MAX_FILE_SIZE) {
       invalidFiles.push(`${file.name} (taille > 10MB)`)
       continue
     }
-    
     validFiles.push(file)
   }
-  
-  // Afficher les erreurs
+
   if (invalidFiles.length > 0) {
-    toast.error(`${invalidFiles.length} fichier(s) ignoré(s):\n${invalidFiles.join('\n')}`)
+    toast.error(`${invalidFiles.length} fichier(s) ignoré(s): ${invalidFiles.join(', ')}`)
   }
-  
+
   if (validFiles.length === 0) {
     setUploading(false)
     return
   }
-  
+
   const newFiles: UploadedFile[] = []
   let completed = 0
-  
+
   for (const file of validFiles) {
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'projects')
-      
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Upload failed for ${file.name}`)
-      }
-      
-      const result = await response.json()
+      // Convertir en base64 localement
+      const base64 = await fileToBase64(file)
+
       newFiles.push({
-        url: result.url,
-        publicId: result.publicId,
+        url: base64,        // URL temporaire base64 pour preview
+        publicId: "",       // sera rempli par l'API
         name: file.name,
         type: file.type,
         size: file.size,
-        thumbnail: result.thumbnail
+        thumbnail: file.type.startsWith("image/") ? base64 : undefined,
+        // Stocker le base64 pour l'envoi
+        base64Data: base64,
       })
-      
+
       completed++
       setUploadProgress((completed / validFiles.length) * 100)
-      
     } catch (error) {
-      console.error(`Error uploading ${file.name}:`, error)
-      toast.error(`Erreur lors de l'upload de ${file.name}`)
+      toast.error(`Erreur avec ${file.name}`)
     }
   }
-  
+
   if (newFiles.length > 0) {
     setUploadedFiles(prev => [...prev, ...newFiles])
     setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
-    toast.success(`${newFiles.length} fichier(s) uploadé(s) avec succès`)
+    toast.success(`${newFiles.length} fichier(s) prêt(s) à l'envoi`)
   }
-  
+
   setUploading(false)
   setUploadProgress(0)
-  
-  // Reset le input file
-  if (fileInputRef.current) {
-    fileInputRef.current.value = ''
-  }
+  if (fileInputRef.current) fileInputRef.current.value = ''
 }
-
   // Supprimer un fichier
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
@@ -327,7 +306,15 @@ const handleFileUpload = async (files: FileList) => {
       budget: { ...prev.budget, [field]: value }
     }))
   }
-
+// Convertir fichier en base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+  })
+}
   const addSkill = (skill: string) => {
     if (skill && !formData.skills.includes(skill)) {
       setFormData(prev => ({ ...prev, skills: [...prev.skills, skill] }))
