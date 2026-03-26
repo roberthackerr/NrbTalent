@@ -1,7 +1,7 @@
 // app/[lang]/projects/create/page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,45 +42,31 @@ import {
   Eye,
   EyeOff,
   HeartHandshake,
+  X,
+  ImageIcon,
+  Paperclip,
+  Loader2,
+  Search,
+  ChevronDown,
   Settings
 } from "lucide-react"
 import { CurrencySelector } from "@/components/currency/CurrencySelector"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import { COUNTRIES } from "@/lib/constants/countries"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Progress } from "@/components/ui/progress"
+import Image from "next/image"
 
-interface ProjectFormData {
-  title: string
-  description: string
-  category: string
-  subcategory: string
-  budget: {
-    min: number
-    max: number
-    type: "fixed" | "hourly"
-    currency: string
-  }
-  skills: string[]
-  deadline: string
-  visibility: "public" | "private"
-  tags: string[]
-  attachments: Array<{
-    name: string
-    url: string
-    type: string
-  }>
-  milestones: Array<{
-    title: string
-    amount: number
-    dueDate: string
-    description: string
-    currency: string
-  }>
-  location: {
-    country: string
-    city: string
-    remote: boolean
-  }
+interface UploadedFile {
+  url: string
+  publicId: string
+  name: string
+  type: string
+  size: number
+  thumbnail?: string
+  progress?: number
 }
 
 interface Category {
@@ -95,24 +81,14 @@ interface Skill {
   avgBudget: number
 }
 
-// Types de projets
-const PROJECT_TYPES = [
-  { value: "fixed", label: "Prix fixe", icon: DollarSign, description: "Budget défini à l'avance" },
-  { value: "hourly", label: "Taux horaire", icon: Clock, description: "Paiement à l'heure travaillée" }
-]
-
-// Niveaux de complexité
-const COMPLEXITY_LEVELS = [
-  { value: "beginner", label: "Débutant", description: "Tâches simples" },
-  { value: "intermediate", label: "Intermédiaire", description: "Expérience requise" },
-  { value: "expert", label: "Expert", description: "Expertise avancée" }
-]
-
-// Urgences
-const URGENCY_LEVELS = [
-  { value: "low", label: "Normal", color: "bg-green-500" },
-  { value: "medium", label: "Urgent", color: "bg-orange-500" },
-  { value: "high", label: "Très urgent", color: "bg-red-500" }
+// Configuration pour l'upload
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain'
 ]
 
 export default function CreateProjectPage() {
@@ -123,18 +99,20 @@ export default function CreateProjectPage() {
   
   const [dict, setDict] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [currentStep, setCurrentStep] = useState(1)
   const [categories, setCategories] = useState<Category[]>([])
   const [popularSkills, setPopularSkills] = useState<Skill[]>([])
   const [skillInput, setSkillInput] = useState("")
   const [tagInput, setTagInput] = useState("")
-  const [complexity, setComplexity] = useState("intermediate")
-  const [urgency, setUrgency] = useState("low")
   const [showPreview, setShowPreview] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState("MG")
+  const [categorySearch, setCategorySearch] = useState("")
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  const [formData, setFormData] = useState<ProjectFormData>({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
@@ -142,15 +120,21 @@ export default function CreateProjectPage() {
     budget: {
       min: 0,
       max: 0,
-      type: "fixed",
+      type: "fixed" as "fixed" | "hourly",
       currency: "MGA"
     },
-    skills: [],
+    skills: [] as string[],
     deadline: "",
-    visibility: "public",
-    tags: [],
-    attachments: [],
-    milestones: [],
+    visibility: "public" as "public" | "private",
+    tags: [] as string[],
+    attachments: [] as UploadedFile[],
+    milestones: [] as Array<{
+      title: string
+      amount: number
+      dueDate: string
+      description: string
+      currency: string
+    }>,
     location: {
       country: "MG",
       city: "",
@@ -180,7 +164,7 @@ export default function CreateProjectPage() {
     fetchData()
   }, [])
 
-  // Vérifier l'authentification et le rôle
+  // Vérifier l'authentification
   useEffect(() => {
     if (status === "loading") return
     
@@ -190,12 +174,104 @@ export default function CreateProjectPage() {
     }
 
     if ((session.user as any).role !== "client") {
-      toast.error(dict?.projects?.errors?.clientOnly || "Seuls les clients peuvent créer des projets")
+      toast.error(dict?.projects?.create?.clientOnly || "Seuls les clients peuvent créer des projets")
       router.push(`/${lang}/`)
     }
   }, [session, status, router, lang, dict])
 
   const t = dict?.projects?.create || {}
+
+  // Upload de fichier vers Cloudinary
+  const uploadFile = async (file: File): Promise<UploadedFile | null> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'projects')
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error('Upload failed')
+      }
+
+      const result = await response.json()
+      return {
+        url: result.url,
+        publicId: result.publicId,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        thumbnail: result.thumbnail
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      return null
+    }
+  }
+
+  // Gestion de l'upload multiple
+  const handleFileUpload = async (files: FileList) => {
+    if (files.length === 0) return
+    
+    setUploading(true)
+    setUploadProgress(0)
+    
+    const newFiles: UploadedFile[] = []
+    let completed = 0
+    
+    for (const file of Array.from(files)) {
+      // Vérifier le type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast.error(`${file.name}: ${t.invalidFileType || "Type de fichier non supporté"}`)
+        continue
+      }
+      
+      // Vérifier la taille
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name}: ${t.fileTooLarge || "Fichier trop volumineux (max 10MB)"}`)
+        continue
+      }
+      
+      // Upload du fichier
+      const uploadedFile = await uploadFile(file)
+      if (uploadedFile) {
+        newFiles.push(uploadedFile)
+      }
+      
+      completed++
+      setUploadProgress((completed / files.length) * 100)
+    }
+    
+    setUploadedFiles(prev => [...prev, ...newFiles])
+    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...newFiles] }))
+    setUploading(false)
+    setUploadProgress(0)
+    
+    if (newFiles.length > 0) {
+      toast.success(`${newFiles.length} ${t.filesUploaded || "fichier(s) uploadé(s)"}`)
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  // Supprimer un fichier
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+    setFormData(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Filtrer les catégories
+  const filteredCategories = categories.filter(cat =>
+    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+  )
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -238,7 +314,7 @@ export default function CreateProjectPage() {
         amount: 0,
         dueDate: "",
         description: "",
-        currency: formData.budget.currency
+        currency: prev.budget.currency
       }]
     }))
   }
@@ -306,15 +382,79 @@ export default function CreateProjectPage() {
   if (!dict) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
       </div>
     )
   }
 
+  // Composant pour la catégorie avec scroll
+  const CategorySelector = () => (
+    <div className="relative">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setShowCategoryDialog(true)}
+        className="w-full justify-between border-purple-200 dark:border-purple-800"
+      >
+        {formData.category || t.selectCategory || "Sélectionnez une catégorie"}
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </Button>
+
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-purple-700 dark:text-purple-300">
+              {t.selectCategory || "Sélectionnez une catégorie"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+            <Input
+              placeholder={t.searchCategory || "Rechercher une catégorie..."}
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+              className="pl-10 border-purple-200 dark:border-purple-800"
+            />
+          </div>
+          
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-2">
+              {filteredCategories.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  {t.noCategories || "Aucune catégorie trouvée"}
+                </div>
+              ) : (
+                filteredCategories.map((category) => (
+                  <Button
+                    key={category.name}
+                    type="button"
+                    variant="ghost"
+                    className="w-full justify-between hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                    onClick={() => {
+                      handleInputChange("category", category.name)
+                      setShowCategoryDialog(false)
+                      setCategorySearch("")
+                    }}
+                  >
+                    <span>{category.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {category.count}
+                    </Badge>
+                  </Button>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950 py-8">
       <div className="container mx-auto px-4 max-w-7xl">
-        {/* Header avec gradient */}
+        {/* Header */}
         <div className="mb-8">
           <Button
             variant="ghost"
@@ -420,45 +560,6 @@ export default function CreateProjectPage() {
                 })}
               </CardContent>
             </Card>
-
-            {/* Tips Card */}
-            <Card className="mt-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                  {t.tips || "Conseils"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-500 mt-0.5" />
-                  <div>
-                    <div className="font-medium text-slate-800 dark:text-slate-200">{t.tip1Title || "Budget réaliste"}</div>
-                    <div className="text-slate-600 dark:text-slate-400 text-xs">
-                      {t.tip1Desc || "Fixez un budget attractif pour attirer les meilleurs talents"}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <FileText className="h-4 w-4 text-blue-500 mt-0.5" />
-                  <div>
-                    <div className="font-medium text-slate-800 dark:text-slate-200">{t.tip2Title || "Description détaillée"}</div>
-                    <div className="text-slate-600 dark:text-slate-400 text-xs">
-                      {t.tip2Desc || "Plus vous êtes précis, plus vous attirerez des candidats qualifiés"}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Users className="h-4 w-4 text-purple-500 mt-0.5" />
-                  <div>
-                    <div className="font-medium text-slate-800 dark:text-slate-200">{t.tip3Title || "Compétences claires"}</div>
-                    <div className="text-slate-600 dark:text-slate-400 text-xs">
-                      {t.tip3Desc || "Listez les compétences essentielles pour le projet"}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Main Content */}
@@ -501,18 +602,7 @@ export default function CreateProjectPage() {
                         <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
                           {t.categoryLabel || "Catégorie"} *
                         </Label>
-                        <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
-                          <SelectTrigger className="mt-2 border-purple-200 dark:border-purple-800">
-                            <SelectValue placeholder={t.selectCategory || "Sélectionnez une catégorie"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category.name} value={category.name}>
-                                {category.name} ({category.count})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <CategorySelector />
                       </div>
 
                       <div>
@@ -551,11 +641,16 @@ export default function CreateProjectPage() {
                             <SelectValue placeholder={t.selectCountry || "Sélectionnez un pays"} />
                           </SelectTrigger>
                           <SelectContent className="max-h-64">
-                            {COUNTRIES.map((country) => (
-                              <SelectItem key={country.code} value={country.code}>
-                                {country.flag} {country.name}
-                              </SelectItem>
-                            ))}
+                            <ScrollArea className="h-[300px]">
+                              {COUNTRIES.map((country) => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-lg">{country.flag}</span>
+                                    <span>{country.name}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </ScrollArea>
                           </SelectContent>
                         </Select>
                       </div>
@@ -585,7 +680,7 @@ export default function CreateProjectPage() {
                     </div>
 
                     <div className="flex justify-between pt-4">
-                      <div className="text-sm text-slate-500">{t.stepCount || "Étape 1 sur 4"}</div>
+                      <div className="text-sm text-slate-500">{t.stepCount?.replace("{step}", "1") || "Étape 1 sur 4"}</div>
                       <Button onClick={() => setCurrentStep(2)} disabled={!validateStep(1)} className="bg-purple-600 hover:bg-purple-700">
                         {t.continue || "Continuer"}
                       </Button>
@@ -612,23 +707,26 @@ export default function CreateProjectPage() {
                         {t.budgetType || "Type de budget"}
                       </Label>
                       <div className="grid grid-cols-2 gap-4">
-                        {PROJECT_TYPES.map((type) => {
-                          const Icon = type.icon
-                          const isSelected = formData.budget.type === type.value
-                          return (
-                            <Button
-                              key={type.value}
-                              type="button"
-                              variant={isSelected ? "default" : "outline"}
-                              onClick={() => handleBudgetChange("type", type.value)}
-                              className={`h-auto py-4 flex flex-col items-center gap-2 ${isSelected ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
-                            >
-                              <Icon className="h-5 w-5" />
-                              <span>{type.label}</span>
-                              <span className="text-xs opacity-80">{type.description}</span>
-                            </Button>
-                          )
-                        })}
+                        <Button
+                          type="button"
+                          variant={formData.budget.type === "fixed" ? "default" : "outline"}
+                          onClick={() => handleBudgetChange("type", "fixed")}
+                          className={`h-auto py-4 flex flex-col items-center gap-2 ${formData.budget.type === "fixed" ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
+                        >
+                          <DollarSign className="h-5 w-5" />
+                          <span>{t.fixed || "Prix fixe"}</span>
+                          <span className="text-xs opacity-80">{t.fixedDesc || "Budget défini à l'avance"}</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={formData.budget.type === "hourly" ? "default" : "outline"}
+                          onClick={() => handleBudgetChange("type", "hourly")}
+                          className={`h-auto py-4 flex flex-col items-center gap-2 ${formData.budget.type === "hourly" ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
+                        >
+                          <Clock className="h-5 w-5" />
+                          <span>{t.hourly || "Taux horaire"}</span>
+                          <span className="text-xs opacity-80">{t.hourlyDesc || "Paiement à l'heure travaillée"}</span>
+                        </Button>
                       </div>
                     </div>
 
@@ -639,13 +737,14 @@ export default function CreateProjectPage() {
                         </Label>
                         <div className="flex items-center gap-4 mt-2">
                           <div className="relative flex-1">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
                             <Input
                               id="hourlyRate"
                               type="number"
                               value={formData.budget.min || ""}
                               onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
                               placeholder="0"
-                              className="pr-20 border-purple-200 dark:border-purple-800"
+                              className="pl-10 pr-20 border-purple-200 dark:border-purple-800"
                             />
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
                               / heure
@@ -711,48 +810,6 @@ export default function CreateProjectPage() {
                       </div>
                     </div>
 
-                    {/* Urgency & Complexity */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                          {t.urgency || "Urgence"}
-                        </Label>
-                        <div className="flex gap-2 mt-2">
-                          {URGENCY_LEVELS.map((level) => (
-                            <Button
-                              key={level.value}
-                              type="button"
-                              variant={urgency === level.value ? "default" : "outline"}
-                              onClick={() => setUrgency(level.value)}
-                              className={`flex-1 ${urgency === level.value ? `bg-${level.color} hover:bg-${level.color}` : "border-purple-200 dark:border-purple-800"}`}
-                            >
-                              {level.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                          {t.complexity || "Complexité"}
-                        </Label>
-                        <Select value={complexity} onValueChange={setComplexity}>
-                          <SelectTrigger className="mt-2 border-purple-200 dark:border-purple-800">
-                            <SelectValue placeholder={t.selectComplexity || "Sélectionnez un niveau"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {COMPLEXITY_LEVELS.map((level) => (
-                              <SelectItem key={level.value} value={level.value}>
-                                <div>
-                                  <div>{level.label}</div>
-                                  <div className="text-xs text-slate-500">{level.description}</div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
                     {/* Milestones */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
@@ -765,7 +822,7 @@ export default function CreateProjectPage() {
                         </Button>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                         {formData.milestones.map((milestone, index) => (
                           <div key={index} className="flex gap-4 items-start p-4 border border-purple-200 dark:border-purple-800 rounded-xl">
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -866,8 +923,8 @@ export default function CreateProjectPage() {
                         <Label className="text-sm font-medium mb-3 block text-purple-600 dark:text-purple-400">
                           {t.popularSkills || "Compétences populaires"}
                         </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {popularSkills.slice(0, 15).map((skill) => (
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border border-purple-200 dark:border-purple-800 rounded-lg">
+                          {popularSkills.slice(0, 20).map((skill) => (
                             <Badge
                               key={skill.skill}
                               variant="outline"
@@ -950,23 +1007,110 @@ export default function CreateProjectPage() {
                       </div>
                     </div>
 
+                    {/* Upload de fichiers */}
                     <div>
                       <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
                         {t.attachments || "Fichiers joints"}
                       </Label>
-                      <div className="border-2 border-dashed border-purple-200 dark:border-purple-800 rounded-xl p-8 text-center mt-2 hover:border-purple-400 transition-colors">
-                        <Upload className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                      
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.doc,.docx,.txt"
+                        onChange={(e) => handleFileUpload(e.target.files!)}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      
+                      <div className="border-2 border-dashed border-purple-200 dark:border-purple-800 rounded-xl p-6 text-center mt-2 hover:border-purple-400 transition-colors">
+                        <Upload className="h-10 w-10 text-purple-400 mx-auto mb-3" />
                         <div className="font-medium text-slate-700 dark:text-slate-300 mb-2">
                           {t.dragDrop || "Glissez-déposez vos fichiers ici"}
                         </div>
                         <div className="text-sm text-slate-500 mb-4">
                           {t.orClick || "ou cliquez pour parcourir"}
                         </div>
-                        <Button variant="outline" className="border-purple-200 hover:bg-purple-50">
-                          <Upload className="h-4 w-4 mr-2" />
-                          {t.selectFiles || "Choisir des fichiers"}
-                        </Button>
+                        <label htmlFor="file-upload" className="cursor-pointer">
+                          <Button variant="outline" type="button" className="border-purple-200 hover:bg-purple-50">
+                            <Upload className="h-4 w-4 mr-2" />
+                            {t.selectFiles || "Choisir des fichiers"}
+                          </Button>
+                        </label>
+                        <p className="text-xs text-slate-400 mt-3">
+                          {t.fileHelp || "Images, PDF, DOC, TXT - Max 10MB par fichier"}
+                        </p>
                       </div>
+
+                      {/* Upload progress */}
+                      {uploading && (
+                        <div className="mt-4 p-4 border border-purple-200 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-purple-600">{t.uploading || "Upload en cours..."}</span>
+                            <span className="text-sm text-purple-600">{Math.round(uploadProgress)}%</span>
+                          </div>
+                          <Progress value={uploadProgress} className="h-2" />
+                        </div>
+                      )}
+
+                      {/* Liste des fichiers uploadés */}
+                      {uploadedFiles.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-purple-700">
+                              {t.uploadedFiles || "Fichiers uploadés"} ({uploadedFiles.length})
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setUploadedFiles([])
+                                setFormData(prev => ({ ...prev, attachments: [] }))
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              {t.clearAll || "Tout supprimer"}
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {uploadedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="relative group border border-purple-200 dark:border-purple-800 rounded-lg p-2 hover:bg-purple-50/30 transition-colors"
+                              >
+                                {file.thumbnail ? (
+                                  <div className="aspect-video relative mb-2 rounded overflow-hidden bg-purple-50">
+                                    <Image
+                                      src={file.thumbnail}
+                                      alt={file.name}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center h-20 bg-purple-50 rounded mb-2">
+                                    <FileText className="h-8 w-8 text-purple-400" />
+                                  </div>
+                                )}
+                                <div className="text-xs truncate" title={file.name}>
+                                  {file.name}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {(file.size / 1024).toFixed(1)} KB
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeFile(index)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Preview Button */}
@@ -989,11 +1133,40 @@ export default function CreateProjectPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.title || "Titre"}</div><div>{formData.title || "-"}</div></div>
-                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.category || "Catégorie"}</div><div>{formData.category || "-"}</div></div>
-                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.budget || "Budget"}</div><div>{formData.budget.min > 0 ? `${formData.budget.min} - ${formData.budget.max} ${formData.budget.currency} (${formData.budget.type === "fixed" ? "Fixe" : "Horaire"})` : "-"}</div></div>
-                            <div><div className="font-medium text-purple-600 dark:text-purple-400">{t.deadline || "Date limite"}</div><div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "-"}</div></div>
-                            <div className="col-span-2"><div className="font-medium text-purple-600 dark:text-purple-400">{t.skills || "Compétences"}</div><div className="flex flex-wrap gap-1 mt-1">{formData.skills.map(s => <Badge key={s} variant="secondary" className="bg-purple-100">{s}</Badge>)}</div></div>
+                            <div>
+                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.title || "Titre"}</div>
+                              <div>{formData.title || "-"}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.category || "Catégorie"}</div>
+                              <div>{formData.category || "-"}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.budget || "Budget"}</div>
+                              <div>{formData.budget.min > 0 ? `${formData.budget.min} - ${formData.budget.max} ${formData.budget.currency} (${formData.budget.type === "fixed" ? "Fixe" : "Horaire"})` : "-"}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.deadline || "Date limite"}</div>
+                              <div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "-"}</div>
+                            </div>
+                            <div className="col-span-2">
+                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.skills || "Compétences"}</div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {formData.skills.map(s => <Badge key={s} variant="secondary" className="bg-purple-100">{s}</Badge>)}
+                              </div>
+                            </div>
+                            {uploadedFiles.length > 0 && (
+                              <div className="col-span-2">
+                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.attachments || "Fichiers joints"}</div>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {uploadedFiles.map((f, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">
+                                      {f.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
