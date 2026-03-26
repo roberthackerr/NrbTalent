@@ -498,7 +498,7 @@ export default function ProjectDetailsPage() {
                       ? (dict?.common?.saved || 'Sauvegardé') 
                       : (dict?.common?.save || 'Sauvegarder')}
                   </button>
-                                  <button
+                                    {IsProjectOwner &&  <button
                     onClick={() => {
                       router.push(`/${lang}/projects/${id}/edit`);
                     }}
@@ -507,7 +507,7 @@ export default function ProjectDetailsPage() {
                     
                     <Edit className={`w-4 h-4 `} />
                     {dict?.common?.edit || 'modifier' }
-                  </button>
+                  </button>}
                 </div>
               )}
             </div>
@@ -536,8 +536,10 @@ export default function ProjectDetailsPage() {
                   ? (dict?.common?.saved || 'Sauvegardé') 
                   : (dict?.common?.save || 'Sauvegarder')}
                 </span>
+
               </button>
-                                               <button
+
+                         {IsProjectOwner             &&        <button
                     onClick={() => {
                       router.push(`/${lang}/projects/${id}/edit`);
                     }}
@@ -546,7 +548,7 @@ export default function ProjectDetailsPage() {
                     
                     <Edit className={`w-4 h-4 `} />
                     {dict?.common?.edit || 'modifier' }
-                  </button>
+                  </button>}
               
               <AIArchitectBadge
                 projectId={projectData._id}
