@@ -68,6 +68,7 @@ import {
   Coffee as CoffeeIcon,
   ImageIcon,
   Download,
+  Edit,
 } from 'lucide-react'
 import Link from 'next/link'
 import { AIArchitectBadge } from '@/components/projects/AIArchitectBadge'
@@ -491,10 +492,21 @@ export default function ProjectDetailsPage() {
                     disabled={saving}
                     className="w-full px-4 py-2 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                   >
+                    
                     <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current text-amber-500' : ''}`} />
                     {isSaved 
                       ? (dict?.common?.saved || 'Sauvegardé') 
                       : (dict?.common?.save || 'Sauvegarder')}
+                  </button>
+                                  <button
+                    onClick={() => {
+                      router.push('edit')
+                    }}
+                    className="w-full px-4 py-2 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    
+                    <Edit className={`w-4 h-4 `} />
+                    {dict?.common?.edit || 'modifier' }
                   </button>
                 </div>
               )}
