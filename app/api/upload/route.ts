@@ -1,4 +1,4 @@
-// app/api/upload/route.ts
+// app/api/upload/route.ts - Version corrigée
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -8,11 +8,9 @@ import { getDatabase } from "@/lib/mongodb"
 import { notificationService } from "@/services/NotificationService"
 
 // Configuration
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB (augmenté pour les documents)
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_MIME_TYPES = [
-  // Images
   'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
-  // Documents
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -20,23 +18,11 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  // Textes
-  'text/plain',
-  'text/markdown',
-  'text/csv',
-  // Archives
-  'application/zip',
-  'application/x-rar-compressed',
-  // Code
-  'application/json',
-  'application/xml',
-  'text/html',
-  'text/css',
-  'text/javascript',
-  'application/javascript'
+  'text/plain', 'text/markdown', 'text/csv',
+  'application/zip', 'application/x-rar-compressed',
+  'application/json', 'application/xml', 'text/html', 'text/css', 'text/javascript', 'application/javascript'
 ]
 
-// Messages d'erreur multilingues
 const messages = {
   fr: {
     unauthorized: "Non autorisé",
@@ -44,8 +30,7 @@ const messages = {
     invalidType: "Type de fichier non supporté",
     tooLarge: "La taille du fichier ne doit pas dépasser 10MB",
     uploadFailed: "Erreur lors du téléchargement",
-    success: "Fichier téléchargé avec succès",
-    multipleFiles: "Upload multiple non supporté, utilisez un seul fichier"
+    success: "Fichier téléchargé avec succès"
   },
   en: {
     unauthorized: "Unauthorized",
@@ -53,8 +38,7 @@ const messages = {
     invalidType: "File type not supported",
     tooLarge: "File size must be less than 10MB",
     uploadFailed: "Upload failed",
-    success: "File uploaded successfully",
-    multipleFiles: "Multiple upload not supported, use single file"
+    success: "File uploaded successfully"
   },
   mg: {
     unauthorized: "Tsy nahazo alalana",
@@ -62,12 +46,10 @@ const messages = {
     invalidType: "Karazana rakitra tsy azo ekena",
     tooLarge: "Tsy mihoatra ny 10MB ny haben'ny rakitra",
     uploadFailed: "Tsy nahomby ny fampidirana",
-    success: "Vita soa aman-tsara ny fampidirana rakitra",
-    multipleFiles: "Tsy azo atao ny fampidirana rakitra maro miaraka"
+    success: "Vita soa aman-tsara ny fampidirana rakitra"
   }
 }
 
-// Messages de notification multilingues
 const notificationMessages = {
   fr: {
     title: (folder: string) => {
@@ -149,12 +131,10 @@ const notificationMessages = {
   }
 }
 
-// Récupérer la langue de l'utilisateur depuis la session
 async function getUserLanguage(userId: string, sessionLang?: string): Promise<'fr' | 'en' | 'mg'> {
   if (sessionLang && (sessionLang === 'fr' || sessionLang === 'en' || sessionLang === 'mg')) {
     return sessionLang
   }
-  
   try {
     const db = await getDatabase()
     let objectId
@@ -163,32 +143,15 @@ async function getUserLanguage(userId: string, sessionLang?: string): Promise<'f
     } catch {
       return 'fr'
     }
-    
     const user = await db.collection("users").findOne(
       { _id: objectId },
       { projection: { language: 1, preferences: 1 } }
     )
-    
     const userLang = user?.language || user?.preferences?.language || 'fr'
-    if (userLang === 'fr' || userLang === 'en' || userLang === 'mg') {
-      return userLang
-    }
-    return 'fr'
-  } catch (error) {
-    console.error('Error getting user language:', error)
+    return userLang === 'fr' || userLang === 'en' || userLang === 'mg' ? userLang : 'fr'
+  } catch {
     return 'fr'
   }
-}
-
-// Déterminer le type de fichier pour Cloudinary
-function getResourceType(file: File): 'image' | 'raw' | 'auto' {
-  if (file.type.startsWith('image/')) {
-    return 'image'
-  }
-  if (file.type === 'application/pdf') {
-    return 'image' // PDF peut être traité comme image avec la bonne configuration
-  }
-  return 'raw'
 }
 
 export async function POST(request: Request) {
@@ -218,25 +181,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: messages.fr.noFile }, { status: 400 })
     }
 
-    // Vérifier le type de fichier
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       const lang = await getUserLanguage(userId)
-      return NextResponse.json(
-        { error: messages[lang].invalidType }, 
-        { status: 400 }
-      )
+      return NextResponse.json({ error: messages[lang].invalidType }, { status: 400 })
     }
 
-    // Vérifier la taille
     if (file.size > MAX_FILE_SIZE) {
       const lang = await getUserLanguage(userId)
-      return NextResponse.json(
-        { error: messages[lang].tooLarge }, 
-        { status: 400 }
-      )
+      return NextResponse.json({ error: messages[lang].tooLarge }, { status: 400 })
     }
 
-    // Récupérer la langue de l'utilisateur
     const sessionLang = (session.user as any).language || (session.user as any).preferences?.language
     userLang = await getUserLanguage(userId, sessionLang)
 
@@ -245,14 +199,16 @@ export async function POST(request: Request) {
     const base64File = `data:${file.type};base64,${buffer.toString('base64')}`
     
     const isImage = file.type.startsWith('image/')
-    const resourceType = getResourceType(file)
+    const isPDF = file.type === 'application/pdf'
 
-    // Configuration de l'upload selon le type
+    // Configuration CRITIQUE pour l'accès public
     const uploadOptions: any = {
       public_id: `${folder}/${session.user.id}/${uuidv4()}`,
       folder: `nrbtalents/${folder}`,
-      resource_type: resourceType,
-      tags: [folder, session.user.id, file.type.split('/')[0]],
+      resource_type: 'auto', // 👈 CHANGEMENT: 'auto' permet à Cloudinary de détecter automatiquement
+      type: 'upload', // 👈 IMPORTANT: pour un accès public
+      access_mode: 'public', // 👈 RENDRE LE FICHIER PUBLIC
+      tags: [folder, session.user.id],
       context: {
         userId: session.user.id,
         folder: folder,
@@ -263,7 +219,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // Ajouter des transformations pour les images
+    // Pour les PDF, ajouter des transformations pour forcer l'affichage
+    if (isPDF) {
+      uploadOptions.transformation = [
+        { flags: "attachment" } // Force le téléchargement plutôt que l'affichage
+      ]
+      uploadOptions.format = 'pdf'
+    }
+
+    // Pour les images, ajouter des transformations
     if (isImage) {
       uploadOptions.transformation = [
         { width: 1200, crop: 'limit', quality: 'auto' },
@@ -271,7 +235,15 @@ export async function POST(request: Request) {
       ]
     }
 
-    // Upload vers Cloudinary
+    console.log('📤 Uploading to Cloudinary:', {
+      folder,
+      fileName: file.name,
+      fileType: file.type,
+      resource_type: uploadOptions.resource_type,
+      type: uploadOptions.type,
+      access_mode: uploadOptions.access_mode
+    })
+
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload(
         base64File,
@@ -287,18 +259,18 @@ export async function POST(request: Request) {
     uploadedPublicId = (uploadResult as any).public_id
     uploadSuccess = true
 
-    // Générer l'URL de la miniature uniquement pour les images
+    console.log('✅ Upload successful:', {
+      url: uploadedUrl,
+      publicId: uploadedPublicId,
+      resource_type: (uploadResult as any).resource_type
+    })
+
     let thumbnailUrl: string | undefined
     if (isImage) {
-      thumbnailUrl = uploadedUrl.replace(
-        '/upload/',
-        '/upload/w_400,h_400,c_fill,g_auto/'
-      )
+      thumbnailUrl = uploadedUrl.replace('/upload/', '/upload/w_400,h_400,c_fill,g_auto/')
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 📢 ENVOYER UNE NOTIFICATION (dans la langue de l'utilisateur)
-    // ──────────────────────────────────────────────────────────────────────────
+    // Notification
     try {
       const notifMsgs = notificationMessages[userLang] || notificationMessages.fr
       const title = notifMsgs.title(folder)
@@ -325,7 +297,6 @@ export async function POST(request: Request) {
         },
         checkPreferences: true
       })
-      console.log(`✅ Upload notification sent to user: ${userId} for folder: ${folder}, file: ${file.name}`)
     } catch (notifError) {
       console.error('⚠️ Failed to send upload notification:', notifError)
     }
@@ -346,9 +317,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('❌ Upload error:', error)
     
-    // ──────────────────────────────────────────────────────────────────────────
-    // 📢 ENVOYER UNE NOTIFICATION D'ERREUR
-    // ──────────────────────────────────────────────────────────────────────────
     if (userId && !uploadSuccess) {
       try {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'
@@ -367,7 +335,6 @@ export async function POST(request: Request) {
           },
           checkPreferences: true
         })
-        console.log('❌ Upload error notification sent to user:', userId)
       } catch (notifError) {
         console.error('⚠️ Failed to send upload error notification:', notifError)
       }
@@ -375,10 +342,7 @@ export async function POST(request: Request) {
     
     const errorLang = userId ? userLang : 'fr'
     return NextResponse.json(
-      { 
-        success: false,
-        error: messages[errorLang].uploadFailed 
-      }, 
+      { success: false, error: messages[errorLang].uploadFailed }, 
       { status: 500 }
     )
   }
