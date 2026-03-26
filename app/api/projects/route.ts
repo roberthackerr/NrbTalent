@@ -14,6 +14,11 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
+    url: {
+    secure: true,
+    private_cdn: false,
+    sign_url: false // ← Important!
+  }
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -179,76 +184,53 @@ type ProcessedAttachment = {
 
 // ─── Cloudinary upload helper ─────────────────────────────────────────────────
 // ─── Cloudinary upload helper ─────────────────────────────────────────────────
+// In your projects route.ts
 async function uploadAttachmentToCloudinary(attachment: {
   base64Data: string
-  name:       string
-  type:       string
-  size:       number
-}): Promise<{
-  url:          string
-  publicId:     string
-  thumbnail?:   string
-  resourceType: string
-} | null> {
+  name: string
+  type: string
+  size: number
+}) {
   try {
-    const isImage    = attachment.type.startsWith("image/")
-    const isPdf      = attachment.type === "application/pdf"
-    const nameWithoutExt = attachment.name.replace(/\.[^/.]+$/, "")
-    const safePublicId = `${Date.now()}-${nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, "_")}`
+    const isPdf = attachment.type === 'application/pdf'
+    const isImage = attachment.type.startsWith('image/')
+    
+    // Ensure base64 has the correct MIME prefix
+    let base64WithPrefix = attachment.base64Data
+    if (!attachment.base64Data.startsWith('data:')) {
+      base64WithPrefix = isPdf 
+        ? `data:application/pdf;base64,${attachment.base64Data}`
+        : `data:${attachment.type};base64,${attachment.base64Data}`
+    }
 
-    // 🔥 CRITIQUE : Pour les PDF, utiliser "raw" et forcer l'accès public
     const uploadOptions: Record<string, any> = {
-      folder:        "projects/attachments",
-      public_id:     safePublicId,
-      overwrite:     false,
-      // ⚠️ POINT CLÉ : access_mode: "public" force l'accès public
-      access_mode:   "public",
+      folder: 'nrbtalents/projects', // Match verification folder structure
+      public_id: `project_attachments/${Date.now()}_${attachment.name.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+      resource_type: isPdf ? 'raw' : isImage ? 'image' : 'raw',
+      access_mode: 'public',
+      tags: ['project', 'attachment'],
     }
 
-    // Déterminer le resource_type correct
-    if (isPdf) {
-      uploadOptions.resource_type = "raw"
-      uploadOptions.format = "pdf"
-      // Pour les PDF, on veut un téléchargement direct
-      uploadOptions.transformation = [{ flags: "attachment" }]
-    } else if (isImage) {
-      uploadOptions.resource_type = "image"
+    // For PDFs, don't add transformation that forces download
+    if (!isPdf) {
       uploadOptions.transformation = [
-        { width: 1200, crop: "limit", quality: "auto" },
-        { width: 400, crop: "fill", gravity: "auto" }
+        { width: 1200, crop: 'limit', quality: 'auto' }
       ]
-    } else {
-      uploadOptions.resource_type = "raw"
-      uploadOptions.access_mode = "public"
     }
 
-    console.log(`📤 Uploading [${attachment.name}] as ${uploadOptions.resource_type} with access_mode=${uploadOptions.access_mode}`)
-
-    const result = await cloudinary.uploader.upload(attachment.base64Data, uploadOptions)
-
-    // Générer une miniature pour les PDF (première page)
-    let thumbnail: string | undefined
-    if (isImage && result.eager?.[0]?.secure_url) {
-      thumbnail = result.eager[0].secure_url
-    } else if (isPdf) {
-      // URL de la première page du PDF (pour aperçu)
-      thumbnail = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_400,h_300,c_fill,pg_1/${result.public_id}.jpg`
-    }
-
-    console.log(`✅ Uploaded [${attachment.name}] → ${result.secure_url} (${result.resource_type})`)
-
+    const result = await cloudinary.uploader.upload(base64WithPrefix, uploadOptions)
+    
     return {
-      url:          result.secure_url,
-      publicId:     result.public_id,
-      thumbnail,
+      url: result.secure_url,
+      publicId: result.public_id,
+      thumbnail: isImage ? result.secure_url : undefined,
       resourceType: result.resource_type,
     }
   } catch (error) {
-    console.error(`❌ Cloudinary upload error [${attachment.name}]:`, error)
+    console.error('Upload error:', error)
     return null
   }
 }
-
 // Traite tous les attachements :
 // - base64Data présent → upload vers Cloudinary
 // - url + publicId présents → déjà uploadé, on conserve

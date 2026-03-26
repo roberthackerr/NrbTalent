@@ -7,6 +7,11 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
+    url: {
+    secure: true,
+    private_cdn: false,
+    sign_url: false // ← Important!
+  }
 });
 
 export default cloudinary;
