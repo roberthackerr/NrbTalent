@@ -195,20 +195,21 @@ async function uploadAttachmentToCloudinary(attachment: {
     const isPdf = attachment.type === 'application/pdf'
     const isImage = attachment.type.startsWith('image/')
     
-    // ✅ Extract file extension
+    // Extract file extension
     const fileExt = attachment.name.split('.').pop()?.toLowerCase() || ''
     const nameWithoutExt = attachment.name.replace(/\.[^/.]+$/, '')
     const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_')
     
-    // ✅ Preserve extension in public_id
+    // Preserve extension in public_id
     const publicIdWithExt = `${Date.now()}_${safeName}.${fileExt}`
     
     // Ensure base64 has the correct MIME prefix
     let base64WithPrefix = attachment.base64Data
     if (!attachment.base64Data.startsWith('data:')) {
-      if (isPdf) {
-        base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
-      } else if (isImage) {
+      // if (isPdf) {
+        //base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
+      // } else 
+      if (isImage) {
         base64WithPrefix = `data:${attachment.type};base64,${attachment.base64Data}`
       } else {
         base64WithPrefix = `data:application/octet-stream;base64,${attachment.base64Data}`
@@ -217,11 +218,18 @@ async function uploadAttachmentToCloudinary(attachment: {
 
     const uploadOptions: Record<string, any> = {
       folder: 'nrbtalents/projects',
-      public_id: publicIdWithExt, // ✅ Now includes .pdf extension
+      public_id: publicIdWithExt,
       resource_type: isPdf ? 'raw' : isImage ? 'image' : 'raw',
       access_mode: 'public',
       tags: ['project', 'attachment'],
     }
+
+    // ✅ For PDFs, add flags to allow inline viewing
+    // if (isPdf) {
+    //   uploadOptions.flags = 'attachment' // Forces download instead of trying to display
+    //   // OR use this for inline viewing:
+    //   // uploadOptions.flags = 'attachment:inline'
+    // }
 
     // For images only, add transformations
     if (isImage) {
