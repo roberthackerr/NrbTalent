@@ -1008,39 +1008,69 @@ export default function CreateProjectPage() {
                     </div>
 
                     {/* Upload de fichiers */}
-                    <div>
-                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                        {t.attachments || "Fichiers joints"}
-                      </Label>
-                      
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf,.doc,.docx,.txt"
-                        onChange={(e) => handleFileUpload(e.target.files!)}
-                        className="hidden"
-                        id="file-upload"
-                      />
-                      
-                      <div className="border-2 border-dashed border-purple-200 dark:border-purple-800 rounded-xl p-6 text-center mt-2 hover:border-purple-400 transition-colors">
-                        <Upload className="h-10 w-10 text-purple-400 mx-auto mb-3" />
-                        <div className="font-medium text-slate-700 dark:text-slate-300 mb-2">
-                          {t.dragDrop || "Glissez-déposez vos fichiers ici"}
-                        </div>
-                        <div className="text-sm text-slate-500 mb-4">
-                          {t.orClick || "ou cliquez pour parcourir"}
-                        </div>
-                        <label htmlFor="file-upload" className="cursor-pointer">
-                          <Button variant="outline" type="button" className="border-purple-200 hover:bg-purple-50">
-                            <Upload className="h-4 w-4 mr-2" />
-                            {t.selectFiles || "Choisir des fichiers"}
-                          </Button>
-                        </label>
-                        <p className="text-xs text-slate-400 mt-3">
-                          {t.fileHelp || "Images, PDF, DOC, TXT - Max 10MB par fichier"}
-                        </p>
-                      </div>
+                   <div>
+  <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+    {t.attachments || "Fichiers joints"}
+  </Label>
+  
+  {/* Input file caché */}
+  <input
+    ref={fileInputRef}
+    type="file"
+    multiple
+    accept="image/*,.pdf,.doc,.docx,.txt"
+    onChange={(e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFileUpload(e.target.files)
+      }
+    }}
+    className="hidden"
+    id="file-upload-input"
+  />
+  
+  {/* Zone de drop */}
+  <div 
+    className="border-2 border-dashed border-purple-200 dark:border-purple-800 rounded-xl p-6 text-center mt-2 hover:border-purple-400 transition-colors cursor-pointer"
+    onClick={() => fileInputRef.current?.click()}
+    onDragOver={(e) => {
+      e.preventDefault()
+      e.currentTarget.classList.add('border-purple-500', 'bg-purple-50/30')
+    }}
+    onDragLeave={(e) => {
+      e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50/30')
+    }}
+    onDrop={(e) => {
+      e.preventDefault()
+      e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50/30')
+      const files = e.dataTransfer.files
+      if (files.length > 0) {
+        handleFileUpload(files)
+      }
+    }}
+  >
+    <Upload className="h-10 w-10 text-purple-400 mx-auto mb-3" />
+    <div className="font-medium text-slate-700 dark:text-slate-300 mb-2">
+      {t.dragDrop || "Glissez-déposez vos fichiers ici"}
+    </div>
+    <div className="text-sm text-slate-500 mb-4">
+      {t.orClick || "ou cliquez pour parcourir"}
+    </div>
+    <Button 
+      variant="outline" 
+      type="button" 
+      onClick={(e) => {
+        e.stopPropagation()
+        fileInputRef.current?.click()
+      }}
+      className="border-purple-200 hover:bg-purple-50"
+    >
+      <Upload className="h-4 w-4 mr-2" />
+      {t.selectFiles || "Choisir des fichiers"}
+    </Button>
+    <p className="text-xs text-slate-400 mt-3">
+      {t.fileHelp || "Images, PDF, DOC, TXT - Max 10MB par fichier"}
+    </p>
+  </div>
 
                       {/* Upload progress */}
                       {uploading && (
