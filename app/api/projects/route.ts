@@ -15,6 +15,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
 });
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_PAGE  = 1
 const DEFAULT_LIMIT = 12
@@ -49,10 +50,7 @@ const GetProjectsQuerySchema = z.object({
     .optional()
     .transform((val) => {
       if (!val) return undefined
-      const skills = val
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0)
+      const skills = val.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
       return skills.length > 0 ? skills : undefined
     }),
   budgetMin: z
@@ -105,15 +103,16 @@ const GetProjectsQuerySchema = z.object({
     }),
 })
 
-// Attachment schema — accepte base64Data pour l'upload intégré
+// FIX: resourceType stocké en base pour la suppression correcte
 const AttachmentSchema = z.object({
-  url:        z.string(),
-  publicId:   z.string(),
-  name:       z.string(),
-  type:       z.string(),
-  size:       z.number(),
-  thumbnail:  z.string().optional(),
-  base64Data: z.string().optional(), // base64 envoyé par le client
+  url:          z.string(),
+  publicId:     z.string(),
+  name:         z.string(),
+  type:         z.string(),
+  size:         z.number(),
+  thumbnail:    z.string().optional(),
+  resourceType: z.string().optional(), // "image" | "video" | "raw" — retourné par Cloudinary
+  base64Data:   z.string().optional(), // base64 envoyé par le client pour l'upload
 })
 
 const CreateProjectSchema = z.object({
@@ -133,8 +132,8 @@ const CreateProjectSchema = z.object({
   deadline: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
-  status:     z.enum(["draft", "open"]).default("draft"),
-  visibility: z.enum(["public", "private"]).optional().default("public"),
+  status:      z.enum(["draft", "open"]).default("draft"),
+  visibility:  z.enum(["public", "private"]).optional().default("public"),
   tags:        z.array(z.string()).optional().default([]),
   attachments: z.array(AttachmentSchema).optional().default([]),
   location: z
@@ -167,47 +166,73 @@ const CreateProjectSchema = z.object({
     .default({}),
 })
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type ProcessedAttachment = {
+  url:          string
+  publicId:     string
+  name:         string
+  type:         string
+  size:         number
+  thumbnail?:   string
+  resourceType: string  // stocké pour la suppression correcte
+}
+
 // ─── Cloudinary upload helper ─────────────────────────────────────────────────
 async function uploadAttachmentToCloudinary(attachment: {
   base64Data: string
   name:       string
   type:       string
   size:       number
-}): Promise<{ url: string; publicId: string; thumbnail?: string } | null> {
+}): Promise<{
+  url:          string
+  publicId:     string
+  thumbnail?:   string
+  resourceType: string
+} | null> {
   try {
-    const isImage        = attachment.type.startsWith("image/")
-    const isPdf          = attachment.type === "application/pdf"
-    const resourceType   = isImage ? "image" : "raw"
-    const safePublicId   = `${Date.now()}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`
+    const isImage    = attachment.type.startsWith("image/")
+    const isPdf      = attachment.type === "application/pdf"
+    const safePublicId = `${Date.now()}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`
 
     const uploadOptions: Record<string, any> = {
       folder:        "projects/attachments",
-      resource_type: resourceType,
+      // FIX: "auto" au lieu de "raw" — Cloudinary détecte le bon type
+      // "raw" rendait les PDFs inaccessibles (HTTP 401)
+      resource_type: "auto",
       public_id:     safePublicId,
       overwrite:     false,
+      // FIX: forcer l'accès public pour tous les types de fichiers
+      access_mode:   "public",
     }
 
-    // Génère une miniature pour les images
+    // Miniature pour les images uniquement
     if (isImage) {
       uploadOptions.eager = [
-        { width: 400, height: 300, crop: "fill", quality: "auto" },
+        { width: 400, height: 300, crop: "fill", quality: "auto", fetch_format: "auto" },
       ]
       uploadOptions.eager_async = false
     }
 
-    const result = await cloudinary.uploader.upload(
-      attachment.base64Data,
-      uploadOptions
-    )
+    const result = await cloudinary.uploader.upload(attachment.base64Data, uploadOptions)
+
+    // Miniature PDF via l'URL de transformation Cloudinary
+    let thumbnail: string | undefined
+    if (isImage) {
+      thumbnail = result.eager?.[0]?.secure_url ?? result.secure_url
+    } else if (isPdf) {
+      // Cloudinary peut générer un aperçu de la première page d'un PDF
+      thumbnail = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_400,h_300,c_fill,pg_1/${result.public_id}.jpg`
+    }
+
+    console.log(`✅ Uploaded [${attachment.name}] resource_type=${result.resource_type} → ${result.secure_url}`)
 
     return {
-      url:       result.secure_url,
-      publicId:  result.public_id,
-      thumbnail: isImage
-        ? result.eager?.[0]?.secure_url ?? result.secure_url
-        : isPdf
-        ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_400,h_300,pg_1/${result.public_id}.jpg`
-        : undefined,
+      url:          result.secure_url,
+      publicId:     result.public_id,
+      thumbnail,
+      // FIX: on stocke le resource_type retourné par Cloudinary
+      // pour pouvoir le réutiliser correctement lors de la suppression
+      resourceType: result.resource_type,
     }
   } catch (error) {
     console.error(`❌ Cloudinary upload error [${attachment.name}]:`, error)
@@ -215,35 +240,20 @@ async function uploadAttachmentToCloudinary(attachment: {
   }
 }
 
-// Traite tous les attachements d'un projet :
-// - Si base64Data présent → upload vers Cloudinary
-// - Si url + publicId présents → déjà uploadé, on garde
-// - Sinon → ignoré
+// Traite tous les attachements :
+// - base64Data présent → upload vers Cloudinary
+// - url + publicId présents → déjà uploadé, on conserve
+// - sinon → ignoré
 async function processAttachments(
   rawAttachments: z.infer<typeof AttachmentSchema>[]
-): Promise<Array<{
-  url:       string
-  publicId:  string
-  name:      string
-  type:      string
-  size:      number
-  thumbnail?: string
-}>> {
+): Promise<ProcessedAttachment[]> {
   if (!rawAttachments || rawAttachments.length === 0) return []
 
-  const processed: Array<{
-    url:       string
-    publicId:  string
-    name:      string
-    type:      string
-    size:      number
-    thumbnail?: string
-  }> = []
+  const processed: ProcessedAttachment[] = []
 
   for (const attachment of rawAttachments) {
     if (attachment.base64Data) {
-      // Nouveau fichier — upload vers Cloudinary
-      console.log(`⬆️  Uploading [${attachment.name}] to Cloudinary…`)
+      console.log(`⬆️  Uploading [${attachment.name}]…`)
       const uploaded = await uploadAttachmentToCloudinary({
         base64Data: attachment.base64Data,
         name:       attachment.name,
@@ -253,32 +263,47 @@ async function processAttachments(
 
       if (uploaded) {
         processed.push({
-          url:       uploaded.url,
-          publicId:  uploaded.publicId,
-          name:      attachment.name,
-          type:      attachment.type,
-          size:      attachment.size,
-          thumbnail: uploaded.thumbnail,
+          url:          uploaded.url,
+          publicId:     uploaded.publicId,
+          name:         attachment.name,
+          type:         attachment.type,
+          size:         attachment.size,
+          thumbnail:    uploaded.thumbnail,
+          resourceType: uploaded.resourceType,
         })
-        console.log(`✅ Uploaded [${attachment.name}] → ${uploaded.url}`)
       } else {
         console.warn(`⚠️  Skipped [${attachment.name}] — upload failed`)
       }
     } else if (attachment.url && attachment.publicId) {
-      // Fichier déjà uploadé — on garde tel quel
+      // Fichier déjà uploadé — on conserve avec son resourceType
       processed.push({
-        url:       attachment.url,
-        publicId:  attachment.publicId,
-        name:      attachment.name,
-        type:      attachment.type,
-        size:      attachment.size,
-        thumbnail: attachment.thumbnail,
+        url:          attachment.url,
+        publicId:     attachment.publicId,
+        name:         attachment.name,
+        type:         attachment.type,
+        size:         attachment.size,
+        thumbnail:    attachment.thumbnail,
+        resourceType: attachment.resourceType ?? "auto",
       })
     }
-    // Sinon : attachment invalide → ignoré silencieusement
+    // sinon: attachment invalide → ignoré
   }
 
   return processed
+}
+
+// Supprime un fichier Cloudinary avec le bon resource_type
+async function deleteCloudinaryFile(publicId: string, resourceType = "auto") {
+  try {
+    await cloudinary.uploader.destroy(publicId, {
+      // FIX: utiliser le resourceType stocké en base
+      // plutôt qu'une détection par extension peu fiable
+      resource_type: resourceType as any,
+    })
+    console.log(`✅ Deleted Cloudinary [${publicId}] (${resourceType})`)
+  } catch (err) {
+    console.error(`⚠️  Failed to delete Cloudinary [${publicId}]:`, err)
+  }
 }
 
 // ─── Notification helpers ─────────────────────────────────────────────────────
@@ -287,7 +312,6 @@ async function getUserLanguage(userId: string): Promise<"fr" | "en" | "mg"> {
     const db = await getDatabase()
     let objectId: ObjectId
     try { objectId = new ObjectId(userId) } catch { return "fr" }
-
     const user = await db.collection("users").findOne(
       { _id: objectId },
       { projection: { language: 1, preferences: 1 } }
@@ -301,7 +325,7 @@ async function getUserLanguage(userId: string): Promise<"fr" | "en" | "mg"> {
 
 const notificationMessages = {
   projectCreated: {
-    fr: { title: "📋 Projet publié",   message: (t: string) => `Votre projet "${t}" a été publié avec succès` },
+    fr: { title: "📋 Projet publié",    message: (t: string) => `Votre projet "${t}" a été publié avec succès` },
     en: { title: "📋 Project published", message: (t: string) => `Your project "${t}" has been published successfully` },
     mg: { title: "📋 Tetikasa navoaka", message: (t: string) => `Nivoaka soa aman-tsara ny tetikasanao "${t}"` },
   },
@@ -312,44 +336,44 @@ const notificationMessages = {
   },
   projectStatusChanged: {
     fr: {
-      open:       { title: "📋 Projet ouvert",      message: (t: string) => `Le projet "${t}" est maintenant ouvert aux candidatures` },
-      inProgress: { title: "🚀 Projet en cours",    message: (t: string) => `Le projet "${t}" est maintenant en cours de réalisation` },
-      completed:  { title: "✅ Projet terminé",     message: (t: string) => `Le projet "${t}" est terminé. N'oubliez pas de laisser un avis !` },
-      cancelled:  { title: "❌ Projet annulé",      message: (t: string) => `Le projet "${t}" a été annulé` },
-      updated:    { title: "📝 Projet mis à jour",  message: (t: string) => `Le projet "${t}" a été mis à jour` },
+      open:       { title: "📋 Projet ouvert",     message: (t: string) => `Le projet "${t}" est maintenant ouvert aux candidatures` },
+      inProgress: { title: "🚀 Projet en cours",   message: (t: string) => `Le projet "${t}" est maintenant en cours de réalisation` },
+      completed:  { title: "✅ Projet terminé",    message: (t: string) => `Le projet "${t}" est terminé. N'oubliez pas de laisser un avis !` },
+      cancelled:  { title: "❌ Projet annulé",     message: (t: string) => `Le projet "${t}" a été annulé` },
+      updated:    { title: "📝 Projet mis à jour", message: (t: string) => `Le projet "${t}" a été mis à jour` },
     },
     en: {
-      open:       { title: "📋 Project open",      message: (t: string) => `Project "${t}" is now open for applications` },
+      open:       { title: "📋 Project open",       message: (t: string) => `Project "${t}" is now open for applications` },
       inProgress: { title: "🚀 Project in progress", message: (t: string) => `Project "${t}" is now in progress` },
-      completed:  { title: "✅ Project completed", message: (t: string) => `Project "${t}" is completed. Don't forget to leave a review!` },
-      cancelled:  { title: "❌ Project cancelled", message: (t: string) => `Project "${t}" has been cancelled` },
-      updated:    { title: "📝 Project updated",   message: (t: string) => `Project "${t}" has been updated` },
+      completed:  { title: "✅ Project completed",  message: (t: string) => `Project "${t}" is completed. Don't forget to leave a review!` },
+      cancelled:  { title: "❌ Project cancelled",  message: (t: string) => `Project "${t}" has been cancelled` },
+      updated:    { title: "📝 Project updated",    message: (t: string) => `Project "${t}" has been updated` },
     },
     mg: {
-      open:       { title: "📋 Tetikasa misokatra",  message: (t: string) => `Misokatra ho an'ny fangatahana ny tetikasa "${t}"` },
-      inProgress: { title: "🚀 Tetikasa mitohy",     message: (t: string) => `Mitohy ny tetikasa "${t}"` },
-      completed:  { title: "✅ Tetikasa vita",       message: (t: string) => `Vita ny tetikasa "${t}". Aza adino ny mamela hevitra!` },
-      cancelled:  { title: "❌ Tetikasa nofoanana",  message: (t: string) => `Nofoanana ny tetikasa "${t}"` },
+      open:       { title: "📋 Tetikasa misokatra",   message: (t: string) => `Misokatra ho an'ny fangatahana ny tetikasa "${t}"` },
+      inProgress: { title: "🚀 Tetikasa mitohy",      message: (t: string) => `Mitohy ny tetikasa "${t}"` },
+      completed:  { title: "✅ Tetikasa vita",        message: (t: string) => `Vita ny tetikasa "${t}". Aza adino ny mamela hevitra!` },
+      cancelled:  { title: "❌ Tetikasa nofoanana",   message: (t: string) => `Nofoanana ny tetikasa "${t}"` },
       updated:    { title: "📝 Tetikasa nohavaozina", message: (t: string) => `Nohavaozina ny tetikasa "${t}"` },
     },
   },
   projectDeleted: {
-    fr: { title: "🗑️ Projet supprimé", message: (t: string) => `Votre projet "${t}" a été supprimé` },
-    en: { title: "🗑️ Project deleted", message: (t: string) => `Your project "${t}" has been deleted` },
+    fr: { title: "🗑️ Projet supprimé",  message: (t: string) => `Votre projet "${t}" a été supprimé` },
+    en: { title: "🗑️ Project deleted",  message: (t: string) => `Your project "${t}" has been deleted` },
     mg: { title: "🗑️ Tetikasa voafafa", message: (t: string) => `Nofafana ny tetikasanao "${t}"` },
   },
   projectDeletedForApplicant: {
-    fr: { title: "🗑️ Projet supprimé", message: (t: string) => `Le projet "${t}" auquel vous avez postulé a été supprimé` },
-    en: { title: "🗑️ Project deleted", message: (t: string) => `The project "${t}" you applied to has been deleted` },
+    fr: { title: "🗑️ Projet supprimé",  message: (t: string) => `Le projet "${t}" auquel vous avez postulé a été supprimé` },
+    en: { title: "🗑️ Project deleted",  message: (t: string) => `The project "${t}" you applied to has been deleted` },
     mg: { title: "🗑️ Tetikasa voafafa", message: (t: string) => `Nofafana ny tetikasa "${t}" nangatahanao` },
   },
 }
 
 async function sendMultilingualNotification(
-  userId: string,
+  userId:      string,
   templateKey: keyof typeof notificationMessages,
-  data: any,
-  subKey?: string
+  data:        any,
+  subKey?:     string
 ) {
   try {
     const userLang = await getUserLanguage(userId)
@@ -437,11 +461,11 @@ const buildFilter = (data: z.infer<typeof GetProjectsQuerySchema>) => {
 const buildSortOptions = (sortBy: string, sortOrder: string) => {
   const dir = sortOrder === "asc" ? 1 : -1
   const map: Record<string, any> = {
-    deadline:         { deadline:         dir },
-    "budget.min":     { "budget.min":     dir },
-    "budget.max":     { "budget.max":     dir },
-    applicationCount: { applicationCount: dir },
-    views:            { views:            dir },
+    "deadline":         { deadline:         dir },
+    "budget.min":       { "budget.min":     dir },
+    "budget.max":       { "budget.max":     dir },
+    "applicationCount": { applicationCount: dir },
+    "views":            { views:            dir },
   }
   return map[sortBy] ?? { createdAt: dir }
 }
@@ -480,9 +504,7 @@ export async function GET(request: Request) {
     // Hydrate client info
     if (projects.length > 0) {
       const uniqueClientIds = [
-        ...new Set(
-          projects.map((p) => p.clientId?.toString()).filter(Boolean)
-        ),
+        ...new Set(projects.map((p) => p.clientId?.toString()).filter(Boolean)),
       ].map((id) => new ObjectId(id!))
 
       if (uniqueClientIds.length > 0) {
@@ -561,7 +583,8 @@ export async function POST(request: Request) {
     const clientId    = new ObjectId((session.user as any).id)
 
     // ✅ Upload des attachements directement vers Cloudinary
-    let processedAttachments: Awaited<ReturnType<typeof processAttachments>> = []
+    // resource_type "auto" + access_mode "public" = pas de HTTP 401
+    let processedAttachments: ProcessedAttachment[] = []
     if (projectData.attachments && projectData.attachments.length > 0) {
       console.log(`📎 Processing ${projectData.attachments.length} attachment(s)…`)
       processedAttachments = await processAttachments(projectData.attachments)
@@ -570,7 +593,8 @@ export async function POST(request: Request) {
 
     const projectDocument = {
       ...projectData,
-      attachments:      processedAttachments, // URLs Cloudinary — pas de base64 en DB
+      // Stocke les URLs Cloudinary — jamais de base64 en base de données
+      attachments:      processedAttachments,
       clientId,
       applications:     [],
       applicationCount: 0,
@@ -585,10 +609,7 @@ export async function POST(request: Request) {
     }
 
     const result = await db.collection("projects").insertOne(projectDocument)
-
-    if (!result.insertedId) {
-      throw new Error("Failed to insert project")
-    }
+    if (!result.insertedId) throw new Error("Failed to insert project")
 
     const projectId = result.insertedId.toString()
 
@@ -599,7 +620,7 @@ export async function POST(request: Request) {
       { title: projectData.title, projectId }
     )
 
-    // 📢 Notifications aux freelancers (si projet public & ouvert)
+    // 📢 Notifications aux freelancers si projet public & ouvert
     if (projectData.visibility === "public" && projectData.status === "open") {
       try {
         const freelancers = await db
@@ -626,7 +647,7 @@ export async function POST(request: Request) {
           console.log(`📢 Notified ${freelancers.length} freelancer(s)`)
         }
       } catch (err) {
-        console.error("⚠️ Failed to notify freelancers:", err)
+        console.error("⚠️  Failed to notify freelancers:", err)
       }
     }
 
@@ -635,7 +656,7 @@ export async function POST(request: Request) {
         success: true,
         message: "Project created successfully",
         data: {
-          projectId:           result.insertedId,
+          projectId,
           status:              projectData.status,
           attachmentsUploaded: processedAttachments.length,
         },
@@ -684,8 +705,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized to update this project" }, { status: 403 })
     }
 
-    // ✅ Traiter les nouveaux attachements si présents
-    let processedAttachments = project.attachments || []
+    // ✅ Traiter les nouveaux attachements si fournis
+    let processedAttachments: ProcessedAttachment[] = project.attachments || []
     if (rawAttachments && Array.isArray(rawAttachments) && rawAttachments.length > 0) {
       const validation = z.array(AttachmentSchema).safeParse(rawAttachments)
       if (validation.success) {
@@ -716,7 +737,6 @@ export async function PUT(request: Request) {
         status
       )
 
-      // Notifier les candidats si annulé
       if (status === "cancelled" && project.applications?.length > 0) {
         await Promise.all(
           project.applications.map((app: any) =>
@@ -730,7 +750,6 @@ export async function PUT(request: Request) {
         )
       }
 
-      // Notifier le freelancer sélectionné si terminé
       if (status === "completed" && project.selectedFreelancerId) {
         await sendMultilingualNotification(
           project.selectedFreelancerId.toString(),
@@ -781,25 +800,16 @@ export async function DELETE(request: Request) {
     const projectTitle = project.title
     const applicantIds = project.applications?.map((app: any) => app.freelancerId) || []
 
-    // ✅ Supprimer les fichiers Cloudinary associés
-    const attachments: Array<{ publicId?: string }> = project.attachments || []
+    // ✅ Supprimer les fichiers Cloudinary avec le bon resource_type
+    // FIX: on utilise le resourceType stocké en base (retourné par Cloudinary lors de l'upload)
+    // au lieu d'une détection par extension peu fiable qui causait des erreurs de suppression
+    const attachments: ProcessedAttachment[] = project.attachments || []
     if (attachments.length > 0) {
       console.log(`🗑️  Deleting ${attachments.length} Cloudinary file(s)…`)
       await Promise.allSettled(
         attachments
           .filter((a) => a.publicId)
-          .map(async (a) => {
-            try {
-              // Détecter le resource_type depuis l'URL ou le type
-              const isImage = a.publicId!.match(/\.(jpg|jpeg|png|webp|gif)$/i)
-              await cloudinary.uploader.destroy(a.publicId!, {
-                resource_type: isImage ? "image" : "raw",
-              })
-              console.log(`✅ Deleted Cloudinary file: ${a.publicId}`)
-            } catch (err) {
-              console.error(`⚠️  Failed to delete ${a.publicId}:`, err)
-            }
-          })
+          .map((a) => deleteCloudinaryFile(a.publicId, a.resourceType ?? "auto"))
       )
     }
 
