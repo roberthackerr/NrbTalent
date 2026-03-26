@@ -178,6 +178,7 @@ type ProcessedAttachment = {
 }
 
 // ─── Cloudinary upload helper ─────────────────────────────────────────────────
+// ─── Cloudinary upload helper ─────────────────────────────────────────────────
 async function uploadAttachmentToCloudinary(attachment: {
   base64Data: string
   name:       string
@@ -192,46 +193,54 @@ async function uploadAttachmentToCloudinary(attachment: {
   try {
     const isImage    = attachment.type.startsWith("image/")
     const isPdf      = attachment.type === "application/pdf"
-    const safePublicId = `${Date.now()}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`
+    const nameWithoutExt = attachment.name.replace(/\.[^/.]+$/, "")
+    const safePublicId = `${Date.now()}-${nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, "_")}`
 
+    // 🔥 CRITIQUE : Pour les PDF, utiliser "raw" et forcer l'accès public
     const uploadOptions: Record<string, any> = {
       folder:        "projects/attachments",
-      // FIX: "auto" au lieu de "raw" — Cloudinary détecte le bon type
-      // "raw" rendait les PDFs inaccessibles (HTTP 401)
-      resource_type: "auto",
       public_id:     safePublicId,
       overwrite:     false,
-      // FIX: forcer l'accès public pour tous les types de fichiers
+      // ⚠️ POINT CLÉ : access_mode: "public" force l'accès public
       access_mode:   "public",
     }
 
-    // Miniature pour les images uniquement
-    if (isImage) {
-      uploadOptions.eager = [
-        { width: 400, height: 300, crop: "fill", quality: "auto", fetch_format: "auto" },
+    // Déterminer le resource_type correct
+    if (isPdf) {
+      uploadOptions.resource_type = "raw"
+      uploadOptions.format = "pdf"
+      // Pour les PDF, on veut un téléchargement direct
+      uploadOptions.transformation = [{ flags: "attachment" }]
+    } else if (isImage) {
+      uploadOptions.resource_type = "image"
+      uploadOptions.transformation = [
+        { width: 1200, crop: "limit", quality: "auto" },
+        { width: 400, crop: "fill", gravity: "auto" }
       ]
-      uploadOptions.eager_async = false
+    } else {
+      uploadOptions.resource_type = "raw"
+      uploadOptions.access_mode = "public"
     }
+
+    console.log(`📤 Uploading [${attachment.name}] as ${uploadOptions.resource_type} with access_mode=${uploadOptions.access_mode}`)
 
     const result = await cloudinary.uploader.upload(attachment.base64Data, uploadOptions)
 
-    // Miniature PDF via l'URL de transformation Cloudinary
+    // Générer une miniature pour les PDF (première page)
     let thumbnail: string | undefined
-    if (isImage) {
-      thumbnail = result.eager?.[0]?.secure_url ?? result.secure_url
+    if (isImage && result.eager?.[0]?.secure_url) {
+      thumbnail = result.eager[0].secure_url
     } else if (isPdf) {
-      // Cloudinary peut générer un aperçu de la première page d'un PDF
+      // URL de la première page du PDF (pour aperçu)
       thumbnail = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_400,h_300,c_fill,pg_1/${result.public_id}.jpg`
     }
 
-    console.log(`✅ Uploaded [${attachment.name}] resource_type=${result.resource_type} → ${result.secure_url}`)
+    console.log(`✅ Uploaded [${attachment.name}] → ${result.secure_url} (${result.resource_type})`)
 
     return {
       url:          result.secure_url,
       publicId:     result.public_id,
       thumbnail,
-      // FIX: on stocke le resource_type retourné par Cloudinary
-      // pour pouvoir le réutiliser correctement lors de la suppression
       resourceType: result.resource_type,
     }
   } catch (error) {
