@@ -1,4 +1,4 @@
-// components/contracts/ContractSignature.tsx
+// components/contracts/ContractSignature.tsx - VERSION CORRIGÉE
 "use client"
 
 import { useState } from "react"
@@ -13,8 +13,8 @@ interface ContractSignatureProps {
   currentUserRole: "client" | "freelancer"
   onSigned: () => void
   onRequestChanges: (changes: string) => void
-  isSigned: boolean          // L'utilisateur courant a-t-il signé ?
-  otherPartySigned: boolean  // L'autre partie a-t-elle signé ?
+  isSigned: boolean
+  otherPartySigned: boolean
 }
 
 export function ContractSignature({
@@ -93,8 +93,8 @@ export function ContractSignature({
     }
   }
 
-  // Déterminer le nom de l'autre partie pour l'affichage
   const otherPartyName = currentUserRole === "client" ? "Freelancer" : "Client"
+  const userRoleName = currentUserRole === "client" ? "Client" : "Freelancer"
 
   return (
     <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
@@ -128,18 +128,12 @@ export function ContractSignature({
                   <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                     Signé
                   </span>
-                  <span className="text-xs text-emerald-600 ml-auto">
-                    ✅ Contrat signé par {otherPartyName.toLowerCase()}
-                  </span>
                 </>
               ) : (
                 <>
                   <Clock className="h-4 w-4 text-amber-600" />
                   <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
                     En attente
-                  </span>
-                  <span className="text-xs text-amber-600 ml-auto">
-                    ⏳ En attente de signature
                   </span>
                 </>
               )}
@@ -157,7 +151,7 @@ export function ContractSignature({
                 isSigned ? "text-emerald-600" : "text-amber-600"
               }`} />
               <p className="font-medium text-slate-700 dark:text-slate-300">
-                Vous ({currentUserRole === "client" ? "Client" : "Freelancer"})
+                Vous ({userRoleName})
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -167,9 +161,6 @@ export function ContractSignature({
                   <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                     Signé
                   </span>
-                  <span className="text-xs text-emerald-600 ml-auto">
-                    ✅ Vous avez signé ce contrat
-                  </span>
                 </>
               ) : (
                 <>
@@ -177,25 +168,38 @@ export function ContractSignature({
                   <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
                     En attente
                   </span>
-                  <span className="text-xs text-amber-600 ml-auto">
-                    ⏳ En attente de votre signature
-                  </span>
                 </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Message spécial quand l'autre a signé mais pas vous */}
-        {otherPartySigned && !isSigned && (
+        {/* Message d'état UNIQUE - sans doublon */}
+        {!isSigned && !otherPartySigned && (
           <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
               <div>
                 <p className="font-semibold text-amber-800 dark:text-amber-300">
-                  {otherPartyName} a déjà signé !
+                  En attente de signature
                 </p>
                 <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  Les deux parties doivent signer le contrat.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {otherPartySigned && !isSigned && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="font-semibold text-blue-800 dark:text-blue-300">
+                  {otherPartyName} a déjà signé !
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
                   Il ne vous reste plus qu'à signer pour finaliser le contrat.
                 </p>
               </div>
@@ -203,17 +207,32 @@ export function ContractSignature({
           </div>
         )}
 
-        {/* Message quand vous avez signé mais pas l'autre */}
         {isSigned && !otherPartySigned && (
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
               <div>
-                <p className="font-semibold text-blue-800 dark:text-blue-300">
+                <p className="font-semibold text-emerald-800 dark:text-emerald-300">
                   Vous avez signé !
                 </p>
-                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-1">
                   En attente de la signature de {otherPartyName.toLowerCase()} pour finaliser le contrat.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSigned && otherPartySigned && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
+              <div>
+                <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+                  Contrat complètement signé ! 🎉
+                </p>
+                <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-1">
+                  Les deux parties ont signé le contrat. Vous pouvez maintenant commencer à travailler.
                 </p>
               </div>
             </div>
@@ -227,7 +246,7 @@ export function ContractSignature({
           </div>
         )}
 
-        {/* Actions */}
+        {/* Actions - UNIQUEMENT si l'utilisateur n'a PAS encore signé */}
         {!isSigned && (
           <div className="flex flex-col gap-3">
             <Button
@@ -267,22 +286,6 @@ export function ContractSignature({
                 Annuler
               </Button>
             )}
-          </div>
-        )}
-
-        {isSigned && !otherPartySigned && (
-          <div className="text-center py-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            <CheckCircle className="h-5 w-5 mx-auto mb-2" />
-            <p className="font-medium">Vous avez signé ce contrat</p>
-            <p className="text-sm mt-1">En attente de la signature de {otherPartyName.toLowerCase()}</p>
-          </div>
-        )}
-
-        {isSigned && otherPartySigned && (
-          <div className="text-center py-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            <CheckCircle className="h-5 w-5 mx-auto mb-2" />
-            <p className="font-medium">Contrat complètement signé !</p>
-            <p className="text-sm mt-1">Les deux parties ont signé le contrat</p>
           </div>
         )}
 
