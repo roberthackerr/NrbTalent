@@ -1,7 +1,7 @@
-// components/NotificationBell.tsx - VERSION FINALE MULTILINGUE ET RESPONSIVE
+// components/NotificationBell.tsx - VERSION AVEC SCROLL OPTIMISÉ
 "use client"
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Bell, 
   Check, 
@@ -185,6 +185,7 @@ export function NotificationBell() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [dict, setDict] = useState<any>(null);
   const [lang, setLang] = useState<Locale>('fr');
+  const scrollRef = useRef<HTMLDivElement>(null);
   
   const { state, actions } = useNotifications();
   const { markAsRead, markAllAsRead, deleteNotification, refreshNotifications } = actions;
@@ -333,17 +334,17 @@ export function NotificationBell() {
         
         <DropdownMenuContent 
           align="end" 
-          className="w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-h-[85vh] p-0 overflow-hidden rounded-xl border-0 shadow-2xl" 
+          className="w-[calc(100vw-2rem)] sm:w-96 md:w-[28rem] max-h-[90vh] p-0 overflow-hidden rounded-xl border-0 shadow-2xl" 
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
-          {/* Header */}
-          <div className="sticky top-0 z-10 p-3 sm:p-4 border-b bg-gradient-to-r from-background/95 to-background/95 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
+          {/* Header - Sticky */}
+          <div className="sticky top-0 z-20 p-4 border-b bg-gradient-to-r from-background/98 to-background/98 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                <h3 className="font-bold text-sm sm:text-base">{t('notifications', 'Notifications')}</h3>
+                <Bell className="h-5 w-5" />
+                <h3 className="font-bold text-base">{t('notifications', 'Notifications')}</h3>
                 {state.unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                  <Badge variant="secondary" className="text-xs">
                     {state.unreadCount} {unreadText}
                   </Badge>
                 )}
@@ -355,11 +356,11 @@ export function NotificationBell() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      className="h-8 w-8"
                       onClick={refreshNotifications}
                       disabled={state.isLoading}
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{t('refresh', 'Actualiser')} (R)</TooltipContent>
@@ -368,33 +369,33 @@ export function NotificationBell() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-7 w-7 sm:h-8 sm:w-8"
+                  className="h-8 w-8"
                   asChild
                 >
                   <Link href={`/${lang}/notifications/settings`}>
-                    <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <Settings className="h-4 w-4" />
                   </Link>
                 </Button>
               </div>
             </div>
             
             {/* Search and Filter */}
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={t('search', 'Rechercher des notifications...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 sm:pl-10 h-8 sm:h-9 text-xs sm:text-sm"
+                  className="pl-10 h-9 text-sm"
                 />
               </div>
               
               <div className="flex items-center justify-between gap-2">
-                <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-8 sm:h-9">
-                    <TabsTrigger value="all" className="text-xs">{t('all', 'Toutes')}</TabsTrigger>
-                    <TabsTrigger value="unread" className="text-xs">{t('unreadOnly', 'Non lues')}</TabsTrigger>
+                <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="flex-1">
+                  <TabsList className="grid w-full grid-cols-2 h-9">
+                    <TabsTrigger value="all" className="text-sm">{t('all', 'Toutes')}</TabsTrigger>
+                    <TabsTrigger value="unread" className="text-sm">{t('unreadOnly', 'Non lues')}</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 
@@ -403,12 +404,12 @@ export function NotificationBell() {
                     variant="ghost"
                     size="sm"
                     onClick={markAllAsRead}
-                    className="h-7 sm:h-8 text-xs px-2 sm:px-3 whitespace-nowrap"
+                    className="h-9 text-sm px-3 whitespace-nowrap"
                     disabled={state.isLoading}
                   >
-                    <Check className="h-3 w-3 mr-1" />
-                    <span className="hidden xs:inline">{t('markAllRead', 'Tout lire')}</span>
-                    <span className="xs:hidden">(A)</span>
+                    <Check className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">{t('markAllRead', 'Tout lire')}</span>
+                    <span className="sm:hidden">(A)</span>
                   </Button>
                 )}
               </div>
@@ -416,21 +417,21 @@ export function NotificationBell() {
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="px-3 sm:px-4 py-1.5 sm:py-2 border-b bg-muted/30">
+          <div className="px-4 py-2 border-b bg-muted/30">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{t('quickAccess', 'Accès rapide')}</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('quickAccess', 'Accès rapide')}</span>
               <div className="flex items-center gap-1">
-                {quickActions.slice(0, 3).map((action) => (
+                {quickActions.map((action) => (
                   <Tooltip key={action.label}>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 sm:h-7 sm:w-7"
+                        className="h-7 w-7"
                         asChild
                       >
                         <Link href={action.href}>
-                          <action.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                          <action.icon className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
                     </TooltipTrigger>
@@ -443,177 +444,179 @@ export function NotificationBell() {
             </div>
           </div>
 
-          {/* Notifications List */}
-          <ScrollArea className="max-h-[300px] sm:max-h-[400px]">
-            {filteredNotifications.length === 0 ? (
-              <div className="p-6 sm:p-8 text-center">
-                <div className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-muted/30 to-muted/50 flex items-center justify-center">
-                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground/50" />
+          {/* Notifications List - Scrollable Area */}
+          <ScrollArea className="max-h-[400px] md:max-h-[500px] overflow-y-auto">
+            <div ref={scrollRef} className="p-2">
+              {filteredNotifications.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-muted/30 to-muted/50 flex items-center justify-center">
+                    <Bell className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <h4 className="font-medium text-base mb-2">
+                    {searchQuery ? t('noResults', 'Aucun résultat') : t('noNotifications', 'Aucune notification')}
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+                    {searchQuery 
+                      ? t('noResultsDesc', 'Aucune notification ne correspond à votre recherche.') 
+                      : t('allCaughtUp', 'Toutes vos notifications sont à jour.')}
+                  </p>
+                  {searchQuery && (
+                    <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => setSearchQuery('')}>
+                      {t('clearSearch', 'Effacer la recherche')}
+                    </Button>
+                  )}
                 </div>
-                <h4 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">
-                  {searchQuery ? t('noResults', 'Aucun résultat') : t('noNotifications', 'Aucune notification')}
-                </h4>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                  {searchQuery 
-                    ? t('noResultsDesc', 'Aucune notification ne correspond à votre recherche.') 
-                    : t('allCaughtUp', 'Toutes vos notifications sont à jour.')}
-                </p>
-                {searchQuery && (
-                  <Button variant="outline" size="sm" className="h-7 sm:h-8 text-xs" onClick={() => setSearchQuery('')}>
-                    {t('clearSearch', 'Effacer la recherche')}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="p-1.5 sm:p-2">
-                {filteredNotifications.slice(0, 20).map((notification, index) => (
-                  <div
-                    key={notification._id}
-                    className={cn(
-                      "p-2 sm:p-3 mb-1 rounded-lg cursor-pointer transition-all duration-200 group",
-                      notification.status === 'UNREAD' 
-                        ? 'bg-blue-50/50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' 
-                        : 'hover:bg-accent/50'
-                    )}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="flex items-start gap-2 sm:gap-3 w-full">
-                      <div className={cn("p-1.5 sm:p-2 rounded-full flex-shrink-0", getCategoryColor(notification.category))}>
-                        {getNotificationIcon(notification.category)}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-1 sm:gap-2">
-                          <div className="flex-1">
-                            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                              <p className="font-semibold text-xs sm:text-sm">
-                                {notification.title}
-                              </p>
-                              {notification.priority === 'URGENT' && (
-                                <Badge variant="destructive" className="text-[8px] sm:text-[10px] px-1 py-0">
-                                  {t('urgent', 'URGENT')}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
-                              {notification.message}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-                              <span className="text-[10px] sm:text-xs text-muted-foreground">
-                                {formatTime(notification.createdAt)}
-                              </span>
-                              <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-muted">
-                                {notification.category?.toLowerCase()}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-1">
-                            {notification.status === 'UNREAD' && (
-                              <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 sm:h-6 sm:w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNotification(notification._id);
-                              }}
-                            >
-                              <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            </Button>
-                          </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {filteredNotifications.map((notification, index) => (
+                    <div
+                      key={notification._id}
+                      className={cn(
+                        "p-3 rounded-lg cursor-pointer transition-all duration-200 group relative",
+                        notification.status === 'UNREAD' 
+                          ? 'bg-blue-50/50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' 
+                          : 'hover:bg-accent/50'
+                      )}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="flex items-start gap-3 w-full">
+                        <div className={cn("p-2 rounded-full flex-shrink-0", getCategoryColor(notification.category))}>
+                          {getNotificationIcon(notification.category)}
                         </div>
                         
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-1 sm:gap-2 mt-2 sm:mt-3">
-                          {notification.status === 'UNREAD' ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 sm:h-7 text-[10px] sm:text-xs px-1.5 sm:px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markAsRead(notification._id);
-                              }}
-                            >
-                              <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                              <span className="hidden xs:inline">{t('markAsRead', 'Marquer comme lu')}</span>
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 sm:h-7 text-[10px] sm:text-xs px-1.5 sm:px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Mark as unread functionality would need to be added to context
-                              }}
-                            >
-                              <EyeOff className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                              <span className="hidden xs:inline">{t('markAsUnread', 'Marquer comme non lu')}</span>
-                            </Button>
-                          )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                <p className="font-semibold text-sm">
+                                  {notification.title}
+                                </p>
+                                {notification.priority === 'URGENT' && (
+                                  <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                                    {t('urgent', 'URGENT')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                <span className="text-xs text-muted-foreground">
+                                  {formatTime(notification.createdAt)}
+                                </span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted">
+                                  {notification.category?.toLowerCase()}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1">
+                              {notification.status === 'UNREAD' && (
+                                <span className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteNotification(notification._id);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
                           
-                          {notification.actionUrl && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 sm:h-7 text-[10px] sm:text-xs px-1.5 sm:px-2"
-                              asChild
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Link href={notification.actionUrl}>
-                                <ChevronRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                                <span className="hidden xs:inline">{t('view', 'Voir')}</span>
-                              </Link>
-                            </Button>
-                          )}
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2 mt-2">
+                            {notification.status === 'UNREAD' ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(notification._id);
+                                }}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                <span className="hidden xs:inline">{t('markAsRead', 'Marquer comme lu')}</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Mark as unread functionality
+                                }}
+                              >
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                <span className="hidden xs:inline">{t('markAsUnread', 'Marquer comme non lu')}</span>
+                              </Button>
+                            )}
+                            
+                            {notification.actionUrl && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                asChild
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Link href={notification.actionUrl}>
+                                  <ChevronRight className="h-3 w-3 mr-1" />
+                                  <span className="hidden xs:inline">{t('view', 'Voir')}</span>
+                                </Link>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Keyboard shortcut hint */}
+                      {index < 9 && (
+                        <div className="absolute right-2 top-2">
+                          <kbd className="px-1.5 py-0.5 text-[10px] border rounded bg-muted/80 font-mono">
+                            {index + 1}
+                          </kbd>
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* Keyboard shortcut hint */}
-                    {index < 9 && (
-                      <div className="absolute right-1 sm:right-2 top-1 sm:top-2">
-                        <kbd className="px-1 py-0.5 text-[8px] sm:text-xs border rounded bg-muted/80 font-mono">
-                          {index + 1}
-                        </kbd>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </ScrollArea>
 
-          {/* Footer */}
-          <div className="sticky bottom-0 p-2 sm:p-3 border-t bg-muted/30 rounded-b-xl">
-            <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
-              <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground">
+          {/* Footer - Sticky Bottom */}
+          <div className="sticky bottom-0 z-20 p-3 border-t bg-muted/30 rounded-b-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Keyboard className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                  <Keyboard className="h-3 w-3" />
                   <span>{t('shortcuts', 'Raccourcis:')}</span>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <kbd className="px-1 py-0.5 border rounded text-[9px] sm:text-xs bg-muted/50 font-mono">A</kbd>
-                  <span className="hidden xs:inline">{t('allRead', 'Tout lire')}</span>
+                <div className="flex items-center gap-2">
+                  <kbd className="px-1.5 py-0.5 border rounded text-xs bg-muted/50 font-mono">A</kbd>
+                  <span className="hidden sm:inline">{t('allRead', 'Tout lire')}</span>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <kbd className="px-1 py-0.5 border rounded text-[9px] sm:text-xs bg-muted/50 font-mono">1-9</kbd>
-                  <span className="hidden xs:inline">{t('open', 'Ouvrir')}</span>
+                <div className="flex items-center gap-2">
+                  <kbd className="px-1.5 py-0.5 border rounded text-xs bg-muted/50 font-mono">1-9</kbd>
+                  <span className="hidden sm:inline">{t('open', 'Ouvrir')}</span>
                 </div>
               </div>
               
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-[10px] sm:text-xs px-2 sm:px-3"
+                className="h-8 text-sm px-3"
                 asChild
               >
                 <Link href={`/${lang}/notifications`}>
-                  <Inbox className="h-3 w-3 mr-1" />
+                  <Inbox className="h-4 w-4 mr-1.5" />
                   {t('notificationCenter', 'Centre de notifications')}
                 </Link>
               </Button>
