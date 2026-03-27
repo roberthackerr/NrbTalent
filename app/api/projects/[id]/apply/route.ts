@@ -82,39 +82,38 @@ const ApplicationSchema = z.object({
   path: ["teamId"]
 })
 
-// ─── Cloudinary Upload Helper ────────────────────────────────────────────────
-async function uploadAttachmentToCloudinary(attachment: {
-  base64Data: string
-  name: string
-  type: string
-  size: number
-}) {
+// ─── Upload file from FormData to Cloudinary ─────────────────────────────────
+async function uploadFileToCloudinary(file: File, folder: string = 'applications'): Promise<ProcessedAttachment | null> {
   try {
-    const isPdf = attachment.type === 'application/pdf'
-    const isImage = attachment.type.startsWith('image/')
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const base64Data = buffer.toString('base64')
     
-    const fileExt = attachment.name.split('.').pop()?.toLowerCase() || ''
-    const nameWithoutExt = attachment.name.replace(/\.[^/.]+$/, '')
+    const isPdf = file.type === 'application/pdf'
+    const isImage = file.type.startsWith('image/')
+    
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || ''
+    const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '')
     const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_')
     const publicIdWithExt = `${Date.now()}_${safeName}.${fileExt}`
     
-    let base64WithPrefix = attachment.base64Data
-    if (!attachment.base64Data.startsWith('data:')) {
+    let base64WithPrefix = base64Data
+    if (!base64Data.startsWith('data:')) {
       if (isPdf) {
-        base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
+        base64WithPrefix = `data:application/pdf;base64,${base64Data}`
       } else if (isImage) {
-        base64WithPrefix = `data:${attachment.type};base64,${attachment.base64Data}`
+        base64WithPrefix = `data:${file.type};base64,${base64Data}`
       } else {
-        base64WithPrefix = `data:application/octet-stream;base64,${attachment.base64Data}`
+        base64WithPrefix = `data:application/octet-stream;base64,${base64Data}`
       }
     }
 
     const uploadOptions: Record<string, any> = {
-      folder: 'nrbtalents/applications',
+      folder: `nrbtalents/${folder}`,
       public_id: publicIdWithExt,
       resource_type: isPdf ? 'raw' : isImage ? 'image' : 'raw',
       access_mode: 'public',
-      tags: ['application', 'attachment'],
+      tags: ['application', folder],
     }
 
     if (isPdf) {
@@ -132,6 +131,9 @@ async function uploadAttachmentToCloudinary(attachment: {
     return {
       url: result.secure_url,
       publicId: result.public_id,
+      name: file.name,
+      type: file.type,
+      size: file.size,
       thumbnail: isImage ? result.secure_url : undefined,
       resourceType: result.resource_type,
     }
@@ -139,50 +141,6 @@ async function uploadAttachmentToCloudinary(attachment: {
     console.error('Upload error:', error)
     return null
   }
-}
-
-// ─── Process Attachments Helper ──────────────────────────────────────────────
-async function processAttachments(
-  rawAttachments: z.infer<typeof AttachmentSchema>[]
-): Promise<ProcessedAttachment[]> {
-  if (!rawAttachments || rawAttachments.length === 0) return []
-
-  const processed: ProcessedAttachment[] = []
-
-  for (const attachment of rawAttachments) {
-    if (attachment.base64Data) {
-      const uploaded = await uploadAttachmentToCloudinary({
-        base64Data: attachment.base64Data,
-        name: attachment.name,
-        type: attachment.type,
-        size: attachment.size,
-      })
-
-      if (uploaded) {
-        processed.push({
-          url: uploaded.url,
-          publicId: uploaded.publicId,
-          name: attachment.name,
-          type: attachment.type,
-          size: attachment.size,
-          thumbnail: uploaded.thumbnail,
-          resourceType: uploaded.resourceType,
-        })
-      }
-    } else if (attachment.url && attachment.publicId) {
-      processed.push({
-        url: attachment.url,
-        publicId: attachment.publicId,
-        name: attachment.name,
-        type: attachment.type,
-        size: attachment.size,
-        thumbnail: attachment.thumbnail,
-        resourceType: attachment.resourceType ?? "auto",
-      })
-    }
-  }
-
-  return processed
 }
 
 // ─── POST Handler ────────────────────────────────────────────────────────────
@@ -203,15 +161,116 @@ export async function POST(
       return NextResponse.json({ error: "Invalid project ID" }, { status: 400 })
     }
 
-    const data = await request.json()
-    
-    // Process attachments
-    let processedAttachments: ProcessedAttachment[] = []
-    if (data.attachments && data.attachments.length > 0) {
-      processedAttachments = await processAttachments(data.attachments)
-      data.attachments = processedAttachments
+    const contentType = request.headers.get("content-type") || ""
+    let data: any
+    let attachments: ProcessedAttachment[] = []
+
+    // Handle multipart/form-data (file upload)
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData()
+      
+      // Extract form fields
+      data = {
+        coverLetter: formData.get("coverLetter") as string,
+        proposedBudget: parseFloat(formData.get("proposedBudget") as string),
+        estimatedDuration: formData.get("estimatedDuration") as string,
+        applyMode: formData.get("applyMode") as "individual" | "team" || "individual",
+        teamId: formData.get("teamId") as string || undefined,
+        attachments: []
+      }
+
+      // Handle file uploads
+      const files = formData.getAll("attachments") as File[]
+      if (files && files.length > 0) {
+        for (const file of files) {
+          if (file.size > 0 && file.size <= 10 * 1024 * 1024) {
+            const uploaded = await uploadFileToCloudinary(file, 'applications')
+            if (uploaded) {
+              attachments.push(uploaded)
+            }
+          }
+        }
+        data.attachments = attachments
+      }
+    } 
+    // Handle JSON (no files or base64)
+    else {
+      data = await request.json()
+      
+      // Process attachments if they exist (for base64 uploads)
+      if (data.attachments && data.attachments.length > 0) {
+        const processedAttachments: ProcessedAttachment[] = []
+        
+        for (const attachment of data.attachments) {
+          if (attachment.base64Data) {
+            // Upload base64 to Cloudinary
+            const isPdf = attachment.type === 'application/pdf'
+            const isImage = attachment.type.startsWith('image/')
+            
+            const fileExt = attachment.name.split('.').pop()?.toLowerCase() || ''
+            const nameWithoutExt = attachment.name.replace(/\.[^/.]+$/, '')
+            const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9_-]/g, '_')
+            const publicIdWithExt = `${Date.now()}_${safeName}.${fileExt}`
+            
+            let base64WithPrefix = attachment.base64Data
+            if (!attachment.base64Data.startsWith('data:')) {
+              if (isPdf) {
+                base64WithPrefix = `data:application/pdf;base64,${attachment.base64Data}`
+              } else if (isImage) {
+                base64WithPrefix = `data:${attachment.type};base64,${attachment.base64Data}`
+              } else {
+                base64WithPrefix = `data:application/octet-stream;base64,${attachment.base64Data}`
+              }
+            }
+
+            const uploadOptions: Record<string, any> = {
+              folder: 'nrbtalents/applications',
+              public_id: publicIdWithExt,
+              resource_type: isPdf ? 'raw' : isImage ? 'image' : 'raw',
+              access_mode: 'public',
+              tags: ['application', 'attachment'],
+            }
+
+            if (isPdf) {
+              uploadOptions.flags = 'attachment'
+            }
+
+            if (isImage) {
+              uploadOptions.transformation = [
+                { width: 1200, crop: 'limit', quality: 'auto' }
+              ]
+            }
+
+            const result = await cloudinary.uploader.upload(base64WithPrefix, uploadOptions)
+            
+            processedAttachments.push({
+              url: result.secure_url,
+              publicId: result.public_id,
+              name: attachment.name,
+              type: attachment.type,
+              size: attachment.size,
+              thumbnail: isImage ? result.secure_url : undefined,
+              resourceType: result.resource_type,
+            })
+          } else if (attachment.url && attachment.publicId) {
+            processedAttachments.push({
+              url: attachment.url,
+              publicId: attachment.publicId,
+              name: attachment.name,
+              type: attachment.type,
+              size: attachment.size,
+              thumbnail: attachment.thumbnail,
+              resourceType: attachment.resourceType ?? "auto",
+            })
+          }
+        }
+        
+        data.attachments = processedAttachments
+        attachments = processedAttachments
+      }
     }
     
+    // Validate application data
     const validationResult = ApplicationSchema.safeParse(data)
 
     if (!validationResult.success) {
@@ -359,7 +418,7 @@ export async function POST(
         coverLetter: data.coverLetter,
         proposedBudget: data.proposedBudget,
         estimatedDuration: data.estimatedDuration,
-        attachments: processedAttachments,
+        attachments: attachments,
         status: "pending",
         clientViewed: false,
         teamSummary: {
@@ -400,7 +459,7 @@ export async function POST(
           teamSize: team.members.length,
           proposedBudget: data.proposedBudget,
           currency: currency,
-          attachmentsCount: processedAttachments.length
+          attachmentsCount: attachments.length
         }
       })
 
@@ -441,7 +500,7 @@ export async function POST(
           message: "Team application submitted successfully",
           applicationId: result.insertedId,
           applicationType: "team",
-          attachmentsUploaded: processedAttachments.length,
+          attachmentsUploaded: attachments.length,
           budget: {
             proposed: data.proposedBudget,
             min: minBudget,
@@ -495,7 +554,7 @@ export async function POST(
         coverLetter: data.coverLetter,
         proposedBudget: data.proposedBudget,
         estimatedDuration: data.estimatedDuration,
-        attachments: processedAttachments,
+        attachments: attachments,
         status: "pending",
         clientViewed: false,
         createdAt: new Date(),
@@ -530,7 +589,7 @@ export async function POST(
           proposedBudget: data.proposedBudget,
           currency: currency,
           estimatedDuration: data.estimatedDuration,
-          attachmentsCount: processedAttachments.length
+          attachmentsCount: attachments.length
         }
       })
 
@@ -549,7 +608,7 @@ export async function POST(
           proposedBudget: data.proposedBudget,
           currency: currency,
           estimatedDuration: data.estimatedDuration,
-          attachmentsCount: processedAttachments.length
+          attachmentsCount: attachments.length
         }
       })
 
@@ -568,7 +627,7 @@ export async function POST(
           message: "Application submitted successfully",
           applicationId: result.insertedId,
           applicationType: "individual",
-          attachmentsUploaded: processedAttachments.length,
+          attachmentsUploaded: attachments.length,
           budget: {
             proposed: data.proposedBudget,
             min: minBudget,
