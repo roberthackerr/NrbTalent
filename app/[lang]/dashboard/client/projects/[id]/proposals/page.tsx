@@ -574,7 +574,7 @@ export default function ProposalsPage() {
                   
                   <Button
                     variant="outline"
-                    onClick={() => router.push(`/${lang}/contracts?project=${projectId}&freelancer=${app.freelancerId}`)}
+                    onClick={() => router.push(`/${lang}/contracts?project=${projectId}&freelancer=${app.freelancer._id}`)}
                     className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-950/30"
                   >
                     <Eye className="h-4 w-4" />
