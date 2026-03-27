@@ -1,4 +1,4 @@
-// app/dashboard/client/projects/page.tsx - Version avec intégration sidebar violette
+// app/dashboard/client/projects/page.tsx - Version avec Dark Mode
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
@@ -61,7 +61,8 @@ import {
   Gem,
   Crown,
   Diamond,
-  Menu
+  Moon,
+  Sun
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -101,6 +102,7 @@ import {
 } from "@/components/ui/dialog"
 import { AIArchitectBadge, AIArchitectMiniBadge } from '@/components/projects/AIArchitectBadge'
 import { useSession } from 'next-auth/react'
+import { useTheme } from "next-themes"
 
 interface Project {
   _id: string
@@ -145,7 +147,8 @@ interface ProjectStats {
 }
 
 export default function ClientProjectsPage() {
-  const {data: session }=useSession()
+  const { data: session } = useSession()
+  const { theme, setTheme } = useTheme()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -375,35 +378,35 @@ export default function ClientProjectsPage() {
       'draft': { 
         label: 'Brouillon', 
         variant: 'secondary' as const, 
-        color: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-200',
+        color: 'bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700',
         icon: FileText,
         gradient: 'from-gray-500 to-gray-600'
       },
       'open': { 
         label: 'Public', 
         variant: 'default' as const, 
-        color: 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border-emerald-200',
+        color: 'bg-gradient-to-r from-emerald-100 to-green-100 dark:from-emerald-900/50 dark:to-green-900/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
         icon: Eye,
         gradient: 'from-emerald-500 to-green-600'
       },
       'in-progress': { 
         label: 'En cours', 
         variant: 'default' as const, 
-        color: 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-200',
+        color: 'bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800',
         icon: TrendingUp,
         gradient: 'from-blue-500 to-cyan-600'
       },
       'completed': { 
         label: 'Terminé', 
         variant: 'secondary' as const, 
-        color: 'bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800 border-purple-200',
+        color: 'bg-gradient-to-r from-purple-100 to-violet-100 dark:from-purple-900/50 dark:to-violet-900/50 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800',
         icon: CheckCircle2,
         gradient: 'from-purple-500 to-violet-600'
       },
       'cancelled': { 
         label: 'Annulé', 
         variant: 'outline' as const, 
-        color: 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-200',
+        color: 'bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/50 dark:to-pink-900/50 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800',
         icon: XCircle,
         gradient: 'from-red-500 to-pink-600'
       }
@@ -479,23 +482,39 @@ export default function ClientProjectsPage() {
       />
 
       <main className="flex-1 overflow-y-auto">
-        {/* Animated Background Elements - Purple Theme */}
+        {/* Animated Background Elements - Dark Mode Compatible */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-fuchsia-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-300/30 dark:bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-fuchsia-300/30 dark:bg-fuchsia-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-pink-300/30 dark:bg-pink-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
 
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          {/* Theme Toggle Button */}
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg hover:bg-purple-50 dark:hover:bg-purple-900/30"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-amber-500" />
+              ) : (
+                <Moon className="h-5 w-5 text-purple-600" />
+              )}
+            </Button>
+          </div>
+
           {/* Mobile menu button */}
           <div className="md:hidden fixed top-4 left-4 z-50">
             <Button
               variant="outline"
               size="icon"
               onClick={() => setIsSidebarOpen(true)}
-              className="bg-white/80 backdrop-blur-sm border-purple-200 shadow-lg hover:bg-purple-50"
+              className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg hover:bg-purple-50 dark:hover:bg-purple-900/30"
             >
-              <Menu className="h-5 w-5 text-purple-600" />
+              <Menu className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </Button>
           </div>
 
@@ -528,25 +547,25 @@ export default function ClientProjectsPage() {
             </div>
 
             <div className="flex gap-3">
-              {/* Quick Stats - Purple Theme */}
-              <div className="hidden lg:flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-purple-200 dark:border-purple-800 shadow-lg">
+              {/* Quick Stats - Dark Mode Compatible */}
+              <div className="hidden lg:flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl p-3 border border-purple-200 dark:border-purple-800 shadow-lg">
                 <div className="text-center">
                   <div className="text-lg font-bold text-purple-700 dark:text-purple-300">{projects.length}</div>
-                  <div className="text-xs text-purple-500">Projets</div>
+                  <div className="text-xs text-purple-500 dark:text-purple-400">Projets</div>
                 </div>
                 <Separator orientation="vertical" className="h-8 bg-purple-200 dark:bg-purple-800" />
                 <div className="text-center">
-                  <div className="text-lg font-bold text-emerald-600">
+                  <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                     {projects.filter(p => p.status === 'open').length}
                   </div>
-                  <div className="text-xs text-purple-500">Actifs</div>
+                  <div className="text-xs text-purple-500 dark:text-purple-400">Actifs</div>
                 </div>
                 <Separator orientation="vertical" className="h-8 bg-purple-200 dark:bg-purple-800" />
                 <div className="text-center">
-                  <div className="text-lg font-bold text-amber-600">
+                  <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
                     {totalPendingApplications}
                   </div>
-                  <div className="text-xs text-purple-500">En attente</div>
+                  <div className="text-xs text-purple-500 dark:text-purple-400">En attente</div>
                 </div>
               </div>
 
@@ -560,7 +579,7 @@ export default function ClientProjectsPage() {
                             variant="outline" 
                             size="sm"
                             onClick={handleSelectAll}
-                            className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700"
+                            className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                           >
                             {selectedProjects.length === filteredAndSortedProjects.length ? 'Désélectionner' : 'Tout sélectionner'}
                           </Button>
@@ -601,7 +620,7 @@ export default function ClientProjectsPage() {
             </div>
           </div>
 
-          {/* Statistiques globales - Purple Theme */}
+          {/* Statistiques globales - Dark Mode Compatible */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card className="bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
@@ -637,11 +656,11 @@ export default function ClientProjectsPage() {
                       </p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-900/50 dark:to-fuchsia-900/50 rounded-xl">
-                      <Users className="h-6 w-6 text-purple-600" />
+                      <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
                       <Users className="h-3 w-3 mr-1" />
                       {stats.avgApplicationsPerProject.toFixed(1)}/projet
                     </Badge>
@@ -664,10 +683,10 @@ export default function ClientProjectsPage() {
                       </p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 rounded-xl">
-                      <DollarSign className="h-6 w-6 text-emerald-600" />
+                      <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
-                  <p className="text-xs text-purple-500 mt-4 flex items-center gap-1">
+                  <p className="text-xs text-purple-500 dark:text-purple-400 mt-4 flex items-center gap-1">
                     <Target className="h-3 w-3" />
                     Moyenne: ${(stats.totalBudget / (projects.length || 1)).toLocaleString()}
                   </p>
@@ -682,10 +701,10 @@ export default function ClientProjectsPage() {
                       <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">92%</p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 rounded-xl">
-                      <BarChart3 className="h-6 w-6 text-amber-600" />
+                      <BarChart3 className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
-                  <p className="text-xs text-purple-500 mt-4 flex items-center gap-1">
+                  <p className="text-xs text-purple-500 dark:text-purple-400 mt-4 flex items-center gap-1">
                     <Zap className="h-3 w-3" />
                     Réponse: {stats.avgResponseTime || 2.3} jours
                   </p>
@@ -697,7 +716,7 @@ export default function ClientProjectsPage() {
           {/* Quick Actions Bar */}
           <div className="mb-6 flex flex-wrap gap-3">
             <Link href="/dashboard/client/proposals">
-              <Button variant="outline" className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700">
+              <Button variant="outline" className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                 <Users className="h-4 w-4" />
                 Toutes les candidatures
                 {totalPendingApplications > 0 && (
@@ -709,18 +728,18 @@ export default function ClientProjectsPage() {
             </Link>
             <Button 
               variant="outline" 
-              className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700"
+              className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
               onClick={() => setShowFilters(!showFilters)}
             >
               <FilterIcon className="h-4 w-4" />
               Filtres avancés
               {showFilters && (
-                <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700">Actifs</Badge>
+                <Badge variant="secondary" className="ml-1 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">Actifs</Badge>
               )}
             </Button>
             <Button 
               variant="outline" 
-              className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700"
+              className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
               onClick={fetchProjects}
             >
               <RefreshCw className="h-4 w-4" />
@@ -728,9 +747,9 @@ export default function ClientProjectsPage() {
             </Button>
           </div>
 
-          {/* Filtres avancés */}
+          {/* Filtres avancés - Dark Mode Compatible */}
           {showFilters && (
-            <Card className="mb-6 bg-white/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
+            <Card className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
@@ -739,7 +758,7 @@ export default function ClientProjectsPage() {
                       Catégorie
                     </Label>
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger className="border-purple-200 dark:border-purple-800">
+                      <SelectTrigger className="border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900">
                         <SelectValue placeholder="Toutes catégories" />
                       </SelectTrigger>
                       <SelectContent>
@@ -759,7 +778,7 @@ export default function ClientProjectsPage() {
                       Budget
                     </Label>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-xs text-purple-500">
+                      <div className="flex justify-between text-xs text-purple-500 dark:text-purple-400">
                         <span>${budgetRange[0].toLocaleString()}</span>
                         <span>${budgetRange[1].toLocaleString()}</span>
                       </div>
@@ -770,7 +789,7 @@ export default function ClientProjectsPage() {
                         step="1000"
                         value={budgetRange[1]}
                         onChange={(e) => setBudgetRange([budgetRange[0], parseInt(e.target.value)])}
-                        className="w-full accent-purple-600"
+                        className="w-full accent-purple-600 dark:accent-purple-500"
                       />
                     </div>
                   </div>
@@ -781,7 +800,7 @@ export default function ClientProjectsPage() {
                       Tri par
                     </Label>
                     <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="border-purple-200 dark:border-purple-800">
+                      <SelectTrigger className="border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900">
                         <SelectValue placeholder="Trier par" />
                       </SelectTrigger>
                       <SelectContent>
@@ -801,7 +820,7 @@ export default function ClientProjectsPage() {
                         checked={showNewProjectsOnly} 
                         onCheckedChange={setShowNewProjectsOnly}
                         id="new-projects"
-                        className="data-[state=checked]:bg-purple-600"
+                        className="data-[state=checked]:bg-purple-600 dark:data-[state=checked]:bg-purple-500"
                       />
                       <Label htmlFor="new-projects" className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                         <Bell className="h-4 w-4" />
@@ -818,7 +837,7 @@ export default function ClientProjectsPage() {
                         setBudgetRange([0, 100000])
                         setShowNewProjectsOnly(false)
                       }}
-                      className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30"
                     >
                       Réinitialiser
                     </Button>
@@ -828,19 +847,19 @@ export default function ClientProjectsPage() {
             </Card>
           )}
 
-          {/* Header avec stats et recherche */}
-          <Card className="mb-6 bg-white/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
+          {/* Header avec stats et recherche - Dark Mode Compatible */}
+          <Card className="mb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
                 {/* Recherche avec suggestions */}
                 <div className="flex-1 w-full">
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400 h-5 w-5" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400 dark:text-purple-500 h-5 w-5" />
                     <Input
                       placeholder="Rechercher projets, compétences, descriptions..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 pr-10 py-6 text-lg rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all bg-white/50"
+                      className="pl-12 pr-10 py-6 text-lg rounded-2xl border-2 border-purple-200 dark:border-purple-800 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800 transition-all bg-white/50 dark:bg-slate-800/50"
                     />
                     {searchTerm && (
                       <Button
@@ -849,7 +868,7 @@ export default function ClientProjectsPage() {
                         className="absolute right-2 top-1/2 transform -translate-y-1/2"
                         onClick={() => setSearchTerm('')}
                       >
-                        <X className="h-4 w-4 text-purple-400" />
+                        <X className="h-4 w-4 text-purple-400 dark:text-purple-500" />
                       </Button>
                     )}
                   </div>
@@ -864,7 +883,7 @@ export default function ClientProjectsPage() {
                           <Button
                             variant={viewMode === 'list' ? 'default' : 'ghost'}
                             size="sm"
-                            className={`rounded-lg gap-2 ${viewMode === 'list' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md' : 'text-purple-700'}`}
+                            className={`rounded-lg gap-2 ${viewMode === 'list' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md' : 'text-purple-700 dark:text-purple-300'}`}
                             onClick={() => setViewMode('list')}
                           >
                             <List className="h-4 w-4" />
@@ -881,7 +900,7 @@ export default function ClientProjectsPage() {
                           <Button
                             variant={viewMode === 'grid' ? 'default' : 'ghost'}
                             size="sm"
-                            className={`rounded-lg gap-2 ${viewMode === 'grid' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md' : 'text-purple-700'}`}
+                            className={`rounded-lg gap-2 ${viewMode === 'grid' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md' : 'text-purple-700 dark:text-purple-300'}`}
                             onClick={() => setViewMode('grid')}
                           >
                             <Grid3x3 className="h-4 w-4" />
@@ -896,7 +915,7 @@ export default function ClientProjectsPage() {
                 </div>
               </div>
 
-              {/* Quick status filters */}
+              {/* Quick status filters - Dark Mode Compatible */}
               <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                 {[
                   { value: 'all', label: 'Tous', count: statusCounts.all, color: 'from-purple-500 to-fuchsia-500' },
@@ -913,7 +932,7 @@ export default function ClientProjectsPage() {
                     className={`relative rounded-full px-4 transition-all duration-200 ${
                       statusFilter === filter.value 
                         ? `bg-gradient-to-r ${filter.color} text-white border-0 shadow-md` 
-                        : 'border-purple-200 text-purple-700 hover:bg-purple-50'
+                        : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30'
                     }`}
                   >
                     {filter.label}
@@ -922,7 +941,7 @@ export default function ClientProjectsPage() {
                       className={`ml-2 ${
                         statusFilter === filter.value 
                           ? 'bg-white/20 text-white' 
-                          : 'bg-purple-100 text-purple-700'
+                          : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
                       }`}
                     >
                       {filter.count}
@@ -937,26 +956,26 @@ export default function ClientProjectsPage() {
           {loading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
-                <Card key={i} className="p-6 bg-white/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg animate-pulse">
+                <Card key={i} className="p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg animate-pulse">
                   <div className="flex items-start justify-between">
                     <div className="space-y-4 flex-1">
-                      <Skeleton className="h-8 w-1/3 rounded-xl" />
-                      <Skeleton className="h-4 w-1/2 rounded" />
+                      <Skeleton className="h-8 w-1/3 rounded-xl bg-purple-100 dark:bg-purple-800" />
+                      <Skeleton className="h-4 w-1/2 rounded bg-purple-100 dark:bg-purple-800" />
                       <div className="flex gap-3">
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
+                        <Skeleton className="h-6 w-24 rounded-full bg-purple-100 dark:bg-purple-800" />
+                        <Skeleton className="h-6 w-24 rounded-full bg-purple-100 dark:bg-purple-800" />
+                        <Skeleton className="h-6 w-24 rounded-full bg-purple-100 dark:bg-purple-800" />
                       </div>
                     </div>
-                    <Skeleton className="h-10 w-32 rounded-lg ml-4" />
+                    <Skeleton className="h-10 w-32 rounded-lg bg-purple-100 dark:bg-purple-800 ml-4" />
                   </div>
                 </Card>
               ))}
             </div>
           ) : filteredAndSortedProjects.length === 0 ? (
-            <Card className="p-12 text-center bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-xl">
-              <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Building className="h-12 w-12 text-purple-600" />
+            <Card className="p-12 text-center bg-gradient-to-br from-white to-purple-50 dark:from-slate-900 dark:to-purple-950/30 border-purple-200 dark:border-purple-800 shadow-xl">
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-900/50 dark:to-fuchsia-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Building className="h-12 w-12 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-3">
                 {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all' 
@@ -978,7 +997,7 @@ export default function ClientProjectsPage() {
                 <Button 
                   variant="outline" 
                   size="lg"
-                  className="gap-3 px-8 py-6 text-lg border-purple-300 text-purple-700 hover:bg-purple-50"
+                  className="gap-3 px-8 py-6 text-lg border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30"
                   onClick={() => {
                     setSearchTerm('')
                     setStatusFilter('all')
@@ -998,7 +1017,7 @@ export default function ClientProjectsPage() {
                 <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
                   {filteredAndSortedProjects.length} projet{filteredAndSortedProjects.length > 1 ? 's' : ''} trouvé{filteredAndSortedProjects.length > 1 ? 's' : ''}
                 </h3>
-                <div className="text-sm text-purple-500">
+                <div className="text-sm text-purple-500 dark:text-purple-400">
                   Tri: <span className="font-medium">{sortBy.replace('-', ' ')}</span>
                 </div>
               </div>
@@ -1014,7 +1033,7 @@ export default function ClientProjectsPage() {
                 return (
                   <Card 
                     key={project._id} 
-                    className="bg-white/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-1 overflow-hidden"
+                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-1 overflow-hidden"
                   >
                     {/* Gradient top bar selon urgence */}
                     <div className={`h-1 w-full bg-gradient-to-r ${urgencyGradient}`} />
@@ -1027,7 +1046,7 @@ export default function ClientProjectsPage() {
                             type="checkbox"
                             checked={selectedProjects.includes(project._id)}
                             onChange={() => handleSelectProject(project._id)}
-                            className="mt-1 h-5 w-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500"
+                            className="mt-1 h-5 w-5 text-purple-600 rounded border-purple-300 dark:border-purple-700 focus:ring-purple-500 dark:bg-slate-800"
                           />
                         </div>
 
@@ -1036,7 +1055,7 @@ export default function ClientProjectsPage() {
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                <h3 className="text-xl font-bold text-purple-900 dark:text-purple-100 truncate group-hover:text-purple-600 transition-colors">
+                                <h3 className="text-xl font-bold text-purple-900 dark:text-purple-100 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                                   {project.title}
                                 </h3>
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -1051,7 +1070,7 @@ export default function ClientProjectsPage() {
                                   {/* Badge de visibilité */}
                                   <Badge 
                                     variant="outline" 
-                                    className="gap-1 border-purple-200 text-purple-700"
+                                    className="gap-1 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300"
                                   >
                                     {project.visibility === 'public' ? (
                                       <>
@@ -1090,14 +1109,14 @@ export default function ClientProjectsPage() {
                               {/* Stats en ligne */}
                               <div className="flex flex-wrap items-center gap-6 text-sm">
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-lg">
-                                    <DollarSign className="h-4 w-4 text-purple-600" />
+                                  <div className="p-2 bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-900/50 dark:to-fuchsia-900/50 rounded-lg">
+                                    <DollarSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                   </div>
                                   <div>
                                     <div className="font-bold text-purple-900 dark:text-purple-100">
                                       {project.budget.min.toLocaleString()} - {project.budget.max.toLocaleString()} {project.budget.currency}
                                     </div>
-                                    <div className="text-xs text-purple-500">
+                                    <div className="text-xs text-purple-500 dark:text-purple-400">
                                       {project.budget.type === 'fixed' ? 'Forfait' : 'Taux horaire'}
                                     </div>
                                   </div>
@@ -1105,26 +1124,26 @@ export default function ClientProjectsPage() {
 
                                 {/* Candidatures avec lien clair vers les propositions */}
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-lg">
-                                    <Users className="h-4 w-4 text-emerald-600" />
+                                  <div className="p-2 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 rounded-lg">
+                                    <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                   </div>
                                   <div>
                                     <div className="font-bold text-purple-900 dark:text-purple-100">
                                       <Link 
                                         href={`/dashboard/client/projects/${project._id}/proposals`}
-                                        className="hover:text-purple-600 hover:underline transition-colors"
+                                        className="hover:text-purple-600 dark:hover:text-purple-400 hover:underline transition-colors"
                                       >
                                         {stats.total} candidature{stats.total !== 1 ? 's' : ''}
                                       </Link>
                                     </div>
-                                    <div className="text-xs text-purple-500 flex gap-2">
+                                    <div className="text-xs text-purple-500 dark:text-purple-400 flex gap-2">
                                       {hasPendingApplications && (
-                                        <span className="text-amber-600 font-medium">
+                                        <span className="text-amber-600 dark:text-amber-400 font-medium">
                                           {stats.pending} en attente
                                         </span>
                                       )}
                                       {stats.accepted > 0 && (
-                                        <span className="text-emerald-600 font-medium">
+                                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                                           {stats.accepted} acceptée{stats.accepted !== 1 ? 's' : ''}
                                         </span>
                                       )}
@@ -1133,8 +1152,8 @@ export default function ClientProjectsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg">
-                                    <Calendar className="h-4 w-4 text-amber-600" />
+                                  <div className="p-2 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 rounded-lg">
+                                    <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                   </div>
                                   <div>
                                     <div className="font-bold text-purple-900 dark:text-purple-100">
@@ -1144,18 +1163,18 @@ export default function ClientProjectsPage() {
                                         year: 'numeric'
                                       })}
                                     </div>
-                                    <div className="text-xs text-purple-500">Créé le</div>
+                                    <div className="text-xs text-purple-500 dark:text-purple-400">Créé le</div>
                                   </div>
                                 </div>
 
                                 {project.category && (
                                   <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-lg">
-                                      <Tag className="h-4 w-4 text-purple-600" />
+                                    <div className="p-2 bg-gradient-to-br from-purple-100 to-fuchsia-100 dark:from-purple-900/50 dark:to-fuchsia-900/50 rounded-lg">
+                                      <Tag className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                     </div>
                                     <div>
                                       <div className="font-bold text-purple-900 dark:text-purple-100">{project.category}</div>
-                                      <div className="text-xs text-purple-500">Catégorie</div>
+                                      <div className="text-xs text-purple-500 dark:text-purple-400">Catégorie</div>
                                     </div>
                                   </div>
                                 )}
@@ -1170,13 +1189,13 @@ export default function ClientProjectsPage() {
                                 <Badge 
                                   key={index} 
                                   variant="outline" 
-                                  className="text-sm px-3 py-1 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                                  className="text-sm px-3 py-1 border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-800/50 transition-colors"
                                 >
                                   {skill}
                                 </Badge>
                               ))}
                               {project.skills.length > 5 && (
-                                <Badge variant="secondary" className="text-sm px-3 py-1 bg-purple-100 text-purple-700">
+                                <Badge variant="secondary" className="text-sm px-3 py-1 bg-purple-100 dark:bg-purple-800/50 text-purple-700 dark:text-purple-300">
                                   +{project.skills.length - 5}
                                 </Badge>
                               )}
@@ -1184,7 +1203,7 @@ export default function ClientProjectsPage() {
                           )}
                         </div>
 
-                        {/* Actions - Mise à jour avec bouton PROPOSITIONS bien visible */}
+                        {/* Actions */}
                         <div className="flex flex-col items-end gap-3 ml-6 min-w-[200px]">
                           {/* Bouton PRINCIPAL vers les propositions */}
                           {project.status === 'open' && stats.total > 0 && (
@@ -1218,12 +1237,12 @@ export default function ClientProjectsPage() {
                                         project._id, 
                                         project.visibility === 'public' ? 'private' : 'public'
                                       )}
-                                      className="gap-2 border-purple-200 hover:bg-purple-50"
+                                      className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30"
                                     >
                                       {project.visibility === 'public' ? (
-                                        <EyeOff className="h-4 w-4 text-purple-600" />
+                                        <EyeOff className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                       ) : (
-                                        <Eye className="h-4 w-4 text-purple-600" />
+                                        <Eye className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                       )}
                                     </Button>
                                   </TooltipTrigger>
@@ -1253,20 +1272,20 @@ export default function ClientProjectsPage() {
                             {/* Menu déroulant */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-purple-600">
+                                <Button variant="ghost" size="sm" className="text-purple-600 dark:text-purple-400">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-900 border-purple-200 dark:border-purple-800">
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/projects/${project._id}/edit`} className="flex items-center gap-2">
+                                  <Link href={`/projects/${project._id}/edit`} className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                                     <Edit2 className="h-4 w-4" />
                                     Modifier
                                   </Link>
                                 </DropdownMenuItem>
                                 
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/projects/${project._id}`} className="flex items-center gap-2">
+                                  <Link href={`/projects/${project._id}`} className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                                     <Eye className="h-4 w-4" />
                                     Voir détails
                                   </Link>
@@ -1276,11 +1295,10 @@ export default function ClientProjectsPage() {
                                   <AIArchitectBadge projectId={project._id} clientId={session?.user?.id} />
                                 </DropdownMenuItem>
 
-                                {/* LIEN CLAIR VERS LES PROPOSITIONS */}
                                 <DropdownMenuItem asChild>
                                   <Link 
                                     href={`/dashboard/client/projects/${project._id}/proposals`}
-                                    className="flex items-center gap-2"
+                                    className="flex items-center gap-2 text-purple-700 dark:text-purple-300"
                                   >
                                     <Users className="h-4 w-4" />
                                     Voir toutes les propositions
@@ -1295,7 +1313,7 @@ export default function ClientProjectsPage() {
                                 {hasNewApplications && (
                                   <DropdownMenuItem 
                                     onClick={() => markAllAsRead(project._id)}
-                                    className="flex items-center gap-2 text-purple-600"
+                                    className="flex items-center gap-2 text-purple-600 dark:text-purple-400"
                                   >
                                     <Check className="h-4 w-4" />
                                     Marquer comme lu
@@ -1304,13 +1322,13 @@ export default function ClientProjectsPage() {
 
                                 <DropdownMenuItem 
                                   onClick={() => duplicateProject(project._id)}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-2 text-purple-700 dark:text-purple-300"
                                 >
                                   <Copy className="h-4 w-4" />
                                   Dupliquer
                                 </DropdownMenuItem>
 
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator className="bg-purple-100 dark:bg-purple-800" />
 
                                 <DropdownMenuItem 
                                   onClick={() => {
@@ -1320,17 +1338,17 @@ export default function ClientProjectsPage() {
                                       description: "Le lien du projet a été copié dans le presse-papier",
                                     })
                                   }}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-2 text-purple-700 dark:text-purple-300"
                                 >
                                   <Copy className="h-4 w-4" />
                                   Copier le lien
                                 </DropdownMenuItem>
 
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator className="bg-purple-100 dark:bg-purple-800" />
 
                                 <DropdownMenuItem 
                                   onClick={() => deleteProject(project._id)}
-                                  className="flex items-center gap-2 text-red-600"
+                                  className="flex items-center gap-2 text-red-600 dark:text-red-400"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                   Supprimer
@@ -1340,7 +1358,7 @@ export default function ClientProjectsPage() {
                           </div>
 
                           {/* Informations rapides */}
-                          <div className="text-xs text-purple-500 text-right mt-2">
+                          <div className="text-xs text-purple-500 dark:text-purple-400 text-right mt-2">
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               Mis à jour: {new Date(project.updatedAt).toLocaleDateString('fr-FR')}
@@ -1354,7 +1372,7 @@ export default function ClientProjectsPage() {
               })}
             </div>
           ) : (
-            // Vue Grille améliorée avec thème purple
+            // Vue Grille améliorée avec thème purple et dark mode
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAndSortedProjects.map((project) => {
                 const stats = getApplicationStats(project)
@@ -1366,7 +1384,7 @@ export default function ClientProjectsPage() {
                 return (
                   <Card 
                     key={project._id} 
-                    className="bg-white/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2 overflow-hidden"
+                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2 overflow-hidden"
                   >
                     {/* Gradient top bar selon urgence */}
                     <div className={`h-1 w-full bg-gradient-to-r ${urgencyGradient}`} />
@@ -1383,19 +1401,19 @@ export default function ClientProjectsPage() {
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-purple-600">
+                            <Button variant="ghost" size="sm" className="text-purple-600 dark:text-purple-400">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-purple-200 dark:border-purple-800">
                             <DropdownMenuItem asChild>
-                              <Link href={`/projects/${project._id}`}>Gérer</Link>
+                              <Link href={`/projects/${project._id}`} className="text-purple-700 dark:text-purple-300">Gérer</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/projects/${project._id}/edit`}>Modifier</Link>
+                              <Link href={`/projects/${project._id}/edit`} className="text-purple-700 dark:text-purple-300">Modifier</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/client/projects/${project._id}/proposals`}>
+                              <Link href={`/dashboard/client/projects/${project._id}/proposals`} className="text-purple-700 dark:text-purple-300">
                                 Voir les propositions
                                 {stats.total > 0 && (
                                   <Badge variant="secondary" className="ml-auto">
@@ -1406,7 +1424,7 @@ export default function ClientProjectsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => deleteProject(project._id)}
-                              className="text-red-600"
+                              className="text-red-600 dark:text-red-400"
                             >
                               Supprimer
                             </DropdownMenuItem>
@@ -1416,7 +1434,7 @@ export default function ClientProjectsPage() {
 
                       {/* Titre avec notification */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
+                        <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-2 line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                           {project.title}
                         </h3>
                         {hasNewApplications && (
@@ -1436,8 +1454,8 @@ export default function ClientProjectsPage() {
                       <div className="space-y-4 mb-6">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 text-purple-500" />
-                            <span className="text-sm text-purple-500">Budget</span>
+                            <DollarSign className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                            <span className="text-sm text-purple-500 dark:text-purple-400">Budget</span>
                           </div>
                           <span className="font-bold text-purple-900 dark:text-purple-100">
                             {project.budget.min.toLocaleString()} - {project.budget.max.toLocaleString()} {project.budget.currency}
@@ -1447,12 +1465,12 @@ export default function ClientProjectsPage() {
                         {/* Candidatures avec lien clair */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-emerald-500" />
-                            <span className="text-sm text-purple-500">Candidatures</span>
+                            <Users className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                            <span className="text-sm text-purple-500 dark:text-purple-400">Candidatures</span>
                           </div>
                           <Link 
                             href={`/dashboard/client/projects/${project._id}/proposals`}
-                            className="font-bold text-purple-900 dark:text-purple-100 hover:text-purple-600 hover:underline transition-colors"
+                            className="font-bold text-purple-900 dark:text-purple-100 hover:text-purple-600 dark:hover:text-purple-400 hover:underline transition-colors"
                           >
                             {stats.total}
                           </Link>
@@ -1461,10 +1479,10 @@ export default function ClientProjectsPage() {
                         {project.category && (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Tag className="h-4 w-4 text-purple-500" />
-                              <span className="text-sm text-purple-500">Catégorie</span>
+                              <Tag className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                              <span className="text-sm text-purple-500 dark:text-purple-400">Catégorie</span>
                             </div>
-                            <Badge variant="outline" className="text-xs border-purple-200 text-purple-700">
+                            <Badge variant="outline" className="text-xs border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
                               {project.category}
                             </Badge>
                           </div>
@@ -1473,8 +1491,8 @@ export default function ClientProjectsPage() {
                         {/* Urgence */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Zap className="h-4 w-4 text-amber-500" />
-                            <span className="text-sm text-purple-500">Urgence</span>
+                            <Zap className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                            <span className="text-sm text-purple-500 dark:text-purple-400">Urgence</span>
                           </div>
                           <Badge className={`bg-gradient-to-r ${urgencyGradient} text-white border-0 text-xs`}>
                             {project.urgency === 'high' ? 'Urgent' : project.urgency === 'medium' ? 'Normal' : 'Flexible'}
@@ -1487,12 +1505,12 @@ export default function ClientProjectsPage() {
                         <div className="pt-4 border-t border-purple-200 dark:border-purple-800 mb-6">
                           <div className="flex flex-wrap gap-1">
                             {project.skills.slice(0, 3).map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-xs border-purple-200 text-purple-700">
+                              <Badge key={index} variant="outline" className="text-xs border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
                                 {skill}
                               </Badge>
                             ))}
                             {project.skills.length > 3 && (
-                              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
+                              <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-800/50 text-purple-700 dark:text-purple-300">
                                 +{project.skills.length - 3}
                               </Badge>
                             )}
@@ -1507,7 +1525,7 @@ export default function ClientProjectsPage() {
                             variant="outline"
                             size="sm"
                             asChild
-                            className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50"
+                            className="flex-1 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30"
                           >
                             <Link href={`/projects/${project._id}`}>
                               Détails
@@ -1535,12 +1553,12 @@ export default function ClientProjectsPage() {
             </div>
           )}
 
-          {/* Footer avec pagination et stats */}
+          {/* Footer avec pagination et stats - Dark Mode Compatible */}
           {!loading && projects.length > 0 && (
-            <Card className="mt-8 bg-white/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
+            <Card className="mt-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-                  <div className="text-sm text-purple-600">
+                  <div className="text-sm text-purple-600 dark:text-purple-400">
                     <p className="font-medium text-purple-900 dark:text-purple-100 mb-1 text-lg">
                       📊 Résumé des résultats
                     </p>
@@ -1554,44 +1572,44 @@ export default function ClientProjectsPage() {
                   <div className="flex flex-wrap gap-4">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-green-500"></div>
-                      <span className="text-sm text-purple-600">{statusCounts.open} public(s)</span>
+                      <span className="text-sm text-purple-600 dark:text-purple-400">{statusCounts.open} public(s)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500"></div>
-                      <span className="text-sm text-purple-600">{statusCounts['in-progress']} en cours</span>
+                      <span className="text-sm text-purple-600 dark:text-purple-400">{statusCounts['in-progress']} en cours</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-purple-400" />
-                      <span className="text-sm text-purple-600">{projects.reduce((sum, p) => sum + p.applicationCount, 0)} candidatures total</span>
+                      <Users className="h-4 w-4 text-purple-400 dark:text-purple-500" />
+                      <span className="text-sm text-purple-600 dark:text-purple-400">{projects.reduce((sum, p) => sum + p.applicationCount, 0)} candidatures total</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-red-400" />
-                      <span className="text-sm text-purple-600">{totalNewApplications} nouvelles</span>
+                      <Bell className="h-4 w-4 text-red-400 dark:text-red-500" />
+                      <span className="text-sm text-purple-600 dark:text-purple-400">{totalNewApplications} nouvelles</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Prochaines actions suggérées */}
                 <div className="mt-6 pt-6 border-t border-purple-200 dark:border-purple-800">
-                  <p className="text-sm text-purple-600 mb-3">💡 Prochaines actions suggérées:</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-400 mb-3">💡 Prochaines actions suggérées:</p>
                   <div className="flex flex-wrap gap-3">
                     {totalPendingApplications > 0 && (
                       <Link href="/dashboard/client/proposals">
-                        <Button variant="outline" className="gap-2 border-amber-200 hover:border-amber-300 hover:bg-amber-50 text-amber-700">
+                        <Button variant="outline" className="gap-2 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                           <Clock className="h-4 w-4" />
                           Réviser {totalPendingApplications} candidature{totalPendingApplications > 1 ? 's' : ''} en attente
                         </Button>
                       </Link>
                     )}
                     <Link href="/projects/create">
-                      <Button variant="outline" className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700">
+                      <Button variant="outline" className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                         <Plus className="h-4 w-4" />
                         Créer un nouveau projet
                       </Button>
                     </Link>
                     <Button 
                       variant="outline" 
-                      className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700"
+                      className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                       onClick={fetchProjects}
                     >
                       <RefreshCw className="h-4 w-4" />
