@@ -138,7 +138,7 @@ export const Footer = ({ dict, lang }: FooterProps) => {
         {/* Copyright */}
         <div className="mt-12 border-t border-border/40 pt-8 text-center text-sm text-muted-foreground">
           <p>
-            &copy; {new Date().getFullYear()} NRBTalents. {t('copyright', 'All rights reserved.')}
+            &copy; {new Date().getFullYear()} NRBTalents. {t('copyright', 'All rights reservedh.')}
           </p>
         </div>
       </div>

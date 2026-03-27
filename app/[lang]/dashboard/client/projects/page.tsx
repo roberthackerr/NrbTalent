@@ -97,6 +97,7 @@ import {
 } from "@/components/ui/dialog"
 import { AIArchitectBadge, AIArchitectMiniBadge } from '@/components/projects/AIArchitectBadge'
 import { useSession } from 'next-auth/react'
+import { cn } from "@/lib/utils"
 
 interface Project {
   _id: string
@@ -141,7 +142,7 @@ interface ProjectStats {
 }
 
 export default function ClientProjectsPage() {
-  const {data:session }=useSession()
+  const {data: session }=useSession()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -370,35 +371,35 @@ export default function ClientProjectsPage() {
       'draft': { 
         label: 'Brouillon', 
         variant: 'secondary' as const, 
-        color: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800',
+        color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
         icon: FileText,
         gradient: 'from-gray-500 to-gray-600'
       },
       'open': { 
         label: 'Public', 
         variant: 'default' as const, 
-        color: 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800',
+        color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
         icon: Eye,
         gradient: 'from-green-500 to-emerald-600'
       },
       'in-progress': { 
         label: 'En cours', 
         variant: 'default' as const, 
-        color: 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800',
+        color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
         icon: TrendingUp,
         gradient: 'from-blue-500 to-cyan-600'
       },
       'completed': { 
         label: 'Terminé', 
         variant: 'secondary' as const, 
-        color: 'bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800',
+        color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
         icon: CheckCircle2,
         gradient: 'from-purple-500 to-violet-600'
       },
       'cancelled': { 
         label: 'Annulé', 
         variant: 'outline' as const, 
-        color: 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800',
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
         icon: XCircle,
         gradient: 'from-red-500 to-pink-600'
       }
@@ -432,10 +433,10 @@ export default function ClientProjectsPage() {
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'high': return 'bg-gradient-to-r from-red-500 to-pink-500'
-      case 'medium': return 'bg-gradient-to-r from-amber-500 to-orange-500'
-      case 'low': return 'bg-gradient-to-r from-emerald-500 to-teal-500'
-      default: return 'bg-gradient-to-r from-gray-500 to-gray-600'
+      case 'high': return 'bg-red-500 dark:bg-red-600'
+      case 'medium': return 'bg-amber-500 dark:bg-amber-600'
+      case 'low': return 'bg-emerald-500 dark:bg-emerald-600'
+      default: return 'bg-gray-500 dark:bg-gray-600'
     }
   }
 
@@ -466,15 +467,15 @@ export default function ClientProjectsPage() {
   )
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/30">
       <DashboardSidebar role="client" />
 
       <main className="flex-1 overflow-y-auto">
-        {/* Animated Background Elements */}
+        {/* Animated Background Elements - Dark mode aware */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute top-0 right-1/4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-purple-300 dark:bg-purple-950 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob"></div>
+          <div className="absolute top-0 right-1/4 w-72 h-72 bg-yellow-300 dark:bg-yellow-950 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-300 dark:bg-pink-950 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob animation-delay-4000"></div>
         </div>
 
         <div className="p-6 max-w-7xl mx-auto">
@@ -486,10 +487,10 @@ export default function ClientProjectsPage() {
                   <Building className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     Mes Projets
                   </h1>
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
                     Gérez tous vos projets en un seul endroit
                   </p>
                 </div>
@@ -507,25 +508,25 @@ export default function ClientProjectsPage() {
             </div>
 
             <div className="flex gap-3">
-              {/* Quick Stats */}
-              <div className="hidden lg:flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-gray-200 shadow-sm">
+              {/* Quick Stats - Dark mode aware */}
+              <div className="hidden lg:flex items-center gap-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{projects.length}</div>
-                  <div className="text-xs text-gray-500">Projets</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{projects.length}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Projets</div>
                 </div>
-                <Separator orientation="vertical" className="h-8" />
+                <Separator orientation="vertical" className="h-8 bg-gray-200 dark:bg-gray-800" />
                 <div className="text-center">
-                  <div className="text-lg font-bold text-green-600">
+                  <div className="text-lg font-bold text-green-600 dark:text-green-400">
                     {projects.filter(p => p.status === 'open').length}
                   </div>
-                  <div className="text-xs text-gray-500">Actifs</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Actifs</div>
                 </div>
-                <Separator orientation="vertical" className="h-8" />
+                <Separator orientation="vertical" className="h-8 bg-gray-200 dark:bg-gray-800" />
                 <div className="text-center">
-                  <div className="text-lg font-bold text-blue-600">
+                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {totalPendingApplications}
                   </div>
-                  <div className="text-xs text-gray-500">En attente</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">En attente</div>
                 </div>
               </div>
 
@@ -539,7 +540,7 @@ export default function ClientProjectsPage() {
                             variant="outline" 
                             size="sm"
                             onClick={handleSelectAll}
-                            className="gap-2 border-gray-300 hover:border-gray-400"
+                            className="gap-2 border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
                           >
                             {selectedProjects.length === filteredAndSortedProjects.length ? 'Désélectionner' : 'Tout sélectionner'}
                           </Button>
@@ -580,15 +581,15 @@ export default function ClientProjectsPage() {
             </div>
           </div>
 
-          {/* Statistiques globales - Enhanced */}
+          {/* Statistiques globales - Enhanced with dark mode */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-gradient-to-br from-white to-blue-50 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <Card className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-900 dark:to-blue-950/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Projets Actifs</p>
-                      <p className="text-3xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Projets Actifs</p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
                         {projects.filter(p => ['open', 'in-progress'].includes(p.status)).length}
                       </p>
                     </div>
@@ -597,8 +598,8 @@ export default function ClientProjectsPage() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Progress value={stats.completionRate || 75} className="h-2 bg-gray-200" />
-                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <Progress value={stats.completionRate || 75} className="h-2 bg-gray-200 dark:bg-gray-700" />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
                       <TrendingUpIcon className="h-3 w-3 text-green-500" />
                       {stats.completionRate || 75}% de taux de réussite
                     </p>
@@ -606,12 +607,12 @@ export default function ClientProjectsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white to-green-50 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <Card className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-green-950/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Candidatures</p>
-                      <p className="text-3xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Candidatures</p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
                         {stats.totalApplications}
                       </p>
                     </div>
@@ -620,7 +621,7 @@ export default function ClientProjectsPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
                       <Users className="h-3 w-3 mr-1" />
                       {stats.avgApplicationsPerProject.toFixed(1)}/projet
                     </Badge>
@@ -633,12 +634,12 @@ export default function ClientProjectsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white to-purple-50 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <Card className="bg-gradient-to-br from-white to-purple-50 dark:from-gray-900 dark:to-purple-950/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Budget Engagé</p>
-                      <p className="text-3xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Budget Engagé</p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
                         ${(stats.totalBudget / 1000).toFixed(1)}k
                       </p>
                     </div>
@@ -646,25 +647,25 @@ export default function ClientProjectsPage() {
                       <DollarSign className="h-6 w-6 text-white" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-4 flex items-center gap-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 flex items-center gap-1">
                     <Target className="h-3 w-3 text-purple-500" />
                     Moyenne: ${(stats.totalBudget / (projects.length || 1)).toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white to-amber-50 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <Card className="bg-gradient-to-br from-white to-amber-50 dark:from-gray-900 dark:to-amber-950/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Performance</p>
-                      <p className="text-3xl font-bold text-gray-900">92%</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Performance</p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">92%</p>
                     </div>
                     <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl group-hover:scale-110 transition-transform">
                       <BarChart3 className="h-6 w-6 text-white" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-4 flex items-center gap-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 flex items-center gap-1">
                     <Zap className="h-3 w-3 text-amber-500" />
                     Réponse: {stats.avgResponseTime || 2.3} jours
                   </p>
@@ -673,10 +674,10 @@ export default function ClientProjectsPage() {
             </div>
           )}
 
-          {/* Quick Actions Bar */}
+          {/* Quick Actions Bar - Dark mode */}
           <div className="mb-6 flex flex-wrap gap-3">
             <Link href="/dashboard/client/proposals">
-              <Button variant="outline" className="gap-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50">
+              <Button variant="outline" className="gap-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30">
                 <Users className="h-4 w-4" />
                 Toutes les candidatures
                 {totalPendingApplications > 0 && (
@@ -688,7 +689,7 @@ export default function ClientProjectsPage() {
             </Link>
             <Button 
               variant="outline" 
-              className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50"
+              className="gap-2 border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30"
               onClick={() => setShowFilters(!showFilters)}
             >
               <FilterIcon className="h-4 w-4" />
@@ -699,7 +700,7 @@ export default function ClientProjectsPage() {
             </Button>
             <Button 
               variant="outline" 
-              className="gap-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+              className="gap-2 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
               onClick={fetchProjects}
             >
               <RefreshCw className="h-4 w-4" />
@@ -707,18 +708,18 @@ export default function ClientProjectsPage() {
             </Button>
           </div>
 
-          {/* Filtres avancés */}
+          {/* Filtres avancés - Dark mode */}
           {showFilters && (
-            <Card className="mb-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="mb-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <Tag className="h-4 w-4" />
                       Catégorie
                     </Label>
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700">
                         <SelectValue placeholder="Toutes catégories" />
                       </SelectTrigger>
                       <SelectContent>
@@ -733,12 +734,12 @@ export default function ClientProjectsPage() {
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <DollarSign className="h-4 w-4" />
                       Budget
                     </Label>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-xs text-gray-500">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                         <span>${budgetRange[0].toLocaleString()}</span>
                         <span>${budgetRange[1].toLocaleString()}</span>
                       </div>
@@ -755,12 +756,12 @@ export default function ClientProjectsPage() {
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Label className="text-sm font-medium mb-2 flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <Clock className="h-4 w-4" />
                       Tri par
                     </Label>
                     <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700">
                         <SelectValue placeholder="Trier par" />
                       </SelectTrigger>
                       <SelectContent>
@@ -781,7 +782,7 @@ export default function ClientProjectsPage() {
                         onCheckedChange={setShowNewProjectsOnly}
                         id="new-projects"
                       />
-                      <Label htmlFor="new-projects" className="flex items-center gap-2">
+                      <Label htmlFor="new-projects" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                         <Bell className="h-4 w-4" />
                         Nouvelles candidatures seulement
                       </Label>
@@ -805,19 +806,19 @@ export default function ClientProjectsPage() {
             </Card>
           )}
 
-          {/* Header avec stats et recherche */}
-          <Card className="mb-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+          {/* Header avec stats et recherche - Dark mode */}
+          <Card className="mb-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-0 shadow-lg">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
                 {/* Recherche avec suggestions */}
                 <div className="flex-1 w-full">
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
                     <Input
                       placeholder="Rechercher projets, compétences, descriptions..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 pr-10 py-6 text-lg rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                      className="pl-12 pr-10 py-6 text-lg rounded-2xl border-2 border-gray-200 dark:border-gray-800 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900 transition-all dark:bg-gray-800 dark:text-white"
                     />
                     {searchTerm && (
                       <Button
@@ -834,14 +835,14 @@ export default function ClientProjectsPage() {
 
                 {/* View controls */}
                 <div className="flex gap-2">
-                  <div className="flex bg-gray-100 rounded-xl p-1">
+                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant={viewMode === 'list' ? 'default' : 'ghost'}
                             size="sm"
-                            className={`rounded-lg gap-2 ${viewMode === 'list' ? 'bg-white shadow' : ''}`}
+                            className={`rounded-lg gap-2 ${viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}
                             onClick={() => setViewMode('list')}
                           >
                             <List className="h-4 w-4" />
@@ -858,7 +859,7 @@ export default function ClientProjectsPage() {
                           <Button
                             variant={viewMode === 'grid' ? 'default' : 'ghost'}
                             size="sm"
-                            className={`rounded-lg gap-2 ${viewMode === 'grid' ? 'bg-white shadow' : ''}`}
+                            className={`rounded-lg gap-2 ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}
                             onClick={() => setViewMode('grid')}
                           >
                             <Grid3x3 className="h-4 w-4" />
@@ -873,15 +874,15 @@ export default function ClientProjectsPage() {
 
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="gap-2">
+                      <Button variant="outline" className="gap-2 dark:bg-gray-800 dark:border-gray-700">
                         <Filter className="h-4 w-4" />
                         Filtres
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl dark:bg-gray-900">
                       <DialogHeader>
-                        <DialogTitle>Filtres avancés</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="dark:text-white">Filtres avancés</DialogTitle>
+                        <DialogDescription className="dark:text-gray-400">
                           Affinez votre recherche avec des critères spécifiques
                         </DialogDescription>
                       </DialogHeader>
@@ -893,26 +894,36 @@ export default function ClientProjectsPage() {
                 </div>
               </div>
 
-              {/* Quick status filters */}
+              {/* Quick status filters - Dark mode */}
               <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                 {[
-                  { value: 'all', label: 'Tous', count: statusCounts.all, color: 'bg-gradient-to-r from-gray-500 to-gray-600' },
-                  { value: 'open', label: 'Publics', count: statusCounts.open, color: 'bg-gradient-to-r from-green-500 to-emerald-600' },
-                  { value: 'in-progress', label: 'En cours', count: statusCounts['in-progress'], color: 'bg-gradient-to-r from-blue-500 to-cyan-600' },
-                  { value: 'draft', label: 'Brouillons', count: statusCounts.draft, color: 'bg-gradient-to-r from-gray-400 to-gray-500' },
-                  { value: 'completed', label: 'Terminés', count: statusCounts.completed, color: 'bg-gradient-to-r from-purple-500 to-violet-600' },
-                  { value: 'cancelled', label: 'Annulés', count: statusCounts.cancelled, color: 'bg-gradient-to-r from-red-500 to-pink-600' },
+                  { value: 'all', label: 'Tous', count: statusCounts.all, color: 'from-gray-500 to-gray-600' },
+                  { value: 'open', label: 'Publics', count: statusCounts.open, color: 'from-green-500 to-emerald-600' },
+                  { value: 'in-progress', label: 'En cours', count: statusCounts['in-progress'], color: 'from-blue-500 to-cyan-600' },
+                  { value: 'draft', label: 'Brouillons', count: statusCounts.draft, color: 'from-gray-400 to-gray-500' },
+                  { value: 'completed', label: 'Terminés', count: statusCounts.completed, color: 'from-purple-500 to-violet-600' },
+                  { value: 'cancelled', label: 'Annulés', count: statusCounts.cancelled, color: 'from-red-500 to-pink-600' },
                 ].map((filter) => (
                   <Button
                     key={filter.value}
                     variant={statusFilter === filter.value ? "default" : "outline"}
                     onClick={() => setStatusFilter(filter.value)}
-                    className={`relative rounded-full px-4 ${statusFilter === filter.value ? filter.color + ' text-white border-0' : 'bg-white/50'}`}
+                    className={cn(
+                      "relative rounded-full px-4",
+                      statusFilter === filter.value 
+                        ? `bg-gradient-to-r ${filter.color} text-white border-0` 
+                        : "bg-white/50 dark:bg-gray-800/50"
+                    )}
                   >
                     {filter.label}
                     <Badge 
                       variant="secondary" 
-                      className={`ml-2 ${statusFilter === filter.value ? 'bg-white/20 text-white' : 'bg-gray-100'}`}
+                      className={cn(
+                        "ml-2",
+                        statusFilter === filter.value 
+                          ? 'bg-white/20 text-white' 
+                          : 'bg-gray-100 dark:bg-gray-700'
+                      )}
                     >
                       {filter.count}
                     </Badge>
@@ -926,33 +937,33 @@ export default function ClientProjectsPage() {
           {loading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
-                <Card key={i} className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg animate-pulse">
+                <Card key={i} className="p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-0 shadow-lg animate-pulse">
                   <div className="flex items-start justify-between">
                     <div className="space-y-4 flex-1">
-                      <Skeleton className="h-8 w-1/3 rounded-xl" />
-                      <Skeleton className="h-4 w-1/2 rounded" />
+                      <Skeleton className="h-8 w-1/3 rounded-xl dark:bg-gray-800" />
+                      <Skeleton className="h-4 w-1/2 rounded dark:bg-gray-800" />
                       <div className="flex gap-3">
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
+                        <Skeleton className="h-6 w-24 rounded-full dark:bg-gray-800" />
+                        <Skeleton className="h-6 w-24 rounded-full dark:bg-gray-800" />
+                        <Skeleton className="h-6 w-24 rounded-full dark:bg-gray-800" />
                       </div>
                     </div>
-                    <Skeleton className="h-10 w-32 rounded-lg ml-4" />
+                    <Skeleton className="h-10 w-32 rounded-lg ml-4 dark:bg-gray-800" />
                   </div>
                 </Card>
               ))}
             </div>
           ) : filteredAndSortedProjects.length === 0 ? (
-            <Card className="p-12 text-center bg-gradient-to-br from-white to-blue-50 border-0 shadow-xl">
-              <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Building className="h-12 w-12 text-blue-600" />
+            <Card className="p-12 text-center bg-gradient-to-br from-white to-blue-50 dark:from-gray-900 dark:to-blue-950/30 border-0 shadow-xl">
+              <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Building className="h-12 w-12 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                 {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all' 
                   ? 'Aucun projet trouvé' 
                   : 'Commencez votre aventure !'}
               </h3>
-              <p className="text-gray-600 mb-8 max-w-md mx-auto text-lg">
+              <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-lg">
                 {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all'
                   ? 'Ajustez vos filtres pour trouver ce que vous cherchez.' 
                   : 'Créez votre premier projet et découvrez les meilleurs talents.'}
@@ -967,7 +978,7 @@ export default function ClientProjectsPage() {
                 <Button 
                   variant="outline" 
                   size="lg"
-                  className="gap-3 px-8 py-6 text-lg border-2"
+                  className="gap-3 px-8 py-6 text-lg border-2 dark:border-gray-700"
                   onClick={() => {
                     setSearchTerm('')
                     setStatusFilter('all')
@@ -984,10 +995,10 @@ export default function ClientProjectsPage() {
             <div className="space-y-6">
               {/* Header de la liste */}
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {filteredAndSortedProjects.length} projet{filteredAndSortedProjects.length > 1 ? 's' : ''} trouvé{filteredAndSortedProjects.length > 1 ? 's' : ''}
                 </h3>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Tri: <span className="font-medium">{sortBy.replace('-', ' ')}</span>
                 </div>
               </div>
@@ -1002,7 +1013,7 @@ export default function ClientProjectsPage() {
                 return (
                   <Card 
                     key={project._id} 
-                    className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-1"
+                    className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-1"
                   >
                     <div className="p-6">
                       <div className="flex items-start justify-between">
@@ -1012,7 +1023,7 @@ export default function ClientProjectsPage() {
                             type="checkbox"
                             checked={selectedProjects.includes(project._id)}
                             onChange={() => handleSelectProject(project._id)}
-                            className="mt-1 h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2"
+                            className="mt-1 h-5 w-5 text-blue-600 rounded border-gray-300 dark:border-gray-700 focus:ring-blue-500 focus:ring-2 dark:bg-gray-800"
                           />
                           
                           {/* Indicateur d'urgence */}
@@ -1023,11 +1034,11 @@ export default function ClientProjectsPage() {
                           {/* Header avec titre et statut */}
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-3">
-                                <h3 className="text-xl font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                   {project.title}
                                 </h3>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <Badge 
                                     variant={statusConfig.variant} 
                                     className={`${statusConfig.color} border-0 shadow-sm`}
@@ -1039,7 +1050,7 @@ export default function ClientProjectsPage() {
                                   {/* Badge de visibilité */}
                                   <Badge 
                                     variant="outline" 
-                                    className="gap-1"
+                                    className="gap-1 dark:border-gray-700"
                                   >
                                     {project.visibility === 'public' ? (
                                       <>
@@ -1065,21 +1076,21 @@ export default function ClientProjectsPage() {
                               </div>
                               
                               {/* Description */}
-                              <p className="text-gray-600 mb-6 line-clamp-2 text-lg leading-relaxed">
+                              <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-2 text-lg leading-relaxed">
                                 {project.description}
                               </p>
 
                               {/* Stats en ligne */}
                               <div className="flex flex-wrap items-center gap-6 text-sm">
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-blue-50 rounded-lg">
-                                    <DollarSign className="h-4 w-4 text-blue-600" />
+                                  <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                                    <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                   </div>
                                   <div>
-                                    <div className="font-bold text-gray-900">
+                                    <div className="font-bold text-gray-900 dark:text-white">
                                       {project.budget.min.toLocaleString()} - {project.budget.max.toLocaleString()} {project.budget.currency}
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                       {project.budget.type === 'fixed' ? 'Forfait' : 'Taux horaire'}
                                     </div>
                                   </div>
@@ -1087,26 +1098,26 @@ export default function ClientProjectsPage() {
 
                                 {/* Candidatures avec lien clair vers les propositions */}
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-green-50 rounded-lg">
-                                    <Users className="h-4 w-4 text-green-600" />
+                                  <div className="p-2 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                                    <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
                                   </div>
                                   <div>
-                                    <div className="font-bold text-gray-900">
+                                    <div className="font-bold text-gray-900 dark:text-white">
                                       <Link 
                                         href={`/dashboard/client/projects/${project._id}/proposals`}
-                                        className="hover:text-blue-600 hover:underline transition-colors"
+                                        className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
                                       >
                                         {stats.total} candidature{stats.total !== 1 ? 's' : ''}
                                       </Link>
                                     </div>
-                                    <div className="text-xs text-gray-500 flex gap-2">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-2">
                                       {hasPendingApplications && (
-                                        <span className="text-amber-600 font-medium">
+                                        <span className="text-amber-600 dark:text-amber-400 font-medium">
                                           {stats.pending} en attente
                                         </span>
                                       )}
                                       {stats.accepted > 0 && (
-                                        <span className="text-green-600 font-medium">
+                                        <span className="text-green-600 dark:text-green-400 font-medium">
                                           {stats.accepted} acceptée{stats.accepted !== 1 ? 's' : ''}
                                         </span>
                                       )}
@@ -1115,29 +1126,29 @@ export default function ClientProjectsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  <div className="p-2 bg-purple-50 rounded-lg">
-                                    <Calendar className="h-4 w-4 text-purple-600" />
+                                  <div className="p-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
+                                    <Calendar className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                   </div>
                                   <div>
-                                    <div className="font-bold text-gray-900">
+                                    <div className="font-bold text-gray-900 dark:text-white">
                                       {new Date(project.createdAt).toLocaleDateString('fr-FR', {
                                         day: 'numeric',
                                         month: 'short',
                                         year: 'numeric'
                                       })}
                                     </div>
-                                    <div className="text-xs text-gray-500">Créé le</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">Créé le</div>
                                   </div>
                                 </div>
 
                                 {project.category && (
                                   <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-amber-50 rounded-lg">
-                                      <Tag className="h-4 w-4 text-amber-600" />
+                                    <div className="p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                                      <Tag className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                     </div>
                                     <div>
-                                      <div className="font-bold text-gray-900">{project.category}</div>
-                                      <div className="text-xs text-gray-500">Catégorie</div>
+                                      <div className="font-bold text-gray-900 dark:text-white">{project.category}</div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">Catégorie</div>
                                     </div>
                                   </div>
                                 )}
@@ -1152,13 +1163,13 @@ export default function ClientProjectsPage() {
                                 <Badge 
                                   key={index} 
                                   variant="outline" 
-                                  className="text-sm px-3 py-1 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                                  className="text-sm px-3 py-1 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                                 >
                                   {skill}
                                 </Badge>
                               ))}
                               {project.skills.length > 5 && (
-                                <Badge variant="secondary" className="text-sm px-3 py-1">
+                                <Badge variant="secondary" className="text-sm px-3 py-1 dark:bg-gray-800">
                                   +{project.skills.length - 5}
                                 </Badge>
                               )}
@@ -1166,7 +1177,7 @@ export default function ClientProjectsPage() {
                           )}
                         </div>
 
-                        {/* Actions - Mise à jour avec bouton PROPOSITIONS bien visible */}
+                        {/* Actions */}
                         <div className="flex flex-col items-end gap-3 ml-6 min-w-[200px]">
                           {/* Bouton PRINCIPAL vers les propositions */}
                           {project.status === 'open' && stats.total > 0 && (
@@ -1200,7 +1211,7 @@ export default function ClientProjectsPage() {
                                         project._id, 
                                         project.visibility === 'public' ? 'private' : 'public'
                                       )}
-                                      className="gap-2"
+                                      className="gap-2 dark:border-gray-700"
                                     >
                                       {project.visibility === 'public' ? (
                                         <EyeOff className="h-4 w-4" />
@@ -1235,30 +1246,30 @@ export default function ClientProjectsPage() {
                             {/* Menu déroulant */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" className="dark:hover:bg-gray-800">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuItem asChild>
+                              <DropdownMenuContent align="end" className="w-56 dark:bg-gray-900 dark:border-gray-800">
+                                <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                                   <Link href={`/projects/${project._id}/edit`} className="flex items-center gap-2">
                                     <Edit2 className="h-4 w-4" />
                                     Modifier
                                   </Link>
                                 </DropdownMenuItem>
                                 
-                                <DropdownMenuItem asChild>
+                                <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                                   <Link href={`/projects/${project._id}`} className="flex items-center gap-2">
                                     <Eye className="h-4 w-4" />
                                     Voir détails
                                   </Link>
                                 </DropdownMenuItem>
-                                     <DropdownMenuItem asChild>
+                                     
+                                <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                                   <AIArchitectBadge projectId={project._id} clientId={session?.user?.id} /> 
                                 </DropdownMenuItem>
 
-                                {/* LIEN CLAIR VERS LES PROPOSITIONS */}
-                                <DropdownMenuItem asChild>
+                                <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                                   <Link 
                                     href={`/dashboard/client/projects/${project._id}/proposals`}
                                     className="flex items-center gap-2"
@@ -1266,7 +1277,7 @@ export default function ClientProjectsPage() {
                                     <Users className="h-4 w-4" />
                                     Voir toutes les propositions
                                     {stats.total > 0 && (
-                                      <Badge variant="secondary" className="ml-auto">
+                                      <Badge variant="secondary" className="ml-auto dark:bg-gray-800">
                                         {stats.total}
                                       </Badge>
                                     )}
@@ -1276,7 +1287,7 @@ export default function ClientProjectsPage() {
                                 {hasNewApplications && (
                                   <DropdownMenuItem 
                                     onClick={() => markAllAsRead(project._id)}
-                                    className="flex items-center gap-2 text-blue-600"
+                                    className="flex items-center gap-2 text-blue-600 dark:text-blue-400 dark:hover:bg-gray-800"
                                   >
                                     <Check className="h-4 w-4" />
                                     Marquer comme lu
@@ -1285,13 +1296,13 @@ export default function ClientProjectsPage() {
 
                                 <DropdownMenuItem 
                                   onClick={() => duplicateProject(project._id)}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-2 dark:hover:bg-gray-800"
                                 >
                                   <Copy className="h-4 w-4" />
                                   Dupliquer
                                 </DropdownMenuItem>
 
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator className="dark:bg-gray-800" />
 
                                 <DropdownMenuItem 
                                   onClick={() => {
@@ -1301,17 +1312,17 @@ export default function ClientProjectsPage() {
                                       description: "Le lien du projet a été copié dans le presse-papier",
                                     })
                                   }}
-                                  className="flex items-center gap-2"
+                                  className="flex items-center gap-2 dark:hover:bg-gray-800"
                                 >
                                   <Copy className="h-4 w-4" />
                                   Copier le lien
                                 </DropdownMenuItem>
 
-                                <DropdownMenuSeparator />
+                                <DropdownMenuSeparator className="dark:bg-gray-800" />
 
                                 <DropdownMenuItem 
                                   onClick={() => deleteProject(project._id)}
-                                  className="flex items-center gap-2 text-red-600"
+                                  className="flex items-center gap-2 text-red-600 dark:text-red-400 dark:hover:bg-gray-800"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                   Supprimer
@@ -1321,7 +1332,7 @@ export default function ClientProjectsPage() {
                           </div>
 
                           {/* Informations rapides */}
-                          <div className="text-xs text-gray-500 text-right mt-2">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 text-right mt-2">
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               Mis à jour: {new Date(project.updatedAt).toLocaleDateString('fr-FR')}
@@ -1335,7 +1346,7 @@ export default function ClientProjectsPage() {
               })}
             </div>
           ) : (
-            // Vue Grille améliorée
+            // Vue Grille améliorée avec dark mode
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAndSortedProjects.map((project) => {
                 const stats = getApplicationStats(project)
@@ -1346,7 +1357,7 @@ export default function ClientProjectsPage() {
                 return (
                   <Card 
                     key={project._id} 
-                    className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2"
+                    className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2"
                   >
                     <CardContent className="p-6">
                       {/* Header avec badge d'urgence */}
@@ -1360,22 +1371,22 @@ export default function ClientProjectsPage() {
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="dark:hover:bg-gray-800">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem asChild>
+                          <DropdownMenuContent align="end" className="w-48 dark:bg-gray-900 dark:border-gray-800">
+                            <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                               <Link href={`/projects/${project._id}`}>Gérer</Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                               <Link href={`/projects/${project._id}/edit`}>Modifier</Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                            <DropdownMenuItem asChild className="dark:hover:bg-gray-800">
                               <Link href={`/dashboard/client/projects/${project._id}/proposals`}>
                                 Voir les propositions
                                 {stats.total > 0 && (
-                                  <Badge variant="secondary" className="ml-auto">
+                                  <Badge variant="secondary" className="ml-auto dark:bg-gray-800">
                                     {stats.total}
                                   </Badge>
                                 )}
@@ -1383,7 +1394,7 @@ export default function ClientProjectsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => deleteProject(project._id)}
-                              className="text-red-600"
+                              className="text-red-600 dark:text-red-400 dark:hover:bg-gray-800"
                             >
                               Supprimer
                             </DropdownMenuItem>
@@ -1393,7 +1404,7 @@ export default function ClientProjectsPage() {
 
                       {/* Titre avec notification */}
                       <div className="mb-3">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {project.title}
                         </h3>
                         {hasNewApplications && (
@@ -1405,7 +1416,7 @@ export default function ClientProjectsPage() {
                       </div>
                       
                       {/* Description */}
-                      <p className="text-gray-600 text-sm mb-6 line-clamp-3">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 line-clamp-3">
                         {project.description}
                       </p>
 
@@ -1414,9 +1425,9 @@ export default function ClientProjectsPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm text-gray-500">Budget</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Budget</span>
                           </div>
-                          <span className="font-bold text-gray-900">
+                          <span className="font-bold text-gray-900 dark:text-white">
                             {project.budget.min.toLocaleString()} - {project.budget.max.toLocaleString()} {project.budget.currency}
                           </span>
                         </div>
@@ -1425,11 +1436,11 @@ export default function ClientProjectsPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-gray-500">Candidatures</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Candidatures</span>
                           </div>
                           <Link 
                             href={`/dashboard/client/projects/${project._id}/proposals`}
-                            className="font-bold text-gray-900 hover:text-blue-600 hover:underline transition-colors"
+                            className="font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
                           >
                             {stats.total}
                           </Link>
@@ -1439,9 +1450,9 @@ export default function ClientProjectsPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Tag className="h-4 w-4 text-purple-500" />
-                              <span className="text-sm text-gray-500">Catégorie</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">Catégorie</span>
                             </div>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs dark:border-gray-700">
                               {project.category}
                             </Badge>
                           </div>
@@ -1450,15 +1461,15 @@ export default function ClientProjectsPage() {
 
                       {/* Compétences */}
                       {project.skills && project.skills.length > 0 && (
-                        <div className="pt-4 border-t mb-6">
+                        <div className="pt-4 border-t dark:border-gray-800 mb-6">
                           <div className="flex flex-wrap gap-1">
                             {project.skills.slice(0, 3).map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
+                              <Badge key={index} variant="outline" className="text-xs dark:border-gray-700">
                                 {skill}
                               </Badge>
                             ))}
                             {project.skills.length > 3 && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs dark:bg-gray-800">
                                 +{project.skills.length - 3}
                               </Badge>
                             )}
@@ -1467,13 +1478,13 @@ export default function ClientProjectsPage() {
                       )}
 
                       {/* Actions */}
-                      <div className="pt-4 border-t">
+                      <div className="pt-4 border-t dark:border-gray-800">
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             asChild
-                            className="flex-1"
+                            className="flex-1 dark:border-gray-700 dark:hover:bg-gray-800"
                           >
                             <Link href={`/projects/${project._id}`}>
                               Détails
@@ -1501,13 +1512,13 @@ export default function ClientProjectsPage() {
             </div>
           )}
 
-          {/* Footer avec pagination et stats */}
+          {/* Footer avec pagination et stats - Dark mode */}
           {!loading && projects.length > 0 && (
-            <Card className="mt-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="mt-8 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-                  <div className="text-sm text-gray-600">
-                    <p className="font-medium text-gray-900 mb-1 text-lg">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="font-medium text-gray-900 dark:text-white mb-1 text-lg">
                       📊 Résumé des résultats
                     </p>
                     <p>
@@ -1520,44 +1531,44 @@ export default function ClientProjectsPage() {
                   <div className="flex flex-wrap gap-4">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500"></div>
-                      <span className="text-sm">{statusCounts.open} public(s)</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{statusCounts.open} public(s)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500"></div>
-                      <span className="text-sm">{statusCounts['in-progress']} en cours</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{statusCounts['in-progress']} en cours</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{projects.reduce((sum, p) => sum + p.applicationCount, 0)} candidatures total</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{projects.reduce((sum, p) => sum + p.applicationCount, 0)} candidatures total</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Bell className="h-4 w-4 text-red-400" />
-                      <span className="text-sm">{totalNewApplications} nouvelles</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{totalNewApplications} nouvelles</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Prochaines actions suggérées */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <p className="text-sm text-gray-600 mb-3">💡 Prochaines actions suggérées:</p>
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">💡 Prochaines actions suggérées:</p>
                   <div className="flex flex-wrap gap-3">
                     {totalPendingApplications > 0 && (
                       <Link href="/dashboard/client/proposals">
-                        <Button variant="outline" className="gap-2 border-amber-200 hover:border-amber-300 hover:bg-amber-50">
-                          <Clock className="h-4 w-4 text-amber-600" />
+                        <Button variant="outline" className="gap-2 border-amber-200 dark:border-amber-800 hover:border-amber-300 dark:hover:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30">
+                          <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                           Réviser {totalPendingApplications} candidature{totalPendingApplications > 1 ? 's' : ''} en attente
                         </Button>
                       </Link>
                     )}
                     <Link href="/projects/create">
-                      <Button variant="outline" className="gap-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50">
-                        <Plus className="h-4 w-4 text-blue-600" />
+                      <Button variant="outline" className="gap-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30">
+                        <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         Créer un nouveau projet
                       </Button>
                     </Link>
                     <Button 
                       variant="outline" 
-                      className="gap-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      className="gap-2 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
                       onClick={fetchProjects}
                     >
                       <RefreshCw className="h-4 w-4" />
