@@ -1,4 +1,4 @@
-// app/api/contracts/route.ts - VERSION CORRIGÉE ET COMPLÈTE
+// app/api/contracts/route.ts - CORRECTION COMPLÈTE POUR FILTRAGE
 import { NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
@@ -16,25 +16,53 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
-    const role = searchParams.get("role") // "client" ou "freelancer"
+    const role = searchParams.get("role")
+    const projectId = searchParams.get("projectId") || searchParams.get("project") // Support both
+    const freelancerId = searchParams.get("freelancerId") || searchParams.get("freelancer") // Support both
     
     const db = await getDatabase()
     const userId = new ObjectId((session.user as any).id)
+    const userRole = (session.user as any).role
+
+    console.log("🔍 GET contracts - User:", userId.toString(), "Role:", userRole)
+    console.log("📊 Query params:", { status, role, projectId, freelancerId })
 
     const filter: any = {}
-    
-    if (role === "client") {
-      filter.clientId = userId
-    } else if (role === "freelancer" || "freelance") {
-      filter.freelancerId = userId
-    } else {
-      // Voir tous les contrats où l'utilisateur est impliqué
-      filter.$or = [{ clientId: userId }, { freelancerId: userId }]
+
+    // 🔥 CRITICAL: Filter by projectId if specified
+    if (projectId && ObjectId.isValid(projectId)) {
+      filter.projectId = new ObjectId(projectId)
+      console.log("🔍 Filtering by projectId:", projectId)
     }
 
-    if (status) {
+    // 🔥 CRITICAL: Filter by freelancerId if specified
+    if (freelancerId && ObjectId.isValid(freelancerId)) {
+      filter.freelancerId = new ObjectId(freelancerId)
+      console.log("🔍 Filtering by freelancerId:", freelancerId)
+    }
+
+    // If both projectId and freelancerId are specified, we already have the filter
+    // If not, add role-based filtering
+    if (!projectId && !freelancerId) {
+      if (role === "client") {
+        filter.clientId = userId
+      } else if (role === "freelancer") {
+        filter.freelancerId = userId
+      } else {
+        // Par défaut: voir tous les contrats où l'utilisateur est impliqué
+        filter.$or = [
+          { clientId: userId },
+          { freelancerId: userId }
+        ]
+      }
+    }
+
+    // Add status filter if specified
+    if (status && status !== "all") {
       filter.status = status
     }
+
+    console.log("📊 Final filter:", JSON.stringify(filter, null, 2))
 
     // Utiliser aggregation pour inclure les informations utilisateurs
     const contracts = await db.collection("contracts").aggregate([
@@ -68,7 +96,6 @@ export async function GET(request: Request) {
       { $unwind: { path: "$project", preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          // Inclure tous les champs du contrat
           _id: 1,
           projectId: 1,
           clientId: 1,
@@ -94,14 +121,12 @@ export async function GET(request: Request) {
           version: 1,
           previousVersionId: 1,
           
-          // Informations client (sans données sensibles)
           "client._id": 1,
           "client.name": 1,
           "client.avatar": 1,
           "client.title": 1,
           "client.rating": 1,
           
-          // Informations freelancer (sans données sensibles)
           "freelancer._id": 1,
           "freelancer.name": 1,
           "freelancer.avatar": 1,
@@ -109,7 +134,6 @@ export async function GET(request: Request) {
           "freelancer.rating": 1,
           "freelancer.skills": 1,
           
-          // Informations projet
           "project._id": 1,
           "project.title": 1,
           "project.description": 1,
@@ -119,6 +143,8 @@ export async function GET(request: Request) {
       { $sort: { createdAt: -1 } }
     ]).toArray()
 
+    console.log(`✅ Found ${contracts.length} contracts`)
+
     return NextResponse.json({ contracts })
   } catch (error) {
     console.error("Erreur récupération contrats:", error)
@@ -126,7 +152,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST - Créer un contrat
+// POST - Créer un contrat (reste inchangé)
 export async function POST(request: Request) {
   try {
     console.log("📝 POST /api/contracts called")
@@ -219,7 +245,7 @@ export async function POST(request: Request) {
       duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     }
 
-    // Créer le contrat - CORRECTION IMPORTANTE : generateDefaultTerms()
+    // Créer le contrat
     const contract = {
       projectId: new ObjectId(projectId),
       clientId,
@@ -235,7 +261,7 @@ export async function POST(request: Request) {
       duration,
       deliverables: deliverables || [],
       scopeOfWork: scopeOfWork || "",
-      termsAndConditions: termsAndConditions || generateDefaultTerms(), // ← CORRECTION ICI
+      termsAndConditions: termsAndConditions || generateDefaultTerms(),
       paymentSchedule: paymentSchedule || {
         type: type === "fixed_price" ? "completion" : "hourly",
         milestones: []
@@ -256,7 +282,7 @@ export async function POST(request: Request) {
       { 
         $set: { 
           status: "contract_pending",
-          freelancerId: new ObjectId(freelancerId),
+          selectedFreelancerId: new ObjectId(freelancerId),
           updatedAt: new Date() 
         } 
       }
@@ -264,9 +290,9 @@ export async function POST(request: Request) {
 
     console.log("✅ Project updated")
 
-    // Envoyer notification au freelancer - CORRECTION : userId doit être ObjectId
+    // Envoyer notification au freelancer
     await db.collection("notifications").insertOne({
-      userId: new ObjectId(freelancerId), // ← CORRECTION ICI
+      userId: new ObjectId(freelancerId),
       type: "contract_created",
       title: "Nouveau contrat reçu",
       message: `${session.user?.name} vous a envoyé un contrat pour "${title}"`,

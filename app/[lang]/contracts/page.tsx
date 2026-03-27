@@ -1,9 +1,9 @@
-// app/contracts/page.tsx - VERSION PURPLE MODERN
+// app/contracts/page.tsx - VERSION AVEC FILTRAGE PAR URL
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,9 +56,11 @@ import {
   LayoutGrid,
   List,
   SortAsc,
-  SortDesc
+  SortDesc,
+  ArrowLeft
 } from "lucide-react"
 import { toast } from "sonner"
+import Link from "next/link"
 import type { Contract } from "@/types/contract"
 
 // Animation variants
@@ -77,23 +79,16 @@ const staggerContainer = {
   }
 }
 
-const scaleOnHover = {
-  whileHover: { scale: 1.02 },
-  whileTap: { scale: 0.98 }
-}
-
-const cardHover = {
-  whileHover: { 
-    y: -8,
-    transition: { duration: 0.2 }
-  }
-}
-
 export default function ContractsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   
-  const [contracts, setContracts] = useState<Contract[]>([])
+  // Récupérer les paramètres d'URL
+  const projectIdParam = searchParams.get("projectId") || searchParams.get("project")
+  const freelancerIdParam = searchParams.get("freelancerId") || searchParams.get("freelancer")
+  
+  const [contracts, setContracts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
@@ -101,6 +96,12 @@ export default function ContractsPage() {
   const [sortBy, setSortBy] = useState<"date" | "amount" | "status">("date")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [showFilters, setShowFilters] = useState(false)
+  
+  // États pour le filtrage par URL
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectIdParam)
+  const [selectedFreelancerId, setSelectedFreelancerId] = useState<string | null>(freelancerIdParam)
+  const [projectInfo, setProjectInfo] = useState<any>(null)
+  const [freelancerInfo, setFreelancerInfo] = useState<any>(null)
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -108,10 +109,61 @@ export default function ContractsPage() {
     }
   }, [status])
 
+  // Charger les informations du projet et du freelancer si filtrés
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchProjectInfo(selectedProjectId)
+    }
+    if (selectedFreelancerId) {
+      fetchFreelancerInfo(selectedFreelancerId)
+    }
+  }, [selectedProjectId, selectedFreelancerId])
+
+  const fetchProjectInfo = async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setProjectInfo(data)
+      }
+    } catch (error) {
+      console.error("Error fetching project:", error)
+    }
+  }
+
+  const fetchFreelancerInfo = async (freelancerId: string) => {
+    try {
+      const response = await fetch(`/api/users/${freelancerId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setFreelancerInfo(data)
+      }
+    } catch (error) {
+      console.error("Error fetching freelancer:", error)
+    }
+  }
+
   const fetchContracts = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/contracts")
+      // Construire l'URL avec les paramètres de filtrage
+      let url = "/api/contracts"
+      const params = new URLSearchParams()
+      
+      if (selectedProjectId) {
+        params.append("projectId", selectedProjectId)
+      }
+      if (selectedFreelancerId) {
+        params.append("freelancerId", selectedFreelancerId)
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+      
+      console.log("🔍 Fetching contracts with URL:", url)
+      
+      const response = await fetch(url)
       const data = await response.json()
       
       if (response.ok) {
@@ -125,6 +177,7 @@ export default function ContractsPage() {
         })) || []
         
         setContracts(formattedContracts)
+        console.log(`✅ Loaded ${formattedContracts.length} contracts`)
       } else {
         toast.error(data.error || "Erreur lors du chargement des contrats")
       }
@@ -268,6 +321,15 @@ export default function ContractsPage() {
     }).format(amount)
   }
 
+  const clearFilters = () => {
+    setSelectedProjectId(null)
+    setSelectedFreelancerId(null)
+    setProjectInfo(null)
+    setFreelancerInfo(null)
+    // Mettre à jour l'URL sans les paramètres
+    router.push("/contracts")
+  }
+
   if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950 flex items-center justify-center">
@@ -304,7 +366,7 @@ export default function ContractsPage() {
       <div className="fixed bottom-0 right-0 w-96 h-96 bg-fuchsia-300/20 dark:bg-fuchsia-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
       
       <div className="container max-w-7xl mx-auto px-4 py-8 relative">
-        {/* Header */}
+        {/* Header avec retour si filtré */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -313,15 +375,32 @@ export default function ContractsPage() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
+                {(selectedProjectId || selectedFreelancerId) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Retour
+                  </Button>
+                )}
                 <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl shadow-lg shadow-purple-500/25">
                   <FileText className="h-6 w-6 text-white" />
                 </div>
                 <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-700 via-fuchsia-700 to-pink-700 dark:from-purple-300 dark:via-fuchsia-300 dark:to-pink-300 bg-clip-text text-transparent">
-                  Mes Contrats
+                  {selectedProjectId ? `Contrats - ${projectInfo?.title || "Projet"}` : "Mes Contrats"}
                 </h1>
               </div>
               <p className="text-purple-600 dark:text-purple-400 ml-11">
-                Gérez tous vos contrats avec vos clients et freelancers
+                {selectedProjectId && selectedFreelancerId
+                  ? `Contrat entre ${projectInfo?.title || "le projet"} et ${freelancerInfo?.name || "le freelancer"}`
+                  : selectedProjectId
+                  ? `Tous les contrats pour "${projectInfo?.title || "ce projet"}"`
+                  : selectedFreelancerId
+                  ? `Tous les contrats avec ${freelancerInfo?.name || "ce freelancer"}`
+                  : "Gérez tous vos contrats avec vos clients et freelancers"}
               </p>
             </div>
             
@@ -334,79 +413,105 @@ export default function ContractsPage() {
               Retour au Dashboard
             </Button>
           </div>
+
+          {/* Badges de filtrage actifs */}
+          {(selectedProjectId || selectedFreelancerId) && (
+            <div className="flex flex-wrap gap-2 mt-4 ml-11">
+              {selectedProjectId && projectInfo && (
+                <Badge className="bg-purple-100 text-purple-700 border-purple-200 px-3 py-1.5 gap-2">
+                  <Briefcase className="h-3 w-3" />
+                  Projet: {projectInfo.title}
+                  <button onClick={() => { setSelectedProjectId(null); setProjectInfo(null); }} className="ml-1 hover:text-purple-900">
+                    <XCircle className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedFreelancerId && freelancerInfo && (
+                <Badge className="bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 px-3 py-1.5 gap-2">
+                  <User className="h-3 w-3" />
+                  Freelancer: {freelancerInfo.name}
+                  <button onClick={() => { setSelectedFreelancerId(null); setFreelancerInfo(null); }} className="ml-1 hover:text-fuchsia-900">
+                    <XCircle className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
         </motion.div>
 
-        {/* Stats Cards */}
-        <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          animate="animate"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
-        >
-          <motion.div variants={fadeInUp}>
-            <Card className="bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white shadow-xl">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm opacity-90">Total contrats</span>
-                  <Gem className="h-5 w-5 opacity-90" />
-                </div>
-                <div className="text-3xl font-bold">{stats.total}</div>
-                <div className="flex items-center gap-1 mt-2 text-xs opacity-80">
-                  <TrendingUp className="h-3 w-3" />
-                  <span>+{Math.floor(stats.total * 0.1)}% ce mois</span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* Stats Cards - seulement si pas de filtre spécifique */}
+        {!selectedProjectId && !selectedFreelancerId && (
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          >
+            <motion.div variants={fadeInUp}>
+              <Card className="bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white shadow-xl">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm opacity-90">Total contrats</span>
+                    <Gem className="h-5 w-5 opacity-90" />
+                  </div>
+                  <div className="text-3xl font-bold">{stats.total}</div>
+                  <div className="flex items-center gap-1 mt-2 text-xs opacity-80">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>+{Math.floor(stats.total * 0.1)}% ce mois</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-          <motion.div variants={fadeInUp}>
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-purple-600 dark:text-purple-400">Valeur totale</span>
-                  <DollarSign className="h-5 w-5 text-purple-500" />
-                </div>
-                <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                  {formatCurrency(stats.totalValue, 'EUR')}
-                </div>
-                <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600">
-                  <ArrowUpRight className="h-3 w-3" />
-                  <span>+12.5%</span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            <motion.div variants={fadeInUp}>
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-purple-600 dark:text-purple-400">Valeur totale</span>
+                    <DollarSign className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    {formatCurrency(stats.totalValue, 'EUR')}
+                  </div>
+                  <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600">
+                    <ArrowUpRight className="h-3 w-3" />
+                    <span>+12.5%</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-          <motion.div variants={fadeInUp}>
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-purple-600 dark:text-purple-400">Contrats actifs</span>
-                  <Zap className="h-5 w-5 text-emerald-500" />
-                </div>
-                <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.active}</div>
-                <div className="text-xs text-purple-500 mt-2">
-                  Valeur: {formatCurrency(stats.activeValue, 'EUR')}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            <motion.div variants={fadeInUp}>
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-purple-600 dark:text-purple-400">Contrats actifs</span>
+                    <Zap className="h-5 w-5 text-emerald-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.active}</div>
+                  <div className="text-xs text-purple-500 mt-2">
+                    Valeur: {formatCurrency(stats.activeValue, 'EUR')}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-          <motion.div variants={fadeInUp}>
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-purple-600 dark:text-purple-400">Moyenne contrat</span>
-                  <Award className="h-5 w-5 text-purple-500" />
-                </div>
-                <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                  {formatCurrency(stats.averageValue, 'EUR')}
-                </div>
-                <Progress value={75} className="mt-2 h-1 bg-purple-100 dark:bg-purple-900" />
-              </CardContent>
-            </Card>
+            <motion.div variants={fadeInUp}>
+              <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-200 dark:border-purple-800 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-purple-600 dark:text-purple-400">Moyenne contrat</span>
+                    <Award className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    {formatCurrency(stats.averageValue, 'EUR')}
+                  </div>
+                  <Progress value={75} className="mt-2 h-1 bg-purple-100 dark:bg-purple-900" />
+                </CardContent>
+              </Card>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
 
         {/* Search and Filters */}
         <motion.div
@@ -491,18 +596,18 @@ export default function ContractsPage() {
               <FileText className="h-3 w-3 mr-2" />
               Tous
               <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700">
-                {stats.total}
+                {filteredAndSortedContracts.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="active" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
               <Zap className="h-3 w-3 mr-2" />
               Actifs
-              <Badge variant="secondary" className="ml-1">{stats.active}</Badge>
+              <Badge variant="secondary" className="ml-1">{contracts.filter(c => c.status === 'active').length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
               <Clock className="h-3 w-3 mr-2" />
               En attente
-              <Badge variant="secondary" className="ml-1">{stats.pending}</Badge>
+              <Badge variant="secondary" className="ml-1">{contracts.filter(c => c.status === 'pending').length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="draft" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
               <FileText className="h-3 w-3 mr-2" />
@@ -515,7 +620,7 @@ export default function ContractsPage() {
             <TabsTrigger value="completed" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
               <Award className="h-3 w-3 mr-2" />
               Terminés
-              <Badge variant="secondary" className="ml-1">{stats.completed}</Badge>
+              <Badge variant="secondary" className="ml-1">{contracts.filter(c => c.status === 'completed').length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="cancelled" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800">
               <XCircle className="h-3 w-3 mr-2" />
@@ -545,9 +650,13 @@ export default function ContractsPage() {
                       <p className="text-purple-600 dark:text-purple-400 mb-4">
                         {searchTerm 
                           ? "Essayez avec d'autres termes de recherche"
-                          : activeTab === "all"
-                            ? "Vous n'avez pas encore de contrats"
-                            : `Vous n'avez pas de contrats avec le statut "${activeTab}"`
+                          : selectedProjectId
+                            ? "Aucun contrat trouvé pour ce projet"
+                            : selectedFreelancerId
+                              ? "Aucun contrat trouvé avec ce freelancer"
+                              : activeTab === "all"
+                                ? "Vous n'avez pas encore de contrats"
+                                : `Vous n'avez pas de contrats avec le statut "${activeTab}"`
                         }
                       </p>
                       {searchTerm && (
@@ -557,6 +666,14 @@ export default function ContractsPage() {
                           className="border-purple-200 hover:bg-purple-50"
                         >
                           Effacer la recherche
+                        </Button>
+                      )}
+                      {(selectedProjectId || selectedFreelancerId) && (
+                        <Button
+                          onClick={clearFilters}
+                          className="bg-gradient-to-r from-purple-600 to-fuchsia-600 ml-3"
+                        >
+                          Voir tous les contrats
                         </Button>
                       )}
                     </CardContent>
@@ -573,7 +690,7 @@ export default function ContractsPage() {
                   }
                 >
                   <AnimatePresence>
-                    {filteredAndSortedContracts.map((contract, index) => {
+                    {filteredAndSortedContracts.map((contract) => {
                       const statusConfig = getStatusConfig(contract.status)
                       const StatusIcon = statusConfig.icon
                       const typeConfig = getTypeLabel(contract.type)
@@ -591,7 +708,13 @@ export default function ContractsPage() {
                             onClick={() => router.push(`/contracts/${contract._id}`)}
                           >
                             {/* Gradient top bar */}
-                            <div className={`h-1 w-full bg-gradient-to-r ${statusConfig.border.replace('border', 'from').replace('dark:border', 'to')}`} />
+                            <div className={`h-1 w-full bg-gradient-to-r ${
+                              contract.status === 'draft' ? 'from-purple-500 to-fuchsia-500' :
+                              contract.status === 'pending' ? 'from-amber-500 to-orange-500' :
+                              contract.status === 'active' ? 'from-emerald-500 to-teal-500' :
+                              contract.status === 'completed' ? 'from-purple-500 to-pink-500' :
+                              'from-slate-500 to-gray-500'
+                            }`} />
                             
                             <CardHeader className="pb-3">
                               <div className="flex justify-between items-start gap-2">
