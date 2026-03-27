@@ -1,4 +1,24 @@
 {
+   "footers": {
+    "tagline": "Aiza no ifanaton'ny talenta tena izy sy ny fanavaozana.",
+    "platform": "Sehatra",
+    "findTalents": "Mitady talenta",
+    "browseServices": "Hijery serivisy",
+    "howItWorks": "Ahoana no fiasany",
+    "pricing": "Vidiny",
+    "company": "Orinasa",
+    "aboutUs": "Momba anay",
+    "blog": "Blog",
+    "careers": "Asa",
+    "contact": "Fifandraisana",
+    "legal": "Lalàna",
+    "copyright": "Zo rehetra voatahiry."
+  },
+  "legals": {
+    "privacy": "Politikan'ny fiainana manokana",
+    "terms": "Fepetra fampiasana",
+    "cookies": "Politikan'ny cookies"
+  },
    "contracts": {
     "create": {
       "title": "Hamorona Fifanarahana",

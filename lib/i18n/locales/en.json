@@ -1,4 +1,24 @@
 {
+   "footers": {
+    "tagline": "Là où le vrai talent rencontre l'innovation.",
+    "platform": "Plateforme",
+    "findTalents": "Trouver des talents",
+    "browseServices": "Parcourir les services",
+    "howItWorks": "Comment ça marche",
+    "pricing": "Tarifs",
+    "company": "Entreprise",
+    "aboutUs": "À propos",
+    "blog": "Blog",
+    "careers": "Carrières",
+    "contact": "Contact",
+    "legal": "Légal",
+    "copyright": "Tous droits réservés."
+  },
+  "legals": {
+    "privacy": "Politique de confidentialité",
+    "terms": "Conditions d'utilisation",
+    "cookies": "Politique des cookies"
+  },
   "contracts": {
     "create": {
       "title": "Create a Contract",
