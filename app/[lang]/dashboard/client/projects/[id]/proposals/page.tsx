@@ -189,8 +189,12 @@ export default function ProposalsPage() {
     }
   }
 
-  const navigateToProfile = (userId: string) => {
-    router.push(`/${lang}/profile/${userId}`)
+  const navigateToProfile = (userId: string | undefined | null)  => {
+     if (!userId || userId === 'undefined' || userId === 'null') {
+    toast.error(dict?.proposals?.errors?.profileNotFound || "Profil non trouvé")
+    return
+  }
+  router.push(`/${lang}/profile/${userId}`)
   }
 
   const formatFileSize = (bytes?: number) => {
@@ -270,7 +274,7 @@ export default function ProposalsPage() {
             <div className="flex-shrink-0">
               <Avatar 
                 className="h-20 w-20 border-2 border-purple-200 dark:border-purple-800 shadow-md cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => navigateToProfile(freelancer?._id)}
+                onClick={() => navigateToProfile(freelancer?._id || app.freelancerId)}
               >
                 <AvatarImage src={freelancer?.avatar} />
                 <AvatarFallback className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold text-xl">
@@ -295,7 +299,7 @@ export default function ProposalsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 
                       className="text-xl font-semibold text-slate-900 dark:text-slate-100 cursor-pointer hover:text-purple-600 transition-colors"
-                      onClick={() => navigateToProfile(app.freelancerId)}
+                      onClick={() => navigateToProfile(freelancer?._id || app.freelancerId)}
                     >
                       {freelancer?.name || 'Freelancer'}
                     </h3>
@@ -463,7 +467,7 @@ export default function ProposalsPage() {
                  
                   <Button
                     variant="ghost"
-                    onClick={() => navigateToProfile(app.freelancerId)}
+                    onClick={() => navigateToProfile(freelancer?._id || app.freelancerId)}
                     className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950/30"
                   >
                     <Eye className="h-4 w-4" />
