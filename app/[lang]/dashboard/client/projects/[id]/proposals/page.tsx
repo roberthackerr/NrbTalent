@@ -2,7 +2,7 @@
 "use client"
 
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -22,17 +22,15 @@ import {
   Users,
   FileText,
   Download,
-  ExternalLink,
   Paperclip,
   Sparkles,
   TrendingUp,
-  Shield,
-  Award,
   Menu,
   Users2,
-  Building2
+  FileCheck,
+  FileSignature
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
@@ -101,6 +99,14 @@ interface Project {
   deadline?: string
 }
 
+interface Contract {
+  _id: string
+  status: 'draft' | 'pending' | 'signed' | 'active' | 'completed' | 'cancelled'
+  amount: number
+  currency: string
+  createdAt: string
+}
+
 export default function ProposalsPage() {
   const router = useRouter()
   const params = useParams()
@@ -113,6 +119,7 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true)
   const [processingAction, setProcessingAction] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [existingContracts, setExistingContracts] = useState<Record<string, Contract>>({})
 
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -137,7 +144,14 @@ export default function ProposalsPage() {
      
       const data = await response.json()
       setProject(data.project)
-      setApplications(Array.isArray(data.applications) ? data.applications : [])
+      const apps = Array.isArray(data.applications) ? data.applications : []
+      setApplications(apps)
+      
+      // Vérifier les contrats existants pour les candidatures acceptées
+      const acceptedApps = apps.filter((app: Application) => app.status === 'accepted')
+      if (acceptedApps.length > 0) {
+        await checkExistingContracts(acceptedApps)
+      }
     } catch (error) {
       console.error("Error fetching project applications:", error)
       toast.error(dict?.proposals?.errors?.fetchFailed || "Erreur lors du chargement des candidatures")
@@ -145,6 +159,26 @@ export default function ProposalsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const checkExistingContracts = async (acceptedApps: Application[]) => {
+    const contractsMap: Record<string, Contract> = {}
+    
+    for (const app of acceptedApps) {
+      try {
+        const response = await fetch(`/api/contracts?projectId=${projectId}&freelancerId=${app.freelancerId}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.contracts && data.contracts.length > 0) {
+            contractsMap[app.freelancerId] = data.contracts[0]
+          }
+        }
+      } catch (error) {
+        console.error(`Error checking contract for freelancer ${app.freelancerId}:`, error)
+      }
+    }
+    
+    setExistingContracts(contractsMap)
   }
 
   async function handleApplicationAction(applicationId: string, status: "accepted" | "rejected") {
@@ -159,24 +193,27 @@ export default function ProposalsPage() {
       
       if (response.ok) {
         toast.success(status === 'accepted' 
-          ? dict?.proposals?.success?.accepted || "Candidature acceptée !" 
-          : dict?.proposals?.success?.rejected || "Candidature rejetée !")
+          ? dict?.proposals?.success?.accepted || "✨ Candidature acceptée !" 
+          : dict?.proposals?.success?.rejected || "Candidature rejetée")
        
-        setApplications(prev => prev.map(app =>
+        const updatedApps = applications.map(app =>
           app._id === applicationId ? { ...app, status } : app
-        ))
+        )
+        setApplications(updatedApps)
         
         if (status === 'accepted') {
-          const acceptedApp = applications.find(a => a._id === applicationId)
-          setProject(prev => prev ? {
-            ...prev,
-            status: 'in-progress',
-            freelancerId: acceptedApp?.freelancerId
-          } : null)
-         
-          setTimeout(() => {
-            router.push(`/${lang}/projects/${projectId}/create-contract`)
-          }, 1500)
+          const acceptedApp = updatedApps.find(a => a._id === applicationId)
+          if (acceptedApp) {
+            // Vérifier si un contrat existe déjà
+            const existingContract = await checkContractExists(acceptedApp.freelancerId)
+            if (!existingContract) {
+              setTimeout(() => {
+                router.push(`/${lang}/projects/${projectId}/create-contract?freelancerId=${acceptedApp.freelancerId}`)
+              }, 1500)
+            } else {
+              toast.info("Un contrat existe déjà pour ce freelancer")
+            }
+          }
         }
       } else {
         const errorData = await response.json()
@@ -189,12 +226,47 @@ export default function ProposalsPage() {
     }
   }
 
-  const navigateToProfile = (userId: string | undefined | null)  => {
-     if (!userId || userId === 'undefined' || userId === 'null') {
-    toast.error(dict?.proposals?.errors?.profileNotFound || "Profil non trouvé")
-    return
+  const checkContractExists = async (freelancerId: string): Promise<Contract | null> => {
+    try {
+      const response = await fetch(`/api/contracts?projectId=${projectId}&freelancerId=${freelancerId}`)
+      if (response.ok) {
+        const data = await response.json()
+        return data.contracts?.[0] || null
+      }
+      return null
+    } catch (error) {
+      console.error("Error checking contract:", error)
+      return null
+    }
   }
-  router.push(`/${lang}/profile/${userId}`)
+
+  const navigateToProfile = (userId: string | undefined | null) => {
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      toast.error(dict?.proposals?.errors?.profileNotFound || "Profil non trouvé")
+      return
+    }
+    router.push(`/${lang}/profile/${userId}`)
+  }
+
+  const navigateToContract = (contractId: string) => {
+    router.push(`/${lang}/contracts/${contractId}`)
+  }
+
+  const navigateToCreateContract = (freelancerId: string) => {
+    router.push(`/${lang}/projects/${projectId}/create-contract?freelancerId=${freelancerId}`)
+  }
+
+  const getContractStatusBadge = (status: string) => {
+    const config: Record<string, { label: string; className: string }> = {
+      draft: { label: "Brouillon", className: "bg-gray-100 text-gray-700" },
+      pending: { label: "En attente", className: "bg-amber-100 text-amber-700" },
+      signed: { label: "Signé", className: "bg-emerald-100 text-emerald-700" },
+      active: { label: "Actif", className: "bg-blue-100 text-blue-700" },
+      completed: { label: "Terminé", className: "bg-purple-100 text-purple-700" },
+      cancelled: { label: "Annulé", className: "bg-rose-100 text-rose-700" }
+    }
+    const c = config[status] || config.draft
+    return <Badge className={`${c.className} text-xs ml-2`}>{c.label}</Badge>
   }
 
   const formatFileSize = (bytes?: number) => {
@@ -261,6 +333,8 @@ export default function ProposalsPage() {
     const isAccepted = type === 'accepted'
     const isRejected = type === 'rejected'
     const freelancer = app.freelancer
+    const existingContract = existingContracts[app.freelancerId]
+    const hasContract = !!existingContract
 
     return (
       <Card key={app._id} className={cn(
@@ -305,7 +379,7 @@ export default function ProposalsPage() {
                     </h3>
                     {freelancer?.rating && (
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-amber-500 text-amber-500 " />
+                        <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
                         <span className="font-medium text-slate-900 dark:text-slate-100">{freelancer.rating}</span>
                         <span className="text-sm text-slate-500">
                           ({freelancer.completedProjects || 0} projets)
@@ -476,6 +550,48 @@ export default function ProposalsPage() {
                 </div>
               )}
 
+              {/* Actions pour candidatures acceptées - BOUTON CONTRAT */}
+              {isAccepted && (
+                <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-purple-100 dark:border-purple-800">
+                  {hasContract ? (
+                    <Button
+                      onClick={() => navigateToContract(existingContract._id)}
+                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 gap-2 shadow-lg shadow-emerald-500/25"
+                    >
+                      <FileCheck className="h-4 w-4" />
+                      {dict?.proposals?.viewContract || "Voir le contrat"}
+                      {getContractStatusBadge(existingContract.status)}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => navigateToCreateContract(app.freelancerId)}
+                      className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 gap-2 shadow-lg shadow-purple-500/25"
+                    >
+                      <FileSignature className="h-4 w-4" />
+                      {dict?.proposals?.createContract || "Créer le contrat"}
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/${lang}/contracts?project=${projectId}&freelancer=${app.freelancerId}`)}
+                    className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-950/30"
+                  >
+                    <Eye className="h-4 w-4" />
+                    {dict?.proposals?.viewAllContracts || "Tous les contrats"}
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigateToProfile(freelancer?._id || app.freelancerId)}
+                    className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950/30"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {dict?.proposals?.contact || "Contacter"}
+                  </Button>
+                </div>
+              )}
+
               {/* Date de candidature */}
               <div className="mt-4 pt-4 border-t border-purple-100 dark:border-purple-800">
                 <div className="flex items-center gap-1 text-xs text-slate-500">
@@ -505,7 +621,6 @@ export default function ProposalsPage() {
       />
       
       <main className="flex-1 overflow-y-auto">
-        {/* Mobile menu button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <Button
             variant="outline"
@@ -518,7 +633,6 @@ export default function ProposalsPage() {
         </div>
 
         <div className="p-4 md:p-6 lg:p-8">
-          {/* Header avec bouton pour voir les propositions d'équipe */}
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <Button variant="ghost" asChild className="gap-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 w-fit">
@@ -528,7 +642,6 @@ export default function ProposalsPage() {
                 </Link>
               </Button>
               
-              {/* Bouton pour voir les propositions d'équipe */}
               <Button
                 onClick={() => router.push(`/${lang}/projects/${projectId}/applications`)}
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-purple-500/25 gap-2"
@@ -583,7 +696,6 @@ export default function ProposalsPage() {
             </div>
           </div>
 
-          {/* Tabs */}
           <Tabs defaultValue="pending" className="space-y-6">
             <TabsList className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-purple-100 dark:border-purple-800 p-1">
               <TabsTrigger value="pending" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white">
