@@ -230,7 +230,7 @@ export function Navigation() {
             { href: `/${lang}/calendar`, label: t("navigations.calendar", "Calendrier"), description: t("navigations.calendarDesc", "Planifier vos rendez-vous"), icon: <Calendar className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/contracts`, label: t("navigations.contracts", "Contrats"), description: t("navigations.contractsDesc", "Gérez vos accords juridiques"), icon: <ScrollText className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/orders`, label: t("navigations.orders", "Commandes"), description: t("navigations.ordersDesc", "Suivi des commandes actives"), icon: <Package className="h-4 w-4 shrink-0" /> },
-          { href: `/${lang}/contracts`, label: t("navigations.Contract", "Contract"), description: t("navigations.ContractDesc", "Contrats client/freelancer "), icon: <FilesIcon className="h-4 w-4 shrink-0" /> },
+      
           ],
         },
         {
