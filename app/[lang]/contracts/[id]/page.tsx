@@ -205,11 +205,27 @@ export default function ContractPage() {
     }).format(amount)
   }
 
-  const getCurrentUserRole = () => {
+  // CORRECTION: Comparaison correcte des IDs
+  const getCurrentUserRole = useCallback(() => {
     if (!contract || !session?.user) return null
-    const userId = (session.user as any).id
-    return contract.clientId._id === userId ? "client" : "freelancer"
-  }
+    
+    const userId = (session.user as any).id?.toString()
+    const clientId = contract.clientId?.toString()
+    const freelancerId = contract.freelancerId?.toString()
+    
+    console.log("🔍 User ID:", userId)
+    console.log("🔍 Client ID:", clientId)
+    console.log("🔍 Freelancer ID:", freelancerId)
+    
+    if (clientId === userId) {
+      return "client"
+    }
+    if (freelancerId === userId) {
+      return "freelancer"
+    }
+    
+    return null
+  }, [contract, session])
 
   const handleSigned = () => {
     toast.success("✨ Contrat signé avec succès !")
@@ -326,6 +342,14 @@ export default function ContractPage() {
   const statusConfig = getStatusConfig(contract.status)
   const StatusIcon = statusConfig.icon
   const contractProgress = calculateProgress()
+  
+  // CORRECTION: Calcul correct des signatures
+  const userHasSigned = isClient 
+    ? !!contract.clientSignature 
+    : !!contract.freelancerSignature
+  const otherPartySigned = isClient 
+    ? !!contract.freelancerSignature 
+    : !!contract.clientSignature
 
   return (
     <TooltipProvider>
@@ -762,8 +786,8 @@ export default function ContractPage() {
                     currentUserRole={currentUserRole}
                     onSigned={handleSigned}
                     onRequestChanges={handleRequestChanges}
-                    isSigned={!!(isClient ? contract.clientSignature : contract.freelancerSignature)}
-                    otherPartySigned={!!(isClient ? contract.freelancerSignature : contract.clientSignature)}
+                    isSigned={userHasSigned}
+                    otherPartySigned={otherPartySigned}
                   />
                 </motion.div>
               )}
@@ -817,7 +841,7 @@ export default function ContractPage() {
                 </Card>
               </motion.div>
 
-              {/* Signatures Status */}
+              {/* Signatures Status - CORRIGÉ */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -831,6 +855,7 @@ export default function ContractPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Signature du Client */}
                     <div className="p-4 bg-purple-50/50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-purple-700 dark:text-purple-300">Client</span>
@@ -852,8 +877,22 @@ export default function ContractPage() {
                           <p className="text-xs font-mono mt-1">IP: {contract.clientSignature.ipAddress}</p>
                         </div>
                       )}
+                      {/* Indicateur si l'utilisateur courant est le client */}
+                      {currentUserRole === 'client' && contract.clientSignature && (
+                        <div className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Vous avez signé ce contrat
+                        </div>
+                      )}
+                      {currentUserRole === 'client' && !contract.clientSignature && contract.freelancerSignature && (
+                        <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Le freelancer a signé, en attente de votre signature
+                        </div>
+                      )}
                     </div>
 
+                    {/* Signature du Freelancer */}
                     <div className="p-4 bg-purple-50/50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-purple-700 dark:text-purple-300">Freelancer</span>
@@ -873,6 +912,19 @@ export default function ContractPage() {
                         <div className="text-sm text-purple-500">
                           <p>Le {formatDate(contract.freelancerSignature.signedAt)}</p>
                           <p className="text-xs font-mono mt-1">IP: {contract.freelancerSignature.ipAddress}</p>
+                        </div>
+                      )}
+                      {/* Indicateur si l'utilisateur courant est le freelancer */}
+                      {currentUserRole === 'freelancer' && contract.freelancerSignature && (
+                        <div className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Vous avez signé ce contrat
+                        </div>
+                      )}
+                      {currentUserRole === 'freelancer' && !contract.freelancerSignature && contract.clientSignature && (
+                        <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Le client a signé, en attente de votre signature
                         </div>
                       )}
                     </div>
@@ -906,7 +958,7 @@ export default function ContractPage() {
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-                      onClick={() => router.push(`/projects/${contract.projectId._id || contract.projectId}`)}
+                      onClick={() => router.push(`/projects/${contract.projectId?._id || contract.projectId}`)}
                     >
                       <ExternalLink className="h-4 w-4" />
                       Voir le projet associé
@@ -971,9 +1023,10 @@ export default function ContractPage() {
                           💡 Conseil intelligent
                         </p>
                         <p className="text-sm text-purple-600 dark:text-purple-400">
-                          {contract.status === 'pending' && "N'oubliez pas de signer le contrat pour démarrer la collaboration."}
+                          {contract.status === 'pending' && otherPartySigned && !userHasSigned && "Le freelancer a déjà signé ! Il ne vous reste plus qu'à signer pour finaliser le contrat."}
+                          {contract.status === 'pending' && userHasSigned && !otherPartySigned && "Vous avez signé ! En attente de la signature de l'autre partie pour finaliser le contrat."}
+                          {contract.status === 'pending' && !userHasSigned && !otherPartySigned && "Les deux parties doivent signer le contrat pour démarrer."}
                           {contract.status === 'active' && "Suivez l'avancement des livrables et communiquez régulièrement."}
-                          {contract.status === 'signed' && "Le contrat est signé ! Vous pouvez maintenant commencer à travailler."}
                           {contract.status === 'completed' && "Félicitations ! N'oubliez pas de laisser un avis."}
                         </p>
                       </div>

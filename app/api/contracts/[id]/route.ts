@@ -8,7 +8,7 @@ import { authOptions } from "@/lib/auth"
 // GET - Détails d'un contrat
 export async function GET(
   request: Request,
-  { params }: { params: Promise <{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,8 +16,9 @@ export async function GET(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
 
-    const {id} = await params
-    const contractId=id;
+    const { id } = await params
+    const contractId = id
+    
     if (!ObjectId.isValid(contractId)) {
       return NextResponse.json({ error: "ID de contrat invalide" }, { status: 400 })
     }
@@ -69,15 +70,27 @@ export async function GET(
       return NextResponse.json({ error: "Contrat non trouvé" }, { status: 404 })
     }
 
-    // Vérifier que l'utilisateur a accès
-    const userIsClient = contract.clientId.equals(userId)
-    const userIsFreelancer = contract.freelancerId.equals(userId)
-    
-    if (!userIsClient && !userIsFreelancer) {
-      return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 })
+    // Normaliser les IDs pour le frontend (les convertir en string)
+    const normalizedContract = {
+      ...contract,
+      clientId: contract.clientId?.toString(),
+      freelancerId: contract.freelancerId?.toString(),
+      projectId: contract.projectId?.toString(),
+      client: contract.client ? {
+        ...contract.client,
+        _id: contract.client._id?.toString()
+      } : null,
+      freelancer: contract.freelancer ? {
+        ...contract.freelancer,
+        _id: contract.freelancer._id?.toString()
+      } : null,
+      project: contract.project ? {
+        ...contract.project,
+        _id: contract.project._id?.toString()
+      } : null
     }
 
-    return NextResponse.json({ contract })
+    return NextResponse.json({ contract: normalizedContract })
   } catch (error) {
     console.error("Erreur récupération contrat:", error)
     return NextResponse.json({ error: "Erreur interne" }, { status: 500 })
@@ -87,15 +100,17 @@ export async function GET(
 // PUT - Signer un contrat
 export async function PUT(
   request: Request,
-   { params }: { params: Promise <{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
     }
-    const {id}=await params
+    
+    const { id } = await params
     const contractId = id
+    
     if (!ObjectId.isValid(contractId)) {
       return NextResponse.json({ error: "ID de contrat invalide" }, { status: 400 })
     }
@@ -105,9 +120,9 @@ export async function PUT(
     const userId = new ObjectId((session.user as any).id)
     
     // Récupérer l'adresse IP et user agent
-    const requestHeaders = Object.fromEntries(request.headers)
-    const ipAddress = requestHeaders['x-forwarded-for'] || 'unknown'
-    const userAgent = requestHeaders['user-agent'] || 'unknown'
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const ipAddress = forwardedFor?.split(',')[0] || 'unknown'
+    const userAgent = request.headers.get('user-agent') || 'unknown'
 
     const contract = await db.collection("contracts").findOne({
       _id: new ObjectId(contractId)
@@ -125,6 +140,14 @@ export async function PUT(
     }
 
     if (action === "sign") {
+      // Vérifier si l'utilisateur a déjà signé
+      if (userIsClient && contract.clientSignature) {
+        return NextResponse.json({ error: "Vous avez déjà signé ce contrat" }, { status: 400 })
+      }
+      if (userIsFreelancer && contract.freelancerSignature) {
+        return NextResponse.json({ error: "Vous avez déjà signé ce contrat" }, { status: 400 })
+      }
+
       // Signer le contrat
       const updateData: any = {
         updatedAt: new Date()
@@ -144,7 +167,7 @@ export async function PUT(
         }
       }
 
-      // Vérifier si les deux parties ont signé
+      // Mettre à jour et récupérer le contrat mis à jour
       const updatedContract = await db.collection("contracts").findOneAndUpdate(
         { _id: new ObjectId(contractId) },
         { $set: updateData },
@@ -155,8 +178,8 @@ export async function PUT(
         const clientSigned = updatedContract.clientSignature
         const freelancerSigned = updatedContract.freelancerSignature
 
+        // Si les deux ont signé
         if (clientSigned && freelancerSigned) {
-          // Les deux ont signé → contrat actif
           await db.collection("contracts").updateOne(
             { _id: new ObjectId(contractId) },
             { 
@@ -181,7 +204,20 @@ export async function PUT(
             title: "Contrat signé",
             message: `${session.user?.name} a signé le contrat "${contract.title}"`,
             data: { contractId, projectId: contract.projectId },
-            createdAt: new Date()
+            createdAt: new Date(),
+            read: false
+          })
+        } else {
+          // Notifier l'autre partie qu'une signature est en attente
+          const otherUserId = userIsClient ? contract.freelancerId : contract.clientId
+          await db.collection("notifications").insertOne({
+            userId: otherUserId,
+            type: "contract_signed_pending",
+            title: "Signature reçue",
+            message: `${session.user?.name} a signé le contrat. En attente de votre signature.`,
+            data: { contractId },
+            createdAt: new Date(),
+            read: false
           })
         }
       }
@@ -192,9 +228,12 @@ export async function PUT(
       })
     }
     else if (action === "request_changes") {
-      // Demander des modifications
       const { changesRequested } = await request.json()
       
+      if (!changesRequested || !changesRequested.trim()) {
+        return NextResponse.json({ error: "Description des modifications requise" }, { status: 400 })
+      }
+
       await db.collection("contracts").updateOne(
         { _id: new ObjectId(contractId) },
         { 
@@ -205,6 +244,7 @@ export async function PUT(
           $push: {
             revisionRequests: {
               requestedBy: userId,
+              requestedByRole: userIsClient ? "client" : "freelancer",
               changes: changesRequested,
               requestedAt: new Date()
             }
@@ -218,9 +258,10 @@ export async function PUT(
         userId: otherUserId,
         type: "contract_revision_requested",
         title: "Modifications demandées",
-        message: `${session.user?.name} a demandé des modifications sur le contrat`,
+        message: `${session.user?.name} a demandé des modifications sur le contrat "${contract.title}"`,
         data: { contractId },
-        createdAt: new Date()
+        createdAt: new Date(),
+        read: false
       })
 
       return NextResponse.json({ 
@@ -229,7 +270,6 @@ export async function PUT(
       })
     }
     else if (action === "cancel") {
-      // Annuler le contrat
       if (contract.status === "active") {
         return NextResponse.json({ 
           error: "Impossible d'annuler un contrat actif" 
@@ -268,7 +308,8 @@ export async function PUT(
         title: "Contrat annulé",
         message: `${session.user?.name} a annulé le contrat "${contract.title}"`,
         data: { contractId },
-        createdAt: new Date()
+        createdAt: new Date(),
+        read: false
       })
 
       return NextResponse.json({ 

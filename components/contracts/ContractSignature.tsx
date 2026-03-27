@@ -1,4 +1,4 @@
-// components/contracts/ContractSignature.tsx - VERSION CORRIGÉE
+// components/contracts/ContractSignature.tsx - Version finale
 "use client"
 
 import { useState } from "react"
@@ -10,7 +10,7 @@ import { Loader2, CheckCircle, XCircle, Edit, Clock, UserCheck } from "lucide-re
 interface ContractSignatureProps {
   contractId: string
   title: string
-  currentUserRole: "client" | "freelancer"
+  currentUserRole: "client" | "freelancer" | null
   onSigned: () => void
   onRequestChanges: (changes: string) => void
   isSigned: boolean
@@ -30,6 +30,11 @@ export function ContractSignature({
   const [showChangesForm, setShowChangesForm] = useState(false)
   const [changesRequested, setChangesRequested] = useState("")
   const [error, setError] = useState("")
+
+  // Si le rôle n'est pas défini, ne rien afficher
+  if (!currentUserRole) {
+    return null
+  }
 
   const handleSign = async () => {
     setIsLoading(true)
@@ -174,23 +179,7 @@ export function ContractSignature({
           </div>
         </div>
 
-        {/* Message d'état UNIQUE - sans doublon */}
-        {!isSigned && !otherPartySigned && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div>
-                <p className="font-semibold text-amber-800 dark:text-amber-300">
-                  En attente de signature
-                </p>
-                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                  Les deux parties doivent signer le contrat.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Message d'état */}
         {otherPartySigned && !isSigned && (
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
             <div className="flex items-start gap-3">
@@ -223,6 +212,22 @@ export function ContractSignature({
           </div>
         )}
 
+        {!isSigned && !otherPartySigned && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800 dark:text-amber-300">
+                  En attente de signature
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  Les deux parties doivent signer le contrat.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isSigned && otherPartySigned && (
           <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
             <div className="flex items-start gap-3">
@@ -232,7 +237,7 @@ export function ContractSignature({
                   Contrat complètement signé ! 🎉
                 </p>
                 <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-1">
-                  Les deux parties ont signé le contrat. Vous pouvez maintenant commencer à travailler.
+                  Les deux parties ont signé le contrat.
                 </p>
               </div>
             </div>
