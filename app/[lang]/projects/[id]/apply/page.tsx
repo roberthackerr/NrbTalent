@@ -130,41 +130,10 @@ interface TeamData {
 }
 
 // File upload helper
-const uploadFileToCloudinary = async (file: File): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const base64Data = (e.target?.result as string).split(',')[1] || (e.target?.result as string)
-        
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            file: base64Data,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            folder: 'applications'
-          }),
-        })
-        
-        if (!response.ok) {
-          throw new Error('Upload failed')
-        }
-        
-        const data = await response.json()
-        resolve(data)
-      } catch (error) {
-        reject(error)
-      }
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
+// File upload helper - UPDATED with FormData
+
+// File upload helper - Uses your apply API for uploads
+
 
 export default function ApplyPage() {
   const params = useParams()
@@ -460,70 +429,71 @@ export default function ApplyPage() {
   }
 
   // Upload de fichier réel vers Cloudinary
-  const handleFileUpload = async (file: File) => {
-    if (formData.attachments.length >= 5) {
-      setErrors(prev => ({ ...prev, attachments: t('maxFiles', 'Maximum 5 files allowed') }))
-      return
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, attachments: t('fileTooLarge', 'File too large (max 10MB)') }))
-      return
-    }
-
-    setUploading(true)
-    setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
-    
-    try {
-      // Simuler la progression (Cloudinary n'envoie pas de progression)
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => ({
-          ...prev,
-          [file.name]: Math.min((prev[file.name] || 0) + 10, 90)
-        }))
-      }, 200)
-
-      // Upload réel vers Cloudinary via l'API
-      const uploaded = await uploadFileToCloudinary(file)
-      
-      clearInterval(progressInterval)
-      setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
-
-      const newAttachment = {
-        name: file.name,
-        url: uploaded.url,
-        type: file.type,
-        size: file.size,
-        publicId: uploaded.publicId,
-        resourceType: uploaded.resourceType
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        attachments: [...prev.attachments, newAttachment]
-      }))
-      
-      toast({
-        title: t('uploadSuccess', 'File Uploaded'),
-        description: `${file.name} ${t('uploadSuccess', 'uploaded successfully')}`,
-      })
-    } catch (error) {
-      console.error('Upload error:', error)
-      setErrors(prev => ({ ...prev, attachments: t('uploadFailed', 'Upload failed') }))
-      toast({
-        title: t('error', 'Error'),
-        description: t('uploadFailed', 'Failed to upload file'),
-        variant: 'destructive',
-      })
-    } finally {
-      setUploading(false)
-      setUploadProgress(prev => {
-        const newState = { ...prev }
-        delete newState[file.name]
-        return newState
-      })
-    }
+  // Handle file upload
+const handleFileUpload = async (file: File) => {
+  if (formData.attachments.length >= 5) {
+    setErrors(prev => ({ ...prev, attachments: t('maxFiles', 'Maximum 5 files allowed') }))
+    return
   }
+
+  if (file.size > 10 * 1024 * 1024) {
+    setErrors(prev => ({ ...prev, attachments: t('fileTooLarge', 'File too large (max 10MB)') }))
+    return
+  }
+
+  setUploading(true)
+  setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+  
+  try {
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => ({
+        ...prev,
+        [file.name]: Math.min((prev[file.name] || 0) + 10, 90)
+      }))
+    }, 200)
+
+    // Upload to your apply API
+    const uploaded = await uploadFileToCloudinary(file)
+    
+    clearInterval(progressInterval)
+    setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
+
+    const newAttachment = {
+      name: file.name,
+      url: uploaded.url,
+      type: file.type,
+      size: file.size,
+      publicId: uploaded.publicId,
+      resourceType: uploaded.resourceType
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      attachments: [...prev.attachments, newAttachment]
+    }))
+    
+    toast({
+      title: t('uploadSuccess', 'File Uploaded'),
+      description: `${file.name} ${t('uploadSuccess', 'uploaded successfully')}`,
+    })
+  } catch (error) {
+    console.error('Upload error:', error)
+    setErrors(prev => ({ ...prev, attachments: t('uploadFailed', 'Upload failed') }))
+    toast({
+      title: t('error', 'Error'),
+      description: t('uploadFailed', 'Failed to upload file'),
+      variant: 'destructive',
+    })
+  } finally {
+    setUploading(false)
+    setUploadProgress(prev => {
+      const newState = { ...prev }
+      delete newState[file.name]
+      return newState
+    })
+  }
+}
 
   const removeAttachment = (index: number) => {
     setFormData(prev => ({
@@ -631,69 +601,68 @@ export default function ApplyPage() {
   }
 
   // Soumettre l'application
-  const handleSubmit = async () => {
-    if (!validateStep(3) || !projectData) return
+  // Soumettre l'application - UPDATED with FormData
+const handleSubmit = async () => {
+  if (!validateStep(3) || !projectData) return
 
-    setIsProcessing(true)
-    try {
-      const requestBody: any = {
-        coverLetter: formData.coverLetter,
-        proposedBudget: formData.proposedBudget,
-        estimatedDuration: formData.estimatedDuration,
-        attachments: formData.attachments.map(({ name, url, type, size, publicId, resourceType }) => ({
-          name, url, type, size, publicId, resourceType
-        })),
-        applyMode: applyMode
-      }
-
-      if (applyMode === 'team') {
-        if (!selectedTeam) {
-          setErrors(prev => ({ ...prev, team: t('selectTeam', 'Please select a team') }))
-          setIsProcessing(false)
-          return
-        }
-        requestBody.teamId = selectedTeam
-      }
-
-      const response = await fetch(`/${lang}/api/projects/${id}/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || data.details?.[0]?.message || 'Application failed')
-      }
-
-      toast({
-        title: t('applicationSubmitted', 'Application Submitted!'),
-        description: applyMode === 'team' 
-          ? t('teamSuccess', 'Your team application has been sent successfully.')
-          : t('individualSuccess', 'Your application has been sent successfully.'),
-      })
-      
-      if (applyMode === 'team' && selectedTeam) {
-        router.push(`/${lang}/teams/${selectedTeam}/applications`)
-      } else {
-        router.push(`/${lang}/projects/${id}?message=application_success`)
-      }
-      
-    } catch (error) {
-      console.error('Submission error:', error)
-      setErrors(prev => ({ ...prev, submit: (error as Error).message }))
-      toast({
-        title: t('error', 'Error'),
-        description: (error as Error).message,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsProcessing(false)
+  setIsProcessing(true)
+  try {
+    // Create FormData for submission
+    const formDataToSend = new FormData()
+    
+    // Add text fields
+    formDataToSend.append('coverLetter', formData.coverLetter)
+    formDataToSend.append('proposedBudget', formData.proposedBudget.toString())
+    formDataToSend.append('estimatedDuration', formData.estimatedDuration)
+    formDataToSend.append('applyMode', applyMode)
+    
+    if (applyMode === 'team' && selectedTeam) {
+      formDataToSend.append('teamId', selectedTeam)
     }
+    
+    // Add attachments as JSON string (since they're already uploaded to Cloudinary)
+    // We send the attachment metadata, not the files themselves
+    const attachmentsMetadata = formData.attachments.map(({ name, url, type, size, publicId, resourceType }) => ({
+      name, url, type, size, publicId, resourceType
+    }))
+    formDataToSend.append('attachments', JSON.stringify(attachmentsMetadata))
+
+    const response = await fetch(`/${lang}/api/projects/${id}/apply`, {
+      method: 'POST',
+      body: formDataToSend, // Important: Don't set Content-Type header
+    })
+
+    const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.details?.[0]?.message || 'Application failed')
+    }
+
+    toast({
+      title: t('applicationSubmitted', 'Application Submitted!'),
+      description: applyMode === 'team' 
+        ? t('teamSuccess', 'Your team application has been sent successfully.')
+        : t('individualSuccess', 'Your application has been sent successfully.'),
+    })
+    
+    if (applyMode === 'team' && selectedTeam) {
+      router.push(`/${lang}/teams/${selectedTeam}/applications`)
+    } else {
+      router.push(`/${lang}/projects/${id}?message=application_success`)
+    }
+    
+  } catch (error) {
+    console.error('Submission error:', error)
+    setErrors(prev => ({ ...prev, submit: (error as Error).message }))
+    toast({
+      title: t('error', 'Error'),
+      description: (error as Error).message,
+      variant: 'destructive',
+    })
+  } finally {
+    setIsProcessing(false)
   }
+}
 
   // Calculer l'indicateur de budget
   const getBudgetIndicator = (budget: number) => {
@@ -715,7 +684,26 @@ export default function ApplyPage() {
 
     return { position: Math.min(Math.max(position, 0), 100), color, label }
   }
+const uploadFileToCloudinary = async (file: File): Promise<any> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('folder', 'applications')
+  // Add a flag to indicate this is just an upload, not a full application
+  formData.append('action', 'upload')
 
+  // Upload to the same apply API endpoint
+  const response = await fetch(`/${lang}/api/projects/${id}/apply`, {
+    method: 'POST',
+    body: formData,
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Upload failed')
+  }
+  
+  return response.json()
+}
   const budgetIndicator = getBudgetIndicator(formData.proposedBudget)
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'mg' ? 'fr-FR' : 'en-US')
 
