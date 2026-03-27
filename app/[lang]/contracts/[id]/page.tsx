@@ -62,7 +62,10 @@ import {
   DollarSign,
   CalendarDays,
   Layers,
-  ScrollText
+  ScrollText,
+  Flower2,
+  Sparkle,
+  Palette
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -89,7 +92,7 @@ const scaleOnHover = {
 
 const glowEffect = {
   whileHover: {
-    boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
+    boxShadow: "0 0 25px rgba(147, 51, 234, 0.4)",
     transition: { duration: 0.2 }
   }
 }
@@ -136,43 +139,43 @@ export default function ContractPage() {
       draft: {
         label: "Brouillon",
         icon: FileText,
-        color: "text-gray-600",
-        bg: "bg-gray-100",
-        gradient: "from-gray-500 to-gray-600"
+        color: "text-purple-600",
+        bg: "bg-purple-100 dark:bg-purple-900/30",
+        gradient: "from-purple-500 to-fuchsia-500"
       },
       pending: {
         label: "En attente",
         icon: Hourglass,
         color: "text-amber-600",
-        bg: "bg-amber-100",
+        bg: "bg-amber-100 dark:bg-amber-900/30",
         gradient: "from-amber-500 to-orange-500"
       },
       signed: {
         label: "Signé",
         icon: Signature,
-        color: "text-blue-600",
-        bg: "bg-blue-100",
-        gradient: "from-blue-500 to-indigo-500"
+        color: "text-purple-600",
+        bg: "bg-purple-100 dark:bg-purple-900/30",
+        gradient: "from-purple-500 to-indigo-500"
       },
       active: {
         label: "Actif",
         icon: Zap,
         color: "text-emerald-600",
-        bg: "bg-emerald-100",
+        bg: "bg-emerald-100 dark:bg-emerald-900/30",
         gradient: "from-emerald-500 to-teal-500"
       },
       completed: {
         label: "Terminé",
         icon: CheckCheck,
         color: "text-purple-600",
-        bg: "bg-purple-100",
+        bg: "bg-purple-100 dark:bg-purple-900/30",
         gradient: "from-purple-500 to-pink-500"
       },
       cancelled: {
         label: "Annulé",
         icon: XCircle,
         color: "text-rose-600",
-        bg: "bg-rose-100",
+        bg: "bg-rose-100 dark:bg-rose-900/30",
         gradient: "from-rose-500 to-red-500"
       }
     }
@@ -254,13 +257,12 @@ export default function ContractPage() {
 
   const deliverablesProgress = useMemo(() => {
     if (!contract?.deliverables?.length) return 0
-    // This would come from actual completion tracking
     return Math.floor(Math.random() * 100)
   }, [contract])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-slate-950 dark:via-indigo-950/30 dark:to-purple-950/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -271,12 +273,12 @@ export default function ContractPage() {
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="mx-auto mb-4"
           >
-            <Sparkles className="h-16 w-16 text-indigo-500" />
+            <Sparkles className="h-16 w-16 text-purple-500" />
           </motion.div>
-          <p className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
+          <p className="text-lg font-medium text-purple-700 dark:text-purple-300 mb-2">
             Chargement du contrat...
           </p>
-          <Progress value={65} className="w-64 mx-auto" />
+          <Progress value={65} className="w-64 mx-auto bg-purple-100 dark:bg-purple-900" />
         </motion.div>
       </div>
     )
@@ -287,27 +289,27 @@ export default function ContractPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-slate-950 dark:via-indigo-950/30 dark:to-purple-950/30 py-8"
+        className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950 py-8"
       >
         <div className="container max-w-4xl mx-auto px-4">
-          <Card className="relative overflow-hidden border-rose-200 dark:border-rose-800 shadow-xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl" />
+          <Card className="relative overflow-hidden border-purple-200 dark:border-purple-800 shadow-xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
             <CardContent className="py-12 text-center relative">
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <AlertTriangle className="h-20 w-20 text-rose-500 mx-auto mb-6" />
+                <AlertTriangle className="h-20 w-20 text-purple-500 mx-auto mb-6" />
               </motion.div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+              <h2 className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-3">
                 Contrat non trouvé
               </h2>
-              <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
+              <p className="text-purple-600 dark:text-purple-400 mb-8 max-w-md mx-auto">
                 Le contrat que vous recherchez n'existe pas, a été supprimé ou vous n'y avez pas accès.
               </p>
               <Button 
                 onClick={() => router.push("/dashboard")}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg"
+                className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 shadow-lg"
               >
                 <Rocket className="h-4 w-4 mr-2" />
                 Retour au tableau de bord
@@ -327,8 +329,12 @@ export default function ContractPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 dark:from-slate-950 dark:via-indigo-950/30 dark:to-purple-950/30">
-        <div className="container max-w-7xl mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
+        {/* Decorative elements */}
+        <div className="fixed top-0 left-0 w-96 h-96 bg-purple-300/20 dark:bg-purple-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="fixed bottom-0 right-0 w-96 h-96 bg-fuchsia-300/20 dark:bg-fuchsia-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+        
+        <div className="container max-w-7xl mx-auto px-4 py-8 relative">
           {/* Header with floating actions */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -340,7 +346,7 @@ export default function ContractPage() {
                 <div className="flex items-center gap-3 mb-3">
                   <motion.div
                     whileHover={{ scale: 1.05, rotate: 5 }}
-                    className="p-2 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25"
+                    className="p-2 bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25"
                   >
                     <FileCheck className="h-6 w-6 text-white" />
                   </motion.div>
@@ -350,14 +356,14 @@ export default function ContractPage() {
                     <StatusIcon className="h-3 w-3 mr-1 inline" />
                     {statusConfig.label}
                   </Badge>
-                  <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">
+                  <span className="text-sm text-purple-500 dark:text-purple-400 font-mono">
                     #{contractId.slice(-8)}
                   </span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                  <span className="text-sm text-purple-500 dark:text-purple-400">
                     v{contract.version || 1}
                   </span>
                 </div>
-                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-900 via-fuchsia-800 to-pink-800 dark:from-purple-200 dark:via-fuchsia-200 dark:to-pink-200 bg-clip-text text-transparent">
                   {contract.title}
                 </h1>
               </div>
@@ -370,9 +376,9 @@ export default function ContractPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleShare}
-                      className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                     >
-                      {copied ? <CheckCircle className="h-5 w-5 text-emerald-500" /> : <Share2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />}
+                      {copied ? <CheckCircle className="h-5 w-5 text-emerald-500" /> : <Share2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
                     </motion.button>
                   </TooltipTrigger>
                   <TooltipContent>Partager le contrat</TooltipContent>
@@ -384,9 +390,9 @@ export default function ContractPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => window.print()}
-                      className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                     >
-                      <Printer className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                      <Printer className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     </motion.button>
                   </TooltipTrigger>
                   <TooltipContent>Imprimer</TooltipContent>
@@ -398,9 +404,9 @@ export default function ContractPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCopyLink}
-                      className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                     >
-                      <Copy className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                      <Copy className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     </motion.button>
                   </TooltipTrigger>
                   <TooltipContent>Copier le lien</TooltipContent>
@@ -411,18 +417,18 @@ export default function ContractPage() {
             {/* Progress Bar */}
             <div className="mt-6">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <span className="text-sm text-purple-600 dark:text-purple-400 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Avancement du contrat
                 </span>
-                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
                   {contractProgress}%
                 </span>
               </div>
-              <Progress value={contractProgress} className="h-2 bg-slate-200 dark:bg-slate-700" />
+              <Progress value={contractProgress} className="h-2 bg-purple-100 dark:bg-purple-900" />
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-6 bg-purple-200 dark:bg-purple-800" />
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -436,16 +442,16 @@ export default function ContractPage() {
                 className="grid grid-cols-1 sm:grid-cols-3 gap-4"
               >
                 <motion.div variants={fadeInUp}>
-                  <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-indigo-100 dark:border-indigo-800">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-purple-200 dark:border-purple-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-fuchsia-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
+                        <div className="p-2 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-xl shadow-lg">
                           <DollarSign className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">Montant total</p>
-                          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                          <p className="text-sm text-purple-600 dark:text-purple-400">Montant total</p>
+                          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                             {formatCurrency(contract.amount, contract.currency)}
                           </p>
                         </div>
@@ -455,15 +461,15 @@ export default function ContractPage() {
                 </motion.div>
 
                 <motion.div variants={fadeInUp}>
-                  <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-indigo-100 dark:border-indigo-800">
+                  <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-purple-200 dark:border-purple-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-lg">
                           <CalendarDays className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">Date de début</p>
-                          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                          <p className="text-sm text-purple-600 dark:text-purple-400">Date de début</p>
+                          <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">
                             {formatDate(contract.startDate, 'short')}
                           </p>
                         </div>
@@ -473,15 +479,15 @@ export default function ContractPage() {
                 </motion.div>
 
                 <motion.div variants={fadeInUp}>
-                  <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-indigo-100 dark:border-indigo-800">
+                  <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-purple-200 dark:border-purple-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
+                        <div className="p-2 bg-gradient-to-br from-fuchsia-500 to-pink-500 rounded-xl shadow-lg">
                           <Layers className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">Type de contrat</p>
-                          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 capitalize">
+                          <p className="text-sm text-purple-600 dark:text-purple-400">Type de contrat</p>
+                          <p className="text-lg font-semibold text-purple-900 dark:text-purple-100 capitalize">
                             {contract.type?.replace('_', ' ') || 'Standard'}
                           </p>
                         </div>
@@ -498,20 +504,20 @@ export default function ContractPage() {
                 transition={{ delay: 0.2 }}
               >
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900">
+                  <TabsList className="grid w-full grid-cols-4 bg-purple-100 dark:bg-purple-900/50 p-1 rounded-xl">
+                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400">
                       <FileText className="h-4 w-4 mr-2" />
                       Aperçu
                     </TabsTrigger>
-                    <TabsTrigger value="deliverables" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900">
+                    <TabsTrigger value="deliverables" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-purple-600">
                       <Target className="h-4 w-4 mr-2" />
                       Livrables
                     </TabsTrigger>
-                    <TabsTrigger value="terms" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900">
+                    <TabsTrigger value="terms" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-purple-600">
                       <Shield className="h-4 w-4 mr-2" />
                       Conditions
                     </TabsTrigger>
-                    <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900">
+                    <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-purple-600">
                       <Euro className="h-4 w-4 mr-2" />
                       Paiements
                     </TabsTrigger>
@@ -526,55 +532,55 @@ export default function ContractPage() {
                       transition={{ duration: 0.2 }}
                     >
                       <TabsContent value="overview" className="mt-6">
-                        <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                           <CardContent className="pt-6 space-y-6">
                             <div>
-                              <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-indigo-500" />
+                              <h3 className="font-semibold text-lg text-purple-900 dark:text-purple-100 mb-3 flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-purple-500" />
                                 Description
                               </h3>
-                              <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                              <p className="text-purple-700 dark:text-purple-300 whitespace-pre-line leading-relaxed">
                                 {contract.description || "Aucune description fournie."}
                               </p>
                             </div>
 
                             <div>
-                              <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                                <Brain className="h-5 w-5 text-purple-500" />
+                              <h3 className="font-semibold text-lg text-purple-900 dark:text-purple-100 mb-3 flex items-center gap-2">
+                                <Brain className="h-5 w-5 text-fuchsia-500" />
                                 Portée du Travail
                               </h3>
-                              <div className="prose prose-slate dark:prose-invert max-w-none">
-                                <p className="whitespace-pre-line text-slate-700 dark:text-slate-300">
+                              <div className="prose prose-purple dark:prose-invert max-w-none">
+                                <p className="whitespace-pre-line text-purple-700 dark:text-purple-300">
                                   {contract.scopeOfWork || "Aucune portée spécifiée."}
                                 </p>
                               </div>
                             </div>
 
-                            <Separator />
+                            <Separator className="bg-purple-200 dark:bg-purple-800" />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="p-4 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl">
-                                <h4 className="font-medium text-sm text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-2">
+                              <div className="p-4 bg-gradient-to-br from-purple-50/50 to-fuchsia-50/50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-xl border border-purple-200 dark:border-purple-800">
+                                <h4 className="font-medium text-sm text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-2">
                                   <User className="h-4 w-4" />
                                   Client
                                 </h4>
                                 <div className="flex items-center gap-3">
-                                  <Avatar className="h-12 w-12 ring-2 ring-indigo-200 dark:ring-indigo-800">
+                                  <Avatar className="h-12 w-12 ring-2 ring-purple-200 dark:ring-purple-800">
                                     <AvatarImage src={contract.client?.avatar} />
-                                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white">
                                       {contract.client?.name?.charAt(0) || "C"}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                                    <p className="font-semibold text-purple-900 dark:text-purple-100">
                                       {contract.client?.name}
                                     </p>
-                                    <p className="text-sm text-slate-500">Membre depuis {new Date(contract.client?.createdAt).getFullYear()}</p>
+                                    <p className="text-sm text-purple-500">Membre depuis {new Date(contract.client?.createdAt).getFullYear()}</p>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="p-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl">
+                              <div className="p-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
                                 <h4 className="font-medium text-sm text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
                                   <Briefcase className="h-4 w-4" />
                                   Freelancer
@@ -587,12 +593,12 @@ export default function ContractPage() {
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                                    <p className="font-semibold text-purple-900 dark:text-purple-100">
                                       {contract.freelancer?.name}
                                     </p>
                                     <div className="flex items-center gap-1">
                                       <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                                      <span className="text-sm text-slate-600">
+                                      <span className="text-sm text-purple-600 dark:text-purple-400">
                                         {contract.freelancer?.rating || 4.8} ({contract.freelancer?.completedProjects || 0} projets)
                                       </span>
                                     </div>
@@ -605,14 +611,14 @@ export default function ContractPage() {
                       </TabsContent>
 
                       <TabsContent value="deliverables" className="mt-6">
-                        <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                           <CardContent className="pt-6">
                             <div className="flex justify-between items-center mb-6">
-                              <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                                <Target className="h-5 w-5 text-indigo-500" />
+                              <h3 className="font-semibold text-lg text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                                <Target className="h-5 w-5 text-purple-500" />
                                 Livrables
                               </h3>
-                              <Badge className="bg-emerald-100 text-emerald-700">
+                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
                                 {deliverablesProgress}% complété
                               </Badge>
                             </div>
@@ -625,42 +631,42 @@ export default function ContractPage() {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                                    className="flex items-start gap-4 p-4 bg-purple-50/50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100/50 dark:hover:bg-purple-800/30 transition-colors group border border-purple-200 dark:border-purple-800"
                                   >
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center flex-shrink-0 shadow-md">
                                       <span className="text-white text-sm font-bold">{index + 1}</span>
                                     </div>
                                     <div className="flex-1">
-                                      <p className="text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                      <p className="text-purple-700 dark:text-purple-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                                         {deliverable}
                                       </p>
-                                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                                      <div className="mt-2 flex items-center gap-3 text-xs text-purple-500">
                                         <span className="flex items-center gap-1">
                                           <Clock className="h-3 w-3" />
                                           En cours
                                         </span>
                                       </div>
                                     </div>
-                                    <CheckCircle className="h-5 w-5 text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                                    <CheckCircle className="h-5 w-5 text-purple-300 group-hover:text-purple-500 transition-colors" />
                                   </motion.div>
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-slate-500 text-center py-8">Aucun livrable spécifié.</p>
+                              <p className="text-purple-500 text-center py-8">Aucun livrable spécifié.</p>
                             )}
                           </CardContent>
                         </Card>
                       </TabsContent>
 
                       <TabsContent value="terms" className="mt-6">
-                        <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                           <CardContent className="pt-6">
-                            <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                              <Shield className="h-5 w-5 text-indigo-500" />
+                            <h3 className="font-semibold text-lg text-purple-900 dark:text-purple-100 mb-4 flex items-center gap-2">
+                              <Shield className="h-5 w-5 text-purple-500" />
                               Termes et Conditions
                             </h3>
-                            <div className="prose prose-slate dark:prose-invert max-w-none bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6">
-                              <div className="whitespace-pre-line text-slate-700 dark:text-slate-300 leading-relaxed">
+                            <div className="prose prose-purple dark:prose-invert max-w-none bg-purple-50/30 dark:bg-purple-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+                              <div className="whitespace-pre-line text-purple-700 dark:text-purple-300 leading-relaxed">
                                 {contract.termsAndConditions}
                               </div>
                             </div>
@@ -669,14 +675,14 @@ export default function ContractPage() {
                       </TabsContent>
 
                       <TabsContent value="payments" className="mt-6">
-                        <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                           <CardContent className="pt-6">
                             <div className="flex justify-between items-center mb-6">
-                              <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                                <Euro className="h-5 w-5 text-indigo-500" />
+                              <h3 className="font-semibold text-lg text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                                <Euro className="h-5 w-5 text-purple-500" />
                                 Plan de Paiement
                               </h3>
-                              <Badge className="bg-indigo-100 text-indigo-700 capitalize">
+                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 capitalize">
                                 {contract.paymentSchedule?.type || 'Standard'}
                               </Badge>
                             </div>
@@ -689,7 +695,7 @@ export default function ContractPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-md transition-shadow"
+                                    className="p-4 border border-purple-200 dark:border-purple-800 rounded-xl hover:shadow-md transition-shadow bg-purple-50/30 dark:bg-purple-900/20"
                                   >
                                     <div className="flex justify-between items-start mb-3">
                                       <div className="flex items-center gap-3">
@@ -697,24 +703,24 @@ export default function ContractPage() {
                                           <span className="text-white text-sm font-bold">{index + 1}</span>
                                         </div>
                                         <div>
-                                          <p className="font-semibold text-slate-900 dark:text-slate-100">
+                                          <p className="font-semibold text-purple-900 dark:text-purple-100">
                                             {milestone.title}
                                           </p>
-                                          <p className="text-sm text-slate-500">{milestone.description}</p>
+                                          <p className="text-sm text-purple-500">{milestone.description}</p>
                                         </div>
                                       </div>
                                       <Badge className={milestone.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
                                         {milestone.status === 'paid' ? 'Payé' : 'En attente'}
                                       </Badge>
                                     </div>
-                                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-700">
+                                    <div className="flex justify-between items-center pt-3 border-t border-purple-200 dark:border-purple-800">
                                       <div className="flex items-center gap-4 text-sm">
-                                        <span className="flex items-center gap-1 text-slate-600">
+                                        <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                                           <Calendar className="h-4 w-4" />
                                           {formatDate(milestone.dueDate, 'short')}
                                         </span>
                                       </div>
-                                      <p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">
+                                      <p className="font-bold text-lg text-purple-600 dark:text-purple-400">
                                         {formatCurrency(milestone.amount, contract.currency)}
                                       </p>
                                     </div>
@@ -723,11 +729,11 @@ export default function ContractPage() {
                               </div>
                             ) : (
                               <div className="text-center py-8">
-                                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                                  <Euro className="h-10 w-10 text-slate-400" />
+                                <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <Euro className="h-10 w-10 text-purple-400" />
                                 </div>
-                                <p className="text-slate-500">Aucun jalon de paiement défini.</p>
-                                <p className="text-sm text-slate-400 mt-1">
+                                <p className="text-purple-500">Aucun jalon de paiement défini.</p>
+                                <p className="text-sm text-purple-400 mt-1">
                                   Paiement unique à la {contract.type === 'fixed_price' ? 'livraison' : 'facturation'}
                                 </p>
                               </div>
@@ -768,42 +774,42 @@ export default function ContractPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.35 }}
               >
-                <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Timer className="h-5 w-5 text-indigo-500" />
+                    <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                      <Timer className="h-5 w-5 text-purple-500" />
                       Chronologie
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="relative pl-6 border-l-2 border-indigo-200 dark:border-indigo-800 space-y-4">
+                    <div className="relative pl-6 border-l-2 border-purple-200 dark:border-purple-800 space-y-4">
                       <div className="relative">
-                        <div className="absolute -left-[1.85rem] mt-1 w-3 h-3 rounded-full bg-indigo-500 ring-4 ring-indigo-100 dark:ring-indigo-900" />
-                        <p className="font-medium text-slate-900 dark:text-slate-100">Création</p>
-                        <p className="text-sm text-slate-500">{formatDate(contract.createdAt)}</p>
+                        <div className="absolute -left-[1.85rem] mt-1 w-3 h-3 rounded-full bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-900" />
+                        <p className="font-medium text-purple-900 dark:text-purple-100">Création</p>
+                        <p className="text-sm text-purple-500">{formatDate(contract.createdAt)}</p>
                       </div>
                       
                       {contract.signedAt && (
                         <div className="relative">
                           <div className="absolute -left-[1.85rem] mt-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900" />
-                          <p className="font-medium text-slate-900 dark:text-slate-100">Signature</p>
-                          <p className="text-sm text-slate-500">{formatDate(contract.signedAt)}</p>
+                          <p className="font-medium text-purple-900 dark:text-purple-100">Signature</p>
+                          <p className="text-sm text-purple-500">{formatDate(contract.signedAt)}</p>
                         </div>
                       )}
                       
                       {contract.startDate && (
                         <div className="relative">
-                          <div className="absolute -left-[1.85rem] mt-1 w-3 h-3 rounded-full bg-purple-500 ring-4 ring-purple-100 dark:ring-purple-900" />
-                          <p className="font-medium text-slate-900 dark:text-slate-100">Début</p>
-                          <p className="text-sm text-slate-500">{formatDate(contract.startDate)}</p>
+                          <div className="absolute -left-[1.85rem] mt-1 w-3 h-3 rounded-full bg-fuchsia-500 ring-4 ring-fuchsia-100 dark:ring-fuchsia-900" />
+                          <p className="font-medium text-purple-900 dark:text-purple-100">Début</p>
+                          <p className="text-sm text-purple-500">{formatDate(contract.startDate)}</p>
                         </div>
                       )}
                       
                       {contract.endDate && (
                         <div className="relative">
                           <div className="absolute -left-[1.85rem] mt-1 w-3 h-3 rounded-full bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-900" />
-                          <p className="font-medium text-slate-900 dark:text-slate-100">Échéance</p>
-                          <p className="text-sm text-slate-500">{formatDate(contract.endDate)}</p>
+                          <p className="font-medium text-purple-900 dark:text-purple-100">Échéance</p>
+                          <p className="text-sm text-purple-500">{formatDate(contract.endDate)}</p>
                         </div>
                       )}
                     </div>
@@ -817,17 +823,17 @@ export default function ContractPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Signature className="h-5 w-5 text-indigo-500" />
+                    <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                      <Signature className="h-5 w-5 text-purple-500" />
                       Signatures
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                    <div className="p-4 bg-purple-50/50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">Client</span>
+                        <span className="font-medium text-purple-700 dark:text-purple-300">Client</span>
                         {contract.clientSignature ? (
                           <Badge className="bg-emerald-100 text-emerald-700 flex items-center gap-1">
                             <CheckCircle className="h-3 w-3" />
@@ -841,16 +847,16 @@ export default function ContractPage() {
                         )}
                       </div>
                       {contract.clientSignature && (
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-purple-500">
                           <p>Le {formatDate(contract.clientSignature.signedAt)}</p>
                           <p className="text-xs font-mono mt-1">IP: {contract.clientSignature.ipAddress}</p>
                         </div>
                       )}
                     </div>
 
-                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                    <div className="p-4 bg-purple-50/50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-slate-700 dark:text-slate-300">Freelancer</span>
+                        <span className="font-medium text-purple-700 dark:text-purple-300">Freelancer</span>
                         {contract.freelancerSignature ? (
                           <Badge className="bg-emerald-100 text-emerald-700 flex items-center gap-1">
                             <CheckCircle className="h-3 w-3" />
@@ -864,7 +870,7 @@ export default function ContractPage() {
                         )}
                       </div>
                       {contract.freelancerSignature && (
-                        <div className="text-sm text-slate-500">
+                        <div className="text-sm text-purple-500">
                           <p>Le {formatDate(contract.freelancerSignature.signedAt)}</p>
                           <p className="text-xs font-mono mt-1">IP: {contract.freelancerSignature.ipAddress}</p>
                         </div>
@@ -880,17 +886,17 @@ export default function ContractPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.45 }}
               >
-                <Card className="border-indigo-100 dark:border-indigo-800 shadow-lg">
+                <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Zap className="h-5 w-5 text-indigo-500" />
+                    <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                      <Zap className="h-5 w-5 text-purple-500" />
                       Actions rapides
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full justify-start gap-2 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                      className="w-full justify-start gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                       onClick={() => router.push(`/messages?contract=${contractId}`)}
                     >
                       <MessageSquare className="h-4 w-4" />
@@ -899,7 +905,7 @@ export default function ContractPage() {
                     
                     <Button
                       variant="outline"
-                      className="w-full justify-start gap-2 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                      className="w-full justify-start gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                       onClick={() => router.push(`/projects/${contract.projectId._id || contract.projectId}`)}
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -909,7 +915,7 @@ export default function ContractPage() {
                     {contract.status === 'active' && currentUserRole === 'client' && (
                       <Button
                         variant="outline"
-                        className="w-full justify-start gap-2 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                        className="w-full justify-start gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                         onClick={() => router.push(`/contracts/${contractId}/milestones/new`)}
                       >
                         <Target className="h-4 w-4" />
@@ -954,17 +960,17 @@ export default function ContractPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <Card className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-200 dark:border-indigo-800">
+                <Card className="bg-gradient-to-r from-purple-500/10 to-fuchsia-500/10 border-purple-200 dark:border-purple-800">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-indigo-500/20 rounded-lg">
-                        <Brain className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm text-indigo-700 dark:text-indigo-300 mb-1">
+                        <p className="font-semibold text-sm text-purple-700 dark:text-purple-300 mb-1">
                           💡 Conseil intelligent
                         </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                        <p className="text-sm text-purple-600 dark:text-purple-400">
                           {contract.status === 'pending' && "N'oubliez pas de signer le contrat pour démarrer la collaboration."}
                           {contract.status === 'active' && "Suivez l'avancement des livrables et communiquez régulièrement."}
                           {contract.status === 'signed' && "Le contrat est signé ! Vous pouvez maintenant commencer à travailler."}
