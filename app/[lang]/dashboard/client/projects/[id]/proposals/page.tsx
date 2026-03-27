@@ -57,7 +57,7 @@ interface Attachment {
 }
 
 interface Freelancer {
-  _id: string
+  _id: string | undefined
   name: string
   avatar?: string
   title?: string
@@ -270,7 +270,7 @@ export default function ProposalsPage() {
             <div className="flex-shrink-0">
               <Avatar 
                 className="h-20 w-20 border-2 border-purple-200 dark:border-purple-800 shadow-md cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => navigateToProfile(app.freelancerId)}
+                onClick={() => navigateToProfile(freelancer?._id)}
               >
                 <AvatarImage src={freelancer?.avatar} />
                 <AvatarFallback className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold text-xl">
