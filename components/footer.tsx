@@ -110,10 +110,10 @@ export const Footer = ({ dict, lang }: FooterProps) => {
             </ul>
           </div>
 
-          {/* legals Links */}
+          {/* Legal Links - Fixed the title to use 'legal' from footers */}
           <div>
             <h3 className="mb-4 text-sm font-semibold">
-              {t('legals', 'legals')}
+              {t('legal', 'Legal')}
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
