@@ -627,7 +627,7 @@ const handleSubmit = async () => {
     }))
     formDataToSend.append('attachments', JSON.stringify(attachmentsMetadata))
 
-    const response = await fetch(`/${lang}/api/projects/${id}/apply`, {
+    const response = await fetch(`/api/projects/${id}/apply`, {
       method: 'POST',
       body: formDataToSend, // Important: Don't set Content-Type header
     })
@@ -692,7 +692,7 @@ const uploadFileToCloudinary = async (file: File): Promise<any> => {
   formData.append('action', 'upload')
 
   // Upload to the same apply API endpoint
-  const response = await fetch(`/${lang}/api/projects/${id}/apply`, {
+  const response = await fetch(`/api/projects/${id}/apply`, {
     method: 'POST',
     body: formData,
   })
