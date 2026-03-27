@@ -1,4 +1,4 @@
-// components/navigation/Navigation.tsx - Version corrigée
+// components/navigation/Navigation.tsx - Version avec sauvegarde de la langue
 "use client"
 
 import Link from "next/link"
@@ -30,6 +30,7 @@ import type { Locale } from '@/lib/i18n/config'
 import Image from "next/image"
 import { MessagesDropdown } from "@/components/messages-dropdown"
 import { NotificationBell } from "./NotificationBell"
+import { useToast } from "@/components/ui/use-toast"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MegaItem {
@@ -62,10 +63,12 @@ export function Navigation() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [dict, setDict] = useState<any>(null)
   const [lang, setLang] = useState<Locale>("fr")
+  const [savingLang, setSavingLang] = useState<string | null>(null)
   const pathname = usePathname()
   const params = useParams()
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
   const navRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     const l = (params.lang as Locale) || "fr"
@@ -101,7 +104,6 @@ export function Navigation() {
         return fallback
       }
     }
-    // Si le résultat est un objet, retourner fallback
     if (typeof v === "object" && v !== null) {
       return fallback
     }
@@ -114,7 +116,69 @@ export function Navigation() {
     return pathname.startsWith(href)
   }
 
-  const switchLang = (code: string) => {
+  const saveLanguageToProfile = async (newLang: Locale): Promise<boolean> => {
+    if (!session?.user) return true // No user logged in, just redirect
+    
+    try {
+      const response = await fetch('/api/users/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'preferences',
+          data: {
+            language: newLang,
+            ...(session?.user?.preferences || {})
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save language preference')
+      }
+
+      // Update session with new language
+      await updateSession({
+        ...session,
+        user: {
+          ...session.user,
+          language: newLang,
+          preferences: {
+            ...session.user.preferences,
+            language: newLang
+          }
+        }
+      })
+
+      toast({
+        title: newLang === 'fr' ? 'Langue enregistrée' :
+               newLang === 'en' ? 'Language saved' :
+               'Voatahiry ny fiteny',
+        duration: 2000,
+      })
+
+      return true
+    } catch (error) {
+      console.error('Error saving language:', error)
+      toast({
+        title: lang === 'fr' ? 'Erreur lors de l\'enregistrement' :
+               lang === 'en' ? 'Error saving language' :
+               'Nisy hadisoana nandritra ny fitehirizana',
+        variant: 'destructive',
+        duration: 3000,
+      })
+      return false
+    }
+  }
+
+  const switchLang = async (code: string) => {
+    setSavingLang(code)
+    
+    // Save language preference to profile if user is logged in
+    if (session?.user) {
+      await saveLanguageToProfile(code as Locale)
+    }
+    
+    // Navigate to the new language version
     const rest = pathname.split("/").slice(2).join("/")
     window.location.href = `/${code}/${rest}`
   }
@@ -324,6 +388,7 @@ export function Navigation() {
               <NotificationBell />
               <MessagesDropdown />
 
+              {/* Language Switcher Desktop */}
               <div className="relative group">
                 <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 whitespace-nowrap">
                   <Globe className="h-4 w-4 shrink-0" />
@@ -335,14 +400,19 @@ export function Navigation() {
                     <button
                       key={l.code}
                       onClick={() => switchLang(l.code)}
+                      disabled={savingLang === l.code}
                       className={cn(
                         "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-accent/50 transition-colors",
-                        lang === l.code && "bg-accent/30"
+                        lang === l.code && "bg-accent/30",
+                        savingLang === l.code && "opacity-50 cursor-wait"
                       )}
                     >
                       <span className="text-base leading-none">{l.flag}</span>
                       <span className="flex-1 text-left font-medium">{l.label}</span>
                       {lang === l.code && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />}
+                      {savingLang === l.code && (
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent shrink-0" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -409,12 +479,17 @@ export function Navigation() {
                           <button
                             key={l.code}
                             onClick={() => switchLang(l.code)}
+                            disabled={savingLang === l.code}
                             className={cn(
-                              "text-base px-1.5 py-0.5 rounded-lg transition-colors",
-                              lang === l.code ? "bg-accent" : "hover:bg-accent/50"
+                              "text-base px-1.5 py-0.5 rounded-lg transition-colors relative",
+                              lang === l.code ? "bg-accent" : "hover:bg-accent/50",
+                              savingLang === l.code && "opacity-50 cursor-wait"
                             )}
                           >
                             {l.flag}
+                            {savingLang === l.code && (
+                              <div className="absolute -top-1 -right-1 h-2 w-2 animate-spin rounded-full border border-primary border-t-transparent" />
+                            )}
                           </button>
                         ))}
                       </div>
@@ -590,7 +665,7 @@ export function Navigation() {
                         </div>
                       )}
 
-                      {/* Liens légaux - CORRIGÉS */}
+                      {/* Liens légaux */}
                       <div className="grid grid-cols-2 gap-1 pt-2 border-t border-border/30">
                         <Link
                           href={`/${lang}/terms`}

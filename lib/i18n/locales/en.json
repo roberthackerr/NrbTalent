@@ -123,6 +123,7 @@
     "newConversation": "New conversation",
     "viewAll": "View all messages"
   },
+  
   "navigations": {
     "home": "Home",
     "signin": "Sign in",
@@ -143,45 +144,116 @@
     "myDashboard": "My Dashboard",
     "viewAllGroups": "View all groups",
     "contactSales": "Contact sales",
+    
     "findTalents": "Find talents",
     "findWork": "Find work",
+    
     "talents": "Talents",
+    "talentsDesc": "Browse all freelancers",
+    
     "freelancers": "Freelancers",
+    "freelancersDesc": "Verified & available profiles",
+    
     "aiMatching": "AI Matching",
-    "matchingClients": "Client Matching",
+    "aiMatchingDesc": "Find the perfect profile with AI",
+    
+    "matchingClients": "Matching Clients",
+    "matchingClientsDesc": "Recommendations for clients",
+    
     "gigs": "Gigs",
+    "gigsDesc": "Services offered by pros",
+    
     "createGig": "Create a Gig",
+    "createGigDesc": "Offer your services",
+    
     "projects": "Projects",
-    "matchingFreelancers": "Freelancer Matching",
+    "projectsDesc": "Missions & calls for tenders",
+    
+    "matchingFreelancers": "Matching Freelancers",
+    "matchingFreelancersDesc": "Projects matching your skills",
+    
     "management": "Management",
+    
     "calendar": "Calendar",
+    "calendarDesc": "Schedule your appointments",
+    
     "contracts": "Contracts",
+    "contractsDesc": "Manage your legal agreements",
+    
     "orders": "Orders",
+    "ordersDesc": "Track active orders",
+    
     "financeTeams": "Finance & Teams",
+    
     "payments": "Payments",
+    "paymentsDesc": "Payment methods & history",
+    
     "referrals": "Referrals",
+    "referralsDesc": "Invite & earn rewards",
+    
     "teams": "Teams",
+    "teamsDesc": "Manage your work teams",
+    
     "teamContracts": "Team Contracts",
+    "teamContractsDesc": "Collective contracts & missions",
+    
     "learnGrow": "Learn & Grow",
+    
     "academy": "Academy",
+    "academyDesc": "Trainings & certifications",
+    
     "blog": "Blog",
+    "blogDesc": "Articles & industry trends",
+    
     "news": "News",
+    "newsDesc": "Latest NRBTalents news",
+    
     "howItWorks": "How it works",
+    "howItWorksDesc": "Complete platform guide",
+    
     "groupsNetwork": "Groups & Network",
+    
     "groups": "Groups",
+    "groupsDesc": "Join professional communities",
+    
     "createGroup": "Create a group",
+    "createGroupDesc": "Start your own community",
+    
     "myGroups": "My groups",
+    "myGroupsDesc": "Groups you manage",
+    
     "cloudIDE": "Cloud IDE",
+    "cloudIDEDesc": "Code in the cloud",
+    
     "solutions": "Solutions",
+    
     "enterpriseSolutions": "Enterprise Solutions",
+    "enterpriseSolutionsDesc": "For large organizations",
+    
     "teamDashboard": "Team Dashboard",
+    "teamDashboardDesc": "Team overview",
+    
     "pricing": "Pricing",
+    "pricingDesc": "Plans & subscriptions",
+    
     "adminVerification": "Admin Verification",
+    "adminVerificationDesc": "Admin access",
+    
     "supportDocs": "Support & Docs",
+    
     "documentation": "Documentation",
+    "documentationDesc": "API & developer guides",
+    
     "faq": "FAQ",
-    "about": "About"
-  },
+    "faqDesc": "Frequently asked questions",
+    
+    "about": "About",
+    "aboutDesc": "Our story & mission",
+    
+    "contactDesc": "Talk to our team",
+    "messagesDesc": "Conversations & notifications"
+  }
+,
   "legal": {
     "terms": "Terms",
     "privacy": "Privacy",

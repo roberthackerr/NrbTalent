@@ -124,64 +124,134 @@
     "newConversation": "Resaka vaovao",
     "viewAll": "Jereo ny hafatra rehetra"
   },
-  "navigations": {
+ "navigations": {
     "home": "Fandraisana",
     "signin": "Hiditra",
     "signup": "Hisoratra anarana",
     "logout": "Hivoaka",
-    "dashboard": "Dashboard",
+    "dashboard": "Takelaka fandraisana",
     "profile": "Momba ahy",
     "messages": "Hafatra",
     "settings": "Fandrindrana",
-    "contact": "Mifandraisa",
+    "contact": "Fifandraisana",
     "quickAction": "Hetsika haingana",
-    "taglineDescription": "Ny sehatra freelance voalohany ho an'ny vondrom-piarahamonina teknolojia afrikana.",
-    "marketplace": "Marketplace",
+    "taglineDescription": "Ny sehatra freelance fototra ho an'ny vondrom-piarahamonina teknolojia afrikanina.",
+    "marketplace": "Tsena",
     "workspace": "Sehatra fiasana",
     "community": "Vondrom-piarahamonina",
     "enterprise": "Orinasa",
     "postProject": "Hametraka tetikasa",
-    "myDashboard": "Ny Dashboard",
-    "viewAllGroups": "Jereo ny vondrona rehetra",
-    "contactSales": "Mifandraisa amin'ny varotra",
-    "findTalents": "Hitady talenta",
-    "findWork": "Hitady asa",
+    "myDashboard": "Takelako",
+    "viewAllGroups": "Hijery vondrona rehetra",
+    "contactSales": "Hifandray amin'ny varotra",
+    
+    "findTalents": "Mitady talenta",
+    "findWork": "Mitady asa",
+    
     "talents": "Talenta",
+    "talentsDesc": "Hijery freelancers rehetra",
+    
     "freelancers": "Freelancers",
-    "aiMatching": "Fampifanarahana AI",
-    "matchingClients": "Fampifanarahana mpanjifa",
-    "gigs": "Serivisy",
-    "createGig": "Hamorona serivisy",
+    "freelancersDesc": "Profils voamarina & misy",
+    
+    "aiMatching": "AI Matching",
+    "aiMatchingDesc": "Mitady profil mety amin'ny AI",
+    
+    "matchingClients": "Matching Clients",
+    "matchingClientsDesc": "Tolo-kevitra ho an'ny mpanjifa",
+    
+    "gigs": "Gigs",
+    "gigsDesc": "Serivisy atolotry ny matihanina",
+    
+    "createGig": "Mamorona Gig",
+    "createGigDesc": "Ampidiro ny serivisinao",
+    
     "projects": "Tetikasa",
-    "matchingFreelancers": "Fampifanarahana Freelance",
+    "projectsDesc": "Misiona & antsoantso",
+    
+    "matchingFreelancers": "Matching Freelances",
+    "matchingFreelancersDesc": "Tetikasa mifanaraka amin'ny fahaizanao",
+    
     "management": "Fitantanana",
+    
     "calendar": "Kalandrie",
+    "calendarDesc": "Mandamina ny fotoam-pivoriana",
+    
     "contracts": "Fifanarahana",
+    "contractsDesc": "Fitantanana ny fifanarahana ara-dalàna",
+    
     "orders": "Baiko",
-    "financeTeams": "Fitantanam-bola & Ekipa",
+    "ordersDesc": "Fanarahamaso ny baiko mavitrika",
+    
+    "financeTeams": "Volahola & Ekipa",
+    
     "payments": "Fandoavam-bola",
-    "referrals": "Fanondroana",
+    "paymentsDesc": "Fomba fandoavam-bola & tantara",
+    
+    "referrals": "Fanolorana",
+    "referralsDesc": "Manasa & mahazo valisoa",
+    
     "teams": "Ekipa",
-    "teamContracts": "Fifanarahana ekipa",
+    "teamsDesc": "Fitantanana ny ekipa miasa",
+    
+    "teamContracts": "Fifanarahana Ekipa",
+    "teamContractsDesc": "Fifanarahana iombonana & misiona",
+    
     "learnGrow": "Mianara & Mivoatra",
+    
     "academy": "Akademia",
-    "blog": "Blaogy",
+    "academyDesc": "Fampiofanana & fanamarinana",
+    
+    "blog": "Blog",
+    "blogDesc": "Lahatsoratra & fironana eo amin'ny sehatra",
+    
     "news": "Vaovao",
-    "howItWorks": "Ahoana no fandehany",
-    "groupsNetwork": "Vondrona & Fifandraisana",
+    "newsDesc": "Vaovao farany NRBTalents",
+    
+    "howItWorks": "Ahoana no fiasany",
+    "howItWorksDesc": "Torolalana feno momba ny sehatra",
+    
+    "groupsNetwork": "Vondrona & Tambajotra",
+    
     "groups": "Vondrona",
-    "createGroup": "Hamorona vondrona",
+    "groupsDesc": "Midira amin'ny vondrom-piarahamonina matihanina",
+    
+    "createGroup": "Mamorona vondrona",
+    "createGroupDesc": "Atombohy ny vondronao manokana",
+    
     "myGroups": "Ny vondroko",
+    "myGroupsDesc": "Vondrona tantaninao",
+    
     "cloudIDE": "IDE Cloud",
+    "cloudIDEDesc": "Kaody ao anaty rahona",
+    
     "solutions": "Vahaolana",
-    "enterpriseSolutions": "Vahaolana ho an'ny orinasa",
-    "teamDashboard": "Dashboard ekipa",
+    
+    "enterpriseSolutions": "Vahaolana Orinasa",
+    "enterpriseSolutionsDesc": "Ho an'ny fikambanana lehibe",
+    
+    "teamDashboard": "Takelaka Ekipa",
+    "teamDashboardDesc": "Fijery ankapobeny ny ekipa",
+    
     "pricing": "Vidiny",
-    "adminVerification": "Fanamarinana Admin",
-    "supportDocs": "Fanampiana & Antontan-taratasy",
-    "documentation": "Antontan-taratasy",
-    "faq": "Fanontaniana matetika",
-    "about": "Momba ny"
+    "pricingDesc": "Plana & famandrihana",
+    
+    "adminVerification": "Fanamarina Admin",
+    "adminVerificationDesc": "Fidirana admin",
+    
+    "supportDocs": "Fanampiana & Docs",
+    
+    "documentation": "Dokantanterana",
+    "documentationDesc": "API & torolalana ho an'ny mpamorona",
+    
+    "faq": "FAQ",
+    "faqDesc": "Fanontaniana matetika",
+    
+    "about": "Momba anay",
+    "aboutDesc": "Ny tantaranay & iraka",
+    
+    "contactDesc": "Miresaha amin'ny ekipanay",
+    "messagesDesc": "Resadresaka & fampandrenesana"
   },
   "legal": {
     "terms": "Fepetra",
