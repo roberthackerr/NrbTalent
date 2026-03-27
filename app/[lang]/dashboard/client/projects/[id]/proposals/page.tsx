@@ -57,7 +57,7 @@ interface Attachment {
 }
 
 interface Freelancer {
-  _id: string | undefined
+  _id: string 
   name: string
   avatar?: string
   title?: string
@@ -80,7 +80,7 @@ interface Application {
   status: 'pending' | 'accepted' | 'rejected'
   createdAt: string
   updatedAt: string
-  freelancer?: Freelancer
+  freelancer: Freelancer
 }
 
 interface Project {
@@ -175,7 +175,7 @@ export default function ProposalsPage() {
           } : null)
          
           setTimeout(() => {
-            router.push(`/${lang}/projects/${projectId}/onboarding`)
+            router.push(`/${lang}/projects/${projectId}/create-contract`)
           }, 1500)
         }
       } else {
