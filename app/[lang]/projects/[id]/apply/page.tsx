@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
@@ -27,7 +27,12 @@ import {
   Crown,
   Loader2,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Trash2,
+  Image as ImageIcon,
+  File,
+  Globe,
+  Languages
 } from 'lucide-react'
 import { ProposalAssistantWidget } from '@/components/proposal-assistant/ProposalAssistantWidget'
 import { useToast } from '@/hooks/use-toast'
@@ -40,7 +45,11 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
+import { getDictionarySafe } from '@/lib/i18n/dictionaries'
+import type { Locale } from '@/lib/i18n/config'
+import { cn } from '@/lib/utils'
 
+// Types
 interface ApplicationData {
   coverLetter: string
   proposedBudget: number
@@ -49,9 +58,13 @@ interface ApplicationData {
     name: string
     url: string
     type: string
+    size: number
+    publicId?: string
+    resourceType?: string
+    base64Data?: string
   }>
   applyMode: 'individual' | 'team'
-  teamId?: string | null  // Add null to the type
+  teamId?: string | null
 }
 
 interface ProjectData {
@@ -116,12 +129,50 @@ interface TeamData {
   }>
 }
 
+// File upload helper
+const uploadFileToCloudinary = async (file: File): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const base64Data = (e.target?.result as string).split(',')[1] || (e.target?.result as string)
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file: base64Data,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            folder: 'applications'
+          }),
+        })
+        
+        if (!response.ok) {
+          throw new Error('Upload failed')
+        }
+        
+        const data = await response.json()
+        resolve(data)
+      } catch (error) {
+        reject(error)
+      }
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function ApplyPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
   const { data: session } = useSession()
   const id = params.id as string
+  const currentLang = (params.lang as Locale) || 'fr'
   
   // États principaux
   const [loading, setLoading] = useState(true)
@@ -131,6 +182,8 @@ export default function ApplyPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [availableTeams, setAvailableTeams] = useState<TeamData[]>([])
   const [selectedTeamDetails, setSelectedTeamDetails] = useState<TeamData | null>(null)
+  const [dict, setDict] = useState<any>(null)
+  const [lang, setLang] = useState<Locale>('fr')
   
   // Données du formulaire
   const [formData, setFormData] = useState<ApplicationData>({
@@ -148,11 +201,139 @@ export default function ApplyPage() {
   // États UI
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [isProcessing, setIsProcessing] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState<any>(null)
   const [showAiAssistant, setShowAiAssistant] = useState(false)
   const [showTeamDetails, setShowTeamDetails] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Charger le dictionnaire
+  useEffect(() => {
+    const l = (params.lang as Locale) || 'fr'
+    setLang(l)
+    getDictionarySafe(l).then(setDict)
+  }, [params.lang])
+
+  // Détecter mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const t = useCallback((key: string, fallback: string = key): string => {
+    if (dict?.apply?.[key]) return dict.apply[key]
+    if (dict?.navigations?.[key]) return dict.navigations[key]
+    // Fallback messages
+    const fallbacks: Record<string, Record<string, string>> = {
+      fr: {
+        backToProject: "Retour au projet",
+        applyTo: "Postuler à",
+        submitProposal: "Soumettre votre proposition",
+        selectMode: "Sélectionnez le mode de candidature",
+        individualMode: "Candidature individuelle",
+        individualDesc: "Postulez en tant que freelance individuel",
+        teamMode: "Candidature en équipe",
+        teamDesc: "Postulez en tant qu'équipe",
+        coverLetter: "Lettre de motivation",
+        coverLetterPlaceholder: "Présentez-vous et expliquez pourquoi vous êtes le candidat idéal...",
+        proposedBudget: "Budget proposé",
+        estimatedDuration: "Durée estimée",
+        attachments: "Pièces jointes",
+        submit: "Soumettre",
+        loading: "Chargement...",
+        fileTooLarge: "Fichier trop volumineux (max 10MB)",
+        maxFiles: "Maximum 5 fichiers",
+        uploadFailed: "Échec de l'upload",
+        uploadSuccess: "Fichier uploadé avec succès",
+        applicationSubmitted: "Candidature soumise !",
+        individualSuccess: "Votre candidature a été envoyée avec succès.",
+        teamSuccess: "Votre candidature en équipe a été envoyée avec succès.",
+        error: "Erreur",
+        projectNotFound: "Projet non trouvé",
+        selectTeam: "Sélectionnez une équipe",
+        budgetTooLow: "Budget trop bas",
+        budgetTooHigh: "Budget trop élevé",
+        dailyLimitReached: "Limite quotidienne atteinte",
+        alreadyApplied: "Vous avez déjà postulé à ce projet",
+        minChars: "Minimum 50 caractères",
+        maxChars: "Maximum 2000 caractères",
+        teamTips: "Conseils pour les candidatures en équipe"
+      },
+      en: {
+        backToProject: "Back to Project",
+        applyTo: "Apply to",
+        submitProposal: "Submit your proposal",
+        selectMode: "Select Application Mode",
+        individualMode: "Individual Application",
+        individualDesc: "Apply as an individual freelancer",
+        teamMode: "Team Application",
+        teamDesc: "Apply as a team",
+        coverLetter: "Cover Letter",
+        coverLetterPlaceholder: "Introduce yourself and explain why you're the ideal candidate...",
+        proposedBudget: "Proposed Budget",
+        estimatedDuration: "Estimated Duration",
+        attachments: "Attachments",
+        submit: "Submit",
+        loading: "Loading...",
+        fileTooLarge: "File too large (max 10MB)",
+        maxFiles: "Maximum 5 files",
+        uploadFailed: "Upload failed",
+        uploadSuccess: "File uploaded successfully",
+        applicationSubmitted: "Application Submitted!",
+        individualSuccess: "Your application has been sent successfully.",
+        teamSuccess: "Your team application has been sent successfully.",
+        error: "Error",
+        projectNotFound: "Project not found",
+        selectTeam: "Select a team",
+        budgetTooLow: "Budget too low",
+        budgetTooHigh: "Budget too high",
+        dailyLimitReached: "Daily application limit reached",
+        alreadyApplied: "You have already applied to this project",
+        minChars: "Minimum 50 characters",
+        maxChars: "Maximum 2000 characters",
+        teamTips: "Tips for team applications"
+      },
+      mg: {
+        backToProject: "Hiverina amin'ny tetikasa",
+        applyTo: "Mangataka amin'ny",
+        submitProposal: "Alefaso ny tolo-kevitrao",
+        selectMode: "Fidio ny fomba fangatahana",
+        individualMode: "Fangatahana tsirairay",
+        individualDesc: "Mangataka amin'ny maha-freelance tsirairay",
+        teamMode: "Fangatahana ekipa",
+        teamDesc: "Mangataka amin'ny maha-ekipa",
+        coverLetter: "Taratahy fanolorana",
+        coverLetterPlaceholder: "Ampahafantaro ny tenanao ary hazavao ny antony maha-mety anao...",
+        proposedBudget: "Tetibola atolotra",
+        estimatedDuration: "Faharetana tombanana",
+        attachments: "Rakitra mifamatotra",
+        submit: "Alefaso",
+        loading: "Mampiditra...",
+        fileTooLarge: "Rakitra lehibe loatra (max 10MB)",
+        maxFiles: "Rakitra 5 fara-fahakeliny",
+        uploadFailed: "Tsy nahomby ny fampidirana",
+        uploadSuccess: "Fampidirana rakitra nahomby",
+        applicationSubmitted: "Fangatahana nalefa!",
+        individualSuccess: "Nalefa soa aman-tsara ny fangatahanao.",
+        teamSuccess: "Nalefa soa aman-tsara ny fangatahana ekipanao.",
+        error: "Hadisoana",
+        projectNotFound: "Tetikasa tsy hita",
+        selectTeam: "Fidio ekipa",
+        budgetTooLow: "Tetibola ambany loatra",
+        budgetTooHigh: "Tetibola avo loatra",
+        dailyLimitReached: "Efa tratra ny fetran'ny fangatahana isan'andro",
+        alreadyApplied: "Efa nangataka tamin'ity tetikasa ity ianao",
+        minChars: "Litera 50 fara-fahakeliny",
+        maxChars: "Litera 2000 fara-tampony",
+        teamTips: "Toro-hevitra ho an'ny fangatahana ekipa"
+      }
+    }
+    return fallbacks[lang]?.[key] || fallbacks.fr[key] || fallback
+  }, [dict, lang])
 
   // Vérification d'authentification
   if (!session || (session.user?.role !== "freelance" && session.user?.role !== "freelancer")) {
@@ -194,24 +375,24 @@ export default function ApplyPage() {
       } catch (error) {
         console.error('Error loading data:', error)
         toast({
-          title: 'Error',
-          description: 'Failed to load project details',
+          title: t('error', 'Error'),
+          description: t('projectNotFound', 'Failed to load project details'),
           variant: 'destructive',
         })
-        router.push(`/projects/${id}`)
+        router.push(`/${lang}/projects/${id}`)
       } finally {
         setLoading(false)
       }
     }
 
     loadInitialData()
-  }, [id, router, toast])
+  }, [id, router, toast, t, lang])
 
   // Charger les équipes de l'utilisateur
   const loadUserTeams = async () => {
     try {
       setLoadingTeams(true)
-      const response = await fetch('/api/teams/my-teams')
+      const response = await fetch(`/${lang}/api/teams/my-teams`)
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -232,7 +413,7 @@ export default function ApplyPage() {
   // Charger les détails d'une équipe spécifique
   const loadTeamDetails = async (teamId: string) => {
     try {
-      const response = await fetch(`/api/teams/${teamId}`)
+      const response = await fetch(`/${lang}/api/teams/${teamId}`)
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -245,32 +426,29 @@ export default function ApplyPage() {
   }
 
   // Gérer le changement de mode d'application
-// Gérer le changement de mode d'application
-const handleModeChange = async (mode: 'individual' | 'team') => {
-  setApplyMode(mode)
-  setFormData(prev => ({ 
-    ...prev, 
-    applyMode: mode,
-    // Clear teamId when switching to individual, ensure it's set when switching to team
-    teamId: mode === 'team' ? selectedTeam : undefined 
-  }))
-  
-  if (mode === 'team' && selectedTeam) {
-    await loadTeamDetails(selectedTeam)
+  const handleModeChange = async (mode: 'individual' | 'team') => {
+    setApplyMode(mode)
+    setFormData(prev => ({ 
+      ...prev, 
+      applyMode: mode,
+      teamId: mode === 'team' ? selectedTeam : undefined 
+    }))
+    
+    if (mode === 'team' && selectedTeam) {
+      await loadTeamDetails(selectedTeam)
+    }
   }
-}
 
   // Gérer le changement d'équipe sélectionnée
-// Gérer le changement d'équipe sélectionnée
-const handleTeamChange = async (teamId: string) => {
-  setSelectedTeam(teamId)
-  setFormData(prev => ({ 
-    ...prev, 
-    teamId: teamId,  // Make sure this is set
-    applyMode: 'team' // Ensure mode is set to team
-  }))
-  await loadTeamDetails(teamId)
-}
+  const handleTeamChange = async (teamId: string) => {
+    setSelectedTeam(teamId)
+    setFormData(prev => ({ 
+      ...prev, 
+      teamId: teamId,
+      applyMode: 'team'
+    }))
+    await loadTeamDetails(teamId)
+  }
 
   // Gérer les changements de formulaire
   const handleInputChange = (field: keyof ApplicationData, value: any) => {
@@ -281,78 +459,43 @@ const handleTeamChange = async (teamId: string) => {
     }
   }
 
-  // Fonctions AI (simplifiées pour l'exemple)
-  const handleGenerateAISuggestion = async () => {
-    if (!projectData) return
-    
-    setAiLoading(true)
-    try {
-      // Simuler une génération AI
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const suggestion = {
-        coverLetter: `Dear Client,
-
-I'm excited to apply for your project "${projectData.title}". With my expertise in ${projectData.skills?.join(', ') || 'relevant skills'}, I'm confident I can deliver exceptional results.
-
-My approach includes:
-- Comprehensive analysis of your requirements
-- Regular communication and updates
-- High-quality deliverables within the agreed timeline
-- Post-delivery support and revisions
-
-Looking forward to discussing how I can contribute to your project's success.
-
-Best regards,
-${freelancerData?.name || 'Your Name'}`,
-        budgetSuggestion: Math.round((projectData.budget.min + projectData.budget.max) / 2),
-        estimatedDuration: '2-3 weeks'
-      }
-      
-      setAiSuggestion(suggestion)
-      setFormData(prev => ({
-        ...prev,
-        coverLetter: suggestion.coverLetter,
-        proposedBudget: suggestion.budgetSuggestion,
-        estimatedDuration: suggestion.estimatedDuration
-      }))
-      
-      toast({
-        title: 'AI Suggestion Applied',
-        description: 'Professional proposal generated successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to generate AI suggestion',
-        variant: 'destructive',
-      })
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-  // Gérer l'upload de fichiers
+  // Upload de fichier réel vers Cloudinary
   const handleFileUpload = async (file: File) => {
     if (formData.attachments.length >= 5) {
-      setErrors(prev => ({ ...prev, attachments: 'Maximum 5 files allowed' }))
+      setErrors(prev => ({ ...prev, attachments: t('maxFiles', 'Maximum 5 files allowed') }))
       return
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, attachments: 'File too large (max 10MB)' }))
+      setErrors(prev => ({ ...prev, attachments: t('fileTooLarge', 'File too large (max 10MB)') }))
       return
     }
 
     setUploading(true)
+    setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+    
     try {
-      // Simuler l'upload
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Simuler la progression (Cloudinary n'envoie pas de progression)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: Math.min((prev[file.name] || 0) + 10, 90)
+        }))
+      }, 200)
+
+      // Upload réel vers Cloudinary via l'API
+      const uploaded = await uploadFileToCloudinary(file)
       
+      clearInterval(progressInterval)
+      setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
+
       const newAttachment = {
         name: file.name,
-        url: URL.createObjectURL(file),
-        type: file.type
+        url: uploaded.url,
+        type: file.type,
+        size: file.size,
+        publicId: uploaded.publicId,
+        resourceType: uploaded.resourceType
       }
 
       setFormData(prev => ({
@@ -361,18 +504,24 @@ ${freelancerData?.name || 'Your Name'}`,
       }))
       
       toast({
-        title: 'File Uploaded',
-        description: `${file.name} has been uploaded successfully`,
+        title: t('uploadSuccess', 'File Uploaded'),
+        description: `${file.name} ${t('uploadSuccess', 'uploaded successfully')}`,
       })
     } catch (error) {
-      setErrors(prev => ({ ...prev, attachments: 'Upload failed' }))
+      console.error('Upload error:', error)
+      setErrors(prev => ({ ...prev, attachments: t('uploadFailed', 'Upload failed') }))
       toast({
-        title: 'Upload Error',
-        description: 'Failed to upload file',
+        title: t('error', 'Error'),
+        description: t('uploadFailed', 'Failed to upload file'),
         variant: 'destructive',
       })
     } finally {
       setUploading(false)
+      setUploadProgress(prev => {
+        const newState = { ...prev }
+        delete newState[file.name]
+        return newState
+      })
     }
   }
 
@@ -383,6 +532,56 @@ ${freelancerData?.name || 'Your Name'}`,
     }))
   }
 
+  // Fonctions AI
+  const handleGenerateAISuggestion = async () => {
+    if (!projectData) return
+    
+    setAiLoading(true)
+    try {
+      const response = await fetch(`/${lang}/api/ai/generate-proposal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectTitle: projectData.title,
+          projectDescription: projectData.description,
+          skills: projectData.skills,
+          freelancerName: freelancerData?.name,
+          freelancerSkills: freelancerData?.skills,
+          budgetMin: projectData.budget.min,
+          budgetMax: projectData.budget.max,
+          currency: projectData.budget.currency,
+          applyMode
+        })
+      })
+
+      if (!response.ok) throw new Error('AI generation failed')
+
+      const suggestion = await response.json()
+      
+      setAiSuggestion(suggestion)
+      setFormData(prev => ({
+        ...prev,
+        coverLetter: suggestion.coverLetter || prev.coverLetter,
+        proposedBudget: suggestion.proposedBudget || prev.proposedBudget,
+        estimatedDuration: suggestion.estimatedDuration || prev.estimatedDuration
+      }))
+      
+      toast({
+        title: 'AI Suggestion Applied',
+        description: 'Professional proposal generated successfully',
+      })
+    } catch (error) {
+      console.error('AI generation error:', error)
+      toast({
+        title: t('error', 'Error'),
+        description: 'Failed to generate AI suggestion',
+        variant: 'destructive',
+      })
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   // Validation
   const validateStep = (step: number): boolean => {
     if (!projectData?.budget) return false
@@ -391,11 +590,11 @@ ${freelancerData?.name || 'Your Name'}`,
 
     if (step === 1) {
       if (!formData.coverLetter.trim()) {
-        newErrors.coverLetter = 'Cover letter is required'
+        newErrors.coverLetter = t('coverLetter', 'Cover letter is required')
       } else if (formData.coverLetter.length < 50) {
-        newErrors.coverLetter = 'Cover letter must be at least 50 characters'
+        newErrors.coverLetter = t('minChars', 'Cover letter must be at least 50 characters')
       } else if (formData.coverLetter.length > 2000) {
-        newErrors.coverLetter = 'Cover letter must not exceed 2000 characters'
+        newErrors.coverLetter = t('maxChars', 'Cover letter must not exceed 2000 characters')
       }
     }
 
@@ -403,18 +602,18 @@ ${freelancerData?.name || 'Your Name'}`,
       if (!formData.proposedBudget || formData.proposedBudget < 1) {
         newErrors.proposedBudget = 'Invalid proposed budget'
       } else if (formData.proposedBudget < projectData.budget.min) {
-        newErrors.proposedBudget = `Minimum budget is ${projectData.budget.min} ${projectData.budget.currency}`
+        newErrors.proposedBudget = `${t('budgetTooLow', 'Budget too low')}: ${projectData.budget.min} ${projectData.budget.currency}`
       } else if (formData.proposedBudget > projectData.budget.max) {
-        newErrors.proposedBudget = `Maximum budget is ${projectData.budget.max} ${projectData.budget.currency}`
+        newErrors.proposedBudget = `${t('budgetTooHigh', 'Budget too high')}: ${projectData.budget.max} ${projectData.budget.currency}`
       }
       
       if (!formData.estimatedDuration.trim()) {
-        newErrors.estimatedDuration = 'Estimated duration is required'
+        newErrors.estimatedDuration = t('estimatedDuration', 'Estimated duration is required')
       }
     }
 
     if (step === 3 && applyMode === 'team' && !selectedTeam) {
-      newErrors.team = 'Please select a team'
+      newErrors.team = t('selectTeam', 'Please select a team')
     }
 
     setErrors(newErrors)
@@ -432,78 +631,73 @@ ${freelancerData?.name || 'Your Name'}`,
   }
 
   // Soumettre l'application
-  // Soumettre l'application
-const handleSubmit = async () => {
-  if (!validateStep(3) || !projectData) return
+  const handleSubmit = async () => {
+    if (!validateStep(3) || !projectData) return
 
-  setIsProcessing(true)
-  try {
-    // Prepare the request body
-    const requestBody: any = {
-      coverLetter: formData.coverLetter,
-      proposedBudget: formData.proposedBudget,
-      estimatedDuration: formData.estimatedDuration,
-      attachments: formData.attachments,
-      applyMode: applyMode
-    }
-
-    // IMPORTANT: Add teamId if applying as team
-    if (applyMode === 'team') {
-      if (!selectedTeam) {
-        setErrors(prev => ({ ...prev, team: 'Please select a team' }))
-        setIsProcessing(false)
-        return
+    setIsProcessing(true)
+    try {
+      const requestBody: any = {
+        coverLetter: formData.coverLetter,
+        proposedBudget: formData.proposedBudget,
+        estimatedDuration: formData.estimatedDuration,
+        attachments: formData.attachments.map(({ name, url, type, size, publicId, resourceType }) => ({
+          name, url, type, size, publicId, resourceType
+        })),
+        applyMode: applyMode
       }
-      requestBody.teamId = selectedTeam
+
+      if (applyMode === 'team') {
+        if (!selectedTeam) {
+          setErrors(prev => ({ ...prev, team: t('selectTeam', 'Please select a team') }))
+          setIsProcessing(false)
+          return
+        }
+        requestBody.teamId = selectedTeam
+      }
+
+      const response = await fetch(`/${lang}/api/projects/${id}/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || data.details?.[0]?.message || 'Application failed')
+      }
+
+      toast({
+        title: t('applicationSubmitted', 'Application Submitted!'),
+        description: applyMode === 'team' 
+          ? t('teamSuccess', 'Your team application has been sent successfully.')
+          : t('individualSuccess', 'Your application has been sent successfully.'),
+      })
+      
+      if (applyMode === 'team' && selectedTeam) {
+        router.push(`/${lang}/teams/${selectedTeam}/applications`)
+      } else {
+        router.push(`/${lang}/projects/${id}?message=application_success`)
+      }
+      
+    } catch (error) {
+      console.error('Submission error:', error)
+      setErrors(prev => ({ ...prev, submit: (error as Error).message }))
+      toast({
+        title: t('error', 'Error'),
+        description: (error as Error).message,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsProcessing(false)
     }
-
-    console.log('Submitting application:', requestBody) // Debug log
-
-    const response = await fetch(`/api/projects/${id}/apply`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    })
-
-    const data = await response.json()
-    
-    if (!response.ok) {
-      console.error('Application error:', data) // Debug log
-      throw new Error(data.error || data.details?.[0]?.message || 'Application failed')
-    }
-
-    // Succès
-    toast({
-      title: 'Application Submitted!',
-      description: applyMode === 'team' 
-        ? `Your team application has been sent successfully. You can track it in your team dashboard.`
-        : `Your individual application has been sent successfully.`,
-    })
-    
-    // Rediriger
-    if (applyMode === 'team' && selectedTeam) {
-      router.push(`/teams/${selectedTeam}/applications`)
-    } else {
-      router.push(`/projects/${id}?message=application_success`)
-    }
-    
-  } catch (error) {
-    console.error('Submission error:', error)
-    setErrors(prev => ({ ...prev, submit: (error as Error).message }))
-    toast({
-      title: 'Error',
-      description: (error as Error).message,
-      variant: 'destructive',
-    })
-  } finally {
-    setIsProcessing(false)
   }
-}
+
   // Calculer l'indicateur de budget
   const getBudgetIndicator = (budget: number) => {
-    if (!projectData?.budget) return { position: 0, color: 'bg-gray-400', label: 'Loading...' }
+    if (!projectData?.budget) return { position: 0, color: 'bg-gray-400', label: t('loading', 'Loading...') }
 
     const range = projectData.budget.max - projectData.budget.min
     const position = range > 0 ? ((budget - projectData.budget.min) / range) * 100 : 0
@@ -513,17 +707,17 @@ const handleSubmit = async () => {
     
     if (budget < projectData.budget.min) {
       color = 'bg-gray-400'
-      label = 'Below minimum budget'
+      label = t('budgetTooLow', 'Below minimum budget')
     } else if (budget > projectData.budget.max) {
       color = 'bg-rose-500'
-      label = 'Above maximum budget'
+      label = t('budgetTooHigh', 'Above maximum budget')
     }
 
     return { position: Math.min(Math.max(position, 0), 100), color, label }
   }
 
   const budgetIndicator = getBudgetIndicator(formData.proposedBudget)
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('fr-FR')
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'mg' ? 'fr-FR' : 'en-US')
 
   // Afficher le chargement
   if (loading) {
@@ -532,7 +726,7 @@ const handleSubmit = async () => {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center py-12">
             <Loader2 className="h-12 w-12 text-sky-600 animate-spin mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">Loading project details...</p>
+            <p className="text-slate-600 dark:text-slate-400">{t('loading', 'Loading project details...')}</p>
           </div>
         </div>
       </div>
@@ -542,19 +736,19 @@ const handleSubmit = async () => {
   // Si le projet n'existe pas
   if (!projectData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 flex items-center justify-center">
-        <Card className="max-w-md">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
           <CardContent className="pt-12 pb-12 text-center">
             <AlertCircle className="h-12 w-12 text-rose-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Project Not Found</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('projectNotFound', 'Project Not Found')}</h1>
             <p className="text-slate-600 dark:text-slate-400 mb-6">
-              The project you're looking for doesn't exist or is no longer available.
+              {t('projectNotFound', 'The project you\'re looking for doesn\'t exist or is no longer available.')}
             </p>
             <Button
-              onClick={() => router.push('/projects')}
+              onClick={() => router.push(`/${lang}/projects`)}
               className="bg-sky-600 text-white hover:bg-sky-700"
             >
-              Browse All Projects
+              {t('backToProject', 'Browse All Projects')}
             </Button>
           </CardContent>
         </Card>
@@ -563,33 +757,35 @@ const handleSubmit = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-4 sm:py-8">
+      <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="mb-6"
+            className="mb-4 sm:mb-6 text-sm sm:text-base"
+            size={isMobile ? "sm" : "default"}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Project
+            {t('backToProject', 'Back to Project')}
           </Button>
           
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                  Apply to "{projectData.title}"
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 break-words">
+                  {t('applyTo', 'Apply to')} "{projectData.title}"
                 </h1>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Submit your proposal for this project
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
+                  {t('submitProposal', 'Submit your proposal for this project')}
                 </p>
               </div>
               
               <Button
                 onClick={() => setShowAiAssistant(!showAiAssistant)}
-                className="bg-gradient-to-r from-sky-600 to-purple-600 text-white hover:opacity-90"
+                className="bg-gradient-to-r from-sky-600 to-purple-600 text-white hover:opacity-90 w-full sm:w-auto"
+                size={isMobile ? "sm" : "default"}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 AI Assistant
@@ -598,67 +794,67 @@ const handleSubmit = async () => {
           </div>
         </div>
 
-        {/* Mode Selection */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mb-8">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-            Select Application Mode
+        {/* Mode Selection - Responsive Grid */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4">
+            {t('selectMode', 'Select Application Mode')}
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Individual Mode */}
             <div 
-              className={`border-2 rounded-xl p-5 cursor-pointer transition-all duration-300 ${
+              className={`border-2 rounded-xl p-4 sm:p-5 cursor-pointer transition-all duration-300 ${
                 applyMode === 'individual' 
-                  ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-lg scale-[1.02]' 
+                  ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-lg scale-[1.01] sm:scale-[1.02]' 
                   : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md'
               }`}
               onClick={() => handleModeChange('individual')}
             >
-              <div className="flex items-start gap-4 mb-4">
-                <div className={`p-3 rounded-lg ${
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${
                   applyMode === 'individual' 
                     ? 'bg-sky-100 dark:bg-sky-900/30' 
                     : 'bg-slate-100 dark:bg-slate-700'
                 }`}>
-                  <User className={`h-6 w-6 ${
+                  <User className={`h-5 w-5 sm:h-6 sm:w-6 ${
                     applyMode === 'individual' 
                       ? 'text-sky-600 dark:text-sky-400' 
                       : 'text-slate-600 dark:text-slate-400'
                   }`} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">
-                    Individual Application
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white mb-1">
+                    {t('individualMode', 'Individual Application')}
                   </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Apply as an individual freelancer
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {t('individualDesc', 'Apply as an individual freelancer')}
                   </p>
                 </div>
               </div>
               
-              <ul className="space-y-3 mb-4">
-                <li className="flex items-center gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Apply with your personal profile
+              <ul className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
+                <li className="flex items-center gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                    {t('individualDesc', 'Apply with your personal profile')}
                   </span>
                 </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Direct communication with client
+                <li className="flex items-center gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                    {t('directCommunication', 'Direct communication with client')}
                   </span>
                 </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    Full control over project delivery
+                <li className="flex items-center gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                    {t('fullControl', 'Full control over project delivery')}
                   </span>
                 </li>
               </ul>
               
               {applyMode === 'individual' && (
-                <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-medium">
+                <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-medium text-sm">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Selected</span>
                 </div>
@@ -667,20 +863,20 @@ const handleSubmit = async () => {
 
             {/* Team Mode */}
             <div 
-              className={`border-2 rounded-xl p-5 cursor-pointer transition-all duration-300 ${
+              className={`border-2 rounded-xl p-4 sm:p-5 cursor-pointer transition-all duration-300 ${
                 applyMode === 'team' 
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg scale-[1.02]' 
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg scale-[1.01] sm:scale-[1.02]' 
                   : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md'
               } ${(loadingTeams || availableTeams.length === 0) ? 'opacity-70 cursor-not-allowed' : ''}`}
               onClick={() => !loadingTeams && availableTeams.length > 0 && handleModeChange('team')}
             >
-              <div className="flex items-start gap-4 mb-4">
-                <div className={`p-3 rounded-lg ${
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${
                   applyMode === 'team' 
                     ? 'bg-purple-100 dark:bg-purple-900/30' 
                     : 'bg-slate-100 dark:bg-slate-700'
                 }`}>
-                  <Users className={`h-6 w-6 ${
+                  <Users className={`h-5 w-5 sm:h-6 sm:w-6 ${
                     applyMode === 'team' 
                       ? 'text-purple-600 dark:text-purple-400' 
                       : 'text-slate-600 dark:text-slate-400'
@@ -688,59 +884,55 @@ const handleSubmit = async () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                      Team Application
+                    <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+                      {t('teamMode', 'Team Application')}
                     </h3>
                     {availableTeams.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {availableTeams.length} team{availableTeams.length !== 1 ? 's' : ''}
+                      <Badge variant="outline" className="text-[10px] sm:text-xs">
+                        {availableTeams.length} {availableTeams.length !== 1 ? 'teams' : 'team'}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Apply as part of a team
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {t('teamDesc', 'Apply as part of a team')}
                   </p>
                 </div>
               </div>
               
               {loadingTeams ? (
-                <div className="text-center py-4">
-                  <Loader2 className="h-6 w-6 text-purple-600 animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-slate-500">Loading your teams...</p>
+                <div className="text-center py-3 sm:py-4">
+                  <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 animate-spin mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm text-slate-500">{t('loading', 'Loading your teams...')}</p>
                 </div>
               ) : availableTeams.length === 0 ? (
-                <div className="space-y-4">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                    <p className="text-sm text-amber-700 dark:text-amber-400">
-                      You need to join or create a team first
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="p-2 sm:p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400">
+                      {t('noTeams', 'You need to join or create a team first')}
                     </p>
                   </div>
                   <Button 
                     variant="outline"
-                    className="w-full"
-                    onClick={() => router.push('/teams')}
+                    className="w-full text-sm"
+                    size={isMobile ? "sm" : "default"}
+                    onClick={() => router.push(`/${lang}/teams`)}
                   >
                     <Building2 className="h-4 w-4 mr-2" />
-                    Browse Teams
+                    {t('browseTeams', 'Browse Teams')}
                   </Button>
                 </div>
               ) : (
                 <>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Select Team
+                  <div className="mb-3 sm:mb-4">
+                    <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      {t('selectTeam', 'Select Team')}
                     </label>
                     <div className="relative">
-<select
-  value={selectedTeam || ''}
-  onChange={(e) => {
-    const teamId = e.target.value;
-    setSelectedTeam(teamId);
-    setFormData(prev => ({ ...prev, teamId: teamId || null })); // Use null if empty
-    loadTeamDetails(teamId);
-  }}
-  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
->
+                      <select
+                        value={selectedTeam || ''}
+                        onChange={(e) => handleTeamChange(e.target.value)}
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                      >
                         {availableTeams.map((team) => (
                           <option key={team.id} value={team.id}>
                             {team.name} ({team.memberCount} members)
@@ -748,43 +940,43 @@ const handleSubmit = async () => {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-slate-400 pointer-events-none" />
                     </div>
                     
                     {selectedTeamDetails && (
-                      <div className="mt-3">
+                      <div className="mt-2 sm:mt-3">
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                          className="text-[10px] sm:text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                           onClick={() => setShowTeamDetails(!showTeamDetails)}
                         >
                           {showTeamDetails ? 'Hide' : 'Show'} team details
                         </Button>
                         
                         {showTeamDetails && (
-                          <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                          <div className="mt-2 p-2 sm:p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-slate-900 dark:text-white">
+                              <span className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">
                                 {selectedTeamDetails.name}
                               </span>
-                              <Badge variant={selectedTeamDetails.availability === 'available' ? 'success' : 'secondary'}>
+                              <Badge variant={selectedTeamDetails.availability === 'available' ? 'success' : 'secondary'} className="text-[10px] sm:text-xs">
                                 {selectedTeamDetails.availability}
                               </Badge>
                             </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-2 sm:mb-3 line-clamp-2">
                               {selectedTeamDetails.description}
                             </p>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-1 sm:gap-2">
                               {selectedTeamDetails.skills.slice(0, 5).map((skill, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
+                                <Badge key={index} variant="secondary" className="text-[10px] sm:text-xs">
                                   {skill}
                                 </Badge>
                               ))}
                               {selectedTeamDetails.skills.length > 5 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{selectedTeamDetails.skills.length - 5} more
+                                <Badge variant="outline" className="text-[10px] sm:text-xs">
+                                  +{selectedTeamDetails.skills.length - 5}
                                 </Badge>
                               )}
                             </div>
@@ -794,29 +986,29 @@ const handleSubmit = async () => {
                     )}
                   </div>
                   
-                  <ul className="space-y-3 mb-4">
-                    <li className="flex items-center gap-3">
-                      <CheckCircle2 className="h-4 w-4 text-purple-500 flex-shrink-0" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        Apply with combined team expertise
+                  <ul className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
+                    <li className="flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                        {t('combinedExpertise', 'Apply with combined team expertise')}
                       </span>
                     </li>
-                    <li className="flex items-center gap-3">
-                      <CheckCircle2 className="h-4 w-4 text-purple-500 flex-shrink-0" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        Higher chance for complex projects
+                    <li className="flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                        {t('higherChance', 'Higher chance for complex projects')}
                       </span>
                     </li>
-                    <li className="flex items-center gap-3">
-                      <CheckCircle2 className="h-4 w-4 text-purple-500 flex-shrink-0" />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        Shared responsibility and workload
+                    <li className="flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                        {t('sharedResponsibility', 'Shared responsibility and workload')}
                       </span>
                     </li>
                   </ul>
                   
                   {applyMode === 'team' && (
-                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
+                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium text-sm">
                       <CheckCircle2 className="h-4 w-4" />
                       <span>Selected</span>
                     </div>
@@ -827,44 +1019,45 @@ const handleSubmit = async () => {
           </div>
           
           {applyMode === 'team' && selectedTeamDetails && (
-            <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold text-purple-900 dark:text-purple-300">
-                      Applying as: {selectedTeamDetails.name}
+                    <h4 className="font-semibold text-sm sm:text-base text-purple-900 dark:text-purple-300">
+                      {t('applyingAs', 'Applying as')}: {selectedTeamDetails.name}
                     </h4>
-                    <p className="text-sm text-purple-700 dark:text-purple-400">
-                      {selectedTeamDetails.memberCount} members • Team lead: {freelancerData?.name}
+                    <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-400">
+                      {selectedTeamDetails.memberCount} members • {t('teamLead', 'Team lead')}: {freelancerData?.name}
                     </p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push(`/teams/${selectedTeam}`)}
-                  className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                  onClick={() => router.push(`/${lang}/teams/${selectedTeam}`)}
+                  className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-sm"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View Team
+                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  {t('viewTeam', 'View Team')}
                 </Button>
               </div>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Formulaire Principal */}
+        {/* Main Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          {/* Form Container */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
-              {/* Steps Navigation */}
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+              {/* Steps Navigation - Responsive */}
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                 <div className="flex items-center justify-between max-w-md mx-auto">
                   {[1, 2, 3].map((stepNumber) => (
-                    <div key={stepNumber} className="flex items-center">
+                    <div key={stepNumber} className="flex items-center flex-1">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 flex-shrink-0 ${
                           step >= stepNumber
                             ? 'bg-sky-600 text-white shadow-lg'
                             : 'bg-slate-300 dark:bg-slate-600 text-slate-600 dark:text-slate-400'
@@ -874,7 +1067,7 @@ const handleSubmit = async () => {
                       </div>
                       {stepNumber < 3 && (
                         <div
-                          className={`w-16 h-1 mx-4 transition-all duration-300 ${
+                          className={`h-0.5 flex-1 mx-1 sm:mx-2 transition-all duration-300 ${
                             step > stepNumber ? 'bg-sky-600' : 'bg-slate-300 dark:bg-slate-600'
                           }`}
                         />
@@ -882,28 +1075,29 @@ const handleSubmit = async () => {
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto">
-                  <span>Cover Letter</span>
-                  <span>Budget & Timeline</span>
-                  <span>Review & Submit</span>
+                <div className="flex justify-between text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto">
+                  <span>{t('coverLetter', 'Cover Letter')}</span>
+                  <span>{t('budget', 'Budget')} & {t('timeline', 'Timeline')}</span>
+                  <span>{t('review', 'Review')}</span>
                 </div>
               </div>
 
               {/* Form Content */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {errors.submit && (
-                  <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                    <span className="text-rose-800 dark:text-rose-300 font-medium">{errors.submit}</span>
+                  <div className="mb-6 p-3 sm:p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg flex items-center gap-2 sm:gap-3">
+                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                    <span className="text-rose-800 dark:text-rose-300 font-medium text-sm sm:text-base">{errors.submit}</span>
                   </div>
                 )}
 
+                {/* Step 1: Cover Letter */}
                 {step === 1 && (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     <div>
-                      <div className="flex justify-between items-center mb-3">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                          Cover Letter *
+                          {t('coverLetter', 'Cover Letter')} *
                         </label>
                         <Button
                           type="button"
@@ -911,71 +1105,70 @@ const handleSubmit = async () => {
                           disabled={aiLoading}
                           variant="outline"
                           size="sm"
-                          className="text-xs"
+                          className="text-xs w-full sm:w-auto"
                         >
                           <Brain className="h-3 w-3 mr-2" />
-                          {aiLoading ? 'Generating...' : 'Generate with AI'}
+                          {aiLoading ? t('generating', 'Generating...') : t('generateAI', 'Generate with AI')}
                         </Button>
                       </div>
                       
                       <Textarea
                         value={formData.coverLetter}
                         onChange={(e) => handleInputChange('coverLetter', e.target.value)}
-                        rows={10}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent dark:bg-slate-800 dark:text-white dark:border-slate-600 ${
+                        rows={isMobile ? 8 : 10}
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent dark:bg-slate-800 dark:text-white dark:border-slate-600 ${
                           errors.coverLetter ? 'border-rose-500 dark:border-rose-400 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-600'
                         }`}
-                        placeholder={`Introduce yourself and explain why you're the perfect ${
-                          applyMode === 'team' ? 'team' : 'freelancer'
-                        } for "${projectData.title}". Highlight your relevant experience, skills, and approach to the project...`}
+                        placeholder={t('coverLetterPlaceholder', `Introduce yourself and explain why you're the perfect ${applyMode === 'team' ? 'team' : 'freelancer'}...`)}
                       />
                       
                       {errors.coverLetter && (
-                        <p className="text-rose-600 dark:text-rose-400 text-sm mt-2 font-medium">{errors.coverLetter}</p>
+                        <p className="text-rose-600 dark:text-rose-400 text-xs sm:text-sm mt-2 font-medium">{errors.coverLetter}</p>
                       )}
                       
-                      <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400 mt-2">
-                        <span>Minimum 50 characters</span>
+                      <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2">
+                        <span>{t('minChars', 'Minimum 50 characters')}</span>
                         <span>{formData.coverLetter.length}/2000</span>
                       </div>
                     </div>
 
                     {/* Tips for Team Applications */}
                     {applyMode === 'team' && selectedTeamDetails && (
-                      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                        <h4 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
+                      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3 sm:p-4">
+                        <h4 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2 text-sm sm:text-base">
                           <Users className="h-4 w-4" />
-                          Team Application Tips
+                          {t('teamTips', 'Team Application Tips')}
                         </h4>
-                        <ul className="space-y-2 text-sm text-purple-800 dark:text-purple-400">
-                          <li>• Highlight your team's combined expertise and how it matches the project requirements</li>
-                          <li>• Mention key team members and their specific roles in the project</li>
-                          <li>• Explain your team's collaboration process and communication style</li>
-                          <li>• Share previous team projects or success stories (if any)</li>
+                        <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-purple-800 dark:text-purple-400">
+                          <li>• {t('teamTip1', 'Highlight your team\'s combined expertise')}</li>
+                          <li>• {t('teamTip2', 'Mention key team members and their roles')}</li>
+                          <li>• {t('teamTip3', 'Explain your team\'s collaboration process')}</li>
+                          <li>• {t('teamTip4', 'Share previous team projects success stories')}</li>
                         </ul>
                       </div>
                     )}
                   </div>
                 )}
 
+                {/* Step 2: Budget & Duration */}
                 {step === 2 && (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Budget Range Info */}
-                    <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-4">
+                    <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Info className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                          <span className="text-sm font-medium text-sky-900 dark:text-sky-100">
-                            Client's Budget Range
+                          <Info className="w-3 h-3 sm:w-4 sm:h-4 text-sky-600 dark:text-sky-400" />
+                          <span className="text-xs sm:text-sm font-medium text-sky-900 dark:text-sky-100">
+                            {t('clientBudget', 'Client\'s Budget Range')}
                           </span>
                         </div>
-                        <Badge variant="outline">
-                          {projectData.budget.type === 'fixed' ? 'Fixed Price' : 'Hourly Rate'}
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
+                          {projectData.budget.type === 'fixed' ? t('fixedPrice', 'Fixed Price') : t('hourlyRate', 'Hourly Rate')}
                         </Badge>
                       </div>
-                      <div className="flex justify-between text-sm text-sky-800 dark:text-sky-200">
-                        <span>Minimum: {projectData.budget.min} {projectData.budget.currency}</span>
-                        <span>Maximum: {projectData.budget.max} {projectData.budget.currency}</span>
+                      <div className="flex justify-between text-xs sm:text-sm text-sky-800 dark:text-sky-200">
+                        <span>{t('min', 'Minimum')}: {projectData.budget.min} {projectData.budget.currency}</span>
+                        <span>{t('max', 'Maximum')}: {projectData.budget.max} {projectData.budget.currency}</span>
                       </div>
                     </div>
 
@@ -983,7 +1176,7 @@ const handleSubmit = async () => {
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                         <DollarSign className="w-4 w-4 inline mr-1" />
-                        Proposed Budget ({projectData.budget.currency}) *
+                        {t('proposedBudget', 'Proposed Budget')} ({projectData.budget.currency}) *
                       </label>
                       
                       <div className="mb-6">
@@ -994,7 +1187,7 @@ const handleSubmit = async () => {
                           step="50"
                           value={formData.proposedBudget}
                           onChange={(e) => handleInputChange('proposedBudget', Number(e.target.value))}
-                          className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-sky-600 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg"
+                          className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer"
                         />
                         
                         {/* Budget Indicator */}
@@ -1004,12 +1197,12 @@ const handleSubmit = async () => {
                             style={{ width: '100%' }}
                           />
                           <div 
-                            className={`absolute w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 shadow-lg -top-1 -ml-2 ${budgetIndicator.color}`}
+                            className={`absolute w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white dark:border-slate-800 shadow-lg -top-1 -ml-2 ${budgetIndicator.color}`}
                             style={{ left: `${budgetIndicator.position}%` }}
                           />
                         </div>
                         
-                        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <div className="flex justify-between text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">
                           <span>{projectData.budget.min}</span>
                           <span className="font-medium">{budgetIndicator.label}</span>
                           <span>{projectData.budget.max}</span>
@@ -1022,7 +1215,7 @@ const handleSubmit = async () => {
                           type="number"
                           value={formData.proposedBudget}
                           onChange={(e) => handleInputChange('proposedBudget', Number(e.target.value))}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent dark:bg-slate-800 dark:text-white dark:border-slate-600 ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent dark:bg-slate-800 dark:text-white dark:border-slate-600 ${
                             errors.proposedBudget ? 'border-rose-500 dark:border-rose-400 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-600'
                           }`}
                           min={projectData.budget.min}
@@ -1030,42 +1223,42 @@ const handleSubmit = async () => {
                           step="50"
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                          <span className="text-slate-500 dark:text-slate-400">{projectData.budget.currency}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-sm">{projectData.budget.currency}</span>
                         </div>
                       </div>
                       
                       {errors.proposedBudget && (
-                        <p className="text-rose-600 dark:text-rose-400 text-sm mt-1 font-medium">{errors.proposedBudget}</p>
+                        <p className="text-rose-600 dark:text-rose-400 text-xs sm:text-sm mt-1 font-medium">{errors.proposedBudget}</p>
                       )}
                       
                       {/* Quick Budget Buttons */}
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex flex-wrap gap-2 mt-3">
                         <Button
                           type="button"
                           onClick={() => handleInputChange('proposedBudget', projectData.budget.min)}
                           variant="outline"
                           size="sm"
-                          className="text-xs"
+                          className="text-[10px] sm:text-xs"
                         >
-                          Min ({projectData.budget.min})
+                          {t('min', 'Min')} ({projectData.budget.min})
                         </Button>
                         <Button
                           type="button"
                           onClick={() => handleInputChange('proposedBudget', Math.round((projectData.budget.min + projectData.budget.max) / 2))}
                           variant="outline"
                           size="sm"
-                          className="text-xs"
+                          className="text-[10px] sm:text-xs"
                         >
-                          Average ({Math.round((projectData.budget.min + projectData.budget.max) / 2)})
+                          {t('average', 'Average')} ({Math.round((projectData.budget.min + projectData.budget.max) / 2)})
                         </Button>
                         <Button
                           type="button"
                           onClick={() => handleInputChange('proposedBudget', projectData.budget.max)}
                           variant="outline"
                           size="sm"
-                          className="text-xs"
+                          className="text-[10px] sm:text-xs"
                         >
-                          Max ({projectData.budget.max})
+                          {t('max', 'Max')} ({projectData.budget.max})
                         </Button>
                       </div>
                     </div>
@@ -1074,75 +1267,76 @@ const handleSubmit = async () => {
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         <Clock className="w-4 h-4 inline mr-1" />
-                        Estimated Duration *
+                        {t('estimatedDuration', 'Estimated Duration')} *
                       </label>
                       <Input
                         type="text"
                         value={formData.estimatedDuration}
                         onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent dark:bg-slate-800 dark:text-white dark:border-slate-600 ${
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent dark:bg-slate-800 dark:text-white dark:border-slate-600 ${
                           errors.estimatedDuration ? 'border-rose-500 dark:border-rose-400 ring-1 ring-rose-500' : 'border-slate-300 dark:border-slate-600'
                         }`}
-                        placeholder="e.g., 2 weeks, 1 month, 3-4 days..."
+                        placeholder={t('durationPlaceholder', 'e.g., 2 weeks, 1 month, 3-4 days...')}
                       />
                       {errors.estimatedDuration && (
-                        <p className="text-rose-600 dark:text-rose-400 text-sm mt-1 font-medium">{errors.estimatedDuration}</p>
+                        <p className="text-rose-600 dark:text-rose-400 text-xs sm:text-sm mt-1 font-medium">{errors.estimatedDuration}</p>
                       )}
                     </div>
                   </div>
                 )}
 
+                {/* Step 3: Review & Attachments */}
                 {step === 3 && (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Application Summary */}
-                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
-                      <h4 className="font-semibold text-slate-900 dark:text-white mb-3">
-                        Application Summary
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-slate-900 dark:text-white mb-3 text-sm sm:text-base">
+                        {t('applicationSummary', 'Application Summary')}
                       </h4>
                       
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Application Mode</span>
+                      <div className="space-y-2 sm:space-y-3 text-sm">
+                        <div className="flex justify-between flex-wrap gap-2">
+                          <span className="text-slate-600 dark:text-slate-400">{t('applicationMode', 'Application Mode')}</span>
                           <Badge variant={applyMode === 'team' ? 'default' : 'outline'}>
                             {applyMode === 'team' ? (
                               <>
                                 <Users className="h-3 w-3 mr-1" />
-                                Team Application
+                                {t('team', 'Team')}
                               </>
                             ) : (
                               <>
                                 <User className="h-3 w-3 mr-1" />
-                                Individual Application
+                                {t('individual', 'Individual')}
                               </>
                             )}
                           </Badge>
                         </div>
                         
                         {applyMode === 'team' && selectedTeamDetails && (
-                          <div className="flex justify-between">
-                            <span className="text-sm text-slate-600 dark:text-slate-400">Selected Team</span>
+                          <div className="flex justify-between flex-wrap gap-2">
+                            <span className="text-slate-600 dark:text-slate-400">{t('selectedTeam', 'Selected Team')}</span>
                             <span className="font-medium text-slate-900 dark:text-white">
                               {selectedTeamDetails.name}
                             </span>
                           </div>
                         )}
                         
-                        <div className="flex justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Proposed Budget</span>
+                        <div className="flex justify-between flex-wrap gap-2">
+                          <span className="text-slate-600 dark:text-slate-400">{t('proposedBudget', 'Proposed Budget')}</span>
                           <span className="font-bold text-slate-900 dark:text-white">
                             {formData.proposedBudget} {projectData.budget.currency}
                           </span>
                         </div>
                         
-                        <div className="flex justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Estimated Duration</span>
+                        <div className="flex justify-between flex-wrap gap-2">
+                          <span className="text-slate-600 dark:text-slate-400">{t('estimatedDuration', 'Estimated Duration')}</span>
                           <span className="font-medium text-slate-900 dark:text-white">
                             {formData.estimatedDuration}
                           </span>
                         </div>
                         
-                        <div className="flex justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Attachments</span>
+                        <div className="flex justify-between flex-wrap gap-2">
+                          <span className="text-slate-600 dark:text-slate-400">{t('attachments', 'Attachments')}</span>
                           <span className="font-medium text-slate-900 dark:text-white">
                             {formData.attachments.length} file{formData.attachments.length !== 1 ? 's' : ''}
                           </span>
@@ -1153,13 +1347,13 @@ const handleSubmit = async () => {
                     {/* Attachments */}
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                        Attachments (Optional)
+                        {t('attachments', 'Attachments')} ({t('optional', 'Optional')})
                         <span className="text-slate-500 dark:text-slate-400 text-xs font-normal ml-2">
-                          Max 5 files, 10MB each
+                          {t('maxFiles', 'Max 5 files, 10MB each')}
                         </span>
                       </label>
                       
-                      <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-sky-400 dark:hover:border-sky-500 transition-colors">
+                      <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-4 sm:p-8 text-center hover:border-sky-400 dark:hover:border-sky-500 transition-colors">
                         <input
                           type="file"
                           id="file-upload"
@@ -1170,40 +1364,60 @@ const handleSubmit = async () => {
                           }}
                           className="hidden"
                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip"
+                          disabled={uploading}
                         />
                         <label htmlFor="file-upload" className="cursor-pointer">
-                          <Upload className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
-                          <p className="text-slate-600 dark:text-slate-400 font-medium">
-                            Click to upload files
+                          {uploading ? (
+                            <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-sky-600 animate-spin mx-auto mb-2 sm:mb-3" />
+                          ) : (
+                            <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-slate-400 dark:text-slate-500 mx-auto mb-2 sm:mb-3" />
+                          )}
+                          <p className="text-slate-600 dark:text-slate-400 font-medium text-sm sm:text-base">
+                            {uploading ? t('uploading', 'Uploading...') : t('clickToUpload', 'Click to upload files')}
                           </p>
-                          <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">
-                            Supports PDF, DOC, JPG, PNG, ZIP
+                          <p className="text-slate-500 dark:text-slate-500 text-xs mt-1">
+                            {t('supportedFormats', 'Supports PDF, DOC, JPG, PNG, ZIP')}
                           </p>
                         </label>
                       </div>
 
-                      {uploading && (
-                        <div className="mt-4 text-center">
-                          <Loader2 className="h-6 w-6 text-sky-600 animate-spin mx-auto mb-2" />
-                          <p className="text-slate-600 dark:text-slate-400">Uploading files...</p>
+                      {/* Upload Progress */}
+                      {Object.keys(uploadProgress).length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                            <div key={fileName} className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-sky-600 transition-all duration-300"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-slate-500">{progress}%</span>
+                            </div>
+                          ))}
                         </div>
                       )}
 
+                      {/* Attachment List */}
                       {formData.attachments.length > 0 && (
                         <div className="mt-4 space-y-2">
                           {formData.attachments.map((attachment, index) => (
                             <div
                               key={index}
-                              className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded-lg"
+                              className="flex items-center justify-between p-2 sm:p-3 bg-slate-50 dark:bg-slate-700 rounded-lg"
                             >
-                              <div className="flex items-center gap-3">
-                                <FileText className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                                <div>
-                                  <p className="font-medium text-sm text-slate-900 dark:text-white truncate max-w-xs">
+                              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                {attachment.type.startsWith('image/') ? (
+                                  <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-400 flex-shrink-0" />
+                                ) : (
+                                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-400 flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-xs sm:text-sm text-slate-900 dark:text-white truncate">
                                     {attachment.name}
                                   </p>
-                                  <p className="text-slate-500 dark:text-slate-400 text-xs">
-                                    {attachment.type}
+                                  <p className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs">
+                                    {attachment.type.split('/').pop()?.toUpperCase() || 'FILE'} • {(attachment.size / 1024).toFixed(1)} KB
                                   </p>
                                 </div>
                               </div>
@@ -1212,9 +1426,9 @@ const handleSubmit = async () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeAttachment(index)}
-                                className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600"
+                                className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-slate-500 hover:text-rose-600 flex-shrink-0"
                               >
-                                <X className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           ))}
@@ -1222,58 +1436,61 @@ const handleSubmit = async () => {
                       )}
 
                       {errors.attachments && (
-                        <p className="text-rose-600 dark:text-rose-400 text-sm mt-2 font-medium">{errors.attachments}</p>
+                        <p className="text-rose-600 dark:text-rose-400 text-xs sm:text-sm mt-2 font-medium">{errors.attachments}</p>
                       )}
                     </div>
 
                     {/* Final Validation */}
                     {errors.team && (
-                      <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                        <p className="text-amber-800 dark:text-amber-400 font-medium">{errors.team}</p>
+                      <div className="p-3 sm:p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <p className="text-amber-800 dark:text-amber-400 font-medium text-sm">{errors.team}</p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Navigation */}
-                <div className="flex justify-between items-center pt-8 border-t border-slate-200 dark:border-slate-700 mt-8">
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    Step {step} of 3
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center pt-6 sm:pt-8 border-t border-slate-200 dark:border-slate-700 mt-6 sm:mt-8">
+                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {t('step', 'Step')} {step} {t('of', 'of')} 3
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 sm:gap-3">
                     {step > 1 && (
                       <Button
                         onClick={handleBack}
                         disabled={isProcessing}
                         variant="outline"
-                        className="min-w-[100px]"
+                        size={isMobile ? "sm" : "default"}
+                        className="min-w-[80px] sm:min-w-[100px]"
                       >
-                        Back
+                        {t('back', 'Back')}
                       </Button>
                     )}
                     {step < 3 ? (
                       <Button
                         onClick={handleNext}
                         disabled={isProcessing}
-                        className="min-w-[100px] bg-sky-600 hover:bg-sky-700"
+                        size={isMobile ? "sm" : "default"}
+                        className="min-w-[80px] sm:min-w-[100px] bg-sky-600 hover:bg-sky-700"
                       >
-                        Next
+                        {t('next', 'Next')}
                       </Button>
                     ) : (
                       <Button
                         onClick={handleSubmit}
                         disabled={isProcessing}
-                        className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700"
+                        size={isMobile ? "sm" : "default"}
+                        className="min-w-[120px] sm:min-w-[150px] bg-emerald-600 hover:bg-emerald-700"
                       >
                         {isProcessing ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Submitting...
+                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                            {t('submitting', 'Submitting...')}
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Submit Application
+                            <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            {t('submit', 'Submit')}
                           </>
                         )}
                       </Button>
@@ -1284,66 +1501,66 @@ const handleSubmit = async () => {
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Sidebar - Responsive */}
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             {/* Project Details */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                Project Details
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4">
+                {t('projectDetails', 'Project Details')}
               </h3>
 
               {/* Client Info */}
               {projectData.client && (
-                <div className="mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
-                  <h4 className="font-medium text-slate-900 dark:text-white mb-3">Client</h4>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-slate-200 dark:border-slate-700">
+                  <h4 className="font-medium text-slate-900 dark:text-white mb-2 sm:mb-3 text-sm sm:text-base">{t('client', 'Client')}</h4>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-sky-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm sm:text-base">
                       {projectData.client.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900 dark:text-white">{projectData.client.name}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{projectData.client.title || 'Client'}</p>
+                      <p className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base">{projectData.client.name}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{projectData.client.title || t('client', 'Client')}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Star className="w-4 h-4 text-amber-400 fill-current" />
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400 fill-current" />
                     <span className="font-medium text-slate-900 dark:text-white">
                       {(projectData.client.rating || 0).toFixed(1)}
                     </span>
                     <span className="text-slate-400 dark:text-slate-500">•</span>
                     <span className="text-slate-600 dark:text-slate-400">
-                      {projectData.client.completedProjects || 0} projects
+                      {projectData.client.completedProjects || 0} {t('projects', 'projects')}
                     </span>
                   </div>
                 </div>
               )}
 
               {/* Project Stats */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Budget Range</span>
+              <div className="space-y-2 sm:space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">{t('budgetRange', 'Budget Range')}</span>
                   <span className="font-medium text-slate-900 dark:text-white">
                     {projectData.budget.min} - {projectData.budget.max} {projectData.budget.currency}
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Deadline</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">{t('deadline', 'Deadline')}</span>
                   <span className="font-medium text-slate-900 dark:text-white">
                     {formatDate(projectData.deadline)}
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Applications</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">{t('applications', 'Applications')}</span>
                   <span className="font-medium text-slate-900 dark:text-white">
                     {projectData.applicationCount}
                   </span>
                 </div>
                 
                 {projectData.location && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Location</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-400">{t('location', 'Location')}</span>
                     <span className="font-medium text-slate-900 dark:text-white">
                       {projectData.location}
                     </span>
@@ -1352,11 +1569,11 @@ const handleSubmit = async () => {
               </div>
 
               {/* Required Skills */}
-              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <h4 className="font-medium text-slate-900 dark:text-white mb-3">Required Skills</h4>
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
+                <h4 className="font-medium text-slate-900 dark:text-white mb-2 sm:mb-3 text-sm sm:text-base">{t('requiredSkills', 'Required Skills')}</h4>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {projectData.skills?.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
+                    <Badge key={index} variant="secondary" className="text-[10px] sm:text-xs">
                       {skill}
                     </Badge>
                   ))}
@@ -1365,54 +1582,55 @@ const handleSubmit = async () => {
             </div>
 
             {/* Tips Card */}
-            <div className="bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-900/20 dark:to-purple-900/20 border border-sky-200 dark:border-sky-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-sky-600 dark:text-sky-400" />
-                Pro Tips
+            <div className="bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-900/20 dark:to-purple-900/20 border border-sky-200 dark:border-sky-800 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-sky-600 dark:text-sky-400" />
+                {t('proTips', 'Pro Tips')}
               </h3>
               
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <h4 className="font-medium text-slate-900 dark:text-white mb-2">
-                    For {applyMode === 'team' ? 'Team' : 'Individual'} Applications:
+                  <h4 className="font-medium text-slate-900 dark:text-white mb-2 text-sm sm:text-base">
+                    {t('for', 'For')} {applyMode === 'team' ? t('team', 'Team') : t('individual', 'Individual')} {t('applications', 'Applications')}:
                   </h4>
-                  <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                  <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
                     <li className="flex items-start gap-2">
                       <Target className="h-3 w-3 text-sky-500 mt-0.5 flex-shrink-0" />
-                      <span>Address specific project requirements in your cover letter</span>
+                      <span>{t('tip1', 'Address specific project requirements')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Target className="h-3 w-3 text-sky-500 mt-0.5 flex-shrink-0" />
-                      <span>Provide relevant examples of similar work</span>
+                      <span>{t('tip2', 'Provide relevant examples of similar work')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Target className="h-3 w-3 text-sky-500 mt-0.5 flex-shrink-0" />
-                      <span>Be transparent about your availability and timeline</span>
+                      <span>{t('tip3', 'Be transparent about availability')}</span>
                     </li>
                     {applyMode === 'team' && (
                       <li className="flex items-start gap-2">
                         <Users className="h-3 w-3 text-purple-500 mt-0.5 flex-shrink-0" />
-                        <span>Highlight team collaboration and workflow</span>
+                        <span>{t('tip4', 'Highlight team collaboration')}</span>
                       </li>
                     )}
                   </ul>
                 </div>
                 
-                <Separator />
+                <Separator className="my-2 sm:my-3" />
                 
                 <div>
-                  <h4 className="font-medium text-slate-900 dark:text-white mb-2">Budget Advice</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Propose a competitive but realistic budget that reflects the project's complexity and your expertise.
+                  <h4 className="font-medium text-slate-900 dark:text-white mb-2 text-sm sm:text-base">{t('budgetAdvice', 'Budget Advice')}</h4>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {t('budgetTip', 'Propose a competitive but realistic budget that reflects the project\'s complexity and your expertise.')}
                   </p>
                 </div>
                 
                 <Button
                   onClick={() => setShowAiAssistant(true)}
-                  className="w-full bg-gradient-to-r from-sky-600 to-purple-600 text-white hover:opacity-90"
+                  className="w-full bg-gradient-to-r from-sky-600 to-purple-600 text-white hover:opacity-90 text-sm"
+                  size={isMobile ? "sm" : "default"}
                 >
-                  <Brain className="h-4 w-4 mr-2" />
-                  Open AI Assistant
+                  <Brain className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                  {t('openAI', 'Open AI Assistant')}
                 </Button>
               </div>
             </div>
@@ -1435,10 +1653,11 @@ const handleSubmit = async () => {
               estimatedDuration: suggestion.estimatedDuration || prev.estimatedDuration
             }))
             toast({
-              title: 'AI Suggestion Applied',
-              description: 'Proposal updated with AI suggestions',
+              title: t('aiApplied', 'AI Suggestion Applied'),
+              description: t('proposalUpdated', 'Proposal updated with AI suggestions'),
             })
           }}
+          lang={lang}
         />
       )}
     </div>
