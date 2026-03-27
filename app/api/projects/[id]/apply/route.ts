@@ -165,35 +165,61 @@ export async function POST(
     let data: any
     let attachments: ProcessedAttachment[] = []
 
-    // Handle multipart/form-data (file upload)
+    // Handle multipart/form-data
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData()
       
-      // Extract form fields
-      data = {
-        coverLetter: formData.get("coverLetter") as string,
-        proposedBudget: parseFloat(formData.get("proposedBudget") as string),
-        estimatedDuration: formData.get("estimatedDuration") as string,
-        applyMode: formData.get("applyMode") as "individual" | "team" || "individual",
-        teamId: formData.get("teamId") as string || undefined,
-        attachments: []
-      }
-
-      // Handle file uploads
-      const files = formData.getAll("attachments") as File[]
-      if (files && files.length > 0) {
-        for (const file of files) {
-          if (file.size > 0 && file.size <= 10 * 1024 * 1024) {
-            const uploaded = await uploadFileToCloudinary(file, 'applications')
-            if (uploaded) {
-              attachments.push(uploaded)
-            }
-          }
+      // Check if this is a file-only upload (action=upload)
+      const action = formData.get("action") as string
+      
+      if (action === "upload") {
+        // Handle file upload only
+        const file = formData.get("file") as File
+        const folder = formData.get("folder") as string || "applications"
+        
+        if (!file) {
+          return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
         }
-        data.attachments = attachments
+        
+        const uploaded = await uploadFileToCloudinary(file, folder)
+        
+        if (!uploaded) {
+          return NextResponse.json({ error: "Upload failed" }, { status: 500 })
+        }
+        
+        return NextResponse.json(uploaded)
+      }
+      
+      // Handle full application submission
+      // Extract form fields - handle null/undefined values
+      const coverLetter = formData.get("coverLetter") as string
+      const proposedBudgetStr = formData.get("proposedBudget") as string
+      const estimatedDuration = formData.get("estimatedDuration") as string
+      const applyMode = formData.get("applyMode") as "individual" | "team" || "individual"
+      const teamId = formData.get("teamId") as string || undefined
+      const attachmentsJson = formData.get("attachments") as string
+      
+      // Parse attachments if provided as JSON string
+      if (attachmentsJson) {
+        try {
+          const parsedAttachments = JSON.parse(attachmentsJson)
+          attachments = parsedAttachments
+        } catch (e) {
+          console.error("Failed to parse attachments JSON:", e)
+        }
+      }
+      
+      // Build data object with proper types
+      data = {
+        coverLetter: coverLetter || "",
+        proposedBudget: proposedBudgetStr ? parseFloat(proposedBudgetStr) : 0,
+        estimatedDuration: estimatedDuration || "",
+        applyMode: applyMode,
+        teamId: teamId,
+        attachments: attachments
       }
     } 
-    // Handle JSON (no files or base64)
+    // Handle JSON
     else {
       data = await request.json()
       
@@ -203,7 +229,6 @@ export async function POST(
         
         for (const attachment of data.attachments) {
           if (attachment.base64Data) {
-            // Upload base64 to Cloudinary
             const isPdf = attachment.type === 'application/pdf'
             const isImage = attachment.type.startsWith('image/')
             
@@ -231,10 +256,7 @@ export async function POST(
               tags: ['application', 'attachment'],
             }
 
-            if (isPdf) {
-              uploadOptions.flags = 'attachment'
-            }
-
+            if (isPdf) uploadOptions.flags = 'attachment'
             if (isImage) {
               uploadOptions.transformation = [
                 { width: 1200, crop: 'limit', quality: 'auto' }
