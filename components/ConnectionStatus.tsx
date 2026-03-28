@@ -14,13 +14,6 @@ export const ConnectionStatus = ({
 }: ConnectionStatusProps) => {
   const getStatusConfig = () => {
     switch (connectionStatus) {
-     case 'disconnected':
-            return {
-          bg: 'bg-gradient-to-r from-red-500 to-rose-500',
-          icon: <WifiOff className="h-4 w-4" />,
-          text: 'Déconnecté',
-          pulse: false
-        }
       // case 'connected':
       //   return {
       //     bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
@@ -43,14 +36,21 @@ export const ConnectionStatus = ({
           pulse: true
         }
       default:
-  
+        return {
+          bg: 'bg-gradient-to-r from-red-500 to-rose-500',
+          icon: <WifiOff className="h-4 w-4" />,
+          text: 'Déconnecté',
+          pulse: false
+        }
     }
   }
 
   const status = getStatusConfig()
 
   return (
-    <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-sm text-white shadow-lg backdrop-blur-sm transition-all duration-300 ${status.bg} ${status.pulse ? 'animate-pulse' : ''}`}>
+    <div>
+      { ['connected'].includes(connectionStatus) && (
+         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-sm text-white shadow-lg backdrop-blur-sm transition-all duration-300 ${status.bg} ${status.pulse ? 'animate-pulse' : ''}`}>
       {status.icon}
       <span className="font-medium">{status.text}</span>
       
@@ -64,6 +64,9 @@ export const ConnectionStatus = ({
           <RefreshCw className="h-3 w-3" />
         </Button>
       )}
+    </div>
+      ) }
+   
     </div>
   )
 }
