@@ -14,13 +14,13 @@ export const ConnectionStatus = ({
 }: ConnectionStatusProps) => {
   const getStatusConfig = () => {
     switch (connectionStatus) {
-      case 'connected':
-        return {
-          bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
-          icon: <Wifi className="h-4 w-4" />,
-          text: 'Connecté',
-          pulse: true
-        }
+      // case 'connected':
+      //   return {
+      //     bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
+      //     icon: <Wifi className="h-4 w-4" />,
+      //     text: 'Connecté',
+      //     pulse: true
+      //   }
       case 'connecting':
         return {
           bg: 'bg-gradient-to-r from-blue-500 to-cyan-500',
