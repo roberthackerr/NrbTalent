@@ -148,7 +148,8 @@ export const ChatHeader = ({
               <div className="flex items-center gap-2 flex-wrap mt-0.5">
                 <div className="flex items-center gap-1">
                   {isConnected ? (
-                    <Wifi className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-500" />
+                    <></>
+                    //<Wifi className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-500" />
                   ) : (
                     <WifiOff className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-500" />
                   )}
@@ -156,7 +157,7 @@ export const ChatHeader = ({
                     "text-[10px] sm:text-xs",
                     isConnected ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                   )}>
-                    {isConnected ? "Connecté" : "Hors ligne"}
+                    {isConnected ? "" : "Hors ligne"}
                   </span>
                 </div>
 
