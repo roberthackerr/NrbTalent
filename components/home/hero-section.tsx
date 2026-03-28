@@ -96,26 +96,7 @@ export function HeroSection({
           
           <AIMatchingButtonHero dict={dict} lang={lang} />
           
-          {/* Stats rapides */}
-          <div className="flex flex-wrap justify-center gap-8 mb-8">
-            <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">{stats.projectsValue || "50K+"}</div>
-              <div className="text-blue-200 text-sm">{stats.projects || "Projets réalisés"}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">{stats.freelancersValue || "15K+"}</div>
-              <div className="text-blue-200 text-sm">{stats.freelancers || "Freelances experts"}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">{stats.satisfactionValue || "98%"}</div>
-              <div className="text-blue-200 text-sm">{stats.satisfaction || "Taux de satisfaction"}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl lg:text-3xl font-bold text-white">{stats.responseTimeValue || "24h"}</div>
-              <div className="text-blue-200 text-sm">{stats.responseTime || "Temps moyen de réponse"}</div>
-            </div>
-          </div>
-
+         
           {/* Actions principales */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             {!user ? (
@@ -124,9 +105,9 @@ export function HeroSection({
                   <Rocket className="h-5 w-5 mr-2" />
                   {actions.startFree || "Commencer gratuitement"}
                 </a>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold">
+                <a href="/project"  variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold">
                   {actions.viewProjects || "Voir les projets"}
-                </Button>
+                </a>
               </>
             ) : user.role === "freelance" ? (
               <>
