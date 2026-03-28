@@ -307,7 +307,7 @@ export function MeetButtonFloating({ dict, lang }: { dict?: any; lang?: string }
   }
 
   return (
-    <div className="fixed bottom-10 right-6 z-50">
+    <div className="fixed bottom-50 right-6 z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="group relative w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300"
