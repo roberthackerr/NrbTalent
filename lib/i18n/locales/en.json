@@ -1,4 +1,62 @@
 {
+  
+  "calendarPopup": {
+    "title": "Your Smart Calendar",
+    "subtitle": "Discover your new time management tool",
+    "new": "New",
+    "later": "Later",
+    "discover": "Discover",
+    "next": "Next",
+    "free": "Free",
+    "sync": "Sync",
+    "reminders": "Reminders",
+    "mobile": "Mobile",
+    "feature1": {
+      "title": "Time Management",
+      "description": "Schedule your appointments and deadlines efficiently"
+    },
+    "feature2": {
+      "title": "Client Meetings",
+      "description": "Organize your calls and meetings with one click"
+    },
+    "feature3": {
+      "title": "Integrations",
+      "description": "Connect with Google Meet, Zoom and other tools"
+    },
+    "feature4": {
+      "title": "Project Tracking",
+      "description": "Track the progress of your projects"
+    }
+  },
+  "idePopup": {
+    "title": "Online IDE",
+    "subtitle": "Your development environment in the browser",
+    "new": "NEW",
+    "later": "Later",
+    "tryNow": "Try now",
+    "next": "Next",
+    "free": "Free",
+    "instant": "Instant",
+    "collaborative": "Collaborative",
+    "secure": "Secure",
+    "develop": "Develop without limits",
+    "feature1": {
+      "title": "VS Code Editor",
+      "description": "Full code editor with syntax highlighting and autocompletion"
+    },
+    "feature2": {
+      "title": "Integrated Terminal",
+      "description": "Run your commands directly in the browser"
+    },
+    "feature3": {
+      "title": "Complete Environment",
+      "description": "Node.js, React, Python - All languages supported"
+    },
+    "feature4": {
+      "title": "Cloud Native",
+      "description": "Automatic cloud backup, accessible from anywhere"
+    }
+  },
     "footers": {
     "tagline": "Where true talent meets innovation.",
     "platform": "Platform",

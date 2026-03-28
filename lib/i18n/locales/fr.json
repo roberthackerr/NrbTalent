@@ -1,4 +1,61 @@
 {
+  "calendarPopup": {
+    "title": "Votre Calendrier Intelligent",
+    "subtitle": "Découvrez votre nouvel outil de gestion du temps",
+    "new": "Nouveau",
+    "later": "Plus tard",
+    "discover": "Découvrir",
+    "next": "Suivant",
+    "free": "Gratuit",
+    "sync": "Synchro",
+    "reminders": "Rappels",
+    "mobile": "Mobile",
+    "feature1": {
+      "title": "Gestion du temps",
+      "description": "Planifiez vos rendez-vous et deadlines efficacement"
+    },
+    "feature2": {
+      "title": "Réunions clients",
+      "description": "Organisez vos appels et réunions en un clic"
+    },
+    "feature3": {
+      "title": "Intégrations",
+      "description": "Lien avec Google Meet, Zoom et autres outils"
+    },
+    "feature4": {
+      "title": "Suivi des projets",
+      "description": "Suivez l'avancement de vos missions"
+    }
+  },
+  "idePopup": {
+    "title": "IDE en Ligne",
+    "subtitle": "Votre environnement de développement dans le navigateur",
+    "new": "NOUVEAU",
+    "later": "Plus tard",
+    "tryNow": "Essayer maintenant",
+    "next": "Suivant",
+    "free": "Gratuit",
+    "instant": "Instantané",
+    "collaborative": "Collaboratif",
+    "secure": "Sécurisé",
+    "develop": "Développez sans limites",
+    "feature1": {
+      "title": "Éditeur VS Code",
+      "description": "Éditeur de code complet avec coloration syntaxique et autocomplétion"
+    },
+    "feature2": {
+      "title": "Terminal intégré",
+      "description": "Exécutez vos commandes directement dans le navigateur"
+    },
+    "feature3": {
+      "title": "Environnement complet",
+      "description": "Node.js, React, Python - Tous les langages supportés"
+    },
+    "feature4": {
+      "title": "Cloud natif",
+      "description": "Sauvegarde automatique dans le cloud, accessible de partout"
+    }
+  },
     "footers": {
     "tagline": "Là où le vrai talent rencontre l'innovation.",
     "platform": "Plateforme",

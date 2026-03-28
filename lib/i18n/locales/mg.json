@@ -1,4 +1,61 @@
 {
+   "calendarPopup": {
+    "title": "Ny Kalandrierao Manan-tsaina",
+    "subtitle": "Fantaro ny fitaovana fitantanam-potoana vaovao",
+    "new": "Vaovao",
+    "later": "Taty aoriana",
+    "discover": "Hamarina",
+    "next": "Manaraka",
+    "free": "Maimaim-poana",
+    "sync": "Synchronisation",
+    "reminders": "Fampahatsiahivana",
+    "mobile": "Mobile",
+    "feature1": {
+      "title": "Fitantanam-potoana",
+      "description": "Drafito ny fotoam-pivoriana sy ny fe-potoana farany amin'ny fomba mahomby"
+    },
+    "feature2": {
+      "title": "Fivoriana amin'ny mpanjifa",
+      "description": "Drafito ny antso sy ny fivoriana amin'ny tsindry tokana"
+    },
+    "feature3": {
+      "title": "Fampidirana",
+      "description": "Mampifandraisa amin'ny Google Meet, Zoom ary fitaovana hafa"
+    },
+    "feature4": {
+      "title": "Fanarahamaso tetikasa",
+      "description": "Araho ny fivoaran'ny tetikasanao"
+    }
+  },
+  "idePopup": {
+    "title": "IDE An-tserasera",
+    "subtitle": "Ny tontolo fampandrosoanao ao amin'ny navigateur",
+    "new": "VAOVAO",
+    "later": "Taty aoriana",
+    "tryNow": "Andramo izao",
+    "next": "Manaraka",
+    "free": "Maimaim-poana",
+    "instant": "Eo no ho eo",
+    "collaborative": "Fiaraha-miasa",
+    "secure": "Azo antoka",
+    "develop": "Mamorona tsy misy fetra",
+    "feature1": {
+      "title": "Editeur VS Code",
+      "description": "Editeur code feno miaraka amin'ny famantarana ny loko sy famenoana mandeha ho azy"
+    },
+    "feature2": {
+      "title": "Terminal tafiditra",
+      "description": "Alefaso ny baiko ao amin'ny navigateur mivantana"
+    },
+    "feature3": {
+      "title": "Tontolo feno",
+      "description": "Node.js, React, Python - Tohana ny fiteny rehetra"
+    },
+    "feature4": {
+      "title": "Cloud voajanahary",
+      "description": "Fitehirizana mandeha ho azy any amin'ny rahona, azo idirana na aiza na aiza"
+    }
+  },
    "footers": {
     "tagline": "Aiza no ifanaton'ny talenta tena izy sy ny fanavaozana.",
     "platform": "Sehatra",
