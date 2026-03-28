@@ -1,5 +1,5 @@
 {
-   "testimonials": {
+   "testimonialss": {
     "title": "Ils nous font confiance",
     "subtitle": "Découvrez les retours d'expérience de nos clients et freelances",
     "project": "Projet réalisé",
@@ -46,7 +46,7 @@
       "project": "Système de recommandation IA"
     }
   },
-  "quickActions": {
+  "quickActionss": {
     "title": "Actions Rapides",
     "subtitle": "Tout ce dont vous avez besoin en un clic",
     "start": "Commencer",

@@ -1,5 +1,5 @@
 {
- "testimonials": {
+ "testimonialss": {
     "title": "They trust us",
     "subtitle": "Discover the experiences of our clients and freelancers",
     "project": "Project completed",
@@ -46,7 +46,7 @@
       "project": "AI recommendation system"
     }
   },
-  "quickActions": {
+  "quickActionss": {
     "title": "Quick Actions",
     "subtitle": "Everything you need in one click",
     "start": "Get started",

@@ -16,29 +16,29 @@ interface QuickActionsProps {
 export function QuickActions({ user, dict, lang = "fr" }: QuickActionsProps) {
   // Translations
   const t = {
-    title: dict?.quickActions?.title || (user ? "Actions Rapides" : "Commencez dès maintenant"),
-    subtitle: dict?.quickActions?.subtitle || (user 
+    title: dict?.quickActionss?.title || (user ? "Actions Rapides" : "Commencez dès maintenant"),
+    subtitle: dict?.quickActionss?.subtitle || (user 
       ? "Tout ce dont vous avez besoin en un clic" 
       : "Rejoignez des milliers de professionnels"),
-    start: dict?.quickActions?.start || "Commencer",
-    freelanceTitle: dict?.quickActions?.freelanceTitle || "Publier un service",
-    freelanceDesc: dict?.quickActions?.freelanceDesc || "Créez votre gig et commencez à recevoir des demandes",
-    recommendedTitle: dict?.quickActions?.recommendedTitle || "Projets recommandés",
-    recommendedDesc: dict?.quickActions?.recommendedDesc || "Découvrez les projets qui matchent avec vos compétences",
-    optimizeTitle: dict?.quickActions?.optimizeTitle || "Optimiser mon profil",
-    optimizeDesc: dict?.quickActions?.optimizeDesc || "Améliorez votre visibilité avec notre IA",
-    clientTitle: dict?.quickActions?.clientTitle || "Publier un projet",
-    clientDesc: dict?.quickActions?.clientDesc || "Trouvez le talent parfait pour votre projet",
-    searchTitle: dict?.quickActions?.searchTitle || "Rechercher des talents",
-    searchDesc: dict?.quickActions?.searchDesc || "Parcourez notre base de freelances experts",
-    analyticsTitle: dict?.quickActions?.analyticsTitle || "Analytics",
-    analyticsDesc: dict?.quickActions?.analyticsDesc || "Suivez vos projets et performances",
-    freelanceSignupTitle: dict?.quickActions?.freelanceSignupTitle || "Commencer en tant que freelance",
-    freelanceSignupDesc: dict?.quickActions?.freelanceSignupDesc || "Créez votre profil et trouvez vos premiers projets",
-    clientSignupTitle: dict?.quickActions?.clientSignupTitle || "Recruter des talents",
-    clientSignupDesc: dict?.quickActions?.clientSignupDesc || "Trouvez les experts pour votre entreprise",
-    exploreTitle: dict?.quickActions?.exploreTitle || "Explorer la plateforme",
-    exploreDesc: dict?.quickActions?.exploreDesc || "Découvrez comment ça marche"
+    start: dict?.quickActionss?.start || "Commencer",
+    freelanceTitle: dict?.quickActionss?.freelanceTitle || "Publier un service",
+    freelanceDesc: dict?.quickActionss?.freelanceDesc || "Créez votre gig et commencez à recevoir des demandes",
+    recommendedTitle: dict?.quickActionss?.recommendedTitle || "Projets recommandés",
+    recommendedDesc: dict?.quickActionss?.recommendedDesc || "Découvrez les projets qui matchent avec vos compétences",
+    optimizeTitle: dict?.quickActionss?.optimizeTitle || "Optimiser mon profil",
+    optimizeDesc: dict?.quickActionss?.optimizeDesc || "Améliorez votre visibilité avec notre IA",
+    clientTitle: dict?.quickActionss?.clientTitle || "Publier un projet",
+    clientDesc: dict?.quickActionss?.clientDesc || "Trouvez le talent parfait pour votre projet",
+    searchTitle: dict?.quickActionss?.searchTitle || "Rechercher des talents",
+    searchDesc: dict?.quickActionss?.searchDesc || "Parcourez notre base de freelances experts",
+    analyticsTitle: dict?.quickActionss?.analyticsTitle || "Analytics",
+    analyticsDesc: dict?.quickActionss?.analyticsDesc || "Suivez vos projets et performances",
+    freelanceSignupTitle: dict?.quickActionss?.freelanceSignupTitle || "Commencer en tant que freelance",
+    freelanceSignupDesc: dict?.quickActionss?.freelanceSignupDesc || "Créez votre profil et trouvez vos premiers projets",
+    clientSignupTitle: dict?.quickActionss?.clientSignupTitle || "Recruter des talents",
+    clientSignupDesc: dict?.quickActionss?.clientSignupDesc || "Trouvez les experts pour votre entreprise",
+    exploreTitle: dict?.quickActionss?.exploreTitle || "Explorer la plateforme",
+    exploreDesc: dict?.quickActionss?.exploreDesc || "Découvrez comment ça marche"
   }
 
   const freelanceActions = [

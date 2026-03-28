@@ -16,72 +16,72 @@ interface TestimonialsProps {
 export function Testimonials({ dict, lang = "fr" }: TestimonialsProps) {
   // Translations
   const t = {
-    title: dict?.testimonials?.title || "Ils nous font confiance",
-    subtitle: dict?.testimonials?.subtitle || "Découvrez les retours d'expérience de nos clients et freelances",
-    project: dict?.testimonials?.project || "Projet réalisé",
-    role: dict?.testimonials?.role || "Rôle"
+    title: dict?.testimonialss?.title || "Ils nous font confiance",
+    subtitle: dict?.testimonialss?.subtitle || "Découvrez les retours d'expérience de nos clients et freelances",
+    project: dict?.testimonialss?.project || "Projet réalisé",
+    role: dict?.testimonialss?.role || "Rôle"
   }
 
   const testimonials = [
     {
       id: 1,
-      name: dict?.testimonials?.testimonial1?.name || "Sarah Chen",
-      role: dict?.testimonials?.testimonial1?.role || "CEO chez TechInnovate",
-      company: dict?.testimonials?.testimonial1?.company || "Startup SaaS",
+      name: dict?.testimonialss?.testimonial1?.name || "Sarah Chen",
+      role: dict?.testimonialss?.testimonial1?.role || "CEO chez TechInnovate",
+      company: dict?.testimonialss?.testimonial1?.company || "Startup SaaS",
       avatar: "/avatars/sarah-chen.jpg",
-      content: dict?.testimonials?.testimonial1?.content || "Grâce à cette plateforme, nous avons trouvé les meilleurs développeurs React pour notre produit. Le matching IA a réduit notre temps de recrutement de 70% !",
+      content: dict?.testimonialss?.testimonial1?.content || "Grâce à cette plateforme, nous avons trouvé les meilleurs développeurs React pour notre produit. Le matching IA a réduit notre temps de recrutement de 70% !",
       rating: 5,
-      project: dict?.testimonials?.testimonial1?.project || "Application de gestion d'équipe"
+      project: dict?.testimonialss?.testimonial1?.project || "Application de gestion d'équipe"
     },
     {
       id: 2,
-      name: dict?.testimonials?.testimonial2?.name || "Marc Dubois",
-      role: dict?.testimonials?.testimonial2?.role || "Freelance Full-Stack",
-      company: dict?.testimonials?.testimonial2?.company || "Indépendant",
+      name: dict?.testimonialss?.testimonial2?.name || "Marc Dubois",
+      role: dict?.testimonialss?.testimonial2?.role || "Freelance Full-Stack",
+      company: dict?.testimonialss?.testimonial2?.company || "Indépendant",
       avatar: "/avatars/marc-dubois.jpg",
-      content: dict?.testimonials?.testimonial2?.content || "J'ai multiplié mes revenus par 3 en 6 mois. Les recommandations de projets correspondent parfaitement à mes compétences et mes ambitions.",
+      content: dict?.testimonialss?.testimonial2?.content || "J'ai multiplié mes revenus par 3 en 6 mois. Les recommandations de projets correspondent parfaitement à mes compétences et mes ambitions.",
       rating: 5,
-      project: dict?.testimonials?.testimonial2?.project || "Plus de 15 projets réalisés"
+      project: dict?.testimonialss?.testimonial2?.project || "Plus de 15 projets réalisés"
     },
     {
       id: 3,
-      name: dict?.testimonials?.testimonial3?.name || "Émilie Laurent",
-      role: dict?.testimonials?.testimonial3?.role || "Directrice Marketing",
-      company: dict?.testimonials?.testimonial3?.company || "EcomStore",
+      name: dict?.testimonialss?.testimonial3?.name || "Émilie Laurent",
+      role: dict?.testimonialss?.testimonial3?.role || "Directrice Marketing",
+      company: dict?.testimonialss?.testimonial3?.company || "EcomStore",
       avatar: "/avatars/emilie-laurent.jpg",
-      content: dict?.testimonials?.testimonial3?.content || "La qualité des freelances est exceptionnelle. Nous avons externalisé tout notre design UI/UX et les résultats ont dépassé nos attentes.",
+      content: dict?.testimonialss?.testimonial3?.content || "La qualité des freelances est exceptionnelle. Nous avons externalisé tout notre design UI/UX et les résultats ont dépassé nos attentes.",
       rating: 4,
-      project: dict?.testimonials?.testimonial3?.project || "Refonte complète de site e-commerce"
+      project: dict?.testimonialss?.testimonial3?.project || "Refonte complète de site e-commerce"
     },
     {
       id: 4,
-      name: dict?.testimonials?.testimonial4?.name || "Thomas Martin",
-      role: dict?.testimonials?.testimonial4?.role || "Développeur DevOps",
-      company: dict?.testimonials?.testimonial4?.company || "Freelance",
+      name: dict?.testimonialss?.testimonial4?.name || "Thomas Martin",
+      role: dict?.testimonialss?.testimonial4?.role || "Développeur DevOps",
+      company: dict?.testimonialss?.testimonial4?.company || "Freelance",
       avatar: "/avatars/thomas-martin.jpg",
-      content: dict?.testimonials?.testimonial4?.content || "Le système de matching intelligent m'a permis de trouver des projets qui correspondent exactement à mon expertise en cloud et infrastructure.",
+      content: dict?.testimonialss?.testimonial4?.content || "Le système de matching intelligent m'a permis de trouver des projets qui correspondent exactement à mon expertise en cloud et infrastructure.",
       rating: 5,
-      project: dict?.testimonials?.testimonial4?.project || "Migration vers AWS"
+      project: dict?.testimonialss?.testimonial4?.project || "Migration vers AWS"
     },
     {
       id: 5,
-      name: dict?.testimonials?.testimonial5?.name || "Lisa Rodriguez",
-      role: dict?.testimonials?.testimonial5?.role || "Product Manager",
-      company: dict?.testimonials?.testimonial5?.company || "FinTech Solutions",
+      name: dict?.testimonialss?.testimonial5?.name || "Lisa Rodriguez",
+      role: dict?.testimonialss?.testimonial5?.role || "Product Manager",
+      company: dict?.testimonialss?.testimonial5?.company || "FinTech Solutions",
       avatar: "/avatars/lisa-rodriguez.jpg",
-      content: dict?.testimonials?.testimonial5?.content || "Nous avons constitué une équipe complète de développeurs en 2 semaines seulement. L'IA a parfaitement compris nos besoins techniques et culturels.",
+      content: dict?.testimonialss?.testimonial5?.content || "Nous avons constitué une équipe complète de développeurs en 2 semaines seulement. L'IA a parfaitement compris nos besoins techniques et culturels.",
       rating: 5,
-      project: dict?.testimonials?.testimonial5?.project || "Application mobile financière"
+      project: dict?.testimonialss?.testimonial5?.project || "Application mobile financière"
     },
     {
       id: 6,
-      name: dict?.testimonials?.testimonial6?.name || "Alexandre Petit",
-      role: dict?.testimonials?.testimonial6?.role || "Data Scientist",
-      company: dict?.testimonials?.testimonial6?.company || "Freelance",
+      name: dict?.testimonialss?.testimonial6?.name || "Alexandre Petit",
+      role: dict?.testimonialss?.testimonial6?.role || "Data Scientist",
+      company: dict?.testimonialss?.testimonial6?.company || "Freelance",
       avatar: "/avatars/alexandre-petit.jpg",
-      content: dict?.testimonials?.testimonial6?.content || "Les projets en IA et Machine Learning sont nombreux et bien rémunérés. J'ai trouvé ma spécialisation grâce aux tendances identifiées par la plateforme.",
+      content: dict?.testimonialss?.testimonial6?.content || "Les projets en IA et Machine Learning sont nombreux et bien rémunérés. J'ai trouvé ma spécialisation grâce aux tendances identifiées par la plateforme.",
       rating: 4,
-      project: dict?.testimonials?.testimonial6?.project || "Système de recommandation IA"
+      project: dict?.testimonialss?.testimonial6?.project || "Système de recommandation IA"
     }
   ]
 
