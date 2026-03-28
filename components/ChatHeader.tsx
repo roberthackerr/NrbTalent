@@ -1,10 +1,11 @@
-// components/ChatHeader.tsx - VERSION RESPONSIVE ET ÉPURÉE
+// components/ChatHeader.tsx - AVEC NAVIGATION VERS LE PROFIL
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Video, Phone, MoreVertical, Wifi, WifiOff, Settings, X, ArrowLeft } from "lucide-react"
+import { RefreshCw, Video, Phone, MoreVertical, Wifi, WifiOff, Settings, X, ArrowLeft, User } from "lucide-react"
 import { Conversation } from "@/types/chat"
 import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 interface ChatHeaderProps {
   conversation: Conversation
@@ -17,8 +18,8 @@ interface ChatHeaderProps {
   onEndCall?: () => void
   callStatus?: "idle" | "connecting" | "connected"
   callRemoteCount?: number
-  onBack?: () => void // 🔥 Pour mobile - retour à la sidebar
-  showBackButton?: boolean // 🔥 Afficher le bouton retour sur mobile
+  onBack?: () => void
+  showBackButton?: boolean
 }
 
 export const ChatHeader = ({
@@ -35,6 +36,7 @@ export const ChatHeader = ({
   onBack,
   showBackButton = false
 }: ChatHeaderProps) => {
+  const router = useRouter()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
   const [showMenu, setShowMenu] = useState(false)
@@ -50,6 +52,17 @@ export const ChatHeader = ({
       console.error('Erreur lors du rafraîchissement:', error)
     } finally {
       setIsRefreshing(false)
+    }
+  }
+
+  // 🔥 Navigation vers le profil de l'utilisateur
+  const handleProfileClick = () => {
+    if (otherParticipant?._id && otherParticipant?.role !== "ai_assistant") {
+      router.push(`/profile/${otherParticipant._id}`)
+    } else if (otherParticipant?.role === "ai_assistant") {
+      // Optionnel: ouvrir une modal d'info sur l'AI ou rediriger vers une page dédiée
+      // Pour l'instant, on ne fait rien ou on peut afficher un toast
+      console.log("L'assistant AI n'a pas de profil utilisateur")
     }
   }
 
@@ -105,8 +118,14 @@ export const ChatHeader = ({
               </Button>
             )}
 
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
+            {/* Avatar - cliquable pour les utilisateurs normaux */}
+            <div 
+              className={cn(
+                "relative flex-shrink-0",
+                otherParticipant?.role !== "ai_assistant" && "cursor-pointer hover:opacity-80 transition-opacity"
+              )}
+              onClick={handleProfileClick}
+            >
               <Avatar className="h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 border-2 border-white dark:border-gray-800 shadow-sm">
                 <AvatarImage src={otherParticipant?.avatar} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm sm:text-base font-semibold">
@@ -123,7 +142,7 @@ export const ChatHeader = ({
                   )}
                   title={isConnected ? "Connecté" : "Déconnecté"}
                 />
-                {otherParticipant?.isOnline && (
+                {otherParticipant?.isOnline && otherParticipant?.role !== "ai_assistant" && (
                   <div 
                     className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border-2 border-white dark:border-gray-800 bg-blue-500"
                     title="En ligne"
@@ -132,16 +151,33 @@ export const ChatHeader = ({
               </div>
             </div>
 
-            {/* User Info */}
+            {/* User Info - nom cliquable */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {otherParticipant?.name || "Utilisateur"}
-                </h2>
+                <button
+                  onClick={handleProfileClick}
+                  className={cn(
+                    "text-left transition-colors",
+                    otherParticipant?.role !== "ai_assistant" 
+                      ? "hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" 
+                      : "cursor-default"
+                  )}
+                  disabled={otherParticipant?.role === "ai_assistant"}
+                >
+                  <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                    {otherParticipant?.name || "Utilisateur"}
+                  </h2>
+                </button>
+                
                 {otherParticipant?.role === "ai_assistant" && (
                   <span className="px-1.5 py-0.5 text-[10px] sm:text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
                     AI
                   </span>
+                )}
+                
+                {/* Icône de profil pour indiquer la clicabilité (optionnel) */}
+                {otherParticipant?.role !== "ai_assistant" && otherParticipant?._id && (
+                  <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 dark:text-gray-500 hidden sm:block" />
                 )}
               </div>
               
@@ -160,7 +196,7 @@ export const ChatHeader = ({
                   </span>
                 </div>
 
-                {otherParticipant?.isOnline && (
+                {otherParticipant?.isOnline && otherParticipant?.role !== "ai_assistant" && (
                   <>
                     <span className="text-gray-400 text-xs">•</span>
                     <div className="flex items-center gap-1">
@@ -184,9 +220,9 @@ export const ChatHeader = ({
             </div>
           </div>
 
-          {/* Right section - Actions */}
+          {/* Right section - Actions (inchangé) */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Call status badge (mobile compact) */}
+            {/* Call status badge */}
             {isCallActive && (
               <div className={cn(
                 "hidden sm:flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium",
@@ -227,7 +263,7 @@ export const ChatHeader = ({
               <Video className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </Button>
 
-            {/* Voice call button - hide on very small screens */}
+            {/* Voice call button */}
             <Button
               variant="ghost"
               size="icon"
@@ -239,7 +275,7 @@ export const ChatHeader = ({
               <Phone className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </Button>
 
-            {/* End call button (only when call is active) */}
+            {/* End call button */}
             {isCallActive && (
               <Button
                 variant="ghost"
@@ -264,7 +300,6 @@ export const ChatHeader = ({
                 <MoreVertical className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
               </Button>
 
-              {/* Dropdown menu */}
               {showMenu && (
                 <div className="absolute right-0 top-full mt-1 w-44 sm:w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
                   <button
@@ -277,6 +312,23 @@ export const ChatHeader = ({
                     <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Paramètres
                   </button>
+                  
+                  {/* Voir le profil dans le menu */}
+                  {otherParticipant?.role !== "ai_assistant" && otherParticipant?._id && (
+                    <>
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      <button
+                        onClick={() => {
+                          router.push(`/profile/${otherParticipant._id}`)
+                          setShowMenu(false)
+                        }}
+                        className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 sm:gap-3 transition-colors"
+                      >
+                        <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        Voir le profil
+                      </button>
+                    </>
+                  )}
                   
                   <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                   
@@ -293,7 +345,7 @@ export const ChatHeader = ({
           </div>
         </div>
 
-        {/* Refresh progress bar - only visible when refreshing */}
+        {/* Refresh progress bar */}
         {isRefreshing && (
           <div className="mt-2 w-full">
             <div className="h-0.5 bg-blue-500 rounded-full animate-pulse w-1/3" />
