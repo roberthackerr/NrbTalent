@@ -1,12 +1,14 @@
-// components/ConversationsSidebar.tsx - VERSION ULTRA-ROBUSTE - ANOMALIES RÉSOLUES
-import { useState, useMemo } from "react"
+// components/ConversationsSidebar.tsx - VERSION MOBILE RESPONSIVE
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, Plus, Trash2, Users, Bot, Sparkles, MessageSquare } from "lucide-react"
+import { Search, Plus, Trash2, Users, Bot, Sparkles, MessageSquare, Menu, X, ChevronLeft } from "lucide-react"
 import { Conversation } from "@/types/chat"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
 
 interface ConversationsSidebarProps {
   conversations: Conversation[]
@@ -36,8 +38,25 @@ export const ConversationsSidebar = ({
   session
 }: ConversationsSidebarProps) => {
   const [isHovered, setIsHovered] = useState<string | null>(null)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
-  // 🔥 FIX: Formater le dernier message ULTRA-ROBUSTE (évite le undefined)
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Close mobile sidebar when conversation is selected on mobile
+  useEffect(() => {
+    if (isMobile && selectedConversation) {
+      setIsMobileOpen(false)
+    }
+  }, [selectedConversation, isMobile])
+
+  // Format last message robustly
   const formatLastMessage = (
     message: string | undefined | null, 
     isAIConversation: boolean, 
@@ -45,7 +64,6 @@ export const ConversationsSidebar = ({
   ): string => {
     const currentUserId = (session?.user as any)?.id
     
-    // 🔥 FIX: Gestion exhaustive des cas vides/invalides
     if (!message || 
         typeof message !== 'string' || 
         message.trim() === '' || 
@@ -55,22 +73,18 @@ export const ConversationsSidebar = ({
     }
     
     try {
-      // Nettoyer le message de manière sécurisée
-      let cleanMessage = String(message) // Force conversion en string
-        .replace(/<[^>]*>/g, '') // Retirer HTML
-        .replace(/\n+/g, ' ') // Sauts de ligne → espaces
-        .replace(/\s+/g, ' ') // Espaces multiples → simple
+      let cleanMessage = String(message)
+        .replace(/<[^>]*>/g, '')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim()
       
-      // 🔥 Double vérification après nettoyage
       if (!cleanMessage || cleanMessage.length === 0) {
         return isAIConversation ? "🤖 Assistant prêt" : "💬 Commencer"
       }
       
-      // Préfixe "Vous: " si c'est l'utilisateur courant qui a envoyé
       const prefix = (senderId && senderId === currentUserId) ? 'Vous: ' : ''
       
-      // Tronquer intelligemment
       const maxLength = 45
       if (cleanMessage.length > maxLength) {
         cleanMessage = cleanMessage.substring(0, maxLength).trim() + '...'
@@ -83,14 +97,13 @@ export const ConversationsSidebar = ({
     }
   }
 
-  // 🔥 FIX: Formater la date ULTRA-ROBUSTE
+  // Format time robustly
   const formatTime = (dateString: string | undefined | null): string => {
     if (!dateString) return "—"
     
     try {
       const date = new Date(dateString)
       
-      // 🔥 Vérifier si la date est valide
       if (isNaN(date.getTime())) {
         return "—"
       }
@@ -98,34 +111,25 @@ export const ConversationsSidebar = ({
       const now = new Date()
       const diffInMs = now.getTime() - date.getTime()
       
-      // 🔥 Vérifier que la différence est positive (pas de date future absurde)
       if (diffInMs < 0) return "À l'instant"
       
       const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
       const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
       
-      // Moins d'1 minute
       if (diffInMinutes < 1) return "À l'instant"
-      
-      // Moins d'1 heure
       if (diffInMinutes < 60) return `${diffInMinutes}min`
-      
-      // Aujourd'hui (moins de 24h)
       if (diffInHours < 24) {
         return date.toLocaleTimeString('fr-FR', { 
           hour: '2-digit', 
           minute: '2-digit' 
         })
       }
-      
-      // Cette semaine (moins de 7 jours)
       if (diffInDays < 7) {
         const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
         return days[date.getDay()]
       }
       
-      // Plus ancien
       return date.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'short'
@@ -136,16 +140,14 @@ export const ConversationsSidebar = ({
     }
   }
 
-  // 🔥 FIX: Tri et filtrage ULTRA-SÉCURISÉ (évite les crashes)
+  // Sort and filter conversations
   const sortedAndFilteredConversations = useMemo(() => {
     try {
-      // 🔥 Validation des données d'entrée
       if (!Array.isArray(conversations)) {
         console.warn('⚠️ Conversations n\'est pas un tableau')
         return []
       }
       
-      // 🔥 Filtrer les conversations invalides AVANT traitement
       let filtered = conversations.filter(conv => 
         conv && 
         typeof conv === 'object' && 
@@ -153,7 +155,6 @@ export const ConversationsSidebar = ({
         Array.isArray(conv.participants)
       )
       
-      // Filtre de recherche
       if (searchQuery && searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
         filtered = filtered.filter(conv => {
@@ -170,15 +171,13 @@ export const ConversationsSidebar = ({
         })
       }
       
-      // 🔥 Tri SÉCURISÉ par date décroissante
       return filtered.sort((a, b) => {
         try {
           const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime()
           const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime()
           
-          // 🔥 Vérifier validité des dates
           if (isNaN(dateA) || isNaN(dateB)) {
-            return 0 // Garder l'ordre actuel si dates invalides
+            return 0
           }
           
           return dateB - dateA
@@ -193,24 +192,37 @@ export const ConversationsSidebar = ({
     }
   }, [conversations, searchQuery, session])
 
-  return (
-    <div className="w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 flex flex-col">
+  // Sidebar content (shared between mobile and desktop)
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Messages
           </h2>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onNewConversation}
-            disabled={!isConnected}
-            className="h-9 w-9 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-40"
-            title="Nouvelle conversation"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          {isMobile && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsMobileOpen(false)}
+              className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          {!isMobile && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onNewConversation}
+              disabled={!isConnected}
+              className="h-9 w-9 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-40"
+              title="Nouvelle conversation"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         
         {/* Bouton AI Compact */}
@@ -290,11 +302,10 @@ export const ConversationsSidebar = ({
               )}
             </div>
           ) : (
-            // Conversations List - Design Pro avec validation
+            // Conversations List
             <div className="space-y-0.5">
               {sortedAndFilteredConversations.map((conv) => {
                 try {
-                  // 🔥 FIX: Validation exhaustive des données de conversation
                   if (!conv || !conv._id || !Array.isArray(conv.participants)) {
                     console.warn('⚠️ Conversation invalide, skip:', conv)
                     return null
@@ -308,13 +319,14 @@ export const ConversationsSidebar = ({
                   return (
                     <div
                       key={conv._id}
-                      className={`relative group p-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                      className={cn(
+                        "relative group p-2.5 rounded-lg transition-all duration-150 cursor-pointer",
                         isSelected
                           ? isAIConversation
                             ? "bg-green-50 dark:bg-green-900/20 shadow-sm"
                             : "bg-blue-50 dark:bg-blue-900/20 shadow-sm"
                           : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      }`}
+                      )}
                       onClick={() => onSelectConversation(conv._id)}
                       onMouseEnter={() => setIsHovered(conv._id)}
                       onMouseLeave={() => setIsHovered(null)}
@@ -335,12 +347,12 @@ export const ConversationsSidebar = ({
                             </Avatar>
                           )}
                           
-                          {/* Indicateur en ligne */}
+                          {/* Online indicator */}
                           {!isAIConversation && otherUser?.isOnline && (
                             <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-900 bg-green-500" />
                           )}
                           
-                          {/* Indicateur AI actif */}
+                          {/* AI active indicator */}
                           {isAIConversation && (
                             <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-900 bg-green-500" />
                           )}
@@ -348,16 +360,16 @@ export const ConversationsSidebar = ({
 
                         {/* Info conversation */}
                         <div className="flex-1 min-w-0">
-                          {/* Première ligne: Nom + Heure */}
                           <div className="flex items-center justify-between mb-0.5">
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <h3 className={`text-sm font-semibold truncate ${
+                              <h3 className={cn(
+                                "text-sm font-semibold truncate",
                                 isAIConversation 
                                   ? "text-green-700 dark:text-green-300" 
                                   : hasUnread
                                   ? "text-gray-900 dark:text-white"
                                   : "text-gray-700 dark:text-gray-300"
-                              }`}>
+                              )}>
                                 {isAIConversation ? "Assistant AI" : otherUser?.name || "Utilisateur"}
                               </h3>
                               {isAIConversation && (
@@ -366,35 +378,36 @@ export const ConversationsSidebar = ({
                                 </Badge>
                               )}
                             </div>
-                            <span className={`text-[11px] font-medium flex-shrink-0 ml-2 ${
+                            <span className={cn(
+                              "text-[11px] font-medium flex-shrink-0 ml-2",
                               hasUnread
                                 ? isAIConversation
                                   ? "text-green-600 dark:text-green-400"
                                   : "text-blue-600 dark:text-blue-400"
                                 : "text-gray-400 dark:text-gray-500"
-                            }`}>
+                            )}>
                               {formatTime(conv.updatedAt || conv.createdAt)}
                             </span>
                           </div>
                           
-                          {/* Deuxième ligne: Message + Badge unread */}
                           <div className="flex items-center justify-between gap-2">
-                            <p className={`text-xs truncate flex-1 ${
+                            <p className={cn(
+                              "text-xs truncate flex-1",
                               hasUnread
                                 ? "text-gray-900 dark:text-white font-medium"
                                 : "text-gray-500 dark:text-gray-400"
-                            }`}>
+                            )}>
                               {formatLastMessage(conv.lastMessage, isAIConversation, conv.lastMessageSenderId)}
                             </p>
                             
-                            {/* Badge non lus */}
                             {hasUnread && (
                               <Badge 
-                                className={`h-5 min-w-5 rounded-full px-1.5 text-[10px] font-bold shadow-sm ${
+                                className={cn(
+                                  "h-5 min-w-5 rounded-full px-1.5 text-[10px] font-bold shadow-sm",
                                   isAIConversation
                                     ? "bg-green-500 hover:bg-green-600 text-white"
                                     : "bg-blue-500 hover:bg-blue-600 text-white"
-                                }`}
+                                )}
                               >
                                 {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
                               </Badge>
@@ -403,15 +416,16 @@ export const ConversationsSidebar = ({
                         </div>
                       </div>
 
-                      {/* Bouton suppression au hover */}
+                      {/* Delete button on hover */}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`absolute right-1.5 top-1/2 transform -translate-y-1/2 h-7 w-7 rounded-full transition-all duration-150 ${
+                        className={cn(
+                          "absolute right-1.5 top-1/2 transform -translate-y-1/2 h-7 w-7 rounded-full transition-all duration-150",
                           isHovered === conv._id && !isSelected
                             ? "opacity-100 scale-100" 
                             : "opacity-0 scale-90 pointer-events-none"
-                        } text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20`}
+                        )}
                         onClick={(e) => {
                           e.stopPropagation()
                           onDeleteConversation(conv, e)
@@ -432,14 +446,16 @@ export const ConversationsSidebar = ({
         </div>
       </ScrollArea>
 
-      {/* Footer Status - Compact */}
+      {/* Footer Status */}
       <div className="p-3 border-t border-gray-200 dark:border-gray-700 space-y-1.5">
-        <div className={`flex items-center gap-1.5 text-[11px] ${
+        <div className={cn(
+          "flex items-center gap-1.5 text-[11px]",
           isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-        }`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${
+        )}>
+          <div className={cn(
+            "w-1.5 h-1.5 rounded-full",
             isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-          }`} />
+          )} />
           <span className="font-medium">
             {isConnected ? 'Connecté' : 'Déconnecté'}
           </span>
@@ -456,6 +472,63 @@ export const ConversationsSidebar = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile New Conversation Button */}
+      {isMobile && (
+        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+          <Button
+            onClick={onNewConversation}
+            disabled={!isConnected}
+            className="w-full gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+          >
+            <Plus className="h-4 w-4" />
+            Nouvelle conversation
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+
+  // Mobile: Sheet drawer, Desktop: Fixed sidebar
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMobileOpen(true)}
+          className="fixed bottom-4 left-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-all md:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        {/* Mobile Drawer */}
+        <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+          <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+
+        {/* When sidebar is closed, show a back button if conversation is selected */}
+        {selectedConversation && !isMobileOpen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileOpen(true)}
+            className="fixed top-4 left-4 z-40 h-8 w-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 md:hidden"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
+      </>
+    )
+  }
+
+  // Desktop: Fixed sidebar
+  return (
+    <div className="w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
+      <SidebarContent />
     </div>
   )
 }
