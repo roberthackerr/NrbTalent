@@ -170,7 +170,7 @@ export function GigGallery({ images, title }: GigGalleryProps) {
               onClick={() => setSelectedImage(index)}
             >
               <img
-                src={image}
+                src={image.url}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover rounded"
               />
