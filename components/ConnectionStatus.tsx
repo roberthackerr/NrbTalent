@@ -14,6 +14,13 @@ export const ConnectionStatus = ({
 }: ConnectionStatusProps) => {
   const getStatusConfig = () => {
     switch (connectionStatus) {
+     case 'disconnected':
+            return {
+          bg: 'bg-gradient-to-r from-red-500 to-rose-500',
+          icon: <WifiOff className="h-4 w-4" />,
+          text: 'Déconnecté',
+          pulse: false
+        }
       // case 'connected':
       //   return {
       //     bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
@@ -36,12 +43,7 @@ export const ConnectionStatus = ({
           pulse: true
         }
       default:
-        return {
-          bg: 'bg-gradient-to-r from-red-500 to-rose-500',
-          icon: <WifiOff className="h-4 w-4" />,
-          text: 'Déconnecté',
-          pulse: false
-        }
+  
     }
   }
 
