@@ -120,10 +120,10 @@ export function HeroSection({
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             {!user ? (
               <>
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-2xl">
+                <a href="/auth/signup"   className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-2xl">
                   <Rocket className="h-5 w-5 mr-2" />
                   {actions.startFree || "Commencer gratuitement"}
-                </Button>
+                </a>
                 <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold">
                   {actions.viewProjects || "Voir les projets"}
                 </Button>
