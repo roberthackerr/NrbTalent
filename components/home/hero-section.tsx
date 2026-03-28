@@ -93,8 +93,9 @@ export function HeroSection({
               </div>
             </div>
           </form>
+          { !user && (<AIMatchingButtonHero dict={dict} lang={lang} />)
           
-          <AIMatchingButtonHero dict={dict} lang={lang} />
+}
           
          
           {/* Actions principales */}

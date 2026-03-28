@@ -306,7 +306,7 @@ export default function HomePage() {
         lang={lang} 
       />
       <div className="mt-8 flex justify-center gap-4">
-          <MeetButtonHero dict={dict} lang={lang} />
+         {session?.user && (<MeetButtonHero dict={dict} lang={lang} />)} 
           {/* Autres boutons... */}
         </div>
         <StatsOverview dict={dict} />
