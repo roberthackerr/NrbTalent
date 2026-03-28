@@ -29,7 +29,8 @@ import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { useState, useEffect } from "react" // Ajouté pour gérer les données
+import { useState, useEffect } from "react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 interface ProjectsGridProps {
   projects: any[]
@@ -45,6 +46,131 @@ interface ProjectsGridProps {
     hasPrev: boolean
   }
   onPageChange?: (page: number) => void
+  lang?: 'fr' | 'en' | 'mg'
+}
+
+// Traductions
+const translations = {
+  fr: {
+    projectsAvailable: "Projets disponibles",
+    opportunities: "opportunité(s) correspondant à vos compétences",
+    refresh: "Actualiser",
+    noProjectsFound: "Aucun projet trouvé",
+    noProjectsAvailable: "Aucun projet disponible pour le moment",
+    tryExpandSearch: "Essayez d'élargir vos critères de recherche ou découvrez d'autres opportunités",
+    beFirstNotified: "Soyez le premier à être notifié quand de nouveaux projets seront publiés",
+    viewAllProjects: "Voir tous les projets",
+    publishFirstProject: "Publier votre premier projet",
+    exploreCategories: "Explorer les catégories",
+    previous: "Précédent",
+    next: "Suivant",
+    savedToFavorites: "Projet sauvegardé dans vos favoris!",
+    saveError: "Erreur lors de la sauvegarde",
+    shareSuccess: "Projet partagé avec succès!",
+    linkCopied: "Lien copié dans le presse-papier!",
+    budgetNotSpecified: "Budget non spécifié",
+    expired: "Expiré",
+    today: "Aujourd'hui",
+    day: "jour",
+    days: "jours",
+    weeks: "semaines",
+    months: "mois",
+    urgent: "Urgent",
+    featured: "Featured",
+    premium: "Premium",
+    requiredSkills: "Compétences requises:",
+    matchPercentage: "% de correspondance",
+    otherSkills: "autres",
+    postedOn: "Posté le",
+    openForApplications: "Ouvert aux candidatures",
+    inProgress: "En cours",
+    apply: "Postuler",
+    viewDetails: "Voir les détails",
+    applications: "candidatures",
+    views: "vues",
+    remote: "Télétravail",
+    privateInvitation: "Invitation uniquement"
+  },
+  en: {
+    projectsAvailable: "Available Projects",
+    opportunities: "opportunities matching your skills",
+    refresh: "Refresh",
+    noProjectsFound: "No projects found",
+    noProjectsAvailable: "No projects available at the moment",
+    tryExpandSearch: "Try expanding your search criteria or discover other opportunities",
+    beFirstNotified: "Be the first to be notified when new projects are published",
+    viewAllProjects: "View all projects",
+    publishFirstProject: "Publish your first project",
+    exploreCategories: "Explore categories",
+    previous: "Previous",
+    next: "Next",
+    savedToFavorites: "Project saved to favorites!",
+    saveError: "Error saving project",
+    shareSuccess: "Project shared successfully!",
+    linkCopied: "Link copied to clipboard!",
+    budgetNotSpecified: "Budget not specified",
+    expired: "Expired",
+    today: "Today",
+    day: "day",
+    days: "days",
+    weeks: "weeks",
+    months: "months",
+    urgent: "Urgent",
+    featured: "Featured",
+    premium: "Premium",
+    requiredSkills: "Required skills:",
+    matchPercentage: "% match",
+    otherSkills: "more",
+    postedOn: "Posted on",
+    openForApplications: "Open for applications",
+    inProgress: "In progress",
+    apply: "Apply",
+    viewDetails: "View details",
+    applications: "applications",
+    views: "views",
+    remote: "Remote",
+    privateInvitation: "Invitation only"
+  },
+  mg: {
+    projectsAvailable: "Tetikasa azo",
+    opportunities: "tetikasa mifanaraka amin'ny fahaizanao",
+    refresh: "Havaozina",
+    noProjectsFound: "Tsy misy tetikasa hita",
+    noProjectsAvailable: "Tsy misy tetikasa amin'izao fotoana izao",
+    tryExpandSearch: "Andramo hanova ny fikarohanao na hitadia tetikasa hafa",
+    beFirstNotified: "Ampandrenesina rehefa misy tetikasa vaovao",
+    viewAllProjects: "Hijery tetikasa rehetra",
+    publishFirstProject: "Hametraka tetikasa voalohany",
+    exploreCategories: "Hijery sokajy",
+    previous: "Teo aloha",
+    next: "Manaraka",
+    savedToFavorites: "Voatahiry ny tetikasa!",
+    saveError: "Tsy voatahiry ny tetikasa",
+    shareSuccess: "Nizara ny tetikasa!",
+    linkCopied: "Nadika ny rohy!",
+    budgetNotSpecified: "Tsy voafaritra ny tetibola",
+    expired: "Lany daty",
+    today: "Anio",
+    day: "andro",
+    days: "andro",
+    weeks: "herinandro",
+    months: "volana",
+    urgent: "Maika",
+    featured: "Nasongadina",
+    premium: "Premium",
+    requiredSkills: "Fahaizana ilaina:",
+    matchPercentage: "% mifanentana",
+    otherSkills: "hafa",
+    postedOn: "Nampidirina tamin'ny",
+    openForApplications: "Misokatra ny fangatahana",
+    inProgress: "Mitohy",
+    apply: "Mangataka",
+    viewDetails: "Jereo antsipiriany",
+    applications: "fangatahana",
+    views: "fijerena",
+    remote: "Lavitra",
+    privateInvitation: "Fanasana manokana"
+  }
 }
 
 export function ProjectsGrid({ 
@@ -53,11 +179,22 @@ export function ProjectsGrid({
   searchQuery, 
   onRefresh,
   pagination,
-  onPageChange 
+  onPageChange,
+  lang = 'fr'
 }: ProjectsGridProps) {
+  const t = translations[lang]
   const { data: session } = useSession()
   const router = useRouter()
   const user = session?.user
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Détecter mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleSaveProject = async (projectId: string) => {
     try {
@@ -70,12 +207,12 @@ export function ProjectsGrid({
       })
 
       if (response.ok) {
-        toast.success("Projet sauvegardé dans vos favoris!")
+        toast.success(t.savedToFavorites)
       } else {
         throw new Error('Failed to save project')
       }
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde")
+      toast.error(t.saveError)
     }
   }
 
@@ -90,26 +227,25 @@ export function ProjectsGrid({
   const handleShare = async (project: any) => {
     const shareData = {
       title: project.title,
-      text: `Découvrez ce projet : ${project.title} - ${project.description?.substring(0, 100)}...`,
+      text: `Découvrez ce projet : ${project.title}`,
       url: `${window.location.origin}/projects/${project._id}`
     }
     
     if (navigator.share) {
       try {
         await navigator.share(shareData)
-        toast.success("Projet partagé avec succès!")
+        toast.success(t.shareSuccess)
       } catch (err) {
         console.log('Erreur de partage:', err)
       }
     } else {
-      // Fallback: copier le lien
       navigator.clipboard.writeText(shareData.url)
-      toast.success("Lien copié dans le presse-papier!")
+      toast.success(t.linkCopied)
     }
   }
 
   const formatBudget = (budget: any) => {
-    if (!budget) return "Budget non spécifié"
+    if (!budget) return t.budgetNotSpecified
     
     if (budget.type === "hourly") {
       return `${budget.min} - ${budget.max} ${budget.currency}/h`
@@ -123,30 +259,12 @@ export function ProjectsGrid({
     const diffTime = deadlineDate.getTime() - now.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     
-    if (diffDays < 0) return "Expiré"
-    if (diffDays === 0) return "Aujourd'hui"
-    if (diffDays === 1) return "1 jour"
-    if (diffDays < 7) return `${diffDays} jours`
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} semaines`
-    return `${Math.ceil(diffDays / 30)} mois`
-  }
-
-  const getBudgetRangePosition = (budget: any, proposed?: number) => {
-    if (!budget || !proposed) return { position: 0, type: 'default' }
-    
-    const range = budget.max - budget.min
-    if (range <= 0) return { position: 0, type: 'default' }
-    
-    const position = ((proposed - budget.min) / range) * 100
-    let type = 'competitive'
-    
-    if (proposed < budget.min) type = 'below'
-    else if (proposed > budget.max) type = 'above'
-    else if (proposed < budget.min + (range * 0.3)) type = 'competitive'
-    else if (proposed > budget.min + (range * 0.7)) type = 'premium'
-    else type = 'average'
-    
-    return { position: Math.min(100, Math.max(0, position)), type }
+    if (diffDays < 0) return t.expired
+    if (diffDays === 0) return t.today
+    if (diffDays === 1) return `1 ${t.day}`
+    if (diffDays < 7) return `${diffDays} ${t.days}`
+    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} ${t.weeks}`
+    return `${Math.ceil(diffDays / 30)} ${t.months}`
   }
 
   const getSkillMatchCount = (projectSkills: string[], userSkills: string[] = []) => {
@@ -160,37 +278,34 @@ export function ProjectsGrid({
   }
 
   if (loading) {
-    return <ProjectsGridSkeleton />
+    return <ProjectsGridSkeleton lang={lang} />
   }
 
   if (projects.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Sparkles className="h-16 w-16 text-blue-500" />
+      <div className="text-center py-8 sm:py-12 md:py-16">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+          <Sparkles className="h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 text-blue-500" />
         </div>
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-          {searchQuery ? "Aucun projet trouvé" : "Aucun projet disponible pour le moment"}
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 sm:mb-3">
+          {searchQuery ? t.noProjectsFound : t.noProjectsAvailable}
         </h3>
-        <p className="text-slate-600 dark:text-slate-400 text-lg mb-8 max-w-md mx-auto">
-          {searchQuery 
-            ? "Essayez d'élargir vos critères de recherche ou découvrez d'autres opportunités"
-            : "Soyez le premier à être notifié quand de nouveaux projets seront publiés"
-          }
+        <p className="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-400 mb-6 sm:mb-8 max-w-md mx-auto px-4">
+          {searchQuery ? t.tryExpandSearch : t.beFirstNotified}
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
           {searchQuery ? (
-            <Button onClick={onRefresh} size="lg">
-              Voir tous les projets
+            <Button onClick={onRefresh} size={isMobile ? "default" : "lg"}>
+              {t.viewAllProjects}
             </Button>
           ) : (
-            <Button size="lg" onClick={() => router.push('/projects/create')}>
+            <Button size={isMobile ? "default" : "lg"} onClick={() => router.push('/projects/create')}>
               <Briefcase className="h-4 w-4 mr-2" />
-              Publier votre premier projet
+              {t.publishFirstProject}
             </Button>
           )}
-          <Button variant="outline" size="lg" onClick={() => router.push('/categories')}>
-            Explorer les catégories
+          <Button variant="outline" size={isMobile ? "default" : "lg"} onClick={() => router.push('/categories')}>
+            {t.exploreCategories}
           </Button>
         </div>
       </div>
@@ -198,33 +313,30 @@ export function ProjectsGrid({
   }
 
   return (
-    <div className="space-y-6">
-      {/* En-tête avec statistiques */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* En-tête */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Projets disponibles
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
+            {t.projectsAvailable}
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-lg mt-2">
-            {pagination?.totalCount || projects.length} opportunité{(pagination?.totalCount || projects.length) > 1 ? 's' : ''} correspondant à vos compétences
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1 sm:mt-2">
+            {pagination?.totalCount || projects.length} {t.opportunities}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => {
-              if (onRefresh) onRefresh()
-            }}
-          >
-            <Sparkles className="h-4 w-4" />
-            Actualiser
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          size={isMobile ? "sm" : "default"}
+          className="flex items-center gap-2"
+          onClick={() => onRefresh && onRefresh()}
+        >
+          <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="text-sm">{t.refresh}</span>
+        </Button>
       </div>
 
       {/* Liste des projets */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {projects.map((project) => (
           <ProjectCard 
             key={project._id || project.id} 
@@ -235,52 +347,71 @@ export function ProjectsGrid({
             onShare={handleShare}
             formatBudget={formatBudget}
             getTimeRemaining={getTimeRemaining}
-            getBudgetRangePosition={getBudgetRangePosition}
             getSkillMatchCount={getSkillMatchCount}
             userSkills={user?.skills || []}
+            lang={lang}
+            translations={t}
+            isMobile={isMobile}
           />
         ))}
       </div>
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex justify-center pt-8">
-          <div className="flex gap-2">
+        <div className="flex justify-center pt-6 sm:pt-8">
+          <div className="flex flex-wrap gap-1 sm:gap-2 justify-center">
             <Button 
               variant="outline" 
-              size="lg"
+              size={isMobile ? "sm" : "default"}
               onClick={() => onPageChange && onPageChange(pagination.page - 1)}
               disabled={!pagination.hasPrev}
+              className="text-sm"
             >
-              ← Précédent
+              ← {!isMobile && t.previous}
             </Button>
             
-            {[...Array(Math.min(5, pagination.totalPages))].map((_, index) => {
-              const pageNum = index + 1
+            {Array.from({ length: Math.min(isMobile ? 3 : 5, pagination.totalPages) }, (_, i) => {
+              let pageNum
+              if (isMobile) {
+                // Pagination compacte mobile
+                const pages = []
+                for (let j = Math.max(1, pagination.page - 1); j <= Math.min(pagination.totalPages, pagination.page + 1); j++) {
+                  pages.push(j)
+                }
+                pageNum = pages[i]
+                if (!pageNum) return null
+              } else {
+                pageNum = i + 1
+              }
+              
               return (
                 <Button
                   key={pageNum}
                   variant={pagination.page === pageNum ? "default" : "outline"}
-                  size="lg"
+                  size={isMobile ? "sm" : "default"}
                   onClick={() => onPageChange && onPageChange(pageNum)}
-                  className={pagination.page === pageNum ? "bg-blue-600 text-white" : ""}
+                  className={cn(
+                    pagination.page === pageNum ? "bg-blue-600 text-white" : "",
+                    "min-w-[2.5rem]"
+                  )}
                 >
                   {pageNum}
                 </Button>
               )
             })}
             
-            {pagination.totalPages > 5 && (
-              <span className="px-3 py-2 text-slate-500">...</span>
+            {!isMobile && pagination.totalPages > 5 && (
+              <span className="px-2 py-2 text-slate-500">...</span>
             )}
             
             <Button 
               variant="outline" 
-              size="lg"
+              size={isMobile ? "sm" : "default"}
               onClick={() => onPageChange && onPageChange(pagination.page + 1)}
               disabled={!pagination.hasNext}
+              className="text-sm"
             >
-              Suivant →
+              {!isMobile && t.next} →
             </Button>
           </div>
         </div>
@@ -289,6 +420,7 @@ export function ProjectsGrid({
   )
 }
 
+// Composant ProjectCard responsive
 function ProjectCard({ 
   project, 
   onSave, 
@@ -297,12 +429,15 @@ function ProjectCard({
   onShare,
   formatBudget, 
   getTimeRemaining, 
-  getBudgetRangePosition,
   getSkillMatchCount,
-  userSkills = []
+  userSkills = [],
+  lang,
+  translations: t,
+  isMobile = false
 }: any) {
   const { data: session } = useSession()
   const router = useRouter()
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false)
   
   const isUrgent = project.urgency === "urgent" || project.urgency === "very-urgent"
   const isFeatured = project.featured
@@ -320,136 +455,138 @@ function ProjectCard({
   return (
     <Card className={cn(
       "border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 group",
-      isFeatured && "border-l-4 border-l-blue-500",
-      isUrgent && "border-l-4 border-l-orange-500",
+      isFeatured && "border-l-2 sm:border-l-4 border-l-blue-500",
+      isUrgent && "border-l-2 sm:border-l-4 border-l-orange-500",
       isPremium && "border-t-2 border-t-yellow-400"
     )}>
-      <CardContent className="p-6">
-        <div className="flex gap-6">
+      <CardContent className="p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Colonne principale */}
           <div className="flex-1">
-            {/* En-tête avec titre et badges */}
-            <div className="flex items-start justify-between mb-4">
+            {/* En-tête */}
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-3 sm:mb-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 cursor-pointer"
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h3 
+                    className="text-base sm:text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 cursor-pointer flex-1"
                     onClick={() => onDetail(project._id)}
                   >
                     {project.title}
                   </h3>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {isFeatured && (
-                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                        <Star className="h-3 w-3 mr-1" />
-                        Featured
+                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] sm:text-xs">
+                        <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                        {t.featured}
                       </Badge>
                     )}
                     {isUrgent && (
-                      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                        <Zap className="h-3 w-3 mr-1" />
-                        Urgent
+                      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-[10px] sm:text-xs">
+                        <Zap className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                        {t.urgent}
                       </Badge>
                     )}
                     {isPremium && (
-                      <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">
-                        <Award className="h-3 w-3 mr-1" />
-                        Premium
+                      <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 text-[10px] sm:text-xs">
+                        <Award className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                        {t.premium}
                       </Badge>
                     )}
                   </div>
                 </div>
                 
-                <p className="text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3 sm:mb-4">
                   {project.description}
                 </p>
               </div>
 
-              {/* Actions rapides */}
-              <div className="flex items-center gap-2 ml-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onSave(project._id)}
-                  className="opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onShare(project)}
-                  className="opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
+              {/* Actions rapides - Desktop */}
+              {!isMobile && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onSave(project._id)}
+                    className="h-8 w-8 opacity-60 hover:opacity-100"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onShare(project)}
+                    className="h-8 w-8 opacity-60 hover:opacity-100"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {/* Métadonnées */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-              {/* Budget et délai */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="font-semibold">{formatBudget(project.budget)}</span>
+            {/* Métadonnées - Layout responsive */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
+                  <span className="font-semibold text-xs sm:text-sm">{formatBudget(project.budget)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <Clock className="h-4 w-4" />
-                  <span>{getTimeRemaining(project.deadline)}</span>
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm">{getTimeRemaining(project.deadline)}</span>
                 </div>
               </div>
 
-              {/* Client et localisation */}
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
                 {project.client && (
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <Building className="h-4 w-4" />
-                    <span>{project.client.name}</span>
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                    <Building className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="truncate max-w-[100px] sm:max-w-[150px]">{project.client.name}</span>
                     {project.client.rating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                        <span className="text-slate-500">{project.client.rating.toFixed(1)}</span>
+                      <div className="flex items-center gap-0.5">
+                        <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-yellow-500 fill-current" />
+                        <span className="text-xs">{project.client.rating.toFixed(1)}</span>
                       </div>
                     )}
                   </div>
                 )}
                 {project.location && (
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <MapPin className="h-4 w-4" />
-                    <span>{project.location.city || project.location.country || 'Télétravail'}</span>
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                    <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="text-xs sm:text-sm">
+                      {project.location.city || project.location.country || t.remote}
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Statistiques */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <Users className="h-4 w-4" />
-                  <span>{project.applicationCount || 0} candidatures</span>
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>{project.applicationCount || 0} {t.applications}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <Eye className="h-4 w-4" />
-                  <span>{project.views || 0} vues</span>
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>{project.views || 0} {t.views}</span>
                 </div>
               </div>
             </div>
 
-            {/* Compétences requises */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Compétences requises:
+            {/* Compétences */}
+            <div className="mb-3 sm:mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h4 className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t.requiredSkills}
                 </h4>
                 {skillMatches > 0 && (
-                  <Badge className={getMatchBadgeColor(matchPercentage)}>
-                    <Target className="h-3 w-3 mr-1" />
-                    {matchPercentage}% de correspondance
+                  <Badge className={cn(getMatchBadgeColor(matchPercentage), "text-[10px] sm:text-xs")}>
+                    <Target className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                    {matchPercentage}{t.matchPercentage}
                   </Badge>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {project.skills?.slice(0, 8).map((skill: string, index: number) => {
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {project.skills?.slice(0, isMobile ? 6 : 8).map((skill: string, index: number) => {
                   const isMatched = userSkills.some((userSkill: string) => 
                     userSkill.toLowerCase().includes(skill.toLowerCase()) ||
                     skill.toLowerCase().includes(userSkill.toLowerCase())
@@ -459,157 +596,227 @@ function ProjectCard({
                       key={index} 
                       variant="secondary" 
                       className={cn(
-                        "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+                        "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px] sm:text-xs",
                         isMatched && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
                       )}
                     >
                       {skill}
-                      {isMatched && <CheckCircle className="h-3 w-3 ml-1" />}
+                      {isMatched && <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-0.5" />}
                     </Badge>
                   )
                 })}
-                {project.skills && project.skills.length > 8 && (
-                  <Badge variant="outline" className="text-slate-500">
-                    +{project.skills.length - 8} autres
+                {project.skills && project.skills.length > (isMobile ? 6 : 8) && (
+                  <Badge variant="outline" className="text-[10px] sm:text-xs">
+                    +{project.skills.length - (isMobile ? 6 : 8)} {t.otherSkills}
                   </Badge>
                 )}
               </div>
             </div>
 
             {/* Informations supplémentaires */}
-            <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-slate-500">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>Posté le {new Date(project.createdAt).toLocaleDateString('fr-FR')}</span>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-[10px] sm:text-xs text-slate-500 dark:text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span>{t.postedOn} {new Date(project.createdAt).toLocaleDateString('fr-FR')}</span>
               </div>
               {project.complexity && (
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
+                <div className="flex items-center gap-1.5">
+                  <Zap className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span className="capitalize">{project.complexity}</span>
                 </div>
               )}
               {project.visibility === "private" && (
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-blue-500" />
-                  <span className="text-blue-600 dark:text-blue-400">Invitation uniquement</span>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-500" />
+                  <span className="text-blue-600 dark:text-blue-400">{t.privateInvitation}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Colonne d'action */}
-          <div className="flex flex-col justify-between w-48">
-            <div className="text-right">
-              <div className="text-xs text-slate-500 dark:text-slate-500 mb-2">
-                {project.status === "open" ? "🔴 Ouvert aux candidatures" : "🟡 En cours"}
+          {/* Colonne d'action - Desktop */}
+          {!isMobile ? (
+            <div className="flex flex-col justify-between w-40 sm:w-48">
+              <div className="text-right mb-3">
+                <div className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-500">
+                  {project.status === "open" ? "🔴 " + t.openForApplications : "🟡 " + t.inProgress}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => onApply(project._id)}
+                  size="default"
+                  disabled={session?.user?.role !== "freelance" && session?.user?.role !== "freelancer"}
+                  className={cn(
+                    "font-semibold w-full text-sm",
+                    (session?.user?.role === "freelance" || session?.user?.role === "freelancer")
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : "bg-gray-400 opacity-60 cursor-not-allowed"
+                  )}
+                >
+                  {t.apply}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full border-slate-300 dark:border-slate-600 text-sm"
+                  size="default"
+                  onClick={() => onDetail(project._id)}
+                >
+                  {t.viewDetails}
+                </Button>
               </div>
             </div>
-            
-            <div className="space-y-3">
-              <Button 
-                onClick={() => onApply(project._id)}
-                size="lg"
-                disabled={session?.user?.role !== "freelance" && session?.user?.role !== "freelancer"}
-                className={`font-semibold w-full ${
-                  session?.user?.role === "freelance" || session?.user?.role === "freelancer"
-                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                    : "bg-gray-400 opacity-60 cursor-not-allowed"
-                }`}
-              >
-                Postuler
-              </Button>
+          ) : (
+            // Actions mobiles - Bottom sheet
+            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => onApply(project._id)}
+                  size="sm"
+                  disabled={session?.user?.role !== "freelance" && session?.user?.role !== "freelancer"}
+                  className={cn(
+                    "flex-1 text-sm",
+                    (session?.user?.role === "freelance" || session?.user?.role === "freelancer")
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : "bg-gray-400 opacity-60 cursor-not-allowed"
+                  )}
+                >
+                  {t.apply}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1 text-sm"
+                  onClick={() => onDetail(project._id)}
+                >
+                  {t.viewDetails}
+                </Button>
+                
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onSave(project._id)}
+                    className="h-8 w-8"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onShare(project)}
+                    className="h-8 w-8"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               
-              <Button 
-                variant="outline" 
-                className="w-full border-slate-300 dark:border-slate-600"
-                size="sm"
-                onClick={() => onDetail(project._id)}
-              >
-                Voir les détails
-              </Button>
+              <div className="text-center mt-2">
+                <div className="text-[10px] text-slate-500 dark:text-slate-500">
+                  {project.status === "open" ? "🔴 " + t.openForApplications : "🟡 " + t.inProgress}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function ProjectsGridSkeleton() {
+// Skeleton responsive
+function ProjectsGridSkeleton({ lang = 'fr' }: { lang?: string }) {
+  const t = translations[lang as keyof typeof translations] || translations.fr
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* En-tête skeleton */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <Skeleton className="h-10 w-64 mb-2" />
-          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-7 sm:h-10 w-48 sm:w-64 mb-1 sm:mb-2" />
+          <Skeleton className="h-4 sm:h-5 w-32 sm:w-48" />
         </div>
-        <div className="flex gap-3">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-24" />
-        </div>
+        <Skeleton className="h-8 sm:h-9 w-20 sm:w-24" />
       </div>
 
       {/* Liste des projets skeleton */}
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
+      <div className="space-y-3 sm:space-y-4">
+        {[...Array(isMobile ? 3 : 5)].map((_, i) => (
           <Card key={i} className="border-slate-200 dark:border-slate-800">
-            <CardContent className="p-6">
-              <div className="flex gap-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                 <div className="flex-1">
                   {/* En-tête */}
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-3 sm:mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Skeleton className="h-7 w-3/4" />
-                        <Skeleton className="h-5 w-16" />
-                      </div>
-                      <Skeleton className="h-4 w-full mb-1" />
-                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-5 sm:h-6 md:h-7 w-3/4 mb-2" />
+                      <Skeleton className="h-3 sm:h-4 w-full mb-1" />
+                      <Skeleton className="h-3 sm:h-4 w-2/3" />
                     </div>
                   </div>
 
                   {/* Métadonnées */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                    <div className="flex gap-4">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-16" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="flex gap-3">
+                      <Skeleton className="h-3 sm:h-4 w-16" />
+                      <Skeleton className="h-3 sm:h-4 w-12" />
                     </div>
-                    <div className="flex gap-4">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                    <div className="flex gap-4">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-16" />
-                    </div>
+                    <Skeleton className="h-3 sm:h-4 w-32" />
+                    <Skeleton className="h-3 sm:h-4 w-24" />
                   </div>
 
                   {/* Compétences */}
-                  <div className="mb-4">
-                    <Skeleton className="h-4 w-32 mb-2" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-16" />
-                      <Skeleton className="h-6 w-20" />
-                      <Skeleton className="h-6 w-14" />
+                  <div className="mb-3 sm:mb-4">
+                    <Skeleton className="h-3 sm:h-4 w-24 mb-2" />
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <Skeleton className="h-5 sm:h-6 w-14" />
+                      <Skeleton className="h-5 sm:h-6 w-16" />
+                      <Skeleton className="h-5 sm:h-6 w-12" />
                     </div>
                   </div>
 
                   {/* Informations supplémentaires */}
-                  <div className="flex gap-6">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-16" />
+                  <div className="flex gap-3 sm:gap-6">
+                    <Skeleton className="h-3 sm:h-4 w-20" />
+                    <Skeleton className="h-3 sm:h-4 w-16" />
                   </div>
                 </div>
 
-                {/* Colonne action */}
-                <div className="w-48">
-                  <div className="text-right mb-4">
-                    <Skeleton className="h-3 w-20 ml-auto" />
-                  </div>
-                  <div className="space-y-3">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-8 w-full" />
+                {/* Colonne action skeleton */}
+                <div className={cn(
+                  isMobile ? "mt-3 pt-3 border-t border-slate-200" : "w-40 sm:w-48",
+                  "flex flex-col justify-between"
+                )}>
+                  <div className={cn(
+                    "space-y-2",
+                    isMobile ? "flex flex-row gap-2" : ""
+                  )}>
+                    <Skeleton className={cn(
+                      "h-8 sm:h-9",
+                      isMobile ? "flex-1" : "w-full"
+                    )} />
+                    <Skeleton className={cn(
+                      "h-8 sm:h-9",
+                      isMobile ? "flex-1" : "w-full mt-2"
+                    )} />
+                    {isMobile && (
+                      <div className="flex gap-1">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
