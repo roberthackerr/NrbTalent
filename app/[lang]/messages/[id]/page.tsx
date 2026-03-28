@@ -1,11 +1,10 @@
-// app/messages/[id]/page.tsx - VERSION AVEC SCROLL MOBILE OPTIMISÉ
+// app/messages/[id]/page.tsx - VERSION FINALE SANS LOGIQUE SIDEBAR SUPPLÉMENTAIRE
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "sonner"
-import { ArrowLeft } from "lucide-react"
 
 // Components
 import { ConnectionStatus } from "@/components/ConnectionStatus"
@@ -43,9 +42,6 @@ export default function ConversationPage() {
   const messagePreferences = useMessagePreferences()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-
-  // ── RESPONSIVE: sidebar visible on mobile ────────────────────────────────
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   // ── Call states ───────────────────────────────────────────────────────────
   const [showIncomingCall, setShowIncomingCall] = useState(false)
@@ -90,7 +86,6 @@ export default function ConversationPage() {
   const scrollToBottom = useCallback((force: boolean = false) => {
     if (!messagesEndRef.current) return
     
-    // Utilisation de requestAnimationFrame pour un scroll plus fluide sur mobile
     requestAnimationFrame(() => {
       try {
         if (force) {
@@ -102,16 +97,6 @@ export default function ConversationPage() {
         console.log("Scroll error (non-critical):", error)
       }
     })
-  }, [])
-
-  // Scroll helper pour le conteneur des messages
-  const scrollMessagesContainerToBottom = useCallback(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: "smooth"
-      })
-    }
   }, [])
 
   const generateChannelName = useCallback((convId: string) => {
@@ -255,8 +240,6 @@ export default function ConversationPage() {
         if (targetConversation) {
           hasOpenedUrlConversation.current = true
           conversationManager.selectConversation(conversationId)
-          // On mobile, hide sidebar when opening from URL
-          setMobileSidebarOpen(false)
           setTimeout(() => fetchMessages(conversationId), 200)
         }
       }
@@ -339,7 +322,6 @@ export default function ConversationPage() {
           toast.info("Vous vous êtes connecté depuis un autre appareil")
           if (isVideoCallOpen || showOutgoingCall || showIncomingCall) handleEndCall()
           break
-        case "PONG": break
         case "VIDEO_CALL_INCOMING":
           if (isVideoCallOpen || showOutgoingCall || showIncomingCall) return
           setIncomingCallData({ callerName: message.data.callerName || "Utilisateur", callerAvatar: message.data.callerAvatar, channelName: message.data.channelName, conversationId: message.data.conversationId, isVideoCall: message.data.isVideoCall !== false })
@@ -347,7 +329,7 @@ export default function ConversationPage() {
           try {
             const audio = new Audio("/sounds/incoming-call.mp3")
             audio.loop = true
-            audio.play().catch(err => alert(err))
+            audio.play().catch(err => console.log("Audio error:", err))
             setTimeout(() => { audio.pause(); audio.currentTime = 0 }, 30000)
           } catch (error) { console.log("Audio error:", error) }
           break
@@ -414,19 +396,9 @@ export default function ConversationPage() {
     lastSelectedConversation.current = convId
     typingManager.cleanup()
     conversationManager.selectConversation(convId)
-    // RESPONSIVE: hide sidebar on mobile when selecting conversation
-    setMobileSidebarOpen(false)
     try { window.history.pushState({}, "", `/messages/${convId}`) } catch (error) { console.log("History push error:", error) }
     setTimeout(() => fetchMessages(convId), 50)
   }, [conversationManager, typingManager, fetchMessages])
-
-  // ── Back to sidebar on mobile ─────────────────────────────────────────────
-  const handleBackToSidebar = useCallback(() => {
-    setMobileSidebarOpen(true)
-    conversationManager.selectConversation(null)
-    lastSelectedConversation.current = null
-    router.push("/messages")
-  }, [conversationManager, router])
 
   // ── Send message ──────────────────────────────────────────────────────────
   const handleSendMessage = useCallback(async (content: string, convId: string) => {
@@ -524,7 +496,6 @@ export default function ConversationPage() {
         if (conversationManager.selectedConversationId === convId) {
           conversationManager.selectConversation(null)
           lastSelectedConversation.current = null
-          setMobileSidebarOpen(true)
           router.push("/messages")
         }
         toast.success("Conversation supprimée")
@@ -684,105 +655,46 @@ export default function ConversationPage() {
 
       {session && <MeetButtonFloating lang={"fr"} />}
 
-      {/*
-        ─── RESPONSIVE LAYOUT ───────────────────────────────────────────────
-        Desktop: sidebar always visible alongside chat panel (flex side-by-side)
-        Mobile:  sidebar OR chat — never both at the same time
-                 controlled by mobileSidebarOpen state
-      */}
+      {/* ConversationsSidebar - gère sa propre responsivité */}
+      <ConversationsSidebar
+        conversations={conversationManager.conversations}
+        selectedConversation={conversationManager.selectedConversationId}
+        onSelectConversation={handleSelectConversation}
+        isLoading={conversationManager.isLoading}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onNewConversation={() => setShowNewConversation(true)}
+        onNewAIConversation={createAIConversation}
+        onDeleteConversation={(conv, e) => {
+          e?.stopPropagation?.()
+          setConversationToDelete(conv)
+          setShowDeleteModal(true)
+        }}
+        isConnected={wsManager.isConnected}
+        session={session}
+      />
 
-      {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
-      {/*
-        - Mobile: full-width, shown when mobileSidebarOpen=true, hidden otherwise
-        - Desktop (md+): fixed width 320px, always visible
-      */}
-      <div className={`
-        ${mobileSidebarOpen ? "flex" : "hidden"} 
-        md:flex 
-        w-full md:w-80 
-        flex-shrink-0 
-        bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm
-        border-r border-gray-200 dark:border-gray-700
-        h-full
-        z-20
-        md:z-auto
-      `}>
-        <ConversationsSidebar
-          conversations={conversationManager.conversations}
-          selectedConversation={conversationManager.selectedConversationId}
-          onSelectConversation={handleSelectConversation}
-          isLoading={conversationManager.isLoading}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onNewConversation={() => setShowNewConversation(true)}
-          onNewAIConversation={createAIConversation}
-          onDeleteConversation={(conv, e) => {
-            e?.stopPropagation?.()
-            setConversationToDelete(conv)
-            setShowDeleteModal(true)
-          }}
-          isConnected={wsManager.isConnected}
-          session={session}
-        />
-      </div>
-
-      {/* Overlay for mobile when sidebar is open */}
-      {mobileSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-10 md:hidden"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* ── CHAT PANEL ───────────────────────────────────────────────────── */}
-      {/*
-        - Mobile: full-width, shown when mobileSidebarOpen=false
-        - Desktop (md+): flex-1, always visible alongside sidebar
-      */}
-      <div className={`
-        ${!mobileSidebarOpen ? "flex" : "hidden"} 
-        md:flex 
-        flex-col 
-        flex-1 
-        min-w-0 
-        h-full 
-        relative
-        bg-white/50 dark:bg-gray-900/50
-      `}>
+      {/* Chat Panel */}
+      <div className="flex-1 flex flex-col min-w-0 h-full relative bg-white/50 dark:bg-gray-900/50">
         {selectedConversation ? (
           <>
-            {/* Chat header — with back button on mobile */}
-            <div className="shrink-0">
-              {/* Mobile back button row */}
-              <div className="flex items-center md:hidden px-3 pt-3 pb-1">
-                <button
-                  onClick={handleBackToSidebar}
-                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                  aria-label="Retour aux conversations"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Conversations</span>
-                </button>
-              </div>
+            <ChatHeader
+              onOpenSettings={() => setShowSettings(true)}
+              conversation={selectedConversation}
+              otherParticipant={otherParticipant}
+              onRefresh={() => {
+                if (conversationManager.selectedConversationId) fetchMessages(conversationManager.selectedConversationId)
+              }}
+              isConnected={wsManager.isConnected}
+              onStartVideoCall={handleStartVideoCall}
+              onStartVoiceCall={() => toast.info("Appel vocal - À implémenter")}
+              onEndCall={handleEndCall}
+              callStatus={callStatus}
+              callRemoteCount={remoteUsers.length}
+              isCallActive={isCallActive}
+            />
 
-              <ChatHeader
-                onOpenSettings={() => setShowSettings(true)}
-                conversation={selectedConversation}
-                otherParticipant={otherParticipant}
-                onRefresh={() => {
-                  if (conversationManager.selectedConversationId) fetchMessages(conversationManager.selectedConversationId)
-                }}
-                isConnected={wsManager.isConnected}
-                onStartVideoCall={handleStartVideoCall}
-                onStartVoiceCall={() => toast.info("Appel vocal - À implémenter")}
-                onEndCall={handleEndCall}
-                callStatus={callStatus}
-                callRemoteCount={remoteUsers.length}
-                isCallActive={isCallActive}
-              />
-            </div>
-
-            {/* Messages area - CORRIGÉ POUR LE SCROLL MOBILE */}
+            {/* Messages area - scrollable */}
             <div 
               ref={messagesContainerRef}
               className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
@@ -828,19 +740,16 @@ export default function ConversationPage() {
               )}
             </div>
 
-            {/* Message input */}
-            <div className="shrink-0">
-              <MessageInput
-                onSendMessage={handleSendMessage}
-                onSendAIMessage={handleSendAIMessage}
-                selectedConversation={conversationManager.selectedConversationId}
-                disabled={(!wsManager.isConnected && !conversationContext?.isAIConversation) || isVideoCallOpen}
-                onTypingStart={handleTypingStart}
-                onTypingStop={handleTypingStop}
-                conversationContext={conversationContext}
-                isConnected={wsManager.isConnected}
-              />
-            </div>
+            <MessageInput
+              onSendMessage={handleSendMessage}
+              onSendAIMessage={handleSendAIMessage}
+              selectedConversation={conversationManager.selectedConversationId}
+              disabled={(!wsManager.isConnected && !conversationContext?.isAIConversation) || isVideoCallOpen}
+              onTypingStart={handleTypingStart}
+              onTypingStop={handleTypingStop}
+              conversationContext={conversationContext}
+              isConnected={wsManager.isConnected}
+            />
           </>
         ) : (
           /* Empty state — no conversation selected */
@@ -874,14 +783,6 @@ export default function ConversationPage() {
                   Discuter avec l'AI
                 </button>
               </div>
-              
-              {/* Button to open sidebar on desktop when no conversation selected */}
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="mt-6 md:hidden text-sm text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                Voir les conversations
-              </button>
             </div>
           </div>
         )}
