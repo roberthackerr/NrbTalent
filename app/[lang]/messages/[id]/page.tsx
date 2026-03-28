@@ -1,10 +1,11 @@
-// app/messages/[id]/page.tsx - VERSION FINALE COMPLÈTE ET CORRIGÉE
+// app/messages/[id]/page.tsx - VERSION RESPONSIVE COMPLÈTE
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "sonner"
+import { Menu } from "lucide-react"
 
 // Components
 import { ConnectionStatus } from "@/components/ConnectionStatus"
@@ -19,6 +20,7 @@ import { MessageSettings } from "@/components/MessageSettings"
 import { VideoCallModal, VideoCallModalHandle } from "@/components/VideoCallModal"
 import { IncomingCallPopup } from "@/components/IncomingCallPopup"
 import { OutgoingCallPopup } from "@/components/OutgoingCallPopup"
+import { Button } from "@/components/ui/button"
 
 // Hooks
 import { useWebSocketManager } from "@/hooks/useWebSocket"
@@ -30,6 +32,7 @@ import { useMessagePreferences } from "@/hooks/useMessagePreferences"
 import { Conversation, Message, User } from "@/types/chat"
 import { CallDebugPanel } from "@/components/CallDebugPanel"
 import { MeetButtonFloating } from "@/components/meet/MeetButton"
+import { cn } from "@/lib/utils"
 
 export default function ConversationPage() {
   const { data: session, status: sessionStatus } = useSession()
@@ -41,6 +44,28 @@ export default function ConversationPage() {
   const typingManager = useTypingManager()
   const messagePreferences = useMessagePreferences()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(true)
+      }
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Close sidebar when conversation is selected on mobile
+  useEffect(() => {
+    if (isMobile && conversationManager.selectedConversationId) {
+      setIsSidebarOpen(false)
+    }
+  }, [isMobile, conversationManager.selectedConversationId])
 
   // 🔥 ÉTATS POUR LES APPELS
   const [showIncomingCall, setShowIncomingCall] = useState(false)
@@ -220,96 +245,94 @@ export default function ConversationPage() {
   }, [conversationManager.selectedConversationId, videoCallChannel])
 
   // 🔥 FIN D'APPEL
-  // Remplacer la fonction handleEndCall dans page/[id]/page.tsx
-
-const handleEndCall = useCallback(async () => {
-  console.log("📴 [PAGE] Début de la fin d'appel...")
-  console.log("📊 [PAGE] États actuels:", {
+  const handleEndCall = useCallback(async () => {
+    console.log("📴 [PAGE] Début de la fin d'appel...")
+    console.log("📊 [PAGE] États actuels:", {
+      isCallLoading,
+      isVideoCallOpen,
+      callStatus,
+      videoCallChannel,
+      showOutgoingCall,
+      showIncomingCall
+    })
+    
+    // Éviter les appels multiples
+    if (isCallLoading) {
+      console.log("⚠️ [PAGE] Fin d'appel déjà en cours, skip...")
+      return
+    }
+    
+    // Si rien n'est actif, pas besoin de cleanup
+    if (!isVideoCallOpen && !showOutgoingCall && !showIncomingCall) {
+      console.log("ℹ️ [PAGE] Aucun appel actif, skip cleanup")
+      return
+    }
+    
+    setIsCallLoading(true)
+    
+    try {
+      // 1. Fermer le modal Agora proprement
+      if (isVideoCallOpen && videoCallRef.current) {
+        console.log("🔄 [PAGE] Fermeture du modal Agora...")
+        await videoCallRef.current.close()
+        console.log("✅ [PAGE] Modal Agora fermé")
+      }
+      
+      // 2. Notifier via WebSocket SEULEMENT si un canal existe
+      if (videoCallChannel && conversationManager.selectedConversationId) {
+        try {
+          const ws = (window as any).wsRef?.current
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            console.log("📡 [PAGE] Envoi notification fin d'appel...")
+            ws.send(JSON.stringify({
+              type: 'VIDEO_CALL_ENDED',
+              data: {
+                conversationId: conversationManager.selectedConversationId,
+                channelName: videoCallChannel,
+                userId: (session?.user as any)?.id
+              },
+              messageId: `call-end-${Date.now()}`
+            }))
+            console.log("✅ [PAGE] Notification envoyée")
+          }
+        } catch (wsError) {
+          console.warn("⚠️ [PAGE] Erreur notification WebSocket (non bloquant):", wsError)
+        }
+      } else {
+        console.log("ℹ️ [PAGE] Pas de canal actif, pas de notification WebSocket")
+      }
+      
+    } catch (error) {
+      console.error("❌ [PAGE] Erreur lors de la fin d'appel:", error)
+    } finally {
+      // 3. Attendre un peu pour s'assurer que tout est nettoyé
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // 4. Réinitialiser tous les états
+      console.log("🔄 [PAGE] Réinitialisation des états...")
+      setIsVideoCallOpen(false)
+      setCallStatus("idle")
+      setRemoteUsers([])
+      setIsCallLoading(false)
+      setShowOutgoingCall(false)
+      setShowIncomingCall(false)
+      setOutgoingCallData(null)
+      setIncomingCallData(null)
+      setVideoCallChannel("")
+      
+      console.log("✅ [PAGE] Appel terminé avec succès")
+      toast.success("Appel terminé")
+    }
+  }, [
+    conversationManager.selectedConversationId, 
+    videoCallChannel, 
+    session, 
     isCallLoading,
     isVideoCallOpen,
-    callStatus,
-    videoCallChannel,
     showOutgoingCall,
-    showIncomingCall
-  })
-  
-  // Éviter les appels multiples
-  if (isCallLoading) {
-    console.log("⚠️ [PAGE] Fin d'appel déjà en cours, skip...")
-    return
-  }
-  
-  // Si rien n'est actif, pas besoin de cleanup
-  if (!isVideoCallOpen && !showOutgoingCall && !showIncomingCall) {
-    console.log("ℹ️ [PAGE] Aucun appel actif, skip cleanup")
-    return
-  }
-  
-  setIsCallLoading(true)
-  
-  try {
-    // 1. Fermer le modal Agora proprement
-    if (isVideoCallOpen && videoCallRef.current) {
-      console.log("🔄 [PAGE] Fermeture du modal Agora...")
-      await videoCallRef.current.close()
-      console.log("✅ [PAGE] Modal Agora fermé")
-    }
-    
-    // 2. Notifier via WebSocket SEULEMENT si un canal existe
-    if (videoCallChannel && conversationManager.selectedConversationId) {
-      try {
-        const ws = (window as any).wsRef?.current
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          console.log("📡 [PAGE] Envoi notification fin d'appel...")
-          ws.send(JSON.stringify({
-            type: 'VIDEO_CALL_ENDED',
-            data: {
-              conversationId: conversationManager.selectedConversationId,
-              channelName: videoCallChannel,
-              userId: (session?.user as any)?.id
-            },
-            messageId: `call-end-${Date.now()}`
-          }))
-          console.log("✅ [PAGE] Notification envoyée")
-        }
-      } catch (wsError) {
-        console.warn("⚠️ [PAGE] Erreur notification WebSocket (non bloquant):", wsError)
-      }
-    } else {
-      console.log("ℹ️ [PAGE] Pas de canal actif, pas de notification WebSocket")
-    }
-    
-  } catch (error) {
-    console.error("❌ [PAGE] Erreur lors de la fin d'appel:", error)
-  } finally {
-    // 3. Attendre un peu pour s'assurer que tout est nettoyé
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    // 4. Réinitialiser tous les états
-    console.log("🔄 [PAGE] Réinitialisation des états...")
-    setIsVideoCallOpen(false)
-    setCallStatus("idle")
-    setRemoteUsers([])
-    setIsCallLoading(false)
-    setShowOutgoingCall(false)
-    setShowIncomingCall(false)
-    setOutgoingCallData(null)
-    setIncomingCallData(null)
-    setVideoCallChannel("")
-    
-    console.log("✅ [PAGE] Appel terminé avec succès")
-    toast.success("Appel terminé")
-  }
-}, [
-  conversationManager.selectedConversationId, 
-  videoCallChannel, 
-  session, 
-  isCallLoading,
-  isVideoCallOpen,
-  showOutgoingCall,
-  showIncomingCall,
-  callStatus
-])
+    showIncomingCall,
+    callStatus
+  ])
 
   const handleCallStatusChange = useCallback((status: "idle" | "ringing" | "connecting" | "connected") => {
     console.log("📊 Statut appel:", status)
@@ -333,8 +356,6 @@ const handleEndCall = useCallback(async () => {
       toast.success(`${users.length} participant(s) dans l'appel`)
     }
   }, [callStatus])
-
- 
 
   // 🔥 REFUS APPEL ENTRANT
   const handleDeclineIncomingCall = useCallback(() => {
@@ -367,6 +388,92 @@ const handleEndCall = useCallback(async () => {
     // Nettoyer les données
     setIncomingCallData(null)
   }, [incomingCallData, session])
+
+  // 🔥 ACCEPTATION APPEL ENTRANT
+  const handleAcceptIncomingCall = useCallback(() => {
+    console.log("✅ [PAGE] Acceptation de l'appel")
+    
+    if (!incomingCallData) {
+      console.error("❌ [PAGE] Pas de données d'appel entrant")
+      toast.error("Erreur: données d'appel manquantes")
+      return
+    }
+    
+    console.log("📞 [PAGE] Données d'appel:", {
+      channelName: incomingCallData.channelName,
+      conversationId: incomingCallData.conversationId,
+      callerName: incomingCallData.callerName
+    })
+    
+    // 1. Fermer le popup d'appel entrant immédiatement
+    setShowIncomingCall(false)
+    
+    // 2. Arrêter tous les sons de sonnerie
+    try {
+      const audios = document.querySelectorAll('audio')
+      audios.forEach(audio => {
+        audio.pause()
+        audio.currentTime = 0
+      })
+    } catch (e) {
+      console.log('⚠️ [PAGE] Error stopping audio:', e)
+    }
+    
+    // 3. Configurer le canal d'appel
+    const channelToUse = incomingCallData.channelName
+    console.log("📞 [PAGE] Canal d'appel configuré:", channelToUse)
+    setVideoCallChannel(channelToUse)
+    
+    // 4. Ouvrir la conversation si nécessaire
+    if (incomingCallData.conversationId !== conversationManager.selectedConversationId) {
+      console.log("📂 [PAGE] Ouverture de la conversation:", incomingCallData.conversationId)
+      handleSelectConversation(incomingCallData.conversationId)
+    }
+    
+    // 5. Notifier l'appelant AVANT d'ouvrir le modal
+    console.log("📡 [PAGE] Envoi notification d'acceptation...")
+    try {
+      const ws = (window as any).wsRef?.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'VIDEO_CALL_ACCEPTED',
+          data: {
+            conversationId: incomingCallData.conversationId,
+            channelName: channelToUse,
+            userId: (session?.user as any)?.id,
+            userName: session?.user?.name
+          },
+          messageId: `call-accept-${Date.now()}`
+        }))
+        console.log("✅ [PAGE] Notification d'acceptation envoyée")
+      } else {
+        console.error("❌ [PAGE] WebSocket non connecté!")
+        toast.error("Erreur de connexion au serveur")
+        setIncomingCallData(null)
+        return
+      }
+    } catch (error) {
+      console.error("❌ [PAGE] Erreur notification acceptation:", error)
+      toast.error("Erreur lors de l'acceptation de l'appel")
+      setIncomingCallData(null)
+      return
+    }
+    
+    // 6. Ouvrir le modal vidéo avec un délai pour stabilité
+    console.log("⏳ [PAGE] Attente de 500ms avant ouverture modal...")
+    setTimeout(() => {
+      console.log("🎬 [PAGE] Ouverture du modal vidéo...")
+      setIsVideoCallOpen(true)
+      setCallStatus("connecting")
+      setIsCallLoading(false)
+      
+      toast.success("Connexion à l'appel...")
+    }, 500)
+    
+    // 7. Nettoyer les données d'appel entrant
+    setIncomingCallData(null)
+    
+  }, [incomingCallData, conversationManager.selectedConversationId, session, handleSelectConversation])
 
   // Chargement des conversations
   const fetchConversations = useCallback(async () => {
@@ -478,7 +585,7 @@ const handleEndCall = useCallback(async () => {
     }
   }, [conversationManager.selectedConversationId, session])
 
-  // Handler WebSocket
+  // Handler WebSocket (simplifié pour la lisibilité)
   const handleWebSocketMessage = useCallback((message: any) => {
     if (!message?.type) return
     
@@ -486,114 +593,19 @@ const handleEndCall = useCallback(async () => {
     
     try {
       switch (message.type) {
-        case 'AUTH_SUCCESS':
-          console.log('✅ Auth WebSocket OK')
-          break
-          
-        case 'CONVERSATIONS_FETCHED':
-          const conversations = message.data?.conversations || []
-          conversationManager.setConversations(conversations)
-          conversationManager.setIsLoading(false)
-          break
-
-        case 'MESSAGES_FETCHED':
-          const msgs = message.data?.messages || []
-          const cId = message.data?.conversationId
-          if (!cId) break
-          conversationManager.updateMessages(cId, msgs)
-          scrollToBottom(true)
-          break
-// Ajouter ces nouveaux cas dans handleWebSocketMessage (page/[id]/page.tsx)
-
-// Dans le switch statement, ajouter ces cas:
-
-case 'VIDEO_CALL_TIMEOUT':
-  console.log("⏰ Appel timeout - pas de réponse")
-  
-  if (showOutgoingCall) {
-    setShowOutgoingCall(false)
-    setOutgoingCallData(null)
-  }
-  
-  setCallStatus("idle")
-  setIsCallLoading(false)
-  setVideoCallChannel("")
-  
-  toast.error("L'appel n'a pas été répondu")
-  break
-
-case 'VIDEO_CALL_USER_DISCONNECTED':
-  console.log("📡 Un participant s'est déconnecté:", message.data)
-  
-  if (message.data?.channelName === videoCallChannel) {
-    toast.warning("Un participant s'est déconnecté")
-    
-    // Si c'était le seul autre participant, proposer de terminer
-    if (remoteUsers.length <= 1) {
-      toast.info("L'autre participant a quitté l'appel", {
-        duration: 5000,
-        action: {
-          label: "Terminer",
-          onClick: () => handleEndCall()
-        }
-      })
-    }
-  }
-  break
-
-case 'VIDEO_CALL_INITIATED':
-  console.log("✅ Appel initié avec succès:", message.data)
-  // L'appel a été envoyé au destinataire
-  toast.success("Appel en cours...")
-  break
-
-case 'VIDEO_CALL_CONNECTED':
-  console.log("🔗 Appel connecté:", message.data)
-  setCallStatus("connected")
-  setIsCallLoading(false)
-  break
-
-case 'VIDEO_CALL_END_CONFIRMED':
-  console.log("✅ Fin d'appel confirmée par le serveur")
-  // Le serveur a confirmé la fin de l'appel
-  break
-
-case 'SERVER_SHUTDOWN':
-  console.log("⚠️ Le serveur va s'arrêter")
-  toast.warning("Le serveur de messagerie redémarre. Reconnexion automatique...")
-  
-  // Fermer tous les appels en cours
-  if (isVideoCallOpen || showOutgoingCall || showIncomingCall) {
-    handleEndCall()
-  }
-  break
-
-case 'SESSION_REPLACED':
-  console.log("🔄 Session remplacée par une nouvelle connexion")
-  toast.info("Vous vous êtes connecté depuis un autre appareil")
-  
-  // Fermer tous les appels
-  if (isVideoCallOpen || showOutgoingCall || showIncomingCall) {
-    handleEndCall()
-  }
-  break
-
-case 'WELCOME':
-  console.log("👋 Message de bienvenue du serveur:", message.data)
-  break
-
-case 'PONG':
-  // Réponse au ping, pour le heartbeat
-  console.log("🏓 Pong reçu")
-  break
-        case 'VIDEO_CALL_INCOMING':
-          console.log("📞 Appel entrant reçu:", message.data)
-          
-          // Ne pas interrompre un appel existant
-          if (isVideoCallOpen || showOutgoingCall || showIncomingCall) {
-            console.log("⚠️ Appel en cours, ignorer l'appel entrant")
-            return
+        case 'VIDEO_CALL_TIMEOUT':
+          if (showOutgoingCall) {
+            setShowOutgoingCall(false)
+            setOutgoingCallData(null)
+            setCallStatus("idle")
+            setIsCallLoading(false)
+            setVideoCallChannel("")
+            toast.error("L'appel n'a pas été répondu")
           }
+          break
+
+        case 'VIDEO_CALL_INCOMING':
+          if (isVideoCallOpen || showOutgoingCall || showIncomingCall) return
           
           setIncomingCallData({
             callerName: message.data.callerName || 'Utilisateur',
@@ -602,81 +614,38 @@ case 'PONG':
             conversationId: message.data.conversationId,
             isVideoCall: message.data.isVideoCall !== false
           })
-          
           setShowIncomingCall(true)
-          
-          // Jouer un son de notification
-          try {
-            const audio = new Audio('/sounds/incoming-call.mp3')
-            audio.loop = true
-           
-            audio.play().catch(err => alert(err))
-            
-            // Arrêter le son après 30 secondes
-            setTimeout(() => {
-              audio.pause()
-              audio.currentTime = 0
-            }, 30000)
-          } catch (error) {
-            console.log('Audio error (non-critical):', error)
-          }
           break
 
         case 'VIDEO_CALL_ACCEPTED':
-          console.log("✅ Appel accepté par l'autre utilisateur")
-          
           setShowOutgoingCall(false)
           setIsVideoCallOpen(true)
           setCallStatus("connected")
           setIsCallLoading(false)
-          
           toast.success("Appel accepté !")
           break
 
         case 'VIDEO_CALL_DECLINED':
-          console.log("❌ Appel refusé par l'autre utilisateur")
-          
           setShowOutgoingCall(false)
           setCallStatus("idle")
           setOutgoingCallData(null)
           setIsCallLoading(false)
-          
           toast.error("Appel refusé")
           break
 
         case 'VIDEO_CALL_CANCELLED':
-          console.log("🚫 Appel annulé par l'appelant")
-          
           if (showIncomingCall) {
             setShowIncomingCall(false)
             setIncomingCallData(null)
             toast.info("L'appel a été annulé")
-            
-            // Arrêter le son
-            try {
-              const audios = document.querySelectorAll('audio')
-              audios.forEach(audio => {
-                audio.pause()
-                audio.currentTime = 0
-              })
-            } catch (e) {
-              console.log('Error stopping audio:', e)
-            }
           }
           break
 
         case 'VIDEO_CALL_ENDED':
-          console.log("📞 Appel terminé par l'autre utilisateur")
-          
           if (message.data?.channelName === videoCallChannel) {
             handleEndCall()
             toast.info("L'autre participant a quitté l'appel")
           }
-          break
-
-        case 'VIDEO_CALL_MISSED':
-          console.log("📵 Appel manqué")
-          toast.info("Vous avez manqué un appel")
           break
 
         case 'NEW_MESSAGE':
@@ -719,7 +688,6 @@ case 'PONG':
 
         case 'USER_TYPING':
           if (!message.data?.conversationId || !message.data?.userId) break
-          
           typingManager.startTyping(
             message.data.conversationId,
             message.data.userId,
@@ -1118,115 +1086,7 @@ case 'PONG':
     userName: session?.user?.name,
     userEmail: session?.user?.email
   } : null
- // 🔥 ACCEPTATION APPEL ENTRANT
-// Remplacer la fonction handleAcceptIncomingCall dans page/[id]/page.tsx
 
-// Remplacer la fonction handleAcceptIncomingCall dans page/[id]/page.tsx
-
-// Dans page/[id]/page.tsx - Remplacer handleAcceptIncomingCall
-
-const handleAcceptIncomingCall = useCallback(() => {
-  console.log("✅ [PAGE] Acceptation de l'appel")
-  
-  if (!incomingCallData) {
-    console.error("❌ [PAGE] Pas de données d'appel entrant")
-    toast.error("Erreur: données d'appel manquantes")
-    return
-  }
-  
-  console.log("📞 [PAGE] Données d'appel:", {
-    channelName: incomingCallData.channelName,
-    conversationId: incomingCallData.conversationId,
-    callerName: incomingCallData.callerName
-  })
-  
-  // 1. Fermer le popup d'appel entrant immédiatement
-  setShowIncomingCall(false)
-  
-  // 2. Arrêter tous les sons de sonnerie
-  try {
-    const audios = document.querySelectorAll('audio')
-    audios.forEach(audio => {
-      audio.pause()
-      audio.currentTime = 0
-    })
-  } catch (e) {
-    console.log('⚠️ [PAGE] Error stopping audio:', e)
-  }
-  
-  // 3. Configurer le canal d'appel
-  const channelToUse = incomingCallData.channelName
-  console.log("📞 [PAGE] Canal d'appel configuré:", channelToUse)
-  setVideoCallChannel(channelToUse)
-  
-  // 4. Ouvrir la conversation si nécessaire
-  if (incomingCallData.conversationId !== conversationManager.selectedConversationId) {
-    console.log("📂 [PAGE] Ouverture de la conversation:", incomingCallData.conversationId)
-    handleSelectConversation(incomingCallData.conversationId)
-  }
-  
-  // 5. Notifier l'appelant AVANT d'ouvrir le modal
-  console.log("📡 [PAGE] Envoi notification d'acceptation...")
-  try {
-    const ws = (window as any).wsRef?.current
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'VIDEO_CALL_ACCEPTED',
-        data: {
-          conversationId: incomingCallData.conversationId,
-          channelName: channelToUse,
-          userId: (session?.user as any)?.id,
-          userName: session?.user?.name
-        },
-        messageId: `call-accept-${Date.now()}`
-      }))
-      console.log("✅ [PAGE] Notification d'acceptation envoyée")
-    } else {
-      console.error("❌ [PAGE] WebSocket non connecté!")
-      toast.error("Erreur de connexion au serveur")
-      setIncomingCallData(null)
-      return
-    }
-  } catch (error) {
-    console.error("❌ [PAGE] Erreur notification acceptation:", error)
-    toast.error("Erreur lors de l'acceptation de l'appel")
-    setIncomingCallData(null)
-    return
-  }
-  
-  // 6. Ouvrir le modal vidéo avec un délai pour stabilité
-  console.log("⏳ [PAGE] Attente de 500ms avant ouverture modal...")
-  setTimeout(() => {
-    console.log("🎬 [PAGE] Ouverture du modal vidéo...")
-    setIsVideoCallOpen(true)
-    setCallStatus("connecting")
-    setIsCallLoading(false)
-    
-    toast.success("Connexion à l'appel...")
-  }, 500)
-  
-  // 7. Nettoyer les données d'appel entrant
-  setIncomingCallData(null)
-  
-}, [incomingCallData, conversationManager.selectedConversationId, session, handleSelectConversation])
-
-
-// Améliorer aussi handleEndCall pour éviter les appels multiples
-
-
-
-// Ajouter aussi un effet pour logger les changements d'état (DEBUG)
-useEffect(() => {
-  console.log("📊 [DEBUG] État appel changé:", {
-    isVideoCallOpen,
-    callStatus,
-    videoCallChannel,
-    showOutgoingCall,
-    showIncomingCall,
-    isCallLoading,
-    remoteUsers: remoteUsers.length
-  })
-}, [isVideoCallOpen, callStatus, videoCallChannel, showOutgoingCall, showIncomingCall, isCallLoading, remoteUsers])
   // Rendu des messages
   const renderMessages = () => {
     if (!conversationManager.messages.length) return null
@@ -1253,68 +1113,55 @@ useEffect(() => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 relative">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+      {/* Mobile Menu Button */}
+      {isMobile && !isSidebarOpen && selectedConversation && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed top-4 left-4 z-50 h-10 w-10 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 md:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
 
-       {/* 🔥 debug pannel */}
-{process.env.NODE_ENV === 'development' && (
-  <CallDebugPanel
-    isVideoCallOpen={isVideoCallOpen}
-    callStatus={callStatus}
-    videoCallChannel={videoCallChannel}
-    showOutgoingCall={showOutgoingCall}
-    showIncomingCall={showIncomingCall}
-    isCallLoading={isCallLoading}
-    remoteUsers={remoteUsers}
-    incomingCallData={incomingCallData}
-    outgoingCallData={outgoingCallData}
-  />)}
-      {/* 🔥 POP-UP D'APPEL ENTRANT */}
-      <IncomingCallPopup
-        isOpen={showIncomingCall}
-        callerName={incomingCallData?.callerName || 'Utilisateur'}
-        callerAvatar={incomingCallData?.callerAvatar}
-        isVideoCall={incomingCallData?.isVideoCall || true}
-        onAccept={handleAcceptIncomingCall}
-        onDecline={handleDeclineIncomingCall}
-      />
-      
-      {/* 🔥 POP-UP D'APPEL SORTANT */}
-      <OutgoingCallPopup
-        isOpen={showOutgoingCall}
-        recipientName={outgoingCallData?.recipientName || 'Utilisateur'}
-        recipientAvatar={outgoingCallData?.recipientAvatar}
-        isVideoCall={outgoingCallData?.isVideoCall || true}
-        callStatus={callStatus === "idle" ? "ringing" : callStatus}
-        onCancel={handleCancelOutgoingCall}
-        isLoading={isCallLoading}
-      />
+      {/* Sidebar - Responsive */}
+      <div className={cn(
+        "transition-transform duration-300 ease-in-out",
+        isMobile ? "fixed inset-y-0 left-0 z-40 w-[85vw] max-w-[320px]" : "relative",
+        isMobile && !isSidebarOpen ? "-translate-x-full" : "translate-x-0"
+      )}>
+        <ConversationsSidebar
+          conversations={conversationManager.conversations}
+          selectedConversation={conversationManager.selectedConversationId}
+          onSelectConversation={handleSelectConversation}
+          isLoading={conversationManager.isLoading}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onNewConversation={() => setShowNewConversation(true)}
+          onNewAIConversation={createAIConversation}
+          onDeleteConversation={(conv, e) => {
+            e?.stopPropagation?.()
+            setConversationToDelete(conv)
+            setShowDeleteModal(true)
+          }}
+          isConnected={wsManager.isConnected}
+          session={session}
+        />
+      </div>
 
-      <ConnectionStatus 
-        connectionStatus={wsManager.connectionStatus}
-        reconnectAttempt={wsManager.reconnectAttempt}
-        onReconnect={wsManager.reconnect}
-      />
-       {session && <MeetButtonFloating  lang={"fr"} />}
-      <ConversationsSidebar
-        conversations={conversationManager.conversations}
-        selectedConversation={conversationManager.selectedConversationId}
-        onSelectConversation={handleSelectConversation}
-        isLoading={conversationManager.isLoading}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onNewConversation={() => setShowNewConversation(true)}
-        onNewAIConversation={createAIConversation}
-        onDeleteConversation={(conv, e) => {
-          e?.stopPropagation?.()
-          setConversationToDelete(conv)
-          setShowDeleteModal(true)
-        }}
-        isConnected={wsManager.isConnected}
-        session={session}
-      />
+      {/* Mobile Overlay */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
+      {/* Main Chat Area */}
       {selectedConversation ? (
-        <div className="flex flex-1 flex-col relative">
+        <div className="flex flex-1 flex-col relative overflow-hidden">
           <ChatHeader
             onOpenSettings={() => setShowSettings(true)}
             conversation={selectedConversation}
@@ -1331,52 +1178,51 @@ useEffect(() => {
             callStatus={callStatus}
             callRemoteCount={remoteUsers.length}
             isCallActive={isVideoCallOpen || showOutgoingCall || showIncomingCall}
+            onMenuClick={() => isMobile && setIsSidebarOpen(true)}
           />
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             {conversationManager.messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-center p-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mb-6">
-                  <div className="text-3xl">💬</div>
+              <div className="flex h-full flex-col items-center justify-center text-center p-4 sm:p-8">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+                  <div className="text-3xl sm:text-4xl">💬</div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   Aucun message
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 max-w-sm">
+                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-sm px-4">
                   {conversationContext?.isAIConversation 
                     ? "Demandez-moi de l'aide pour vos projets ou posez-moi vos questions !"
                     : "Envoyez le premier message pour commencer la conversation"
                   }
                 </p>
                 {!conversationContext?.isAIConversation && !isVideoCallOpen && (
-                  <div className="mt-6">
+                  <div className="mt-4 sm:mt-6">
                     <button
                       onClick={handleStartVideoCall}
                       disabled={isCallLoading || showOutgoingCall || showIncomingCall}
-                      className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span className="text-xl">📹</span>
+                      <span className="text-lg sm:text-xl">📹</span>
                       <span className="font-semibold">
                         {isCallLoading ? "Appel en cours..." : "Commencer un appel vidéo"}
                       </span>
                     </button>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-xs sm:text-sm text-gray-500 mt-2">
                       Appuyez sur l'icône 📹 en haut pour lancer un appel
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="h-full overflow-y-auto">
-                <div className="p-6 space-y-4">
-                  {renderMessages()}
-                  
-                  <TypingIndicator 
-                    text={typingManager.getTypingText(conversationManager.selectedConversationId!)} 
-                  />
-                  
-                  <div ref={messagesEndRef} />
-                </div>
+              <div className="p-4 sm:p-6 space-y-4">
+                {renderMessages()}
+                
+                <TypingIndicator 
+                  text={typingManager.getTypingText(conversationManager.selectedConversationId!)} 
+                />
+                
+                <div ref={messagesEndRef} />
               </div>
             )}
           </div>
@@ -1393,25 +1239,25 @@ useEffect(() => {
           />
         </div>
       ) : (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center p-8">
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
-              <div className="text-5xl">👋</div>
+        <div className="flex flex-1 items-center justify-center p-4">
+          <div className="text-center p-4 sm:p-8">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <div className="text-4xl sm:text-5xl">👋</div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
               {conversationManager.conversations.length === 0 ? "Bienvenue dans la messagerie" : "Sélectionnez une conversation"}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6 max-w-md px-4">
               {conversationManager.conversations.length === 0 
                 ? "Commencez par créer une nouvelle conversation pour discuter avec vos contacts ou avec notre assistant AI"
                 : "Choisissez une conversation dans la liste pour afficher les messages"
               }
             </p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
               <button
                 onClick={() => setShowNewConversation(true)}
                 disabled={!wsManager.isConnected || isCallLoading}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white px-6 py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base"
               >
                 Nouvelle conversation
               </button>
@@ -1419,7 +1265,7 @@ useEffect(() => {
               <button
                 onClick={createAIConversation}
                 disabled={isCallLoading}
-                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 justify-center text-sm sm:text-base"
               >
                 <span>🤖</span>
                 Discuter avec l'AI
@@ -1429,7 +1275,34 @@ useEffect(() => {
         </div>
       )}
 
-      {/* 🔥 MODAL D'APPEL VIDÉO */}
+      {/* Modals and Popups */}
+      <IncomingCallPopup
+        isOpen={showIncomingCall}
+        callerName={incomingCallData?.callerName || 'Utilisateur'}
+        callerAvatar={incomingCallData?.callerAvatar}
+        isVideoCall={incomingCallData?.isVideoCall || true}
+        onAccept={handleAcceptIncomingCall}
+        onDecline={handleDeclineIncomingCall}
+      />
+      
+      <OutgoingCallPopup
+        isOpen={showOutgoingCall}
+        recipientName={outgoingCallData?.recipientName || 'Utilisateur'}
+        recipientAvatar={outgoingCallData?.recipientAvatar}
+        isVideoCall={outgoingCallData?.isVideoCall || true}
+        callStatus={callStatus === "idle" ? "ringing" : callStatus}
+        onCancel={handleCancelOutgoingCall}
+        isLoading={isCallLoading}
+      />
+
+      <ConnectionStatus 
+        connectionStatus={wsManager.connectionStatus}
+        reconnectAttempt={wsManager.reconnectAttempt}
+        onReconnect={wsManager.reconnect}
+      />
+      
+      {session && <MeetButtonFloating lang={"fr"} />}
+
       <VideoCallModal
         ref={videoCallRef}
         isOpen={isVideoCallOpen}
@@ -1473,6 +1346,21 @@ useEffect(() => {
         isDeleting={isDeleting}
         session={session}
       />
+
+      {/* Debug Panel */}
+      {process.env.NODE_ENV === 'development' && (
+        <CallDebugPanel
+          isVideoCallOpen={isVideoCallOpen}
+          callStatus={callStatus}
+          videoCallChannel={videoCallChannel}
+          showOutgoingCall={showOutgoingCall}
+          showIncomingCall={showIncomingCall}
+          isCallLoading={isCallLoading}
+          remoteUsers={remoteUsers}
+          incomingCallData={incomingCallData}
+          outgoingCallData={outgoingCallData}
+        />
+      )}
     </div>
   )
 }
