@@ -31,6 +31,7 @@ const publicRoutes = [
   '/cookies'
 ]
 
+// Routes qui ne nécessitent pas de vérification email
 const noEmailVerifyRoutes = [
   '/auth/verify-email-prompt',
   '/auth/verify-email',
@@ -38,11 +39,22 @@ const noEmailVerifyRoutes = [
   '/auth/reset-password'
 ]
 
+// Routes publiques API
 const publicApiRoutes = [
   '/api/auth',
   '/api/webhooks',
   '/api/health',
   '/api/public'
+]
+
+// Routes d'authentification (rediriger si déjà connecté)
+const authRoutes = [
+  '/auth/signin',
+  '/auth/signup',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+  '/auth/verify-email-prompt'
 ]
 
 export const config = {
@@ -89,13 +101,16 @@ export async function middleware(request: NextRequest) {
       preferredLocale = cookieLang
     }
   }
-  // Priorité 3: Langue du navigateur (si pas d'utilisateur connecté)
-  else if (!token?.sub && !pathnameHasLocale) {
-    // const acceptLanguage = request.headers.get('accept-language')
-    // const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
-    // if (browserLocale && locales.includes(browserLocale as any)) {
-    //   preferredLocale = browserLocale
-    // }
+
+  // Extraire le chemin sans la langue
+  const pathWithoutLang = pathnameHasLocale 
+    ? pathname.replace(/^\/[^\/]+/, '') || '/'
+    : pathname
+
+  // 🔥 VÉRIFICATION: Rediriger les utilisateurs connectés depuis les pages d'auth
+  if (token && authRoutes.some(route => pathWithoutLang === route || pathWithoutLang.startsWith(route + '/'))) {
+    const newUrl = new URL(`/${preferredLocale}/dashboard`, request.url)
+    return NextResponse.redirect(newUrl)
   }
 
   console.log('🔍 Language detection:', {
@@ -103,7 +118,8 @@ export async function middleware(request: NextRequest) {
     preferredLocale,
     currentLocale,
     pathnameHasLocale,
-    hasToken: !!token
+    hasToken: !!token,
+    pathWithoutLang
   })
 
   // Redirection vers la langue préférée
@@ -166,18 +182,29 @@ export default withAuth(
       pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
 
+    const isAuthRoute = authRoutes.some(route => 
+      pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
+    )
+
     const needsEmailVerification = !noEmailVerifyRoutes.some(route => 
       pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
+
+    // 🔥 NOUVEAU: Vérification pour les routes d'auth
+    if (isAuthRoute) {
+      if (token) {
+        // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
+        return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
+      }
+      // Sinon, autoriser l'accès à la page d'auth
+      return NextResponse.next()
+    }
 
     if (isPublicApiRoute) {
       return NextResponse.next()
     }
 
     if (isPublicRoute) {
-      if (token && (pathWithoutLang.startsWith('/auth') || pathWithoutLang === '/auth')) {
-        return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
-      }
       return NextResponse.next()
     }
 
