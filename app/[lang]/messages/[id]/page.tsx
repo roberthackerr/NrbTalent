@@ -1,4 +1,4 @@
-// app/messages/[id]/page.tsx - RESPONSIVE VERSION
+// app/messages/[id]/page.tsx - VERSION AVEC SCROLL MOBILE OPTIMISÉ
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
@@ -42,9 +42,10 @@ export default function ConversationPage() {
   const typingManager = useTypingManager()
   const messagePreferences = useMessagePreferences()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // ── RESPONSIVE: sidebar visible on mobile ────────────────────────────────
-  
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
   // ── Call states ───────────────────────────────────────────────────────────
   const [showIncomingCall, setShowIncomingCall] = useState(false)
@@ -85,19 +86,31 @@ export default function ConversationPage() {
   const isLoadingMessages = useRef(false)
   const lastSelectedConversation = useRef<string | null>(null)
 
-  // ── Scroll ────────────────────────────────────────────────────────────────
+  // ── Scroll optimisé pour mobile ───────────────────────────────────────────
   const scrollToBottom = useCallback((force: boolean = false) => {
     if (!messagesEndRef.current) return
-    try {
-      if (force) {
-        messagesEndRef.current.scrollIntoView({ behavior: "auto" })
-      } else {
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-        }, 100)
+    
+    // Utilisation de requestAnimationFrame pour un scroll plus fluide sur mobile
+    requestAnimationFrame(() => {
+      try {
+        if (force) {
+          messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" })
+        } else {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+        }
+      } catch (error) {
+        console.log("Scroll error (non-critical):", error)
       }
-    } catch (error) {
-      console.log("Scroll error (non-critical):", error)
+    })
+  }, [])
+
+  // Scroll helper pour le conteneur des messages
+  const scrollMessagesContainerToBottom = useCallback(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      })
     }
   }, [])
 
@@ -243,7 +256,7 @@ export default function ConversationPage() {
           hasOpenedUrlConversation.current = true
           conversationManager.selectConversation(conversationId)
           // On mobile, hide sidebar when opening from URL
-        
+          setMobileSidebarOpen(false)
           setTimeout(() => fetchMessages(conversationId), 200)
         }
       }
@@ -402,17 +415,18 @@ export default function ConversationPage() {
     typingManager.cleanup()
     conversationManager.selectConversation(convId)
     // RESPONSIVE: hide sidebar on mobile when selecting conversation
-  
+    setMobileSidebarOpen(false)
     try { window.history.pushState({}, "", `/messages/${convId}`) } catch (error) { console.log("History push error:", error) }
     setTimeout(() => fetchMessages(convId), 50)
   }, [conversationManager, typingManager, fetchMessages])
 
   // ── Back to sidebar on mobile ─────────────────────────────────────────────
   const handleBackToSidebar = useCallback(() => {
-
+    setMobileSidebarOpen(true)
     conversationManager.selectConversation(null)
     lastSelectedConversation.current = null
-  }, [conversationManager])
+    router.push("/messages")
+  }, [conversationManager, router])
 
   // ── Send message ──────────────────────────────────────────────────────────
   const handleSendMessage = useCallback(async (content: string, convId: string) => {
@@ -510,7 +524,7 @@ export default function ConversationPage() {
         if (conversationManager.selectedConversationId === convId) {
           conversationManager.selectConversation(null)
           lastSelectedConversation.current = null
-
+          setMobileSidebarOpen(true)
           router.push("/messages")
         }
         toast.success("Conversation supprimée")
@@ -682,7 +696,17 @@ export default function ConversationPage() {
         - Mobile: full-width, shown when mobileSidebarOpen=true, hidden otherwise
         - Desktop (md+): fixed width 320px, always visible
       */}
-
+      <div className={`
+        ${mobileSidebarOpen ? "flex" : "hidden"} 
+        md:flex 
+        w-full md:w-80 
+        flex-shrink-0 
+        bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm
+        border-r border-gray-200 dark:border-gray-700
+        h-full
+        z-20
+        md:z-auto
+      `}>
         <ConversationsSidebar
           conversations={conversationManager.conversations}
           selectedConversation={conversationManager.selectedConversationId}
@@ -700,7 +724,15 @@ export default function ConversationPage() {
           isConnected={wsManager.isConnected}
           session={session}
         />
+      </div>
 
+      {/* Overlay for mobile when sidebar is open */}
+      {mobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-10 md:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
 
       {/* ── CHAT PANEL ───────────────────────────────────────────────────── */}
       {/*
@@ -708,13 +740,14 @@ export default function ConversationPage() {
         - Desktop (md+): flex-1, always visible alongside sidebar
       */}
       <div className={`
-    
-        md:flex
-        flex-col
-        flex-1
-        min-w-0
-        h-full
+        ${!mobileSidebarOpen ? "flex" : "hidden"} 
+        md:flex 
+        flex-col 
+        flex-1 
+        min-w-0 
+        h-full 
         relative
+        bg-white/50 dark:bg-gray-900/50
       `}>
         {selectedConversation ? (
           <>
@@ -749,8 +782,15 @@ export default function ConversationPage() {
               />
             </div>
 
-            {/* Messages area */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            {/* Messages area - CORRIGÉ POUR LE SCROLL MOBILE */}
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+              style={{ 
+                WebkitOverflowScrolling: "touch",
+                scrollBehavior: "smooth"
+              }}
+            >
               {conversationManager.messages.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center p-6 sm:p-8">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mb-4 sm:mb-6">
@@ -780,12 +820,10 @@ export default function ConversationPage() {
                   )}
                 </div>
               ) : (
-                <div className="h-full overflow-y-auto overscroll-contain">
-                  <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
-                    {renderMessages()}
-                    <TypingIndicator text={typingManager.getTypingText(conversationManager.selectedConversationId!)} />
-                    <div ref={messagesEndRef} />
-                  </div>
+                <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
+                  {renderMessages()}
+                  <TypingIndicator text={typingManager.getTypingText(conversationManager.selectedConversationId!)} />
+                  <div ref={messagesEndRef} />
                 </div>
               )}
             </div>
@@ -836,9 +874,14 @@ export default function ConversationPage() {
                   Discuter avec l'AI
                 </button>
               </div>
-
-              {/* On desktop empty state, show button to open sidebar if closed */}
-            
+              
+              {/* Button to open sidebar on desktop when no conversation selected */}
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="mt-6 md:hidden text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Voir les conversations
+              </button>
             </div>
           </div>
         )}
