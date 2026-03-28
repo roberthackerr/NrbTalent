@@ -91,11 +91,11 @@ export async function middleware(request: NextRequest) {
   }
   // Priorité 3: Langue du navigateur (si pas d'utilisateur connecté)
   else if (!token?.sub && !pathnameHasLocale) {
-    const acceptLanguage = request.headers.get('accept-language')
-    const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
-    if (browserLocale && locales.includes(browserLocale as any)) {
-      preferredLocale = browserLocale
-    }
+    // const acceptLanguage = request.headers.get('accept-language')
+    // const browserLocale = acceptLanguage?.split(',')[0].split('-')[0]
+    // if (browserLocale && locales.includes(browserLocale as any)) {
+    //   preferredLocale = browserLocale
+    // }
   }
 
   console.log('🔍 Language detection:', {
