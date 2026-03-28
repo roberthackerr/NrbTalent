@@ -1,4 +1,10 @@
 {
+   "statss": {
+    "projectsPublished": "Projects Published",
+    "activeFreelancers": "Active Freelancers",
+    "revenueGenerated": "Revenue Generated",
+    "successRate": "Success Rate"
+  },
  "testimonialss": {
     "title": "They trust us",
     "subtitle": "Discover the experiences of our clients and freelancers",
