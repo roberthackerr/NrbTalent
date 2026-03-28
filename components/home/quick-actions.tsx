@@ -1,127 +1,161 @@
+// components/home/quick-actions.tsx
 "use client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Rocket, Plus, Search, TrendingUp, Users, Sparkles } from "lucide-react"
 import Link from "next/link"
+import type { Locale } from "@/lib/i18n/config"
 
 interface QuickActionsProps {
   user: any
+  dict?: any
+  lang?: Locale
 }
 
-const freelanceActions = [
-  {
-    title: "Publier un service",
-    description: "Créez votre gig et commencez à recevoir des demandes",
-    icon: Plus,
-    action: "/gigs/create",
-    color: "bg-gradient-to-r from-blue-500 to-purple-600"
-  },
-  {
-    title: "Projets recommandés",
-    description: "Découvrez les projets qui matchent avec vos compétences",
-    icon: TrendingUp,
-    action: "/projects?filter=recommended",
-    color: "bg-gradient-to-r from-green-500 to-emerald-600"
-  },
-  {
-    title: "Optimiser mon profil",
-    description: "Améliorez votre visibilité avec notre IA",
-    icon: Sparkles,
-    action: "/dashboard/settings",
-    color: "bg-gradient-to-r from-orange-500 to-red-600"
+export function QuickActions({ user, dict, lang = "fr" }: QuickActionsProps) {
+  // Translations
+  const t = {
+    title: dict?.quickActions?.title || (user ? "Actions Rapides" : "Commencez dès maintenant"),
+    subtitle: dict?.quickActions?.subtitle || (user 
+      ? "Tout ce dont vous avez besoin en un clic" 
+      : "Rejoignez des milliers de professionnels"),
+    start: dict?.quickActions?.start || "Commencer",
+    freelanceTitle: dict?.quickActions?.freelanceTitle || "Publier un service",
+    freelanceDesc: dict?.quickActions?.freelanceDesc || "Créez votre gig et commencez à recevoir des demandes",
+    recommendedTitle: dict?.quickActions?.recommendedTitle || "Projets recommandés",
+    recommendedDesc: dict?.quickActions?.recommendedDesc || "Découvrez les projets qui matchent avec vos compétences",
+    optimizeTitle: dict?.quickActions?.optimizeTitle || "Optimiser mon profil",
+    optimizeDesc: dict?.quickActions?.optimizeDesc || "Améliorez votre visibilité avec notre IA",
+    clientTitle: dict?.quickActions?.clientTitle || "Publier un projet",
+    clientDesc: dict?.quickActions?.clientDesc || "Trouvez le talent parfait pour votre projet",
+    searchTitle: dict?.quickActions?.searchTitle || "Rechercher des talents",
+    searchDesc: dict?.quickActions?.searchDesc || "Parcourez notre base de freelances experts",
+    analyticsTitle: dict?.quickActions?.analyticsTitle || "Analytics",
+    analyticsDesc: dict?.quickActions?.analyticsDesc || "Suivez vos projets et performances",
+    freelanceSignupTitle: dict?.quickActions?.freelanceSignupTitle || "Commencer en tant que freelance",
+    freelanceSignupDesc: dict?.quickActions?.freelanceSignupDesc || "Créez votre profil et trouvez vos premiers projets",
+    clientSignupTitle: dict?.quickActions?.clientSignupTitle || "Recruter des talents",
+    clientSignupDesc: dict?.quickActions?.clientSignupDesc || "Trouvez les experts pour votre entreprise",
+    exploreTitle: dict?.quickActions?.exploreTitle || "Explorer la plateforme",
+    exploreDesc: dict?.quickActions?.exploreDesc || "Découvrez comment ça marche"
   }
-]
 
-const clientActions = [
-  {
-    title: "Publier un projet",
-    description: "Trouvez le talent parfait pour votre projet",
-    icon: Plus,
-    action: "/projects/create",
-    color: "bg-gradient-to-r from-blue-500 to-purple-600"
-  },
-  {
-    title: "Rechercher des talents",
-    description: "Parcourez notre base de freelances experts",
-    icon: Search,
-    action: "/talents",
-    color: "bg-gradient-to-r from-green-500 to-emerald-600"
-  },
-  {
-    title: "Analytics",
-    description: "Suivez vos projets et performances",
-    icon: TrendingUp,
-    action: "/dashboard/analytics",
-    color: "bg-gradient-to-r from-orange-500 to-red-600"
-  }
-]
+  const freelanceActions = [
+    {
+      title: t.freelanceTitle,
+      description: t.freelanceDesc,
+      icon: Plus,
+      action: `/${lang}/gigs/create`,
+      color: "from-blue-500 to-purple-600"
+    },
+    {
+      title: t.recommendedTitle,
+      description: t.recommendedDesc,
+      icon: TrendingUp,
+      action: `/${lang}/projects?filter=recommended`,
+      color: "from-green-500 to-emerald-600"
+    },
+    {
+      title: t.optimizeTitle,
+      description: t.optimizeDesc,
+      icon: Sparkles,
+      action: `/${lang}/dashboard/settings`,
+      color: "from-orange-500 to-red-600"
+    }
+  ]
 
-const guestActions = [
-  {
-    title: "Commencer en tant que freelance",
-    description: "Créez votre profil et trouvez vos premiers projets",
-    icon: Rocket,
-    action: "/auth/signup?role=freelance",
-    color: "bg-gradient-to-r from-blue-500 to-purple-600"
-  },
-  {
-    title: "Recruter des talents",
-    description: "Trouvez les experts pour votre entreprise",
-    icon: Users,
-    action: "/auth/signup?role=client",
-    color: "bg-gradient-to-r from-green-500 to-emerald-600"
-  },
-  {
-    title: "Explorer la plateforme",
-    description: "Découvrez comment ça marche",
-    icon: Search,
-    action: "/discover",
-    color: "bg-gradient-to-r from-orange-500 to-red-600"
-  }
-]
+  const clientActions = [
+    {
+      title: t.clientTitle,
+      description: t.clientDesc,
+      icon: Plus,
+      action: `/${lang}/projects/create`,
+      color: "from-blue-500 to-purple-600"
+    },
+    {
+      title: t.searchTitle,
+      description: t.searchDesc,
+      icon: Search,
+      action: `/${lang}/talents`,
+      color: "from-green-500 to-emerald-600"
+    },
+    {
+      title: t.analyticsTitle,
+      description: t.analyticsDesc,
+      icon: TrendingUp,
+      action: `/${lang}/dashboard/analytics`,
+      color: "from-orange-500 to-red-600"
+    }
+  ]
 
-export function QuickActions({ user }: QuickActionsProps) {
+  const guestActions = [
+    {
+      title: t.freelanceSignupTitle,
+      description: t.freelanceSignupDesc,
+      icon: Rocket,
+      action: `/${lang}/auth/signup?role=freelance`,
+      color: "from-blue-500 to-purple-600"
+    },
+    {
+      title: t.clientSignupTitle,
+      description: t.clientSignupDesc,
+      icon: Users,
+      action: `/${lang}/auth/signup?role=client`,
+      color: "from-green-500 to-emerald-600"
+    },
+    {
+      title: t.exploreTitle,
+      description: t.exploreDesc,
+      icon: Search,
+      action: `/${lang}/discover`,
+      color: "from-orange-500 to-red-600"
+    }
+  ]
+
   const actions = user 
     ? (user.role === "freelance" ? freelanceActions : clientActions)
     : guestActions
 
   return (
     <section className="bg-slate-50 dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              {user ? "Actions Rapides" : "Commencez dès maintenant"}
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2 sm:mb-3">
+              {t.title}
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">
-              {user 
-                ? "Tout ce dont vous avez besoin en un clic" 
-                : "Rejoignez des milliers de professionnels"
-              }
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 px-4">
+              {t.subtitle}
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 px-2 sm:px-0">
             {actions.map((action, index) => {
               const Icon = action.icon
               return (
-                <Card key={index} className="border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105 group">
-                  <CardHeader className="pb-3">
-                    <div className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                      <Icon className="h-6 w-6 text-white" />
+                <Card 
+                  key={index} 
+                  className="border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group cursor-pointer"
+                >
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r ${action.color} flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}>
+                      <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
-                    <CardTitle className="text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <CardTitle className="text-lg sm:text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {action.title}
                     </CardTitle>
-                    <CardDescription className="text-slate-600 dark:text-slate-400">
+                    <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                       {action.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
+                  <CardContent className="pt-0 sm:pt-2">
+                    <Button 
+                      asChild 
+                      className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-sm sm:text-base"
+                    >
                       <Link href={action.action}>
-                        Commencer
+                        {t.start}
                       </Link>
                     </Button>
                   </CardContent>

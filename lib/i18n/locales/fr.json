@@ -1,4 +1,74 @@
 {
+   "testimonials": {
+    "title": "Ils nous font confiance",
+    "subtitle": "Découvrez les retours d'expérience de nos clients et freelances",
+    "project": "Projet réalisé",
+    "testimonial1": {
+      "name": "Sarah Chen",
+      "role": "CEO chez TechInnovate",
+      "company": "Startup SaaS",
+      "content": "Grâce à cette plateforme, nous avons trouvé les meilleurs développeurs React pour notre produit. Le matching IA a réduit notre temps de recrutement de 70% !",
+      "project": "Application de gestion d'équipe"
+    },
+    "testimonial2": {
+      "name": "Marc Dubois",
+      "role": "Freelance Full-Stack",
+      "company": "Indépendant",
+      "content": "J'ai multiplié mes revenus par 3 en 6 mois. Les recommandations de projets correspondent parfaitement à mes compétences et mes ambitions.",
+      "project": "Plus de 15 projets réalisés"
+    },
+    "testimonial3": {
+      "name": "Émilie Laurent",
+      "role": "Directrice Marketing",
+      "company": "EcomStore",
+      "content": "La qualité des freelances est exceptionnelle. Nous avons externalisé tout notre design UI/UX et les résultats ont dépassé nos attentes.",
+      "project": "Refonte complète de site e-commerce"
+    },
+    "testimonial4": {
+      "name": "Thomas Martin",
+      "role": "Développeur DevOps",
+      "company": "Freelance",
+      "content": "Le système de matching intelligent m'a permis de trouver des projets qui correspondent exactement à mon expertise en cloud et infrastructure.",
+      "project": "Migration vers AWS"
+    },
+    "testimonial5": {
+      "name": "Lisa Rodriguez",
+      "role": "Product Manager",
+      "company": "FinTech Solutions",
+      "content": "Nous avons constitué une équipe complète de développeurs en 2 semaines seulement. L'IA a parfaitement compris nos besoins techniques et culturels.",
+      "project": "Application mobile financière"
+    },
+    "testimonial6": {
+      "name": "Alexandre Petit",
+      "role": "Data Scientist",
+      "company": "Freelance",
+      "content": "Les projets en IA et Machine Learning sont nombreux et bien rémunérés. J'ai trouvé ma spécialisation grâce aux tendances identifiées par la plateforme.",
+      "project": "Système de recommandation IA"
+    }
+  },
+  "quickActions": {
+    "title": "Actions Rapides",
+    "subtitle": "Tout ce dont vous avez besoin en un clic",
+    "start": "Commencer",
+    "freelanceTitle": "Publier un service",
+    "freelanceDesc": "Créez votre gig et commencez à recevoir des demandes",
+    "recommendedTitle": "Projets recommandés",
+    "recommendedDesc": "Découvrez les projets qui matchent avec vos compétences",
+    "optimizeTitle": "Optimiser mon profil",
+    "optimizeDesc": "Améliorez votre visibilité avec notre IA",
+    "clientTitle": "Publier un projet",
+    "clientDesc": "Trouvez le talent parfait pour votre projet",
+    "searchTitle": "Rechercher des talents",
+    "searchDesc": "Parcourez notre base de freelances experts",
+    "analyticsTitle": "Analytics",
+    "analyticsDesc": "Suivez vos projets et performances",
+    "freelanceSignupTitle": "Commencer en tant que freelance",
+    "freelanceSignupDesc": "Créez votre profil et trouvez vos premiers projets",
+    "clientSignupTitle": "Recruter des talents",
+    "clientSignupDesc": "Trouvez les experts pour votre entreprise",
+    "exploreTitle": "Explorer la plateforme",
+    "exploreDesc": "Découvrez comment ça marche"
+  },
   "calendarPopup": {
     "title": "Votre Calendrier Intelligent",
     "subtitle": "Découvrez votre nouvel outil de gestion du temps",

@@ -1,4 +1,74 @@
 {
+  "testimonials": {
+    "title": "Matoky anay izy ireo",
+    "subtitle": "Fantaro ny traikefan'ny mpanjifa sy freelancers",
+    "project": "Tetikasa vita",
+    "testimonial1": {
+      "name": "Sarah Chen",
+      "role": "CEO ao amin'ny TechInnovate",
+      "company": "Startup SaaS",
+      "content": "Noho ity sehatra ity, nahita ny mpamorona React tsara indrindra ho an'ny vokatra izahay. Ny matching AI dia nampihena ny fotoanay fikarohana 70%!",
+      "project": "Fitantanana ekipa"
+    },
+    "testimonial2": {
+      "name": "Marc Dubois",
+      "role": "Freelance Full-Stack",
+      "company": "Mahaleo tena",
+      "content": "Nampitombo avo telo heny ny fidiram-bolako tao anatin'ny 6 volana. Ny tolo-kevitra momba ny tetikasa dia mifanaraka tsara amin'ny fahaizako sy ny tanjoko.",
+      "project": "Tetikasa 15 mahery vita"
+    },
+    "testimonial3": {
+      "name": "Émilie Laurent",
+      "role": "Taleo Marketing",
+      "company": "EcomStore",
+      "content": "Tena tsara ny kalitaon'ireo freelancers. Nampiasa olon-kafa ny famolavolana UI/UX izahay ary nihoatra ny zavatra andrasanay ny valiny.",
+      "project": "Fanavaozana tanteraka ny tranokala e-commerce"
+    },
+    "testimonial4": {
+      "name": "Thomas Martin",
+      "role": "Mpamorona DevOps",
+      "company": "Freelance",
+      "content": "Ny rafitra matching manan-tsaina dia nanampy ahy hahita tetikasa mifanaraka amin'ny fahaizako amin'ny cloud sy infrastructure.",
+      "project": "Fifindrana mankany AWS"
+    },
+    "testimonial5": {
+      "name": "Lisa Rodriguez",
+      "role": "Product Manager",
+      "company": "FinTech Solutions",
+      "content": "Nanorina ekipa feno mpamorona tao anatin'ny 2 herinandro monja izahay. Ny IA dia nahatakatra tsara ny filantsika ara-teknika sy ara-kolontsaina.",
+      "project": "Fampiharana mobile ara-bola"
+    },
+    "testimonial6": {
+      "name": "Alexandre Petit",
+      "role": "Data Scientist",
+      "company": "Freelance",
+      "content": "Ny tetikasa momba ny IA sy Machine Learning dia maro ary manome karama tsara. Nahita ny manam-pahaizana manokana aho noho ny fironana fantatry ny sehatra.",
+      "project": "Rafitra fanolorana IA"
+    }
+  },
+  "quickActions": {
+    "title": "Hetsika Haingana",
+    "subtitle": "Ny zavatra rehetra ilainao amin'ny tsindry tokana",
+    "start": "Manomboka",
+    "freelanceTitle": "Mamoaka serivisy",
+    "freelanceDesc": "Mamorona gig ary manomboka mahazo fangatahana",
+    "recommendedTitle": "Tetikasa atolotra",
+    "recommendedDesc": "Fantaro ny tetikasa mifanaraka amin'ny fahaizanao",
+    "optimizeTitle": "Hanatsara ny mombamomba ahy",
+    "optimizeDesc": "Hanatsara ny fahitana anao miaraka amin'ny AI",
+    "clientTitle": "Mamoaka tetikasa",
+    "clientDesc": "Hitady ny talenta mety ho an'ny tetikasanao",
+    "searchTitle": "Hitady talenta",
+    "searchDesc": "Hijery ny tahiry freelancers manam-pahaizana",
+    "analyticsTitle": "Analytics",
+    "analyticsDesc": "Araho ny tetikasanao sy ny zava-bitanao",
+    "freelanceSignupTitle": "Manomboka ho freelance",
+    "freelanceSignupDesc": "Mamorona mombamomba anao ary hitady tetikasa voalohany",
+    "clientSignupTitle": "Mampiasa talenta",
+    "clientSignupDesc": "Hitady manam-pahaizana ho an'ny orinasanao",
+    "exploreTitle": "Hijery ny sehatra",
+    "exploreDesc": "Fantaro ny fomba fiasany"
+  },
    "calendarPopup": {
     "title": "Ny Kalandrierao Manan-tsaina",
     "subtitle": "Fantaro ny fitaovana fitantanam-potoana vaovao",

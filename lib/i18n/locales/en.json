@@ -1,5 +1,74 @@
 {
-  
+ "testimonials": {
+    "title": "They trust us",
+    "subtitle": "Discover the experiences of our clients and freelancers",
+    "project": "Project completed",
+    "testimonial1": {
+      "name": "Sarah Chen",
+      "role": "CEO at TechInnovate",
+      "company": "SaaS Startup",
+      "content": "Thanks to this platform, we found the best React developers for our product. AI matching reduced our recruitment time by 70%!",
+      "project": "Team management application"
+    },
+    "testimonial2": {
+      "name": "Marc Dubois",
+      "role": "Full-Stack Freelancer",
+      "company": "Independent",
+      "content": "I tripled my income in 6 months. Project recommendations perfectly match my skills and ambitions.",
+      "project": "15+ completed projects"
+    },
+    "testimonial3": {
+      "name": "Émilie Laurent",
+      "role": "Marketing Director",
+      "company": "EcomStore",
+      "content": "The quality of freelancers is exceptional. We outsourced all our UI/UX design and the results exceeded our expectations.",
+      "project": "Complete e-commerce site redesign"
+    },
+    "testimonial4": {
+      "name": "Thomas Martin",
+      "role": "DevOps Developer",
+      "company": "Freelance",
+      "content": "The intelligent matching system helped me find projects that exactly match my cloud and infrastructure expertise.",
+      "project": "AWS Migration"
+    },
+    "testimonial5": {
+      "name": "Lisa Rodriguez",
+      "role": "Product Manager",
+      "company": "FinTech Solutions",
+      "content": "We built a complete team of developers in just 2 weeks. The AI perfectly understood our technical and cultural needs.",
+      "project": "Financial mobile application"
+    },
+    "testimonial6": {
+      "name": "Alexandre Petit",
+      "role": "Data Scientist",
+      "company": "Freelance",
+      "content": "AI and Machine Learning projects are numerous and well-paid. I found my specialization thanks to the trends identified by the platform.",
+      "project": "AI recommendation system"
+    }
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "subtitle": "Everything you need in one click",
+    "start": "Get started",
+    "freelanceTitle": "Publish a service",
+    "freelanceDesc": "Create your gig and start receiving requests",
+    "recommendedTitle": "Recommended projects",
+    "recommendedDesc": "Discover projects that match your skills",
+    "optimizeTitle": "Optimize my profile",
+    "optimizeDesc": "Improve your visibility with our AI",
+    "clientTitle": "Post a project",
+    "clientDesc": "Find the perfect talent for your project",
+    "searchTitle": "Find talent",
+    "searchDesc": "Browse our database of expert freelancers",
+    "analyticsTitle": "Analytics",
+    "analyticsDesc": "Track your projects and performance",
+    "freelanceSignupTitle": "Start as a freelancer",
+    "freelanceSignupDesc": "Create your profile and find your first projects",
+    "clientSignupTitle": "Hire talent",
+    "clientSignupDesc": "Find experts for your business",
+    "exploreTitle": "Explore the platform",
+    "exploreDesc": "Discover how it works"
+  }, 
   "calendarPopup": {
     "title": "Your Smart Calendar",
     "subtitle": "Discover your new time management tool",
