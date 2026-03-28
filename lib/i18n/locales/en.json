@@ -1,24 +1,25 @@
 {
-   "footers": {
-    "tagline": "Là où le vrai talent rencontre l'innovation.",
-    "platform": "Plateforme",
-    "findTalents": "Trouver des talents",
-    "browseServices": "Parcourir les services",
-    "howItWorks": "Comment ça marche",
-    "pricing": "Tarifs",
-    "company": "Entreprise",
-    "aboutUs": "À propos",
+    "footers": {
+    "tagline": "Where true talent meets innovation.",
+    "platform": "Platform",
+    "findTalents": "Find Talents",
+    "browseServices": "Browse Services",
+    "howItWorks": "How It Works",
+    "pricing": "Pricing",
+    "company": "Company",
+    "aboutUs": "About Us",
     "blog": "Blog",
-    "careers": "Carrières",
+    "careers": "Careers",
     "contact": "Contact",
-    "legal": "Légal",
-    "copyright": "Tous droits réservés."
+    "legal": "Legal",
+    "copyright": "All rights reserved."
   },
   "legals": {
-    "privacy": "Politique de confidentialité",
-    "terms": "Conditions d'utilisation",
-    "cookies": "Politique des cookies"
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookie Policy"
   },
+
   "contracts": {
     "create": {
       "title": "Create a Contract",
