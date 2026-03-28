@@ -6,6 +6,7 @@ import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar, Users, Code2 }
 import { useState } from "react"
 import { TeamAccessButton } from '@/components/ui/team-access-button';
 import { AIMatchingButtonHero } from "../ai-matching/AIMatchingButton"
+import { AuthShortcutButtons } from "@/components/auth/AuthShortcutButtons"
 
 interface HeroSectionProps {
   lang: 'fr' | 'en' | 'mg'
@@ -67,7 +68,7 @@ export function HeroSection({
             <span className="font-semibold text-white"> {hero.subtitleHighlight || "intelligence artificielle avancée"}</span>
           </p>
 
-          {/* Barre de recherche */}
+          {/* Barre de recherche avec boutons d'authentification */}
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -76,19 +77,25 @@ export function HeroSection({
                 placeholder={hero.searchPlaceholder || "Rechercher React, Design, Marketing, Développement..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-32 py-6 text-lg border-0 shadow-2xl rounded-2xl bg-white/95 backdrop-blur-sm focus:bg-white"
+                className="w-full pl-12 pr-[180px] py-6 text-lg border-0 shadow-2xl rounded-2xl bg-white/95 backdrop-blur-sm focus:bg-white"
               />
-              <Button 
-                type="submit"
-                size="lg"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                {hero.searchButton || "Rechercher"}
-              </Button>
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                {/* Boutons d'authentification */}
+                {!user && <AuthShortcutButtons />}
+                <Button 
+                  type="submit"
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  {hero.searchButton || "Rechercher"}
+                </Button>
+              </div>
             </div>
           </form>
+          
           <AIMatchingButtonHero dict={dict} lang={lang} />
+          
           {/* Stats rapides */}
           <div className="flex flex-wrap justify-center gap-8 mb-8">
             <div className="text-center">

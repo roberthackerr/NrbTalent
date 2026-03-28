@@ -109,7 +109,7 @@ export async function middleware(request: NextRequest) {
 
   // 🔥 VÉRIFICATION: Rediriger les utilisateurs connectés depuis les pages d'auth
   if (token && authRoutes.some(route => pathWithoutLang === route || pathWithoutLang.startsWith(route + '/'))) {
-    const newUrl = new URL(`/${preferredLocale}/dashboard`, request.url)
+    const newUrl = new URL(`/${preferredLocale}/`, request.url)
     return NextResponse.redirect(newUrl)
   }
 
@@ -194,7 +194,7 @@ export default withAuth(
     if (isAuthRoute) {
       if (token) {
         // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
-        return NextResponse.redirect(new URL(`/${lang}/dashboard`, req.url))
+        return NextResponse.redirect(new URL(`/${lang}/`, req.url))
       }
       // Sinon, autoriser l'accès à la page d'auth
       return NextResponse.next()
