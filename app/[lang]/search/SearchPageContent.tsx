@@ -866,6 +866,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
           </div>
         </div>
       </div>
-    </div>
+    </div> 
   )
 }
