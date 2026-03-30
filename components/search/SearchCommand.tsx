@@ -1,5 +1,5 @@
 // components/search/SearchCommand.tsx
-"use client"
+'use client'
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -16,26 +16,30 @@ import {
   X,
   Loader2,
   Home,
-  Tag,
-  Sparkles,
-  ChevronDown,
-  ChevronUp
+  TrendingUp,
+  MapPin,
+  Verified
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
 import { getDictionarySafe } from "@/lib/i18n/dictionaries"
 import type { Locale } from "@/lib/i18n/config"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 
 interface SearchResult {
   id: string
   title: string
   description?: string
-  type: 'project' | 'user' | 'conversation' | 'category' | 'skill' | 'team'
+  type: 'project' | 'user' | 'conversation' | 'category' | 'skill'
   icon?: React.ReactNode
   url: string
   badge?: string
   avatar?: string
   category?: string
+  rating?: number
+  location?: string
+  verified?: boolean
 }
 
 interface SearchCommandProps {
@@ -54,7 +58,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [searchType, setSearchType] = useState<'all' | 'projects' | 'users' | 'messages'>('all')
+  const [searchType, setSearchType] = useState<'all' | 'users' | 'projects'>('all')
   
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
@@ -106,35 +110,35 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     }
   ]
 
-  // Popular searches
+  // Popular searches (statiques)
   const popularSearches: SearchResult[] = [
     {
       id: 'popular-1',
       title: 'Développement Web',
       type: 'category',
-      icon: <Tag className="h-4 w-4" />,
-      url: `/${lang}/projects?category=web-development`
+      icon: <TrendingUp className="h-4 w-4" />,
+      url: `/${lang}/search?q=développement web`
     },
     {
       id: 'popular-2',
       title: 'React.js',
       type: 'skill',
-      icon: <Sparkles className="h-4 w-4" />,
-      url: `/${lang}/projects?skills=React`
+      icon: <Star className="h-4 w-4" />,
+      url: `/${lang}/search?q=react`
     },
     {
       id: 'popular-3',
       title: 'Design UI/UX',
       type: 'category',
-      icon: <Star className="h-4 w-4" />,
-      url: `/${lang}/projects?category=design`
+      icon: <Briefcase className="h-4 w-4" />,
+      url: `/${lang}/search?q=design ui/ux`
     },
     {
       id: 'popular-4',
       title: 'Freelances React',
       type: 'user',
       icon: <Users className="h-4 w-4" />,
-      url: `/${lang}/freelancers?skills=React`
+      url: `/${lang}/search?q=react&type=freelancers`
     }
   ]
 
@@ -161,7 +165,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     })
   }, [])
 
-  // Recherche API
+  // Recherche API - Utilisateurs uniquement pour la commande rapide
   useEffect(() => {
     if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setResults([])
@@ -174,58 +178,34 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
       try {
         const params = new URLSearchParams({
           q: debouncedQuery,
-          type: searchType,
-          lang
+          limit: '5',
+          page: '1'
         })
         
-        const response = await fetch(`/api/search?${params}`)
+        const response = await fetch(`/api/users/search?${params}`)
         
         if (response.ok) {
           const data = await response.json()
           const formattedResults: SearchResult[] = []
           
-          // Projets
-          if (data.projects?.length && (searchType === 'all' || searchType === 'projects')) {
-            formattedResults.push(...data.projects.map((p: any) => ({
-              id: p._id,
-              title: p.title,
-              description: p.description?.substring(0, 100),
-              type: 'project' as const,
-              icon: <Briefcase className="h-4 w-4" />,
-              url: `/${lang}/projects/${p._id}`,
-              badge: `${p.budget?.min}${p.budget?.currency}`,
-              category: p.category
-            })))
-          }
-          
-          // Utilisateurs
+          // Utilisateurs (freelances et clients)
           if (data.users?.length && (searchType === 'all' || searchType === 'users')) {
             formattedResults.push(...data.users.map((u: any) => ({
               id: u._id,
               title: u.name,
-              description: u.title || u.email,
+              description: u.title || u.bio?.substring(0, 80) || '',
               type: 'user' as const,
               icon: <User className="h-4 w-4" />,
               url: `/${lang}/profile/${u._id}`,
               avatar: u.avatar,
-              badge: u.role === 'freelance' ? (t.freelancer || 'Freelance') : (t.client || 'Client')
+              badge: u.role === 'freelance' ? 'Freelance' : 'Client',
+              rating: u.statistics?.rating,
+              location: u.location,
+              verified: u.verified
             })))
           }
           
-          // Conversations
-          if (data.conversations?.length && (searchType === 'all' || searchType === 'messages')) {
-            formattedResults.push(...data.conversations.map((c: any) => ({
-              id: c._id,
-              title: c.otherParticipant?.name || 'Conversation',
-              description: c.lastMessage?.substring(0, 60),
-              type: 'conversation' as const,
-              icon: <MessageSquare className="h-4 w-4" />,
-              url: `/${lang}/messages/${c._id}`,
-              badge: c.unreadCount > 0 ? `${c.unreadCount}` : undefined
-            })))
-          }
-          
-          setResults(formattedResults.slice(0, 10))
+          setResults(formattedResults.slice(0, 8))
         } else {
           console.error('Search API error')
           setResults([])
@@ -244,7 +224,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
   // Gestion clavier
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K ou Ctrl+K pour ouvrir/fermer
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
         if (isOpen) onClose()
@@ -280,9 +259,8 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
         case 'Tab':
           e.preventDefault()
           setSearchType(prev => {
-            if (prev === 'all') return 'projects'
-            if (prev === 'projects') return 'users'
-            if (prev === 'users') return 'messages'
+            if (prev === 'all') return 'users'
+            if (prev === 'users') return 'projects'
             return 'all'
           })
           break
@@ -293,7 +271,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, results, query, shortcuts, popularSearches, selectedIndex, onClose])
 
-  // Focus input quand ouvert
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100)
@@ -301,7 +278,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     }
   }, [isOpen])
 
-  // Scroll dans les résultats
   useEffect(() => {
     if (resultsRef.current && selectedIndex >= 0) {
       const selectedElement = resultsRef.current.children[selectedIndex] as HTMLElement
@@ -336,16 +312,14 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
 
   return (
     <>
-      {/* Overlay */}
       <div 
         className="fixed inset-0 bg-black/50 z-50 animate-in fade-in duration-200"
         onClick={onClose}
       />
       
-      {/* Modal */}
       <div className="fixed top-[20%] left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50 animate-in slide-in-from-top-4 duration-200">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Header avec filtres */}
+          {/* Header */}
           <div className="flex items-center border-b border-gray-200 dark:border-gray-700">
             <div className="flex-1 flex items-center px-4">
               <Search className="h-5 w-5 text-gray-400" />
@@ -368,7 +342,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               )}
             </div>
             
-            {/* Filtres */}
+            {/* Filtres rapides */}
             <div className="flex items-center gap-1 pr-2">
               <button
                 onClick={() => setSearchType('all')}
@@ -382,17 +356,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                 {t.all || 'Tout'}
               </button>
               <button
-                onClick={() => setSearchType('projects')}
-                className={cn(
-                  "px-2 py-1 text-xs rounded-md transition-colors",
-                  searchType === 'projects' 
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" 
-                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-                )}
-              >
-                {t.projects || 'Projets'}
-              </button>
-              <button
                 onClick={() => setSearchType('users')}
                 className={cn(
                   "px-2 py-1 text-xs rounded-md transition-colors",
@@ -402,17 +365,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                 )}
               >
                 {t.freelancers || 'Freelances'}
-              </button>
-              <button
-                onClick={() => setSearchType('messages')}
-                className={cn(
-                  "px-2 py-1 text-xs rounded-md transition-colors",
-                  searchType === 'messages' 
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" 
-                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-                )}
-              >
-                {t.messages || 'Messages'}
               </button>
             </div>
           </div>
@@ -428,11 +380,19 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               <div className="text-center py-12">
                 <Search className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500 font-medium">{t.noResults || 'Aucun résultat trouvé'}</p>
-                <p className="text-sm text-gray-400 mt-1">{t.tryDifferent || 'Essayez avec des termes différents'}</p>
+                <button
+                  onClick={() => {
+                    onClose()
+                    router.push(`/${lang}/search?q=${encodeURIComponent(query)}`)
+                  }}
+                  className="mt-3 text-sm text-blue-600 hover:text-blue-700"
+                >
+                  Voir tous les résultats →
+                </button>
               </div>
             ) : (
               <div className="py-2">
-                {/* Recherches récentes (seulement si pas de query) */}
+                {/* Recherches récentes */}
                 {!query && recentSearches.length > 0 && (
                   <div className="px-4 py-2">
                     <div className="flex items-center justify-between mb-2">
@@ -451,10 +411,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                         <button
                           key={idx}
                           onClick={() => handleRecentClick(search)}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors",
-                            "hover:bg-gray-100 dark:hover:bg-gray-800"
-                          )}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-800"
                         >
                           <Clock className="h-4 w-4 text-gray-400" />
                           <span className="text-sm text-gray-700 dark:text-gray-300">{search}</span>
@@ -479,26 +436,18 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                       {/* Avatar/Icône */}
                       <div className="flex-shrink-0">
                         {result.avatar ? (
-                          <img 
-                            src={result.avatar} 
-                            alt={result.title}
-                            className="h-10 w-10 rounded-full object-cover"
-                          />
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={result.avatar} />
+                            <AvatarFallback>{result.title?.charAt(0)}</AvatarFallback>
+                          </Avatar>
                         ) : (
                           <div className={cn(
                             "h-10 w-10 rounded-full flex items-center justify-center",
-                            result.type === 'project' && "bg-blue-100 text-blue-600 dark:bg-blue-900/30",
                             result.type === 'user' && "bg-green-100 text-green-600 dark:bg-green-900/30",
-                            result.type === 'conversation' && "bg-purple-100 text-purple-600 dark:bg-purple-900/30",
                             result.type === 'category' && "bg-orange-100 text-orange-600 dark:bg-orange-900/30",
                             result.type === 'skill' && "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30"
                           )}>
-                            {result.icon || (
-                              result.type === 'project' ? <Briefcase className="h-5 w-5" /> :
-                              result.type === 'user' ? <User className="h-5 w-5" /> :
-                              result.type === 'conversation' ? <MessageSquare className="h-5 w-5" /> :
-                              <Search className="h-5 w-5" />
-                            )}
+                            {result.icon || <User className="h-5 w-5" />}
                           </div>
                         )}
                       </div>
@@ -509,14 +458,12 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                           <p className="font-medium text-gray-900 dark:text-white truncate">
                             {result.title}
                           </p>
-                          {result.badge && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                              {result.badge}
-                            </span>
+                          {result.verified && (
+                            <Verified className="h-3.5 w-3.5 text-blue-500" />
                           )}
-                          {result.category && (
-                            <span className="text-[10px] text-gray-400">
-                              {result.category}
+                          {result.badge && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600">
+                              {result.badge}
                             </span>
                           )}
                         </div>
@@ -525,53 +472,70 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                             {result.description}
                           </p>
                         )}
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                          {result.rating && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                              <span>{result.rating}</span>
+                            </div>
+                          )}
+                          {result.location && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>{result.location}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       
-                      {/* Type badge */}
-                      <div className="flex-shrink-0">
-                        <span className={cn(
-                          "text-[10px] px-2 py-0.5 rounded-full",
-                          result.type === 'project' && "bg-blue-100 text-blue-700",
-                          result.type === 'user' && "bg-green-100 text-green-700",
-                          result.type === 'conversation' && "bg-purple-100 text-purple-700",
-                          result.type === 'category' && "bg-orange-100 text-orange-700",
-                          result.type === 'skill' && "bg-cyan-100 text-cyan-700"
-                        )}>
-                          {result.type === 'project' && (t.project || 'Projet')}
-                          {result.type === 'user' && (t.user || 'Freelance')}
-                          {result.type === 'conversation' && (t.conversation || 'Message')}
-                          {result.type === 'category' && (t.category || 'Catégorie')}
-                          {result.type === 'skill' && (t.skill || 'Compétence')}
-                        </span>
-                      </div>
+                      {/* Voir tous les résultats */}
+                      {query && idx === displayResults.length - 1 && displayResults.length >= 5 && (
+                        <div className="flex-shrink-0 text-xs text-blue-600">
+                          Voir plus →
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
+                
+                {/* Lien vers page de recherche complète */}
+                {query && (
+                  <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 mt-2">
+                    <button
+                      onClick={() => {
+                        onClose()
+                        router.push(`/${lang}/search?q=${encodeURIComponent(query)}`)
+                      }}
+                      className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Voir tous les résultats pour "{query}" →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
           
-          {/* Footer avec raccourcis */}
+          {/* Footer */}
           <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-400">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">↑</kbd>
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">↓</kbd>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">↑↓</kbd>
                 <span>{t.navigate || 'naviguer'}</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">↵</kbd>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">↵</kbd>
                 <span>{t.select || 'sélectionner'}</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">Esc</kbd>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Esc</kbd>
                 <span>{t.close || 'fermer'}</span>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">⌘K</kbd>
               <span>{t.or || 'ou'}</span>
-              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">Ctrl+K</kbd>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Ctrl+K</kbd>
             </div>
           </div>
         </div>
@@ -580,7 +544,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
   )
 }
 
-// Hook personnalisé
 export function useSearchCommand() {
   const [isOpen, setIsOpen] = useState(false)
   
@@ -591,7 +554,6 @@ export function useSearchCommand() {
   return { isOpen, open, close, toggle }
 }
 
-// Bouton de déclenchement
 export function SearchButton({ onClick, lang = 'fr' }: { onClick?: () => void; lang?: Locale }) {
   const [isMac, setIsMac] = useState(false)
   const [dict, setDict] = useState<any>(null)
