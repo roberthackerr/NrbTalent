@@ -53,10 +53,10 @@ const SearchProjectsSchema = z.object({
 type SearchProjectsQuery = z.infer<typeof SearchProjectsSchema>
 
 // ─── Helper: Build search filter ─────────────────────────────────────────────
-function buildSearchFilter(query: SearchProjectsQuery, session?: any) {
+function buildSearchFilter(query: SearchProjectsQuery) {
   const filter: any = {
     visibility: "public",
-    status: query.status,
+    status: "open",
   }
 
   // Recherche textuelle
@@ -68,7 +68,6 @@ function buildSearchFilter(query: SearchProjectsQuery, session?: any) {
       { skills: searchRegex },
       { category: searchRegex },
       { subcategory: searchRegex },
-      { tags: searchRegex },
     ]
   }
 
@@ -106,14 +105,8 @@ function buildSearchFilter(query: SearchProjectsQuery, session?: any) {
     filter.$or = filter.$or || []
     filter.$or.push(
       { "location.country": locationRegex },
-      { "location.city": locationRegex },
-      { "location.remote": query.location === "remote" }
+      { "location.city": locationRegex }
     )
-  }
-
-  // Note minimum du client
-  if (query.minRating > 0) {
-    filter["client.rating"] = { $gte: query.minRating }
   }
 
   // Projets auxquels un freelance a postulé
@@ -127,17 +120,9 @@ function buildSearchFilter(query: SearchProjectsQuery, session?: any) {
   return filter
 }
 
-// ─── Helper: Build sort options with relevance scoring ───────────────────────
-function buildSortOptions(query: SearchProjectsQuery, searchTerm?: string) {
+// ─── Helper: Build sort options ───────────────────────────────────────────────
+function buildSortOptions(query: SearchProjectsQuery) {
   const dir = query.sortOrder === "asc" ? 1 : -1
-
-  if (query.sortBy === "relevance" && searchTerm) {
-    // Score de pertinence basé sur le texte de recherche
-    return {
-      score: { $meta: "textScore" },
-      createdAt: -1,
-    }
-  }
 
   const sortMap: Record<string, any> = {
     createdAt: { createdAt: dir },
@@ -145,6 +130,10 @@ function buildSortOptions(query: SearchProjectsQuery, searchTerm?: string) {
     budget: { "budget.min": dir },
     applications: { applicationCount: dir },
     views: { views: dir },
+  }
+
+  if (query.sortBy === "relevance") {
+    return { createdAt: -1 }
   }
 
   return sortMap[query.sortBy] || { createdAt: -1 }
@@ -228,22 +217,18 @@ export async function GET(request: Request) {
     }
 
     // Construction du filtre
-    const filter = buildSearchFilter(query, session)
+    const filter = buildSearchFilter(query)
     const skip = (query.page - 1) * query.limit
+    const sortOptions = buildSortOptions(query)
 
-    // Exécution de la recherche avec score de pertinence si nécessaire
-    let cursor = db.collection("projects").find(filter)
-
-    // Ajout du score de pertinence pour le tri textuel
-    if (query.sortBy === "relevance" && query.q) {
-      cursor = cursor.sort({ score: { $meta: "textScore" }, createdAt: -1 })
-    } else {
-      const sortOptions = buildSortOptions(query, query.q)
-      cursor = cursor.sort(sortOptions)
-    }
-
+    // Exécution de la recherche
     const [projects, totalCount] = await Promise.all([
-      cursor.skip(skip).limit(query.limit).toArray(),
+      db.collection("projects")
+        .find(filter)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(query.limit)
+        .toArray(),
       db.collection("projects").countDocuments(filter),
     ])
 
@@ -295,7 +280,6 @@ export async function GET(request: Request) {
           budgetMax: query.budgetMax,
           budgetType: query.budgetType || null,
           location: query.location || null,
-          minRating: query.minRating,
         },
         facets: {
           skills: popularSkills.map(s => ({ name: s._id, count: s.count })),

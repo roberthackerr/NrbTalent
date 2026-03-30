@@ -136,7 +136,8 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [totalUsers, setTotalUsers] = useState(0)
   const [totalProjects, setTotalProjects] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
+  const [totalPagesUsers, setTotalPagesUsers] = useState(1)
+  const [totalPagesProjects, setTotalPagesProjects] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   
@@ -169,6 +170,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
       if (data.success) {
         setUsers(data.users || [])
         setTotalUsers(data.pagination.total || 0)
+        setTotalPagesUsers(data.pagination.pages || 1)
       }
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -193,7 +195,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
       if (budgetType !== 'all') params.set('type', budgetType)
       if (category) params.set('category', category)
       if (sort === 'date') params.set('sortBy', 'createdAt')
-      if (sort === 'rating') params.set('sortBy', 'rating')
       params.set('page', page.toString())
       params.set('limit', activeTab === 'all' ? '5' : '12')
       
@@ -203,7 +204,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
       if (data.success) {
         setProjects(data.data?.projects || [])
         setTotalProjects(data.data?.pagination?.total || 0)
-        setTotalPages(data.data?.pagination?.totalPages || 1)
+        setTotalPagesProjects(data.data?.pagination?.totalPages || 1)
       }
     } catch (error) {
       console.error('Error fetching projects:', error)
@@ -710,18 +711,36 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
             </AnimatePresence>
             
             {/* Pagination (seulement pour les onglets individuels) */}
-            {activeTab !== 'all' && totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-8">
-                <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                  Précédent
-                </Button>
-                <span className="px-4 py-2 text-sm text-gray-600">
-                  Page {page} sur {totalPages}
-                </span>
-                <Button variant="outline" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                  Suivant
-                </Button>
-              </div>
+            {activeTab !== 'all' && (
+              activeTab === 'users' ? (
+                totalPagesUsers > 1 && (
+                  <div className="flex justify-center gap-2 mt-8">
+                    <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                      Précédent
+                    </Button>
+                    <span className="px-4 py-2 text-sm text-gray-600">
+                      Page {page} sur {totalPagesUsers}
+                    </span>
+                    <Button variant="outline" onClick={() => setPage(p => Math.min(totalPagesUsers, p + 1))} disabled={page === totalPagesUsers}>
+                      Suivant
+                    </Button>
+                  </div>
+                )
+              ) : (
+                totalPagesProjects > 1 && (
+                  <div className="flex justify-center gap-2 mt-8">
+                    <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                      Précédent
+                    </Button>
+                    <span className="px-4 py-2 text-sm text-gray-600">
+                      Page {page} sur {totalPagesProjects}
+                    </span>
+                    <Button variant="outline" onClick={() => setPage(p => Math.min(totalPagesProjects, p + 1))} disabled={page === totalPagesProjects}>
+                      Suivant
+                    </Button>
+                  </div>
+                )
+              )
             )}
           </div>
         </div>
