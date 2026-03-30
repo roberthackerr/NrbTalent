@@ -432,11 +432,7 @@ export function Navigation() {
                 <ThemeToggle />
                 <NotificationBell />
                 <MessagesDropdown />
-                   <SearchCommand
-        isOpen={search.isOpen}
-        onClose={search.close}
-        lang={lang}
-      />
+ 
                 {/* Language switcher */}
                 <div className="relative group">
                   <button className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/40 whitespace-nowrap">
