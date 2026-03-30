@@ -1,6 +1,12 @@
 {
   
-  "search": {
+"search": {
+    "title": "Fikarohana",
+    "filters": "Sivana",
+    "clearAll": "Esory daholo",
+    "searchButton": "Hikaroka",
+    "results": "valiny",
+    "found": "hita",
     "placeholder": "Hikaroka tetikasa, freelances, hafatra...",
     "recentSearches": "Fikarohana vao haingana",
     "popularSearches": "Fikarohana malaza",

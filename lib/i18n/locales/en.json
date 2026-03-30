@@ -1,5 +1,11 @@
 {
-  "search": {
+ "search": {
+    "title": "Search",
+    "filters": "Filters",
+    "clearAll": "Clear all",
+    "searchButton": "Search",
+    "results": "results",
+    "found": "found",
     "placeholder": "Search projects, freelancers, messages...",
     "recentSearches": "Recent searches",
     "popularSearches": "Popular searches",
