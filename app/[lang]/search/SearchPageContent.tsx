@@ -717,7 +717,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   Page {page} sur {totalPages}
                 </span>
                 <Button variant="outline" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                  Suivant
+                  Suivant 
                 </Button>
               </div>
             )}
