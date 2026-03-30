@@ -18,7 +18,9 @@ import {
   Home,
   TrendingUp,
   MapPin,
-  Verified
+  Verified,
+  DollarSign,
+  Calendar
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -40,6 +42,14 @@ interface SearchResult {
   rating?: number
   location?: string
   verified?: boolean
+  budget?: {
+    min: number
+    max: number
+    type: 'fixed' | 'hourly'
+    currency: string
+  }
+  deadline?: string
+  skills?: string[]
 }
 
 interface SearchCommandProps {
@@ -138,7 +148,14 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
       title: 'Freelances React',
       type: 'user',
       icon: <Users className="h-4 w-4" />,
-      url: `/${lang}/search?q=react&type=freelancers`
+      url: `/${lang}/search?q=react&type=users`
+    },
+    {
+      id: 'popular-5',
+      title: 'Projets Web',
+      type: 'project',
+      icon: <Briefcase className="h-4 w-4" />,
+      url: `/${lang}/search?q=web&type=projects`
     }
   ]
 
@@ -165,7 +182,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     })
   }, [])
 
-  // Recherche API - Utilisateurs uniquement pour la commande rapide
+  // Recherche API - Utilisateurs et Projets
   useEffect(() => {
     if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setResults([])
@@ -175,41 +192,70 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
 
     const search = async () => {
       setLoading(true)
+      const formattedResults: SearchResult[] = []
+      
       try {
-        const params = new URLSearchParams({
-          q: debouncedQuery,
-          limit: '5',
-          page: '1'
-        })
-        
-        const response = await fetch(`/api/users/search?${params}`)
-        
-        if (response.ok) {
-          const data = await response.json()
-          const formattedResults: SearchResult[] = []
+        // Recherche d'utilisateurs
+        if (searchType === 'all' || searchType === 'users') {
+          const usersParams = new URLSearchParams({
+            q: debouncedQuery,
+            limit: '5',
+            page: '1'
+          })
           
-          // Utilisateurs (freelances et clients)
-          if (data.users?.length && (searchType === 'all' || searchType === 'users')) {
-            formattedResults.push(...data.users.map((u: any) => ({
-              id: u._id,
-              title: u.name,
-              description: u.title || u.bio?.substring(0, 80) || '',
-              type: 'user' as const,
-              icon: <User className="h-4 w-4" />,
-              url: `/${lang}/profile/${u._id}`,
-              avatar: u.avatar,
-              badge: u.role === 'freelance' ? 'Freelance' : 'Client',
-              rating: u.statistics?.rating,
-              location: u.location,
-              verified: u.verified
-            })))
+          const usersResponse = await fetch(`/api/users/search?${usersParams}`)
+          
+          if (usersResponse.ok) {
+            const usersData = await usersResponse.json()
+            if (usersData.users?.length) {
+              formattedResults.push(...usersData.users.map((u: any) => ({
+                id: `user-${u._id}`,
+                title: u.name,
+                description: u.title || u.bio?.substring(0, 80) || '',
+                type: 'user' as const,
+                icon: <User className="h-4 w-4" />,
+                url: `/${lang}/profile/${u._id}`,
+                avatar: u.avatar,
+                badge: u.role === 'freelance' ? 'Freelance' : 'Client',
+                rating: u.statistics?.rating,
+                location: u.location,
+                verified: u.verified
+              })))
+            }
           }
-          
-          setResults(formattedResults.slice(0, 8))
-        } else {
-          console.error('Search API error')
-          setResults([])
         }
+        
+        // Recherche de projets
+        if (searchType === 'all' || searchType === 'projects') {
+          const projectsParams = new URLSearchParams({
+            q: debouncedQuery,
+            limit: '5',
+            page: '1',
+            status: 'open'
+          })
+          
+          const projectsResponse = await fetch(`/api/projects/search?${projectsParams}`)
+          
+          if (projectsResponse.ok) {
+            const projectsData = await projectsResponse.json()
+            if (projectsData.data?.projects?.length) {
+              formattedResults.push(...projectsData.data.projects.map((p: any) => ({
+                id: `project-${p._id}`,
+                title: p.title,
+                description: p.description?.substring(0, 80) || '',
+                type: 'project' as const,
+                icon: <Briefcase className="h-4 w-4" />,
+                url: `/${lang}/projects/${p._id}`,
+                badge: p.category || 'Projet',
+                budget: p.budget,
+                deadline: p.deadline,
+                skills: p.skills?.slice(0, 3)
+              })))
+            }
+          }
+        }
+        
+        setResults(formattedResults.slice(0, 8))
       } catch (error) {
         console.error('Search error:', error)
         setResults([])
@@ -305,6 +351,29 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     localStorage.removeItem('recentSearches')
   }
 
+  const formatBudget = (budget?: { min: number; max: number; type: string; currency: string }) => {
+    if (!budget) return null
+    const currency = budget.currency === 'EUR' ? '€' : budget.currency === 'USD' ? '$' : budget.currency
+    if (budget.type === 'fixed') {
+      return `${currency}${budget.min} - ${currency}${budget.max}`
+    }
+    return `${currency}${budget.min}/h - ${currency}${budget.max}/h`
+  }
+
+  const formatDeadline = (deadline?: string) => {
+    if (!deadline) return null
+    const date = new Date(deadline)
+    const now = new Date()
+    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) return 'Expiré'
+    if (diffDays === 0) return 'Aujourd\'hui'
+    if (diffDays === 1) return 'Demain'
+    if (diffDays <= 7) return `${diffDays} jours`
+    if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} semaines`
+    return `${Math.ceil(diffDays / 30)} mois`
+  }
+
   if (!isOpen) return null
 
   const displayResults = query ? results : [...shortcuts, ...popularSearches]
@@ -328,7 +397,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t.placeholder || "Rechercher..."}
+                placeholder={t.placeholder || "Rechercher des freelances ou projets..."}
                 className="flex-1 px-3 py-4 text-base bg-transparent outline-none placeholder:text-gray-400"
                 autoComplete="off"
               />
@@ -365,6 +434,17 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                 )}
               >
                 {t.freelancers || 'Freelances'}
+              </button>
+              <button
+                onClick={() => setSearchType('projects')}
+                className={cn(
+                  "px-2 py-1 text-xs rounded-md transition-colors",
+                  searchType === 'projects' 
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" 
+                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                )}
+              >
+                {t.projects || 'Projets'}
               </button>
             </div>
           </div>
@@ -428,7 +508,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                       key={result.id}
                       onClick={() => handleSelect(result)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors",
+                        "w-full flex items-start gap-3 px-3 py-3 rounded-lg text-left transition-colors",
                         selectedIndex === idx && "bg-gray-100 dark:bg-gray-800"
                       )}
                       onMouseEnter={() => setSelectedIndex(idx)}
@@ -444,22 +524,23 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                           <div className={cn(
                             "h-10 w-10 rounded-full flex items-center justify-center",
                             result.type === 'user' && "bg-green-100 text-green-600 dark:bg-green-900/30",
+                            result.type === 'project' && "bg-blue-100 text-blue-600 dark:bg-blue-900/30",
                             result.type === 'category' && "bg-orange-100 text-orange-600 dark:bg-orange-900/30",
                             result.type === 'skill' && "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30"
                           )}>
-                            {result.icon || <User className="h-5 w-5" />}
+                            {result.icon || (result.type === 'project' ? <Briefcase className="h-5 w-5" /> : <User className="h-5 w-5" />)}
                           </div>
                         )}
                       </div>
                       
                       {/* Contenu */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-gray-900 dark:text-white truncate">
                             {result.title}
                           </p>
                           {result.verified && (
-                            <Verified className="h-3.5 w-3.5 text-blue-500" />
+                            <Verified className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
                           )}
                           {result.badge && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600">
@@ -467,33 +548,59 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                             </span>
                           )}
                         </div>
+                        
                         {result.description && (
-                          <p className="text-sm text-gray-500 truncate mt-0.5">
+                          <p className="text-sm text-gray-500 line-clamp-2 mt-0.5">
                             {result.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                          {result.rating && (
+                        
+                        {/* Métadonnées */}
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-400">
+                          {result.type === 'user' && result.rating && (
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                              <span>{result.rating}</span>
+                              <span>{result.rating.toFixed(1)}</span>
                             </div>
                           )}
-                          {result.location && (
+                          
+                          {result.type === 'user' && result.location && (
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
                               <span>{result.location}</span>
                             </div>
                           )}
+                          
+                          {result.type === 'project' && result.budget && (
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3" />
+                              <span>{formatBudget(result.budget)}</span>
+                            </div>
+                          )}
+                          
+                          {result.type === 'project' && result.deadline && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>{formatDeadline(result.deadline)}</span>
+                            </div>
+                          )}
+                          
+                          {result.type === 'project' && result.skills && result.skills.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <div className="flex gap-1">
+                                {result.skills.slice(0, 2).map((skill, i) => (
+                                  <span key={i} className="text-[10px] px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+                                    {skill}
+                                  </span>
+                                ))}
+                                {result.skills.length > 2 && (
+                                  <span className="text-[10px]">+{result.skills.length - 2}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      
-                      {/* Voir tous les résultats */}
-                      {query && idx === displayResults.length - 1 && displayResults.length >= 5 && (
-                        <div className="flex-shrink-0 text-xs text-blue-600">
-                          Voir plus →
-                        </div>
-                      )}
                     </button>
                   ))}
                 </div>
@@ -504,7 +611,8 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                     <button
                       onClick={() => {
                         onClose()
-                        router.push(`/${lang}/search?q=${encodeURIComponent(query)}`)
+                        const typeParam = searchType !== 'all' ? `&type=${searchType}` : ''
+                        router.push(`/${lang}/search?q=${encodeURIComponent(query)}${typeParam}`)
                       }}
                       className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
@@ -530,6 +638,10 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Esc</kbd>
                 <span>{t.close || 'fermer'}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Tab</kbd>
+                <span>{t.switchType || 'changer de type'}</span>
               </div>
             </div>
             <div className="flex items-center gap-1">
