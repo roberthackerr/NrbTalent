@@ -525,6 +525,7 @@ export function Navigation() {
               <div className="flex items-center gap-1 mr-1">
                 <NotificationBell />
                 <MessagesDropdown />
+                <SearchCommand isOpen={isOpen} onClose={close} lang={lang} />
               </div>
               
               <ThemeToggle />
