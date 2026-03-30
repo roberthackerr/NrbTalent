@@ -108,7 +108,7 @@ export function UserMenu() {
       hour: '2-digit',
       minute: '2-digit'
     })
-  }
+  } 
 
   return (
     <div className="flex items-center gap-1">
