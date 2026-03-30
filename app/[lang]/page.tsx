@@ -1029,11 +1029,11 @@ function GigCard({ item, pal, base, index, onClick }: {
                 <Chip icon={<DollarSign className="w-3 h-3" />}
                   label={`${item.price} ${item.currency || "€"}`} variant="green" />
               )}
-              {item.deliveryTime && (
+              { item.deliveryTime && (
                 <Chip icon={<Clock className="w-3 h-3" />}
                   label={`${item.deliveryTime} jour${item.deliveryTime > 1 ? "s" : ""}`} />
               )}
-              {item.revisions !== undefined && item.revisions > 0 && (
+              { item.revisions !== undefined && item.revisions > 0 && (
                 <Chip icon={<RefreshCw className="w-3 h-3" />}
                   label={`${item.revisions} révision${item.revisions > 1 ? "s" : ""}`} variant="blue" />
               )}
