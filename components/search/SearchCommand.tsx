@@ -11,25 +11,20 @@ import {
   MessageSquare, 
   User, 
   Settings, 
-  HelpCircle, 
-  TrendingUp,
   Clock,
   Star,
   X,
   Loader2,
-  Command,
-  ArrowUp,
-  ArrowDown,
   Home,
-  FileText,
-  Calendar,
   Tag,
-  Bookmark,
   Sparkles,
-  Zap
+  ChevronDown,
+  ChevronUp
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
+import { getDictionarySafe } from "@/lib/i18n/dictionaries"
+import type { Locale } from "@/lib/i18n/config"
 
 interface SearchResult {
   id: string
@@ -46,77 +41,14 @@ interface SearchResult {
 interface SearchCommandProps {
   isOpen: boolean
   onClose: () => void
-  lang?: 'fr' | 'en' | 'mg'
-}
-
-const translations = {
-  fr: {
-    searchPlaceholder: "Rechercher des projets, freelances, messages...",
-    recentSearches: "Recherches récentes",
-    popularSearches: "Recherches populaires",
-    categories: "Catégories",
-    skills: "Compétences",
-    noResults: "Aucun résultat trouvé",
-    tryDifferent: "Essayez avec des termes différents",
-    searchProjects: "Rechercher des projets",
-    searchFreelancers: "Rechercher des freelances",
-    openMenu: "Ouvrir le menu",
-    shortcuts: "Raccourcis",
-    goToHome: "Accueil",
-    goToProjects: "Projets",
-    goToMessages: "Messages",
-    goToProfile: "Mon profil",
-    goToSettings: "Paramètres",
-    loading: "Chargement...",
-    pressToSearch: "Appuyez sur ⌘K ou Ctrl+K pour rechercher"
-  },
-  en: {
-    searchPlaceholder: "Search projects, freelancers, messages...",
-    recentSearches: "Recent searches",
-    popularSearches: "Popular searches",
-    categories: "Categories",
-    skills: "Skills",
-    noResults: "No results found",
-    tryDifferent: "Try different terms",
-    searchProjects: "Search projects",
-    searchFreelancers: "Search freelancers",
-    openMenu: "Open menu",
-    shortcuts: "Shortcuts",
-    goToHome: "Home",
-    goToProjects: "Projects",
-    goToMessages: "Messages",
-    goToProfile: "My profile",
-    goToSettings: "Settings",
-    loading: "Loading...",
-    pressToSearch: "Press ⌘K or Ctrl+K to search"
-  },
-  mg: {
-    searchPlaceholder: "Hikaroka tetikasa, freelances, hafatra...",
-    recentSearches: "Fikarohana vao haingana",
-    popularSearches: "Fikarohana malaza",
-    categories: "Sokajy",
-    skills: "Fahaizana",
-    noResults: "Tsy misy valiny hita",
-    tryDifferent: "Andramo teny hafa",
-    searchProjects: "Hikaroka tetikasa",
-    searchFreelancers: "Hikaroka freelances",
-    openMenu: "Hanokatra menio",
-    shortcuts: "Fomba haingana",
-    goToHome: "Fandraisana",
-    goToProjects: "Tetikasa",
-    goToMessages: "Hafatra",
-    goToProfile: "Momba ahy",
-    goToSettings: "Fandrindrana",
-    loading: "Amplasiana...",
-    pressToSearch: "Tsindrio ⌘K na Ctrl+K hikaroka"
-  }
+  lang?: Locale
 }
 
 export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandProps) {
-  const t = translations[lang]
   const router = useRouter()
   const { data: session } = useSession()
   
+  const [dict, setDict] = useState<any>(null)
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchResult[]>([])
   const [recentSearches, setRecentSearches] = useState<string[]>([])
@@ -128,74 +60,81 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
   const resultsRef = useRef<HTMLDivElement>(null)
   const debouncedQuery = useDebounce(query, 300)
 
+  // Charger les traductions
+  useEffect(() => {
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
+
+  const t = dict?.search || {}
+
   // Shortcuts
   const shortcuts: SearchResult[] = [
     {
       id: 'home',
-      title: t.goToHome,
+      title: t.goToHome || 'Accueil',
       type: 'category',
       icon: <Home className="h-4 w-4" />,
-      url: '/'
+      url: `/${lang}`
     },
     {
       id: 'projects',
-      title: t.goToProjects,
+      title: t.goToProjects || 'Projets',
       type: 'category',
       icon: <Briefcase className="h-4 w-4" />,
-      url: '/projects'
+      url: `/${lang}/projects`
     },
     {
       id: 'messages',
-      title: t.goToMessages,
+      title: t.goToMessages || 'Messages',
       type: 'category',
       icon: <MessageSquare className="h-4 w-4" />,
-      url: '/messages'
+      url: `/${lang}/messages`
     },
     {
       id: 'profile',
-      title: t.goToProfile,
+      title: t.goToProfile || 'Mon profil',
       type: 'category',
       icon: <User className="h-4 w-4" />,
-      url: `/profile/${session?.user?.id}`
+      url: `/${lang}/profile/${session?.user?.id}`
     },
     {
       id: 'settings',
-      title: t.goToSettings,
+      title: t.goToSettings || 'Paramètres',
       type: 'category',
       icon: <Settings className="h-4 w-4" />,
-      url: '/settings'
+      url: `/${lang}/settings`
     }
   ]
 
-  // Popular searches (à charger depuis API)
+  // Popular searches
   const popularSearches: SearchResult[] = [
     {
       id: 'popular-1',
       title: 'Développement Web',
       type: 'category',
       icon: <Tag className="h-4 w-4" />,
-      url: '/projects?category=web-development'
+      url: `/${lang}/projects?category=web-development`
     },
     {
       id: 'popular-2',
       title: 'React.js',
       type: 'skill',
       icon: <Sparkles className="h-4 w-4" />,
-      url: '/projects?skills=React'
+      url: `/${lang}/projects?skills=React`
     },
     {
       id: 'popular-3',
       title: 'Design UI/UX',
       type: 'category',
       icon: <Star className="h-4 w-4" />,
-      url: '/projects?category=design'
+      url: `/${lang}/projects?category=design`
     },
     {
       id: 'popular-4',
       title: 'Freelances React',
       type: 'user',
       icon: <Users className="h-4 w-4" />,
-      url: '/freelancers?skills=React'
+      url: `/${lang}/freelancers?skills=React`
     }
   ]
 
@@ -235,7 +174,8 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
       try {
         const params = new URLSearchParams({
           q: debouncedQuery,
-          type: searchType
+          type: searchType,
+          lang
         })
         
         const response = await fetch(`/api/search?${params}`)
@@ -252,7 +192,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               description: p.description?.substring(0, 100),
               type: 'project' as const,
               icon: <Briefcase className="h-4 w-4" />,
-              url: `/projects/${p._id}`,
+              url: `/${lang}/projects/${p._id}`,
               badge: `${p.budget?.min}${p.budget?.currency}`,
               category: p.category
             })))
@@ -266,9 +206,9 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               description: u.title || u.email,
               type: 'user' as const,
               icon: <User className="h-4 w-4" />,
-              url: `/profile/${u._id}`,
+              url: `/${lang}/profile/${u._id}`,
               avatar: u.avatar,
-              badge: u.role === 'freelance' ? 'Freelance' : 'Client'
+              badge: u.role === 'freelance' ? (t.freelancer || 'Freelance') : (t.client || 'Client')
             })))
           }
           
@@ -280,7 +220,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               description: c.lastMessage?.substring(0, 60),
               type: 'conversation' as const,
               icon: <MessageSquare className="h-4 w-4" />,
-              url: `/messages/${c._id}`,
+              url: `/${lang}/messages/${c._id}`,
               badge: c.unreadCount > 0 ? `${c.unreadCount}` : undefined
             })))
           }
@@ -299,16 +239,15 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
     }
     
     search()
-  }, [debouncedQuery, searchType])
+  }, [debouncedQuery, searchType, lang])
 
   // Gestion clavier
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K ou Ctrl+K pour ouvrir
+      // Cmd+K ou Ctrl+K pour ouvrir/fermer
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
         if (isOpen) onClose()
-        else onClose() // Pour ouvrir, le parent doit gérer l'état
         return
       }
       
@@ -415,7 +354,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t.searchPlaceholder}
+                placeholder={t.placeholder || "Rechercher..."}
                 className="flex-1 px-3 py-4 text-base bg-transparent outline-none placeholder:text-gray-400"
                 autoComplete="off"
               />
@@ -440,7 +379,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                     : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
-                Tout
+                {t.all || 'Tout'}
               </button>
               <button
                 onClick={() => setSearchType('projects')}
@@ -451,7 +390,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                     : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
-                Projets
+                {t.projects || 'Projets'}
               </button>
               <button
                 onClick={() => setSearchType('users')}
@@ -462,7 +401,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                     : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
-                Freelances
+                {t.freelancers || 'Freelances'}
               </button>
               <button
                 onClick={() => setSearchType('messages')}
@@ -473,7 +412,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                     : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
-                Messages
+                {t.messages || 'Messages'}
               </button>
             </div>
           </div>
@@ -483,13 +422,13 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                <span className="ml-2 text-gray-500">{t.loading}</span>
+                <span className="ml-2 text-gray-500">{t.loading || 'Chargement...'}</span>
               </div>
             ) : !hasResults && query ? (
               <div className="text-center py-12">
                 <Search className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">{t.noResults}</p>
-                <p className="text-sm text-gray-400 mt-1">{t.tryDifferent}</p>
+                <p className="text-gray-500 font-medium">{t.noResults || 'Aucun résultat trouvé'}</p>
+                <p className="text-sm text-gray-400 mt-1">{t.tryDifferent || 'Essayez avec des termes différents'}</p>
               </div>
             ) : (
               <div className="py-2">
@@ -498,13 +437,13 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                   <div className="px-4 py-2">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        {t.recentSearches}
+                        {t.recentSearches || 'Recherches récentes'}
                       </p>
                       <button
                         onClick={clearRecentSearches}
                         className="text-xs text-gray-400 hover:text-gray-600"
                       >
-                        Effacer
+                        {t.clear || 'Effacer'}
                       </button>
                     </div>
                     <div className="space-y-1">
@@ -598,11 +537,11 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
                           result.type === 'category' && "bg-orange-100 text-orange-700",
                           result.type === 'skill' && "bg-cyan-100 text-cyan-700"
                         )}>
-                          {result.type === 'project' && 'Projet'}
-                          {result.type === 'user' && 'Freelance'}
-                          {result.type === 'conversation' && 'Message'}
-                          {result.type === 'category' && 'Catégorie'}
-                          {result.type === 'skill' && 'Compétence'}
+                          {result.type === 'project' && (t.project || 'Projet')}
+                          {result.type === 'user' && (t.user || 'Freelance')}
+                          {result.type === 'conversation' && (t.conversation || 'Message')}
+                          {result.type === 'category' && (t.category || 'Catégorie')}
+                          {result.type === 'skill' && (t.skill || 'Compétence')}
                         </span>
                       </div>
                     </button>
@@ -618,20 +557,20 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">↑</kbd>
                 <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">↓</kbd>
-                <span>naviguer</span>
+                <span>{t.navigate || 'naviguer'}</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">↵</kbd>
-                <span>sélectionner</span>
+                <span>{t.select || 'sélectionner'}</span>
               </div>
               <div className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">⌘K</kbd>
-                <span>fermer</span>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">Esc</kbd>
+                <span>{t.close || 'fermer'}</span>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">⌘K</kbd>
-              <span>ou</span>
+              <span>{t.or || 'ou'}</span>
               <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">Ctrl+K</kbd>
             </div>
           </div>
@@ -641,7 +580,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
   )
 }
 
-// Hook personnalisé pour utiliser la recherche
+// Hook personnalisé
 export function useSearchCommand() {
   const [isOpen, setIsOpen] = useState(false)
   
@@ -653,12 +592,16 @@ export function useSearchCommand() {
 }
 
 // Bouton de déclenchement
-export function SearchButton({ onClick }: { onClick?: () => void }) {
+export function SearchButton({ onClick, lang = 'fr' }: { onClick?: () => void; lang?: Locale }) {
   const [isMac, setIsMac] = useState(false)
+  const [dict, setDict] = useState<any>(null)
   
   useEffect(() => {
     setIsMac(/Mac|iPod|iPhone|iPad/.test(navigator.platform))
-  }, [])
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
+  
+  const t = dict?.search || {}
   
   return (
     <button
@@ -671,7 +614,7 @@ export function SearchButton({ onClick }: { onClick?: () => void }) {
     >
       <Search className="h-4 w-4 text-gray-400" />
       <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">
-        Rechercher...
+        {t.placeholder || 'Rechercher...'}
       </span>
       <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-gray-100 dark:bg-gray-700 rounded">
         {isMac ? '⌘K' : 'Ctrl+K'}
