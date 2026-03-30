@@ -86,25 +86,6 @@ interface Project {
   hasApplied?: boolean
 }
 
-interface SearchResponse {
-  success: boolean
-  users?: User[]
-  projects?: Project[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    pages: number
-    hasNext: boolean
-    hasPrev: boolean
-  }
-  filters: any
-  facets?: {
-    skills?: Array<{ name: string; count: number }>
-    categories?: Array<{ name: string; count: number }>
-  }
-}
-
 interface SearchPageContentProps {
   params: { lang: Locale }
   searchParams: { 
@@ -151,10 +132,11 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   // États des résultats
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [loadingProjects, setLoadingProjects] = useState(false)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [totalProjects, setTotalProjects] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  const [facets, setFacets] = useState<any>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   
@@ -164,70 +146,86 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   
   const t = dict?.search || {}
   
-  const fetchResults = useCallback(async () => {
-    setLoading(true)
+  // Rechercher des utilisateurs
+  const fetchUsers = useCallback(async () => {
+    if (activeTab === 'projects') return
+    
+    setLoadingUsers(true)
     
     try {
       const params = new URLSearchParams()
       if (query) params.set('q', query)
-      if (activeTab !== 'all') params.set('type', activeTab)
       if (location) params.set('location', location)
       if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
       if (minRating > 0) params.set('minRating', minRating.toString())
       if (sort === 'rating') params.set('sortBy', 'rating')
       if (sort === 'date') params.set('sortBy', 'createdAt')
-      
-      // Filtres projets
-      if (budgetMin > 0) params.set('budgetMin', budgetMin.toString())
-      if (budgetMax < 1000000) params.set('budgetMax', budgetMax.toString())
-      if (budgetType !== 'all') params.set('budgetType', budgetType)
-      if (category) params.set('category', category)
-      
       params.set('page', page.toString())
-      params.set('limit', '12')
+      params.set('limit', activeTab === 'all' ? '5' : '12')
       
-      const response = await fetch(`/api/search?${params}`)
-      const data: SearchResponse = await response.json()
+      const response = await fetch(`/api/users/search?${params}`)
+      const data = await response.json()
       
       if (data.success) {
         setUsers(data.users || [])
-        setProjects(data.projects || [])
-        setTotal(data.pagination.total)
-        setTotalPages(data.pagination.pages)
-        setFacets(data.facets)
+        setTotalUsers(data.pagination.total || 0)
       }
-      
-      // Mettre à jour l'URL
-      const urlParams = new URLSearchParams()
-      if (query) urlParams.set('q', query)
-      if (activeTab !== 'all') urlParams.set('type', activeTab)
-      if (location) urlParams.set('location', location)
-      if (skillsFilter.length) urlParams.set('skills', skillsFilter.join(','))
-      if (minRating > 0) urlParams.set('minRating', minRating.toString())
-      if (sort !== 'relevance') urlParams.set('sort', sort)
-      if (page > 1) urlParams.set('page', page.toString())
-      if (budgetMin > 0) urlParams.set('budgetMin', budgetMin.toString())
-      if (budgetMax < 1000000) urlParams.set('budgetMax', budgetMax.toString())
-      if (budgetType !== 'all') urlParams.set('budgetType', budgetType)
-      if (category) urlParams.set('category', category)
-      
-      router.replace(`${pathname}?${urlParams.toString()}`, { scroll: false })
-      
     } catch (error) {
-      console.error('Search error:', error)
+      console.error('Error fetching users:', error)
     } finally {
-      setLoading(false)
+      setLoadingUsers(false)
     }
-  }, [query, activeTab, page, sort, location, skillsFilter, minRating, budgetMin, budgetMax, budgetType, category, router, pathname])
+  }, [query, location, skillsFilter, minRating, sort, page, activeTab])
   
+  // Rechercher des projets
+  const fetchProjects = useCallback(async () => {
+    if (activeTab === 'users') return
+    
+    setLoadingProjects(true)
+    
+    try {
+      const params = new URLSearchParams()
+      if (query) params.set('q', query)
+      if (location) params.set('location', location)
+      if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
+      if (budgetMin > 0) params.set('budgetMin', budgetMin.toString())
+      if (budgetMax < 1000000) params.set('budgetMax', budgetMax.toString())
+      if (budgetType !== 'all') params.set('type', budgetType)
+      if (category) params.set('category', category)
+      if (sort === 'date') params.set('sortBy', 'createdAt')
+      if (sort === 'rating') params.set('sortBy', 'rating')
+      params.set('page', page.toString())
+      params.set('limit', activeTab === 'all' ? '5' : '12')
+      
+      const response = await fetch(`/api/projects?${params}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setProjects(data.data?.projects || [])
+        setTotalProjects(data.data?.pagination?.total || 0)
+        setTotalPages(data.data?.pagination?.totalPages || 1)
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    } finally {
+      setLoadingProjects(false)
+    }
+  }, [query, location, skillsFilter, budgetMin, budgetMax, budgetType, category, sort, page, activeTab])
+  
+  // Effet pour charger les données
   useEffect(() => {
-    fetchResults()
-  }, [fetchResults])
+    if (activeTab === 'users' || activeTab === 'all') {
+      fetchUsers()
+    }
+    if (activeTab === 'projects' || activeTab === 'all') {
+      fetchProjects()
+    }
+  }, [fetchUsers, fetchProjects, activeTab])
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
-    fetchResults()
+    // Les fetch seront déclenchés par les effets
   }
   
   const clearFilters = () => {
@@ -273,9 +271,21 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
     )
   }
   
+  const loading = (activeTab === 'users' && loadingUsers) || (activeTab === 'projects' && loadingProjects) || (activeTab === 'all' && (loadingUsers || loadingProjects))
+  
   // Rendu des résultats selon l'onglet actif
   const renderResults = () => {
     if (activeTab === 'users') {
+      if (loadingUsers) {
+        return (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <UserCardSkeleton key={i} variant={viewMode === 'grid' ? 'minimal' : 'default'} />
+            ))}
+          </div>
+        )
+      }
+      
       if (users.length === 0) {
         return (
           <div className="text-center py-16">
@@ -313,6 +323,16 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
     }
     
     if (activeTab === 'projects') {
+      if (loadingProjects) {
+        return (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <ProjectCardSkeleton key={i} variant="default" />
+            ))}
+          </div>
+        )
+      }
+      
       if (projects.length === 0) {
         return (
           <div className="text-center py-16">
@@ -350,6 +370,24 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
     // Onglet "Tout" - affiche les deux types
     const hasUsers = users.length > 0
     const hasProjects = projects.length > 0
+    const isLoading = loadingUsers || loadingProjects
+    
+    if (isLoading) {
+      return (
+        <div className="space-y-8">
+          <div className="space-y-4">
+            {[...Array(2)].map((_, i) => (
+              <UserCardSkeleton key={`user-${i}`} variant="minimal" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[...Array(2)].map((_, i) => (
+              <ProjectCardSkeleton key={`project-${i}`} variant="minimal" />
+            ))}
+          </div>
+        </div>
+      )
+    }
     
     if (!hasUsers && !hasProjects) {
       return (
@@ -367,7 +405,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Freelances ({users.length})
+                Freelances ({totalUsers})
               </h2>
               <button 
                 onClick={() => setActiveTab('users')}
@@ -394,7 +432,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Projets ({projects.length})
+                Projets ({totalProjects})
               </h2>
               <button 
                 onClick={() => setActiveTab('projects')}
@@ -406,10 +444,10 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
             <div className="space-y-4">
               {projects.slice(0, 3).map((project) => (
                 <ProjectCard
-                  key={project._id} 
+                  key={project._id}
                   project={project}
                   lang={lang}
-                  variant="minimal" 
+                  variant="minimal"
                   showActions={false}
                   onDetail={(p) => router.push(`/projects/${p._id}`)}
                 />
@@ -530,19 +568,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                       placeholder="React, Node.js, UI/UX..."
                       className="text-sm"
                     />
-                    {facets?.skills && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {facets.skills.slice(0, 5).map((skill: any) => (
-                          <button
-                            key={skill.name}
-                            onClick={() => setSkillsFilter([skill.name])}
-                            className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 hover:bg-gray-200"
-                          >
-                            {skill.name} ({skill.count})
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   
                   {/* Note minimum */}
@@ -612,25 +637,18 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                       </div>
                       
                       {/* Catégorie */}
-                      {facets?.categories && facets.categories.length > 0 && (
-                        <div className="mb-4">
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                            Catégorie
-                          </label>
-                          <select
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-                          >
-                            <option value="">Toutes les catégories</option>
-                            {facets.categories.map((cat: any) => (
-                              <option key={cat.name} value={cat.name}>
-                                {cat.name} ({cat.count})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                      <div className="mb-4">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                          Catégorie
+                        </label>
+                        <Input
+                          type="text"
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                          placeholder="Développement Web, Design..."
+                          className="text-sm"
+                        />
+                      </div>
                     </>
                   )}
                   
@@ -678,37 +696,21 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
             </Tabs>
             
             {/* Résultats count */}
-            {!loading && total > 0 && (
+            {!loading && (
               <div className="mb-4 text-sm text-gray-500">
-                <span className="font-medium text-gray-900 dark:text-white">{total}</span> résultats
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {activeTab === 'users' ? totalUsers : activeTab === 'projects' ? totalProjects : totalUsers + totalProjects}
+                </span> résultats
               </div>
             )}
             
             {/* Liste des résultats */}
             <AnimatePresence mode="wait">
-              {loading ? (
-                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    activeTab === 'users' ? (
-                      <UserCardSkeleton key={i} variant={viewMode === 'grid' ? 'minimal' : 'default'} />
-                    ) : (
-                      <ProjectCardSkeleton key={i} variant="default" />
-                    )
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="results"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  {renderResults()}
-                </motion.div>
-              )}
+              {renderResults()}
             </AnimatePresence>
             
-            {/* Pagination */}
-            {totalPages > 1 && (
+            {/* Pagination (seulement pour les onglets individuels) */}
+            {activeTab !== 'all' && totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8">
                 <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                   Précédent
@@ -717,7 +719,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   Page {page} sur {totalPages}
                 </span>
                 <Button variant="outline" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                  Suivant 
+                  Suivant
                 </Button>
               </div>
             )}
