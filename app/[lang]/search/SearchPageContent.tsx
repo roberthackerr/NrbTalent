@@ -14,33 +14,30 @@ import {
   Star,
   MapPin,
   Clock,
-  DollarSign,
   Loader2,
   Filter,
   X,
-  TrendingUp,
-  Award,
-  MessageCircle,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
-  Zap,
   Building2,
-  Globe2,
   Calendar,
   Eye,
+  Verified,
+  TrendingUp,
+  MessageCircle,
   Heart,
   Share2,
-  Verified,
-  GraduationCap,
-  Code2,
-  Palette,
-  Megaphone,
-  Layers
+  Bookmark,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
+  Grid3X3,
+  List,
+  SlidersHorizontal
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -57,9 +54,19 @@ interface SearchResult {
   url: string
   featured?: boolean
   verified?: boolean
+  author?: {
+    name: string
+    avatar?: string
+    role?: string
+  }
+  engagement?: {
+    likes: number
+    comments: number
+    shares: number
+  }
 }
 
-// Données fictives enrichies
+// Données fictives
 const fakeData: Record<string, SearchResult[]> = {
   projects: [
     {
@@ -67,28 +74,23 @@ const fakeData: Record<string, SearchResult[]> = {
       title: 'Développement Site E-commerce React',
       description: 'Recherche développeur React pour créer un site e-commerce complet avec panier et paiement Stripe. Stack: React, Node.js, MongoDB, Stripe API.',
       type: 'project',
-      badges: ['React', 'Node.js', 'Stripe', 'MongoDB'],
-      stats: { price: '2500-4000€', date: 'Publié il y a 2 jours', applications: 12, urgency: 'Urgent' },
+      badges: ['React', 'Node.js', 'Stripe'],
+      stats: { budget: '2500-4000€', deadline: '30 jours', proposals: 12 },
       url: '/projects/1',
-      featured: true
+      featured: true,
+      author: { name: 'TechCorp', role: 'Client vérifié' },
+      engagement: { likes: 24, comments: 5, shares: 3 }
     },
     {
       id: '2',
       title: 'Refonte UI/UX Application Mobile',
       description: 'Designer UI/UX pour refondre l\'interface d\'une application mobile de fitness avec 50k+ utilisateurs.',
       type: 'project',
-      badges: ['Figma', 'UI/UX', 'Mobile', 'Prototypage'],
-      stats: { price: '1500-2500€', date: 'Publié il y a 5 jours', applications: 8 },
-      url: '/projects/2'
-    },
-    {
-      id: '3',
-      title: 'Développement API REST avec Node.js',
-      description: 'Création d\'une API RESTful pour une application de livraison de repas.',
-      type: 'project',
-      badges: ['Node.js', 'Express', 'PostgreSQL', 'JWT'],
-      stats: { price: '3000-4500€', date: 'Publié il y a 1 jour', applications: 5 },
-      url: '/projects/3'
+      badges: ['Figma', 'UI/UX', 'Mobile'],
+      stats: { budget: '1500-2500€', deadline: '15 jours', proposals: 8 },
+      url: '/projects/2',
+      author: { name: 'FitApp', role: 'Startup' },
+      engagement: { likes: 18, comments: 3, shares: 2 }
     }
   ],
   freelancers: [
@@ -99,10 +101,12 @@ const fakeData: Record<string, SearchResult[]> = {
       type: 'freelancer',
       image: 'https://randomuser.me/api/portraits/men/1.jpg',
       badges: ['React', 'Node.js', 'TypeScript', 'AWS'],
-      stats: { rating: 4.9, reviews: 128, price: '45€/h', location: 'Paris', projects: 47, availability: 'Disponible' },
+      stats: { rating: 4.9, reviews: 128, rate: '45€/h', location: 'Paris', projects: 47 },
       url: '/profile/1',
       verified: true,
-      featured: true
+      featured: true,
+      author: { name: 'Thomas Martin', role: 'Freelance Expert' },
+      engagement: { likes: 342, comments: 28, shares: 45 }
     },
     {
       id: '2',
@@ -110,33 +114,12 @@ const fakeData: Record<string, SearchResult[]> = {
       description: 'Designer UI/UX spécialisée dans les applications mobiles et le design système. 6 ans d\'expérience.',
       type: 'freelancer',
       image: 'https://randomuser.me/api/portraits/women/2.jpg',
-      badges: ['Figma', 'Adobe XD', 'UI/UX', 'Design System'],
-      stats: { rating: 4.8, reviews: 95, price: '50€/h', location: 'Lyon', projects: 32 },
+      badges: ['Figma', 'Adobe XD', 'UI/UX'],
+      stats: { rating: 4.8, reviews: 95, rate: '50€/h', location: 'Lyon', projects: 32 },
       url: '/profile/2',
-      verified: true
-    },
-    {
-      id: '3',
-      title: 'Marc Leclerc',
-      description: 'Expert en Marketing Digital et Growth Hacking. Spécialiste SEO, SEA et réseaux sociaux.',
-      type: 'freelancer',
-      image: 'https://randomuser.me/api/portraits/men/3.jpg',
-      badges: ['SEO', 'Google Ads', 'Facebook Ads', 'Analytics'],
-      stats: { rating: 4.7, reviews: 64, price: '60€/h', location: 'Bordeaux', projects: 28 },
-      url: '/profile/3'
-    }
-  ],
-  clients: [
-    {
-      id: '1',
-      title: 'TechCorp France',
-      description: 'Leader français des solutions SaaS pour les entreprises. Recherche des freelances pour projets innovants.',
-      type: 'client',
-      image: 'https://logo.clearbit.com/techcorp.com',
-      badges: ['SaaS', 'Tech', 'Startup'],
-      stats: { location: 'Paris', projects: 45, budget: '200k+', since: 2018 },
-      url: '/clients/1',
-      verified: true
+      verified: true,
+      author: { name: 'Sophie Dubois', role: 'UI/UX Designer' },
+      engagement: { likes: 287, comments: 42, shares: 23 }
     }
   ],
   posts: [
@@ -145,10 +128,12 @@ const fakeData: Record<string, SearchResult[]> = {
       title: 'Comment réussir son premier projet freelance',
       description: 'Guide complet pour débuter en freelance et trouver ses premiers clients. Astuces, pièges à éviter et stratégies gagnantes.',
       type: 'post',
-      badges: ['Guide', 'Débutant', 'Conseils'],
-      stats: { date: '15 mars 2024', views: 1234, likes: 89, comments: 23 },
+      badges: ['Guide', 'Débutant'],
+      stats: { date: '15 mars 2024', readTime: '8 min' },
       url: '/posts/1',
-      featured: true
+      featured: true,
+      author: { name: 'Marie Lambert', avatar: 'https://randomuser.me/api/portraits/women/5.jpg', role: 'Expert Freelance' },
+      engagement: { likes: 156, comments: 23, shares: 67 }
     }
   ],
   teams: [
@@ -157,9 +142,11 @@ const fakeData: Record<string, SearchResult[]> = {
       title: 'Équipe Dev React',
       description: 'Groupe de développeurs React passionnés pour projets collaboratifs et open source.',
       type: 'team',
-      badges: ['React', 'Open Source', 'Mentorat'],
-      stats: { members: 12, projects: 8, skills: ['React', 'Next.js', 'Tailwind'] },
-      url: '/teams/1'
+      badges: ['React', 'Open Source'],
+      stats: { members: 12, projects: 8 },
+      url: '/teams/1',
+      author: { name: 'React Community', role: 'Communauté' },
+      engagement: { likes: 89, comments: 12, shares: 8 }
     }
   ]
 }
@@ -177,13 +164,13 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   const [dict, setDict] = useState<any>(null)
   const [query, setQuery] = useState(searchParams.q || '')
   const [type, setType] = useState(searchParams.type || 'all')
-  const [page, setPage] = useState(parseInt(searchParams.page || '1'))
   const [sort, setSort] = useState(searchParams.sort || 'relevance')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [total, setTotal] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
-  const [expandedFilters, setExpandedFilters] = useState<string[]>(['type', 'sort'])
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [activeTab, setActiveTab] = useState<'all' | 'projects' | 'freelancers' | 'posts'>('all')
   
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -199,7 +186,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
     
     if (type === 'all' || type === 'projects') allResults = [...allResults, ...fakeData.projects]
     if (type === 'all' || type === 'freelancers') allResults = [...allResults, ...fakeData.freelancers]
-    if (type === 'all' || type === 'clients') allResults = [...allResults, ...fakeData.clients]
     if (type === 'all' || type === 'posts') allResults = [...allResults, ...fakeData.posts]
     if (type === 'all' || type === 'teams') allResults = [...allResults, ...fakeData.teams]
     
@@ -225,9 +211,8 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
     if (query) urlParams.set('q', query)
     if (type !== 'all') urlParams.set('type', type)
     if (sort !== 'relevance') urlParams.set('sort', sort)
-    if (page > 1) urlParams.set('page', page.toString())
     router.replace(`${pathname}?${urlParams.toString()}`, { scroll: false })
-  }, [query, type, page, sort, router, pathname])
+  }, [query, type, sort, router, pathname])
   
   useEffect(() => {
     performSearch()
@@ -235,7 +220,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setPage(1)
     performSearch()
   }
   
@@ -243,282 +227,211 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
     setQuery('')
     setType('all')
     setSort('relevance')
-    setPage(1)
-  }
-  
-  const toggleFilter = (filter: string) => {
-    setExpandedFilters(prev => 
-      prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
-    )
   }
   
   const hasFilters = query || type !== 'all' || sort !== 'relevance'
   
-  const typeOptions = [
-    { value: 'all', label: t.all || 'Tout', icon: Search, color: 'text-gray-500' },
-    { value: 'projects', label: t.projects || 'Projets', icon: Briefcase, color: 'text-blue-500' },
-    { value: 'freelancers', label: t.freelancers || 'Freelances', icon: User, color: 'text-green-500' },
-    { value: 'clients', label: 'Clients', icon: Building2, color: 'text-purple-500' },
-    { value: 'posts', label: 'Publications', icon: FileText, color: 'text-orange-500' },
-    { value: 'teams', label: t.team || 'Équipes', icon: Users, color: 'text-cyan-500' },
-  ]
-  
-  const sortOptions = [
-    { value: 'relevance', label: 'Pertinence', icon: Sparkles },
-    { value: 'rating', label: 'Meilleure note', icon: Star },
-    { value: 'date', label: 'Plus récent', icon: Calendar },
+  const tabs = [
+    { id: 'all', label: t.all || 'Tout', icon: Search },
+    { id: 'projects', label: t.projects || 'Projets', icon: Briefcase },
+    { id: 'freelancers', label: t.freelancers || 'Freelances', icon: User },
+    { id: 'posts', label: 'Publications', icon: FileText },
   ]
   
   if (!dict) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4" />
-          <p className="text-gray-500">Chargement...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
       </div>
     )
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-900 dark:via-indigo-900 dark:to-purple-900">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-        
-        <div className="container mx-auto px-4 py-16 md:py-20 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
-                <Sparkles className="h-4 w-4 text-yellow-300" />
-                <span className="text-sm font-medium text-white">
-                  {query ? `${total} résultats trouvés` : 'Recherche avancée'}
-                </span>
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                {query ? `${query}` : t.title || 'Recherche'}
-              </h1>
-              <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
-                {query 
-                  ? `Découvrez ${total} résultat${total > 1 ? 's' : ''} correspondant à votre recherche`
-                  : 'Trouvez les meilleurs talents, projets et opportunités sur NRBTalents'
-                }
-              </p>
-              
-              {/* Barre de recherche */}
-              <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
-                <div className="relative group">
-                  <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                  <Input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t.placeholder || "Rechercher des projets, freelances..."}
-                    className="w-full pl-12 pr-36 py-4 text-base rounded-2xl border-0 shadow-xl bg-white/95 backdrop-blur-sm focus:bg-white transition-all"
-                  />
-                  <Button 
-                    type="submit" 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 rounded-xl"
-                    disabled={loading}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header avec recherche */}
+      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-4 py-3">
+            {/* Barre de recherche */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.placeholder || "Rechercher des projets, freelances..."}
+                  className="w-full pl-9 pr-12 py-2 text-sm rounded-full bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-blue-500"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
                   >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                      <>
-                        <Search className="h-4 w-4 mr-2" />
-                        {t.searchButton || 'Rechercher'}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
+                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+            </form>
+            
+            {/* Filtre rapide */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "rounded-full",
+                showFilters && "bg-gray-100 dark:bg-gray-800"
+              )}
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </Button>
+            
+            {/* Vue mode */}
+            <div className="hidden sm:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "rounded-full",
+                  viewMode === 'list' && "bg-gray-100 dark:bg-gray-800"
+                )}
+              >
+                <List className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  "rounded-full",
+                  viewMode === 'grid' && "bg-gray-100 dark:bg-gray-800"
+                )}
+              >
+                <Grid3X3 className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex gap-6">
           {/* Sidebar Filtres */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-            className={cn(
-              "lg:w-80 flex-shrink-0 transition-all duration-300",
-              showFilters ? "block" : "hidden lg:block"
-            )}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 sticky top-24 overflow-hidden">
-              {/* Header */}
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-blue-600" />
-                    <h2 className="font-semibold text-gray-900 dark:text-white">
-                      {t.filters || 'Filtres'}
-                    </h2>
-                  </div>
-                  {hasFilters && (
-                    <button
-                      onClick={clearFilters}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                    >
-                      {t.clearAll || 'Effacer tout'}
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              <div className="p-5 space-y-6">
-                {/* Type de contenu */}
-                <div>
-                  <button
-                    onClick={() => toggleFilter('type')}
-                    className="flex items-center justify-between w-full mb-3"
-                  >
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Type de contenu</span>
-                    {expandedFilters.includes('type') ? (
-                      <ChevronUp className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-gray-400" />
-                    )}
-                  </button>
-                  
-                  <AnimatePresence>
-                    {expandedFilters.includes('type') && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-1">
-                          {typeOptions.map(option => {
-                            const Icon = option.icon
-                            return (
-                              <button
-                                key={option.value}
-                                onClick={() => {
-                                  setType(option.value)
-                                  setPage(1)
-                                }}
-                                className={cn(
-                                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200",
-                                  type === option.value
-                                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                                    : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                                )}
-                              >
-                                <Icon className={cn("h-4 w-4", option.color)} />
-                                <span className="text-sm font-medium">{option.label}</span>
-                                {type === option.value && (
-                                  <div className="ml-auto w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  </div>
-                                )}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                
-                {/* Tri */}
-                <div>
-                  <button
-                    onClick={() => toggleFilter('sort')}
-                    className="flex items-center justify-between w-full mb-3"
-                  >
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Trier par</span>
-                    {expandedFilters.includes('sort') ? (
-                      <ChevronUp className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-gray-400" />
-                    )}
-                  </button>
-                  
-                  <AnimatePresence>
-                    {expandedFilters.includes('sort') && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-1">
-                          {sortOptions.map(option => {
-                            const Icon = option.icon
-                            return (
-                              <button
-                                key={option.value}
-                                onClick={() => setSort(option.value)}
-                                className={cn(
-                                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200",
-                                  sort === option.value
-                                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                                    : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                                )}
-                              >
-                                <Icon className="h-4 w-4" />
-                                <span className="text-sm font-medium">{option.label}</span>
-                                {sort === option.value && (
-                                  <div className="ml-auto w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  </div>
-                                )}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-          
-          {/* Résultats */}
-          <div className="flex-1">
-            {/* Mobile filter button */}
-            <div className="lg:hidden mb-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="w-full gap-2"
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 280, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                className="flex-shrink-0 overflow-hidden"
               >
-                <Filter className="h-4 w-4" />
-                {showFilters ? 'Masquer les filtres' : 'Afficher les filtres'}
-              </Button>
+                <div className="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sticky top-20">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Filtres</h3>
+                    {hasFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="text-xs text-blue-600 hover:text-blue-700"
+                      >
+                        Effacer
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Type */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                      Type
+                    </label>
+                    <div className="space-y-1">
+                      {tabs.map(tab => {
+                        const Icon = tab.icon
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setType(tab.id === 'all' ? 'all' : tab.id)}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                              type === (tab.id === 'all' ? 'all' : tab.id)
+                                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span>{tab.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Tri */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                      Trier par
+                    </label>
+                    <select
+                      value={sort}
+                      onChange={(e) => setSort(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                    >
+                      <option value="relevance">Pertinence</option>
+                      <option value="rating">Meilleure note</option>
+                      <option value="date">Plus récent</option>
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Contenu principal */}
+          <div className="flex-1 min-w-0">
+            {/* Tabs */}
+            <div className="flex gap-6 border-b border-gray-200 dark:border-gray-700 mb-6">
+              {tabs.map(tab => {
+                const Icon = tab.icon
+                const isActive = type === (tab.id === 'all' ? 'all' : tab.id)
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setType(tab.id === 'all' ? 'all' : tab.id)}
+                    className={cn(
+                      "flex items-center gap-2 pb-3 text-sm font-medium transition-colors relative",
+                      isActive 
+                        ? "text-blue-600 dark:text-blue-400" 
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                    {tab.id !== 'all' && fakeData[tab.id as keyof typeof fakeData] && (
+                      <span className="text-xs text-gray-400">
+                        {fakeData[tab.id as keyof typeof fakeData]?.length || 0}
+                      </span>
+                    )}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                      />
+                    )}
+                  </button>
+                )
+              })}
             </div>
             
-            {/* Résultats header */}
+            {/* Résultats count */}
             {!loading && results.length > 0 && (
-              <div className="flex items-center justify-between mb-6">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-semibold text-gray-900 dark:text-white">{total}</span> {t.results || 'résultats'}
-                </div>
-                <div className="text-xs text-gray-400">
-                  Affichage des {Math.min(10, total)} premiers résultats
-                </div>
+              <div className="mb-4 text-sm text-gray-500">
+                <span className="font-medium text-gray-900 dark:text-white">{total}</span> résultats
               </div>
             )}
             
-            {/* Résultats */}
+            {/* Liste des résultats */}
             <AnimatePresence mode="wait">
               {loading ? (
                 <motion.div
@@ -529,7 +442,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   className="space-y-4"
                 >
                   {[...Array(3)].map((_, i) => (
-                    <ResultCardSkeleton key={i} />
+                    <PostSkeleton key={i} viewMode={viewMode} />
                   ))}
                 </motion.div>
               ) : results.length === 0 ? (
@@ -537,16 +450,16 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   key="empty"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm"
+                  className="text-center py-16"
                 >
-                  <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Search className="h-12 w-12 text-gray-400" />
+                  <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="h-10 w-10 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {t.noResults || 'Aucun résultat trouvé'}
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                    Aucun résultat trouvé
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                    {t.tryDifferent || 'Essayez avec d\'autres mots-clés ou retirez certains filtres'}
+                  <p className="text-sm text-gray-500">
+                    Essayez avec d'autres mots-clés
                   </p>
                 </motion.div>
               ) : (
@@ -554,7 +467,10 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   key="results"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="space-y-4"
+                  className={cn(
+                    "space-y-4",
+                    viewMode === 'grid' && "grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0"
+                  )}
                 >
                   {results.map((result, index) => (
                     <motion.div
@@ -563,7 +479,11 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <ResultCard result={result} lang={lang} t={t} />
+                      {viewMode === 'grid' ? (
+                        <GridCard result={result} lang={lang} />
+                      ) : (
+                        <FeedCard result={result} lang={lang} />
+                      )}
                     </motion.div>
                   ))}
                 </motion.div>
@@ -576,206 +496,234 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   )
 }
 
-// Composant de carte de résultat professionnel
-function ResultCard({ result, lang, t }: { result: SearchResult; lang: Locale; t: any }) {
-  const getTypeConfig = () => {
+// Composant Feed Card (style réseau social)
+function FeedCard({ result, lang }: { result: SearchResult; lang: Locale }) {
+  const [liked, setLiked] = useState(false)
+  const [saved, setSaved] = useState(false)
+  
+  const getTypeColor = () => {
     switch (result.type) {
-      case 'project':
-        return { icon: Briefcase, color: 'bg-blue-500', bgLight: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600' }
-      case 'freelancer':
-        return { icon: User, color: 'bg-green-500', bgLight: 'bg-green-50 dark:bg-green-900/20', textColor: 'text-green-600' }
-      case 'client':
-        return { icon: Building2, color: 'bg-purple-500', bgLight: 'bg-purple-50 dark:bg-purple-900/20', textColor: 'text-purple-600' }
-      case 'post':
-        return { icon: FileText, color: 'bg-orange-500', bgLight: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-600' }
-      case 'team':
-        return { icon: Users, color: 'bg-cyan-500', bgLight: 'bg-cyan-50 dark:bg-cyan-900/20', textColor: 'text-cyan-600' }
-      default:
-        return { icon: Search, color: 'bg-gray-500', bgLight: 'bg-gray-50 dark:bg-gray-800', textColor: 'text-gray-600' }
+      case 'project': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+      case 'freelancer': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+      case 'post': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+      case 'team': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
     }
   }
   
-  const config = getTypeConfig()
-  const Icon = config.icon
-  
   return (
-    <Link href={`/${lang}${result.url}`}>
-      <article className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800">
-        <div className="p-6">
-          <div className="flex items-start gap-5">
-            {/* Avatar/Icon */}
-            <div className="relative flex-shrink-0">
-              {result.image ? (
-                <div className="relative">
-                  <Image
-                    src={result.image}
-                    alt={result.title}
-                    width={64}
-                    height={64}
-                    className="rounded-2xl object-cover ring-4 ring-white dark:ring-gray-800"
-                  />
-                  {result.verified && (
-                    <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 ring-2 ring-white dark:ring-gray-800">
-                      <Verified className="h-3 w-3 text-white" />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className={cn(
-                  "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105",
-                  config.bgLight
-                )}>
-                  <Icon className={cn("h-8 w-8", config.textColor)} />
-                </div>
+    <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700">
+      {/* Header */}
+      <div className="p-4 pb-0">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={result.author?.avatar || result.image} />
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+              {result.title?.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                {result.author?.name || result.title}
+              </span>
+              {result.verified && (
+                <Verified className="h-3.5 w-3.5 text-blue-500" />
               )}
-              
-              {result.featured && (
-                <div className="absolute -top-2 -right-2">
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full p-1">
-                    <Sparkles className="h-3 w-3 text-white" />
-                  </div>
-                </div>
-              )}
+              <Badge className={cn("text-[10px]", getTypeColor())}>
+                {result.type === 'project' ? 'Projet' : 
+                 result.type === 'freelancer' ? 'Freelance' : 
+                 result.type === 'post' ? 'Article' : 'Équipe'}
+              </Badge>
             </div>
-            
-            {/* Contenu */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between flex-wrap gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {result.title}
-                    </h2>
-                    {result.verified && (
-                      <Verified className="h-4 w-4 text-blue-500" />
-                    )}
-                    {result.stats?.urgency && (
-                      <Badge className="bg-red-100 text-red-700 border-red-200 text-xs">
-                        <Zap className="h-3 w-3 mr-1" />
-                        {result.stats.urgency}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <Badge variant="secondary" className="text-xs font-medium">
-                      {result.type === 'project' ? (t.project || 'Projet') :
-                       result.type === 'freelancer' ? (t.user || 'Freelance') :
-                       result.type === 'client' ? 'Client' :
-                       result.type === 'post' ? 'Publication' : (t.team || 'Équipe')}
-                    </Badge>
-                    
-                    {result.stats?.rating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {result.stats.rating}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          ({result.stats.reviews})
-                        </span>
-                      </div>
-                    )}
-                    
-                    {result.stats?.availability && (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          {result.stats.availability}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {result.stats?.price && (
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
-                      {result.stats.price}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {result.type === 'project' ? 'Budget' : 'Tarif horaire'}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <p className="mt-3 text-gray-600 dark:text-gray-400 line-clamp-2 text-sm">
-                {result.description}
-              </p>
-              
-              {/* Badges */}
-              {result.badges && result.badges.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {result.badges.slice(0, 4).map((badge) => (
-                    <Badge key={badge} variant="outline" className="text-xs bg-gray-50 dark:bg-gray-800/50">
-                      {badge}
-                    </Badge>
-                  ))}
-                  {result.badges.length > 4 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{result.badges.length - 4}
-                    </Badge>
-                  )}
-                </div>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>{result.author?.role || ''}</span>
+              {result.stats?.date && (
+                <>
+                  <span>•</span>
+                  <span>{result.stats.date}</span>
+                </>
               )}
-              
-              {/* Stats */}
-              <div className="flex flex-wrap gap-4 mt-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-                {result.stats?.location && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <MapPin className="h-3.5 w-3.5" />
-                    <span>{result.stats.location}</span>
-                  </div>
-                )}
-                {result.stats?.date && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{result.stats.date}</span>
-                  </div>
-                )}
-                {result.stats?.applications && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{result.stats.applications} candidatures</span>
-                  </div>
-                )}
-                {result.stats?.projects && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    <span>{result.stats.projects} projets</span>
-                  </div>
-                )}
-                {result.stats?.views && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <Eye className="h-3.5 w-3.5" />
-                    <span>{result.stats.views} vues</span>
-                  </div>
-                )}
-              </div>
+              {result.stats?.readTime && (
+                <>
+                  <span>•</span>
+                  <span>{result.stats.readTime} de lecture</span>
+                </>
+              )}
             </div>
           </div>
+          <button className="text-gray-400 hover:text-gray-600">
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Contenu */}
+      <div className="p-4">
+        <Link href={`/${lang}${result.url}`}>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 transition-colors mb-2">
+            {result.title}
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+            {result.description}
+          </p>
+        </Link>
+        
+        {/* Badges */}
+        {result.badges && result.badges.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {result.badges.slice(0, 3).map((badge) => (
+              <Badge key={badge} variant="secondary" className="text-xs">
+                {badge}
+              </Badge>
+            ))}
+          </div>
+        )}
+        
+        {/* Stats */}
+        {result.stats && (
+          <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
+            {result.stats.budget && (
+              <div className="flex items-center gap-1">
+                <Briefcase className="h-3 w-3" />
+                <span>{result.stats.budget}</span>
+              </div>
+            )}
+            {result.stats.rate && (
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{result.stats.rate}</span>
+              </div>
+            )}
+            {result.stats.location && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span>{result.stats.location}</span>
+              </div>
+            )}
+            {result.stats.rating && (
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                <span>{result.stats.rating} ({result.stats.reviews})</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Actions */}
+      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setLiked(!liked)}
+            className={cn(
+              "flex items-center gap-1.5 text-sm transition-colors",
+              liked ? "text-red-500" : "text-gray-500 hover:text-red-500"
+            )}
+          >
+            <Heart className={cn("h-5 w-5", liked && "fill-current")} />
+            <span>{(result.engagement?.likes || 0) + (liked ? 1 : 0)}</span>
+          </button>
+          <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-500 transition-colors">
+            <MessageCircle className="h-5 w-5" />
+            <span>{result.engagement?.comments || 0}</span>
+          </button>
+          <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-500 transition-colors">
+            <Share2 className="h-5 w-5" />
+            <span>{result.engagement?.shares || 0}</span>
+          </button>
+        </div>
+        <button
+          onClick={() => setSaved(!saved)}
+          className={cn(
+            "text-gray-400 hover:text-blue-500 transition-colors",
+            saved && "text-blue-500"
+          )}
+        >
+          <Bookmark className={cn("h-5 w-5", saved && "fill-current")} />
+        </button>
+      </div>
+    </article>
+  )
+}
+
+// Composant Grid Card
+function GridCard({ result, lang }: { result: SearchResult; lang: Locale }) {
+  return (
+    <Link href={`/${lang}${result.url}`}>
+      <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden border border-gray-200 dark:border-gray-700 group">
+        {result.image && (
+          <div className="aspect-video overflow-hidden">
+            <Image
+              src={result.image}
+              alt={result.title}
+              width={400}
+              height={225}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        )}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="secondary" className="text-xs">
+              {result.type === 'project' ? 'Projet' : 
+               result.type === 'freelancer' ? 'Freelance' : 
+               result.type === 'post' ? 'Article' : 'Équipe'}
+            </Badge>
+            {result.featured && (
+              <Badge className="bg-yellow-100 text-yellow-700 text-xs">
+                <Sparkles className="h-3 w-3 mr-1" />
+                En vedette
+              </Badge>
+            )}
+          </div>
+          <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors line-clamp-1">
+            {result.title}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+            {result.description}
+          </p>
+          {result.stats?.rating && (
+            <div className="flex items-center gap-1 mt-3">
+              <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {result.stats.rating}
+              </span>
+              <span className="text-xs text-gray-500">
+                ({result.stats.reviews})
+              </span>
+            </div>
+          )}
         </div>
       </article>
     </Link>
   )
 }
 
-function ResultCardSkeleton() {
+function PostSkeleton({ viewMode }: { viewMode: string }) {
+  if (viewMode === 'grid') {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 animate-pulse">
+        <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg mb-3" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2" />
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+      </div>
+    )
+  }
+  
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 animate-pulse">
-      <div className="flex gap-5">
-        <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 animate-pulse">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
         <div className="flex-1">
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-          <div className="flex gap-2 mt-3">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20" />
-          </div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-1" />
+          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
         </div>
       </div>
+      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-1" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
     </div>
   )
 }
