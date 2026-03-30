@@ -1,4 +1,4 @@
-// components/navigation/Navigation.tsx - Version corrigée pour petits écrans
+// components/navigation/Navigation.tsx - Version avec sauvegarde de la langue
 "use client"
 
 import Link from "next/link"
@@ -32,7 +32,7 @@ import Image from "next/image"
 import { MessagesDropdown } from "@/components/messages-dropdown"
 import { NotificationBell } from "./NotificationBell"
 import { useToast } from "@/components/ui/use-toast"
-import { SearchCommand, SearchButton, useSearchCommand } from "@/components/search/SearchCommand"
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MegaItem {
@@ -66,23 +66,12 @@ export function Navigation() {
   const [dict, setDict] = useState<any>(null)
   const [lang, setLang] = useState<Locale>("fr")
   const [savingLang, setSavingLang] = useState<string | null>(null)
-  const [isSmallScreen, setIsSmallScreen] = useState(false)
   const pathname = usePathname()
   const params = useParams()
   const { data: session, update: updateSession } = useSession()
   const navRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
-  const { isOpen, open, close } = useSearchCommand()
-
-  // Détecter les petits écrans
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsSmallScreen(window.innerWidth < 1380) // xl breakpoint
-    }
-    checkScreenSize()
-    window.addEventListener('resize', checkScreenSize)
-    return () => window.removeEventListener('resize', checkScreenSize)
-  }, [])
+  
 
   useEffect(() => {
     const l = (params.lang as Locale) || "fr"
@@ -131,7 +120,7 @@ export function Navigation() {
   }
 
   const saveLanguageToProfile = async (newLang: Locale): Promise<boolean> => {
-    if (!session?.user) return true
+    if (!session?.user) return true // No user logged in, just redirect
     
     try {
       const response = await fetch('/api/users/profile', {
@@ -150,6 +139,7 @@ export function Navigation() {
         throw new Error('Failed to save language preference')
       }
 
+      // Update session with new language
       await updateSession({
         ...session,
         user: {
@@ -186,14 +176,17 @@ export function Navigation() {
   const switchLang = async (code: string) => {
     setSavingLang(code)
     
+    // Save language preference to profile if user is logged in
     if (session?.user) {
       await saveLanguageToProfile(code as Locale)
     }
     
+    // Navigate to the new language version
     const rest = pathname.split("/").slice(2).join("/")
     window.location.href = `/${code}/${rest}`
   }
 
+  // Fonction pour récupérer les textes légaux en string
   const getLegalText = (key: string, fallback: string): string => {
     if (!dict?.legal?.[key]) return fallback
     const value = dict.legal[key]
@@ -202,47 +195,7 @@ export function Navigation() {
     return fallback
   }
 
-  // Version simplifiée des menus pour petits écrans
-  const simplifiedMegas = {
-    marketplace: {
-      label: t("navigations.marketplace", "Marketplace"),
-      items: [
-        { href: `/${lang}/talents`, label: t("navigations.talents", "Talents") },
-        { href: `/${lang}/freelancers`, label: t("navigations.freelancers", "Freelancers") },
-        { href: `/${lang}/ai-matching`, label: t("navigations.aiMatching", "AI Matching") },
-        { href: `/${lang}/gigs`, label: t("navigations.gigs", "Gigs") },
-        { href: `/${lang}/projects`, label: t("navigations.projects", "Projets") },
-      ]
-    },
-    workspace: {
-      label: t("navigations.workspace", "Espace travail"),
-      items: [
-        { href: `/${lang}/messages`, label: t("navigations.messages", "Messages") },
-        { href: `/${lang}/calendar`, label: t("navigations.calendar", "Calendrier") },
-        { href: `/${lang}/dashboard`, label: t("navigations.dashboard", "Dashboard") },
-        { href: `/${lang}/teams`, label: t("navigations.teams", "Équipes") },
-      ]
-    },
-    community: {
-      label: t("navigations.community", "Communauté"),
-      items: [
-        { href: `/${lang}/blog`, label: t("navigations.blog", "Blog") },
-        { href: `/${lang}/groups`, label: t("navigations.groups", "Groupes") },
-        { href: `/${lang}/academy`, label: t("navigations.academy", "Académie") },
-        { href: `/${lang}/how-it-works`, label: t("navigations.howItWorks", "Comment ça marche") },
-      ]
-    },
-    enterprise: {
-      label: t("navigations.enterprise", "Entreprise"),
-      items: [
-        { href: `/${lang}/enterprise`, label: t("navigations.enterpriseSolutions", "Solutions") },
-        { href: `/${lang}/pricing`, label: t("navigations.pricing", "Tarifs") },
-        { href: `/${lang}/contact-sales`, label: t("navigations.contactSales", "Contact") },
-      ]
-    }
-  }
-
-  // ─── Mega menu definitions avec traductions ──────────────────────────────────
+  // ── Mega menu definitions avec traductions ──────────────────────────────────
   const megas: Record<string, MegaMenu> = {
     marketplace: {
       label: t("navigations.marketplace", "Marketplace"),
@@ -279,6 +232,7 @@ export function Navigation() {
             { href: `/${lang}/calendar`, label: t("navigations.calendar", "Calendrier"), description: t("navigations.calendarDesc", "Planifier vos rendez-vous"), icon: <Calendar className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/contracts`, label: t("navigations.contracts", "Contrats"), description: t("navigations.contractsDesc", "Gérez vos accords juridiques"), icon: <ScrollText className="h-4 w-4 shrink-0" /> },
             { href: `/${lang}/orders`, label: t("navigations.orders", "Commandes"), description: t("navigations.ordersDesc", "Suivi des commandes actives"), icon: <Package className="h-4 w-4 shrink-0" /> },
+      
           ],
         },
         {
@@ -384,92 +338,59 @@ export function Navigation() {
                   className="h-8 w-8 transition-transform group-hover:scale-110" 
                 />
               </div>
-              <span className="hidden sm:inline text-sm font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent whitespace-nowrap">
-                NRBTalents
-              </span>
+              <div className="hidden lg:flex flex-col">
+                <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent whitespace-nowrap">
+                  NRBTalents
+                </span>
+                <span className="text-xs text-muted-foreground">Freelance</span>
+              </div>
             </Link>
 
-            {/* ── Desktop mega nav — visible uniquement sur grands écrans (xl+) ── */}
-            {!isSmallScreen && (
-              <div className="hidden xl:flex items-center gap-0.5 flex-1 min-w-0 overflow-hidden">
-                <Link
-                  href={`/${lang}`}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0",
-                    isActive(`/${lang}`)
-                      ? "text-foreground bg-accent/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
-                  )}
-                  onClick={() => setOpenMenu(null)}
-                >
-                  <Home className="h-4 w-4 shrink-0" />
-                  <span>{t("navigations.home", "Accueil")}</span>
-                </Link>
+            {/* ── Desktop mega nav — visible lg+ uniquement ─────────────────── */}
+            <div className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0 overflow-hidden">
+              <Link
+                href={`/${lang}`}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0",
+                  isActive(`/${lang}`)
+                    ? "text-foreground bg-accent/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                )}
+                onClick={() => setOpenMenu(null)}
+              >
+                <Home className="h-4 w-4 shrink-0" />
+                <span className="hidden xl:inline">{t("navigations.home", "Accueil")}</span>
+              </Link>
 
-                {Object.entries(megas).map(([key, mega]) => {
-                  const isOpen = openMenu === key
-                  const anyActive = mega.groups.some(g =>
-                    g.items.some(item => isActive(item.href))
-                  )
-                  return (
-                    <button
-                      key={key}
-                      className={cn(
-                        "flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0",
-                        anyActive || isOpen
-                          ? "text-foreground bg-accent/50"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
-                      )}
-                      onClick={() => setOpenMenu(isOpen ? null : key)}
-                      onMouseEnter={() => setOpenMenu(key)}
-                    >
-                      <span>{mega.label}</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isOpen && "rotate-180")} />
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* ── Menu simplifié pour écrans moyens (lg à xl) ─────────────────── */}
-            {isSmallScreen && !mobileOpen && (
-              <div className="hidden lg:flex xl:hidden items-center gap-1 flex-1 overflow-x-auto scrollbar-hide">
-                <Link
-                  href={`/${lang}`}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap",
-                    isActive(`/${lang}`)
-                      ? "text-foreground bg-accent/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
-                  )}
-                >
-                  {t("navigations.home", "Accueil")}
-                </Link>
-                {Object.entries(simplifiedMegas).map(([key, menu]) => (
-                  <Link
+              {Object.entries(megas).map(([key, mega]) => {
+                const isOpen = openMenu === key
+                const anyActive = mega.groups.some(g =>
+                  g.items.some(item => isActive(item.href))
+                )
+                return (
+                  <button
                     key={key}
-                    href={menu.items[0]?.href || `/${lang}`}
                     className={cn(
-                      "px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap",
-                      menu.items.some(item => isActive(item.href))
+                      "flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0",
+                      anyActive || isOpen
                         ? "text-foreground bg-accent/50"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
                     )}
+                    onClick={() => setOpenMenu(isOpen ? null : key)}
+                    onMouseEnter={() => setOpenMenu(key)}
                   >
-                    {menu.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+                    <span>{mega.label}</span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isOpen && "rotate-180")} />
+                  </button>
+                )
+              })}
+            </div>
 
             {/* ── Desktop right actions — visible lg+ uniquement ────────────── */}
             <div className="hidden lg:flex items-center gap-2 shrink-0 min-w-fit">
               <ThemeToggle />
               <NotificationBell />
               <MessagesDropdown />
-              
-              <SearchButton onClick={open} />
-              <SearchCommand isOpen={isOpen} onClose={close} lang={lang} />
 
               {/* Language Switcher Desktop */}
               <div className="relative group">
@@ -522,10 +443,10 @@ export function Navigation() {
 
             {/* ── Hamburger mobile/tablette — visible SOUS lg (0–1023px) ─────── */}
             <div className="flex items-center gap-1 lg:hidden ml-auto shrink-0">
+              {/* Notifications et messages sur mobile */}
               <div className="flex items-center gap-1 mr-1">
                 <NotificationBell />
                 <MessagesDropdown />
-                <SearchCommand isOpen={isOpen} onClose={close} lang={lang} />
               </div>
               
               <ThemeToggle />
@@ -581,18 +502,6 @@ export function Navigation() {
 
                   <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
                     <div className="px-3 py-3 space-y-1">
-                      {/* Bouton recherche mobile */}
-                      <button
-                        onClick={() => {
-                          open()
-                          setMobileOpen(false)
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-accent/30 text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all mb-2"
-                      >
-                        <SearchButton onClick={() => {}} />
-                        <span className="flex-1 text-left">Rechercher...</span>
-                        <kbd className="text-xs text-muted-foreground">⌘K</kbd>
-                      </button>
 
                       {/* Home */}
                       <Link
@@ -704,7 +613,7 @@ export function Navigation() {
                       </div>
                     </div>
 
-                    {/* User section mobile (identique) */}
+                    {/* User section mobile */}
                     <div className="px-3 pb-4 pt-2 border-t border-border/40 space-y-3 mt-2">
                       {session?.user ? (
                         <>
@@ -804,16 +713,16 @@ export function Navigation() {
         </div>
       </nav>
 
-      {/* ── Mega menu panels — desktop uniquement (hidden sous xl) ───────────── */}
-      {openMenu && !isSmallScreen && (
+      {/* ── Mega menu panels — desktop uniquement (hidden sous lg) ───────────── */}
+      {openMenu && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] hidden xl:block"
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] hidden lg:block"
             onMouseEnter={() => setOpenMenu(null)}
           />
 
           <div
-            className="fixed top-14 sm:top-16 left-0 right-0 z-50 justify-center px-4 sm:px-6 hidden xl:flex"
+            className="fixed top-14 sm:top-16 left-0 right-0 z-50 justify-center px-4 sm:px-6 hidden lg:flex"
             onMouseLeave={() => setOpenMenu(null)}
           >
             <div className="absolute -top-3 left-0 right-0 h-4 pointer-events-auto" />
