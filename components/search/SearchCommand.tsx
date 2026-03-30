@@ -181,8 +181,7 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
       return updated
     })
   }, [])
-
-  // Recherche API - Utilisateurs et Projets
+   // Recherche API - Utilisateurs et Projets
   useEffect(() => {
     if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setResults([])
