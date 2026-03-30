@@ -32,6 +32,7 @@ import Image from "next/image"
 import { MessagesDropdown } from "@/components/messages-dropdown"
 import { NotificationBell } from "./NotificationBell"
 import { useToast } from "@/components/ui/use-toast"
+import { SearchCommand, SearchButton, useSearchCommand } from "@/components/search/SearchCommand"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MegaItem {
@@ -70,6 +71,7 @@ export function Navigation() {
   const { data: session, update: updateSession } = useSession()
   const navRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
+   const { isOpen, open, close } = useSearchCommand()
 
   useEffect(() => {
     const l = (params.lang as Locale) || "fr"
@@ -389,6 +391,13 @@ export function Navigation() {
               <ThemeToggle />
               <NotificationBell />
               <MessagesDropdown />
+                  <>
+      {/* Bouton de recherche */}
+      <SearchButton onClick={open} />
+      
+      {/* Command palette */}
+      <SearchCommand isOpen={isOpen} onClose={close} lang="fr" />
+    </>
 
               {/* Language Switcher Desktop */}
               <div className="relative group">
