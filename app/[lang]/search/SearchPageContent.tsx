@@ -197,7 +197,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
       params.set('page', page.toString())
       params.set('limit', activeTab === 'all' ? '5' : '12')
       
-      const response = await fetch(`/api/projects?${params}`)
+      const response = await fetch(`/api/projects/search?${params}`)
       const data = await response.json()
       
       if (data.success) {
