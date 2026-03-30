@@ -409,7 +409,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   key={project._id}
                   project={project}
                   lang={lang}
-                  variant="minimal"
+                  variant="minimal" 
                   showActions={false}
                   onDetail={(p) => router.push(`/projects/${p._id}`)}
                 />
