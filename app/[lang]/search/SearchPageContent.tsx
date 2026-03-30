@@ -7,47 +7,36 @@ import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import { 
   Search, 
-  Briefcase, 
   User, 
-  Star,
-  MapPin,
-  Clock,
   Loader2,
   Filter,
   X,
-  Verified,
-  Heart,
-  MessageCircle,
-  Share2,
-  Bookmark,
   SlidersHorizontal,
   Grid3X3,
-  List,
-  ChevronDown
+  List
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
+import { UserCard, UserCardSkeleton } from '@/components/user/UserCard'
 
 interface User {
   _id: string
   name: string
   email: string
-  role: string
+  role: 'freelance' | 'client'
   title: string
   bio: string
   avatar: string
-  skills: string[]
+  skills: any[]
   location: string
   hourlyRate: number
   statistics: {
     rating: number
     completedProjects: number
     responseRate: number
+    successRate?: number
   }
   verified: boolean
   createdAt: string
@@ -94,8 +83,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   const [totalPages, setTotalPages] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
-  const [liked, setLiked] = useState<Record<string, boolean>>({})
-  const [saved, setSaved] = useState<Record<string, boolean>>({})
   
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -383,12 +370,12 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
               </div>
             )}
             
-            {/* Liste des freelances */}
+            {/* Liste des freelances avec UserCard */}
             <AnimatePresence mode="wait">
               {loading ? (
                 <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                   {[...Array(3)].map((_, i) => (
-                    <UserCardSkeleton key={i} viewMode={viewMode} />
+                    <UserCardSkeleton key={i} variant={viewMode === 'grid' ? 'minimal' : 'default'} />
                   ))}
                 </motion.div>
               ) : users.length === 0 ? (
@@ -405,17 +392,26 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className={cn(
-                    "space-y-4",
-                    viewMode === 'grid' && "grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0"
+                    viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"
                   )}
                 >
                   {users.map((user, index) => (
-                    <motion.div key={user._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                      {viewMode === 'grid' ? (
-                        <UserGridCard user={user} lang={lang} liked={liked[user._id]} saved={saved[user._id]} onLike={() => setLiked(prev => ({ ...prev, [user._id]: !prev[user._id] }))} onSave={() => setSaved(prev => ({ ...prev, [user._id]: !prev[user._id] }))} />
-                      ) : (
-                        <UserFeedCard user={user} lang={lang} liked={liked[user._id]} saved={saved[user._id]} onLike={() => setLiked(prev => ({ ...prev, [user._id]: !prev[user._id] }))} onSave={() => setSaved(prev => ({ ...prev, [user._id]: !prev[user._id] }))} />
-                      )}
+                    <motion.div
+                      key={user._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <UserCard
+                        user={user}
+                        lang={lang}
+                        variant={viewMode === 'grid' ? 'minimal' : 'default'}
+                        showContactButton
+                        onContact={(user) => {
+                          console.log('Contact', user.name)
+                          // Implémenter la logique de contact ici
+                        }}
+                      />
                     </motion.div>
                   ))}
                 </motion.div>
@@ -437,178 +433,6 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Composant Feed Card
-function UserFeedCard({ user, lang, liked, saved, onLike, onSave }: any) {
-  return (
-    <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700">
-      <div className="p-4 pb-0">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12">
-            <AvatarImage src={user.avatar} />
-            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-              {user.name?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link href={`/${lang}/profile/${user._id}`} className="font-semibold text-gray-900 dark:text-white hover:text-blue-600">
-                {user.name}
-              </Link>
-              {user.verified && <Verified className="h-4 w-4 text-blue-500" />}
-              <Badge className="bg-green-100 text-green-700 text-xs">
-                {user.role === 'freelance' ? 'Freelance' : 'Client'}
-              </Badge>
-            </div>
-            <div className="text-sm text-gray-500">{user.title}</div>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-              {user.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  <span>{user.location}</span>
-                </div>
-              )}
-              {user.hourlyRate > 0 && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>{user.hourlyRate}€/h</span>
-                </div>
-              )}
-              {user.statistics?.rating > 0 && (
-                <div className="flex items-center gap-1">
-                  <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                  <span>{user.statistics.rating.toFixed(1)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{user.bio}</p>
-        
-        {user.skills && user.skills.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {user.skills.slice(0, 3).map((skill: string) => (
-              <Badge key={skill} variant="secondary" className="text-xs">
-                {skill}
-              </Badge>
-            ))}
-            {user.skills.length > 3 && (
-              <Badge variant="outline" className="text-xs">+{user.skills.length - 3}</Badge>
-            )}
-          </div>
-        )}
-        
-        {user.statistics?.completedProjects > 0 && (
-          <div className="mt-3 text-xs text-gray-500">
-            <span className="font-medium">{user.statistics.completedProjects}</span> projets complétés
-          </div>
-        )}
-      </div>
-      
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={onLike} className={cn("flex items-center gap-1.5 text-sm transition-colors", liked ? "text-red-500" : "text-gray-500 hover:text-red-500")}>
-            <Heart className={cn("h-5 w-5", liked && "fill-current")} />
-            <span>{liked ? 1 : 0}</span>
-          </button>
-          <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-500">
-            <MessageCircle className="h-5 w-5" />
-            <span>0</span>
-          </button>
-          <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-500">
-            <Share2 className="h-5 w-5" />
-          </button>
-        </div>
-        <button onClick={onSave} className={cn("text-gray-400 hover:text-blue-500", saved && "text-blue-500")}>
-          <Bookmark className={cn("h-5 w-5", saved && "fill-current")} />
-        </button>
-      </div>
-    </article>
-  )
-}
-
-// Composant Grid Card
-function UserGridCard({ user, lang }: any) {
-  return (
-    <Link href={`/${lang}/profile/${user._id}`}>
-      <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden border border-gray-200 dark:border-gray-700 group">
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                {user.name?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600">{user.name}</h3>
-                {user.verified && <Verified className="h-3.5 w-3.5 text-blue-500" />}
-              </div>
-              <p className="text-xs text-gray-500">{user.title}</p>
-            </div>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{user.bio}</p>
-          <div className="flex items-center gap-3 mt-3 text-xs text-gray-500">
-            {user.location && (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                <span>{user.location}</span>
-              </div>
-            )}
-            {user.hourlyRate > 0 && (
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>{user.hourlyRate}€/h</span>
-              </div>
-            )}
-          </div>
-          {user.statistics?.rating > 0 && (
-            <div className="flex items-center gap-1 mt-2">
-              <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
-              <span className="text-sm font-medium">{user.statistics.rating.toFixed(1)}</span>
-              <span className="text-xs text-gray-500">({user.statistics.completedProjects} projets)</span>
-            </div>
-          )}
-        </div>
-      </article>
-    </Link>
-  )
-}
-
-function UserCardSkeleton({ viewMode }: { viewMode: string }) {
-  if (viewMode === 'grid') {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 animate-pulse">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full" />
-          <div className="flex-1">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-1" />
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-          </div>
-        </div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2" />
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
-      </div>
-    )
-  }
-  
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 animate-pulse">
-      <div className="flex gap-3">
-        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full" />
-        <div className="flex-1">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2" />
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2" />
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
         </div>
       </div>
     </div>
