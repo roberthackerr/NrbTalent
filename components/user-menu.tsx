@@ -128,12 +128,12 @@ export function UserMenu() {
             </Avatar>
             
             {/* Info utilisateur - visible sur desktop */}
-            <div className="hidden md:flex flex-col items-start">
+            {/* <div className="hidden md:flex flex-col items-start">
               <p className="text-xs sm:text-sm font-semibold leading-tight">{user.name}</p>
               <p className="text-xs text-muted-foreground leading-tight capitalize font-medium">
                 {user.role || 'Utilisateur'}
               </p>
-            </div>
+            </div> */}
             
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70 hidden md:block" />
           </Button>
