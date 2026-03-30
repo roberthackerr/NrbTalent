@@ -406,7 +406,7 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
             <div className="space-y-4">
               {projects.slice(0, 3).map((project) => (
                 <ProjectCard
-                  key={project._id}
+                  key={project._id} 
                   project={project}
                   lang={lang}
                   variant="minimal" 
