@@ -77,7 +77,7 @@ export function Navigation() {
   // Détecter les petits écrans
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsSmallScreen(window.innerWidth < 1800) // xl breakpoint
+      setIsSmallScreen(window.innerWidth < 1380) // xl breakpoint
     }
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
