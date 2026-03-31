@@ -7,7 +7,10 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, ArrowRight, ArrowLeft, Sparkles, Trophy, Target, Users, Camera, Zap, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  CheckCircle, ArrowRight, ArrowLeft, Sparkles, Trophy, Target,
+  Users, Camera, Zap, Briefcase, ChevronLeft, ChevronRight
+} from 'lucide-react'
 import { AvatarStep } from '@/components/onboarding/AvatarStep'
 import { SkillsTab } from '@/components/settings/skills-tab'
 import { PortfolioTab } from '@/components/settings/portfolio-tab'
@@ -18,6 +21,84 @@ import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 
 type OnboardingStep = 'welcome' | 'avatar' | 'skills' | 'portfolio'
 
+interface StepConfig {
+  id: OnboardingStep
+  title: string
+  description: string
+  color: string
+  icon: any
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRITIQUE : Ce composant est défini EN DEHORS du composant parent.
+// S'il était défini à l'intérieur, React créerait une nouvelle référence de
+// fonction à chaque re-render, forçant un démontage/remontage complet du
+// composant — ce qui provoque exactement l'erreur "removeChild: node is not
+// a child of this node".
+// ─────────────────────────────────────────────────────────────────────────────
+interface MobileStepIndicatorProps {
+  steps: StepConfig[]
+  currentStep: OnboardingStep
+  completedSteps: OnboardingStep[]
+  onPrevious: () => void
+  onNext: () => void
+  onGoToStep: (step: OnboardingStep) => void
+}
+
+function MobileStepIndicator({
+  steps,
+  currentStep,
+  completedSteps,
+  onPrevious,
+  onNext,
+  onGoToStep,
+}: MobileStepIndicatorProps) {
+  const currentIndex = steps.findIndex((step) => step.id === currentStep)
+  const isFirst = currentIndex === 0
+
+  return (
+    <div className="flex items-center justify-between mb-6 px-2">
+      <button
+        onClick={onPrevious}
+        disabled={isFirst}
+        className={`p-2 rounded-full ${
+          isFirst
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+        }`}
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+
+      <div className="flex gap-2">
+        {steps.map((step) => (
+          <button
+            key={step.id}
+            onClick={() => onGoToStep(step.id)}
+            className={`h-2 rounded-full transition-all ${
+              currentStep === step.id
+                ? 'w-6 bg-gradient-to-r ' + step.color
+                : completedSteps.includes(step.id)
+                ? 'w-2 bg-green-500'
+                : 'w-2 bg-gray-300 dark:bg-gray-600'
+            }`}
+          />
+        ))}
+      </div>
+
+      <button
+        onClick={onNext}
+        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page principale
+// ─────────────────────────────────────────────────────────────────────────────
 export default function OnboardingPage() {
   const { data: session, update } = useSession()
   const router = useRouter()
@@ -47,13 +128,7 @@ export default function OnboardingPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [session, router, lang])
 
-  const steps: {
-    id: OnboardingStep
-    title: string
-    description: string
-    color: string
-    icon: any
-  }[] = dict
+  const steps: StepConfig[] = dict
     ? [
         {
           id: 'avatar',
@@ -84,9 +159,7 @@ export default function OnboardingPage() {
       ? 0
       : ((steps.findIndex((step) => step.id === currentStep) + 1) / (steps.length + 1)) * 100
 
-  const handleStartOnboarding = () => {
-    setCurrentStep('avatar')
-  }
+  const handleStartOnboarding = () => setCurrentStep('avatar')
 
   const handleNext = async () => {
     if (currentStep === 'portfolio') {
@@ -95,9 +168,7 @@ export default function OnboardingPage() {
       const currentIndex = steps.findIndex((step) => step.id === currentStep)
       if (currentIndex < steps.length - 1) {
         setCurrentStep(steps[currentIndex + 1].id)
-        if (isMobile) {
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-        }
+        if (isMobile) window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     }
   }
@@ -106,9 +177,7 @@ export default function OnboardingPage() {
     const currentIndex = steps.findIndex((step) => step.id === currentStep)
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1].id)
-      if (isMobile) {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
+      if (isMobile) window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (currentIndex === 0) {
       setCurrentStep('welcome')
     }
@@ -126,9 +195,7 @@ export default function OnboardingPage() {
     try {
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           section: 'onboardingCompleted',
           data: { onboardingCompleted: true },
@@ -138,9 +205,7 @@ export default function OnboardingPage() {
       if (response.ok) {
         await update()
         toast.success(dict?.onboardingPage.success || 'Profile setup complete!')
-        setTimeout(() => {
-          router.push(`/${lang}`)
-        }, 1500)
+        setTimeout(() => router.push(`/${lang}`), 1500)
       } else {
         throw new Error('Failed to update profile')
       }
@@ -158,10 +223,9 @@ export default function OnboardingPage() {
     switch (currentStep) {
       case 'welcome':
         return (
-          // suppressHydrationWarning évite les conflits DOM causés par les extensions navigateur
-          <div className="text-center py-8 sm:py-12" suppressHydrationWarning>
+          <div className="text-center py-8 sm:py-12">
             <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 sm:mb-8 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full opacity-20 animate-pulse" />
               <div className="absolute inset-2 sm:inset-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                 <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
               </div>
@@ -180,23 +244,17 @@ export default function OnboardingPage() {
                 {
                   icon: <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />,
                   title: dict.onboardingPage.benefits?.expertise || 'Showcase Expertise',
-                  description:
-                    dict.onboardingPage.benefits?.expertiseDesc ||
-                    'Highlight your skills and experience',
+                  description: dict.onboardingPage.benefits?.expertiseDesc || 'Highlight your skills and experience',
                 },
                 {
                   icon: <Target className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />,
                   title: dict.onboardingPage.benefits?.clients || 'Attract Clients',
-                  description:
-                    dict.onboardingPage.benefits?.clientsDesc ||
-                    'Get discovered by the right clients',
+                  description: dict.onboardingPage.benefits?.clientsDesc || 'Get discovered by the right clients',
                 },
                 {
                   icon: <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500" />,
                   title: dict.onboardingPage.benefits?.trust || 'Build Trust',
-                  description:
-                    dict.onboardingPage.benefits?.trustDesc ||
-                    'Professional profile increases credibility',
+                  description: dict.onboardingPage.benefits?.trustDesc || 'Professional profile increases credibility',
                 },
               ].map((item, index) => (
                 <div
@@ -226,7 +284,7 @@ export default function OnboardingPage() {
 
       case 'avatar':
         return (
-          <div className="space-y-4 sm:space-y-6" suppressHydrationWarning>
+          <div className="space-y-4 sm:space-y-6">
             <AvatarStep
               onComplete={() => handleStepComplete('avatar')}
               onSkip={handleNext}
@@ -235,9 +293,7 @@ export default function OnboardingPage() {
             />
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-3 sm:p-4 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                💡{' '}
-                {dict.onboardingPage.tips?.avatar ||
-                  'Add a professional photo to build trust with potential clients'}
+                💡 {dict.onboardingPage.tips?.avatar || 'Add a professional photo to build trust with potential clients'}
               </p>
             </div>
           </div>
@@ -245,7 +301,7 @@ export default function OnboardingPage() {
 
       case 'skills':
         return (
-          <div className="space-y-4 sm:space-y-6" suppressHydrationWarning>
+          <div className="space-y-4 sm:space-y-6">
             <div className="mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-1 sm:mb-2">
                 {dict.onboardingPage.skills.title}
@@ -254,19 +310,15 @@ export default function OnboardingPage() {
                 {dict.onboardingPage.skills.description}
               </p>
             </div>
-
             <SkillsTab
               user={session?.user}
               dict={dict.onboardingPage.skills}
               lang={lang}
               onUpdate={() => handleStepComplete('skills')}
             />
-
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-3 sm:p-4 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                💡{' '}
-                {dict.onboardingPage.tips?.skills ||
-                  'Add skills that match your expertise to get better project matches'}
+                💡 {dict.onboardingPage.tips?.skills || 'Add skills that match your expertise to get better project matches'}
               </p>
             </div>
           </div>
@@ -274,7 +326,7 @@ export default function OnboardingPage() {
 
       case 'portfolio':
         return (
-          <div className="space-y-4 sm:space-y-6" suppressHydrationWarning>
+          <div className="space-y-4 sm:space-y-6">
             <div className="mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-1 sm:mb-2">
                 {dict.onboardingPage.portfolio.title}
@@ -283,19 +335,15 @@ export default function OnboardingPage() {
                 {dict.onboardingPage.portfolio.description}
               </p>
             </div>
-
             <PortfolioTab
               user={session?.user}
               dict={dict}
               lang={lang}
               onUpdate={() => handleStepComplete('portfolio')}
             />
-
             <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-3 sm:p-4 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                💡{' '}
-                {dict.onboardingPage.tips?.portfolio ||
-                  'Showcase your best work to impress potential clients'}
+                💡 {dict.onboardingPage.tips?.portfolio || 'Showcase your best work to impress potential clients'}
               </p>
             </div>
           </div>
@@ -306,88 +354,40 @@ export default function OnboardingPage() {
     }
   }
 
-  // Mobile step indicator — key prop pour forcer un remount propre et éviter les conflits DOM
-  const MobileStepIndicator = () => {
-    const currentIndex = steps.findIndex((step) => step.id === currentStep)
-
-    return (
-      <div className="flex items-center justify-between mb-6 px-2" suppressHydrationWarning>
-        <button
-          onClick={handlePrevious}
-          disabled={
-            currentIndex === 0 &&
-            currentStep !== 'skills' &&
-            currentStep !== 'portfolio'
-          }
-          className={`p-2 rounded-full ${
-            currentIndex === 0 &&
-            currentStep !== 'skills' &&
-            currentStep !== 'portfolio'
-              ? 'opacity-50 cursor-not-allowed'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-          }`}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-
-        <div className="flex gap-2">
-          {steps.map((step) => (
-            <button
-              key={step.id}
-              onClick={() => setCurrentStep(step.id)}
-              className={`h-2 rounded-full transition-all ${
-                currentStep === step.id
-                  ? 'w-6 bg-gradient-to-r ' + step.color
-                  : completedSteps.includes(step.id)
-                  ? 'w-2 bg-green-500'
-                  : 'w-2 bg-gray-300 dark:bg-gray-600'
-              }`}
-            />
-          ))}
-        </div>
-
-        <button
-          onClick={handleNext}
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-    )
-  }
-
-  // Rendu initial côté serveur : squelette neutre sans état isMobile
-  // Cela évite le mismatch d'hydration entre serveur et client
   if (!isMounted || !dict) {
     return (
-      <div
-        className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4"
-        suppressHydrationWarning
-      >
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
   }
 
+  const currentStepConfig = steps.find((s) => s.id === currentStep)
+
   return (
-    // suppressHydrationWarning sur le wrapper racine : protège contre les modifications
-    // de DOM faites par des extensions navigateur (Google Translate, Grammarly, etc.)
-    <div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-4 sm:py-6 md:py-8"
-      suppressHydrationWarning
-    >
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-4 sm:py-6 md:py-8">
       <div className="container max-w-5xl mx-auto px-3 sm:px-4">
+
         {/* Language Switcher */}
         <div className="flex justify-end mb-4 sm:mb-6">
           <LanguageSwitcher lang={lang} />
         </div>
 
-        {/* Mobile Step Indicator — monté uniquement côté client après isMounted */}
-        {currentStep !== 'welcome' && isMobile && (
-          <MobileStepIndicator key={`mobile-indicator-${currentStep}`} />
+        {/* Mobile Step Indicator
+            Utilise le composant défini HORS du parent pour éviter que React
+            ne le considère comme un nouveau composant à chaque re-render. */}
+        {currentStep !== 'welcome' && isMobile && steps.length > 0 && (
+          <MobileStepIndicator
+            steps={steps}
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            onGoToStep={setCurrentStep}
+          />
         )}
 
         {/* Desktop Header */}
@@ -404,7 +404,7 @@ export default function OnboardingPage() {
 
         {/* Progress Bar */}
         {currentStep !== 'welcome' && (
-          <div className="mb-6 sm:mb-8" suppressHydrationWarning>
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2 text-xs sm:text-sm">
               <span className="font-medium text-gray-700 dark:text-gray-300">
                 {dict.onboardingPage.progress}
@@ -417,9 +417,7 @@ export default function OnboardingPage() {
             </div>
             <Progress value={progress} className="h-2" />
             <div className="flex justify-between text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <span>
-                {Math.round(progress)}% {dict.onboardingPage.completed}
-              </span>
+              <span>{Math.round(progress)}% {dict.onboardingPage.completed}</span>
               <span>
                 {completedSteps.length} {dict.onboardingPage.of} {steps.length}{' '}
                 {dict.onboardingPage.completed}
@@ -488,10 +486,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Main Content Card
-            key={currentStep} : force un remount complet à chaque changement d'étape.
-            Cela vide l'arbre React précédent avant d'en monter un nouveau,
-            ce qui empêche React de tenter un removeChild sur des nœuds
-            modifiés entre-temps par des extensions tierces. */}
+            key={currentStep} : force un remount propre à chaque changement d'étape */}
         <Card
           key={currentStep}
           className="border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm"
@@ -503,32 +498,28 @@ export default function OnboardingPage() {
                 : ''
             }`}
           >
-            {currentStep !== 'welcome' && !isMobile && (
+            {currentStep !== 'welcome' && !isMobile && currentStepConfig && (
               <>
                 <CardTitle className="flex items-center gap-2 sm:gap-3 text-xl sm:text-2xl">
-                  <div
-                    className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-r ${
-                      steps.find((s) => s.id === currentStep)?.color
-                    } text-white`}
-                  >
+                  <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-r ${currentStepConfig.color} text-white`}>
                     {currentStep === 'avatar' && <Camera className="h-4 w-4 sm:h-5 sm:w-5" />}
                     {currentStep === 'skills' && <Zap className="h-4 w-4 sm:h-5 sm:w-5" />}
-                    {currentStep === 'portfolio' && (
-                      <Briefcase className="h-4 w-4 sm:h-5 sm:w-5" />
-                    )}
+                    {currentStep === 'portfolio' && <Briefcase className="h-4 w-4 sm:h-5 sm:w-5" />}
                   </div>
-                  {steps.find((s) => s.id === currentStep)?.title}
+                  {currentStepConfig.title}
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
-                  {steps.find((step) => step.id === currentStep)?.description}
+                  {currentStepConfig.description}
                 </CardDescription>
               </>
             )}
           </CardHeader>
-          <CardContent className="pt-4 sm:pt-6">{renderStepContent()}</CardContent>
+          <CardContent className="pt-4 sm:pt-6">
+            {renderStepContent()}
+          </CardContent>
         </Card>
 
-        {/* Navigation Buttons - Desktop */}
+        {/* Navigation - Desktop */}
         {currentStep !== 'welcome' && !isMobile && (
           <div className="flex justify-between mt-6 sm:mt-8">
             <Button
@@ -552,7 +543,7 @@ export default function OnboardingPage() {
             >
               {loading ? (
                 <>
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   {dict.onboardingPage.saving}
                 </>
               ) : currentStep === 'portfolio' ? (
@@ -570,7 +561,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Navigation Buttons - Mobile */}
+        {/* Navigation - Mobile */}
         {currentStep !== 'welcome' && isMobile && (
           <div className="flex gap-3 mt-6">
             <Button
@@ -594,7 +585,7 @@ export default function OnboardingPage() {
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   {dict.onboardingPage.saving}
                 </>
               ) : currentStep === 'portfolio' ? (
