@@ -13,6 +13,7 @@ interface PortfolioTabProps {
   user: any
   dict: any
   lang: string
+  onUpdate?: () => void
 }
 
 interface PortfolioItem {
@@ -39,7 +40,7 @@ interface Experience {
   achievement: string
 }
 
-export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
+export function PortfolioTab({ user, dict, lang, onUpdate }: PortfolioTabProps) {
   const [loading, setLoading] = useState(false)
   const [activeSection, setActiveSection] = useState<"portfolio" | "experience">("portfolio")
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
@@ -53,14 +54,11 @@ export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
     try {
       setLoading(true)
       const response = await fetch('/api/users/profile')
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile data')
-      }
-      
+
+      if (!response.ok) throw new Error('Failed to fetch profile data')
+
       const userData = await response.json()
-      
-      // Traiter le portfolio
+
       const portfolioData = userData.portfolio || []
       const sortedPortfolio = [...portfolioData].sort((a: PortfolioItem, b: PortfolioItem) => {
         if (a.featured && !b.featured) return -1
@@ -70,8 +68,7 @@ export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
         return dateA - dateB
       })
       setPortfolioItems(sortedPortfolio)
-      
-      // Traiter les expériences
+
       const experienceData = userData.experience || []
       const sortedExperiences = [...experienceData].sort((a: Experience, b: Experience) => {
         if (a.current && !b.current) return -1
@@ -79,10 +76,10 @@ export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
         return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
       })
       setExperiences(sortedExperiences)
-      
+
     } catch (error) {
       console.error('Error fetching data:', error)
-      toast.error(dict.errors?.fetch || "Erreur lors du chargement des données")
+      toast.error(dict?.errors?.fetch || "Erreur lors du chargement des données")
     } finally {
       setLoading(false)
     }
@@ -90,11 +87,19 @@ export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
 
   const handleUpdate = async () => {
     await fetchData()
+    onUpdate?.()
   }
 
   return (
-    <div className="space-y-6">
-      {/* Navigation */}
+    /*
+      suppressHydrationWarning sur le wrapper racine : Google Translate modifie
+      les nœuds texte de ce composant, ce qui crée un décalage entre le DOM
+      réel et le DOM virtuel de React. Sans cette protection, React tente de
+      supprimer des nœuds que Google Translate a déjà remplacés → removeChild.
+    */
+    <div className="space-y-6" suppressHydrationWarning>
+
+      {/* Navigation — suppressHydrationWarning sur les spans de texte traduits */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardContent className="p-4">
           <div className="flex gap-2">
@@ -104,7 +109,10 @@ export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
               className="flex-1"
             >
               <Briefcase className="h-4 w-4 mr-2" />
-              {dict.navigation?.portfolio || "Portfolio"} ({portfolioItems.length})
+              {/* translate="no" empêche Google Translate de toucher ce nœud */}
+              <span translate="no" suppressHydrationWarning>
+                {dict?.navigation?.portfolio || "Portfolio"} ({portfolioItems.length})
+              </span>
             </Button>
             <Button
               variant={activeSection === "experience" ? "default" : "outline"}
@@ -112,33 +120,48 @@ export function PortfolioTab({ user, dict, lang }: PortfolioTabProps) {
               className="flex-1"
             >
               <Building className="h-4 w-4 mr-2" />
-              {dict.navigation?.experience || "Expériences"} ({experiences.length})
+              <span translate="no" suppressHydrationWarning>
+                {dict?.navigation?.experience || "Expériences"} ({experiences.length})
+              </span>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Contenu dynamique */}
-     {activeSection === "portfolio" && (
- // In PortfolioSection call inside portfolio-tab.tsx
-<PortfolioSection
-  items={portfolioItems}
-  onUpdate={handleUpdate}
-  loading={loading}
-  dict={dict.portfolio || dict}  // fallback: if no dict.portfolio, use dict itself
-  lang={lang}
-/>
-)}
+      {/*
+        CORRECTION PRINCIPALE — Google Translate + rendu conditionnel :
 
-{activeSection === "experience" && (
-  <ExperienceSection
-    experiences={experiences}
-    onUpdate={handleUpdate}
-    loading={loading}
-    dict={dict.experience || dict}  // ← needs dict.experience, not dict
-    lang={lang}
-  />
-)}
+        Le problème : Google Translate remplace les nœuds texte enfants par ses
+        propres nœuds <font>. Quand React démontait PortfolioSection ou
+        ExperienceSection via {condition && <Composant />}, il tentait de
+        supprimer les nœuds originaux — mais Google Translate les avait déjà
+        remplacés. D'où l'erreur "removeChild: node is not a child of this node".
+
+        La solution : garder les DEUX composants toujours montés dans le DOM,
+        et les afficher/masquer uniquement via CSS (display: none).
+        React ne démonte plus jamais ces composants → plus aucun removeChild.
+        Google Translate peut modifier les textes sans conflit.
+      */}
+      <div style={{ display: activeSection === "portfolio" ? "block" : "none" }}>
+        <PortfolioSection
+          items={portfolioItems}
+          onUpdate={handleUpdate}
+          loading={loading}
+          dict={dict?.portfolio || dict}
+          lang={lang}
+        />
+      </div>
+
+      <div style={{ display: activeSection === "experience" ? "block" : "none" }}>
+        <ExperienceSection
+          experiences={experiences}
+          onUpdate={handleUpdate}
+          loading={loading}
+          dict={dict?.experience || dict}
+          lang={lang}
+        />
+      </div>
+
     </div>
   )
 }
