@@ -1,4 +1,47 @@
 {
+  "proposal": {
+    "title": "Propositions reçues",
+    "subtitle": "freelance(s) ont postulé",
+    "back": "Retour",
+    "projectNotFound": "Projet non trouvé",
+    "projectNotFoundDesc": "Le projet que vous recherchez n'existe pas ou a été supprimé.",
+    "backToProjects": "Retour aux projets",
+    "totalProposals": "Total propositions",
+    "pending": "En attente",
+    "accepted": "Acceptées",
+    "rejected": "Rejetées",
+    "searchPlaceholder": "Rechercher un freelance, compétence...",
+    "sortBy": "Trier par",
+    "recent": "Plus récent",
+    "bestRating": "Meilleure note",
+    "budgetAsc": "Budget croissant",
+    "mostExperienced": "Plus d'expérience",
+    "allStatus": "Tous les statuts",
+    "filters": "Filtres",
+    "noProposals": "Aucune proposition reçue",
+    "noResults": "Aucun résultat trouvé",
+    "noProposalsDesc": "Les freelancers apparaîtront ici lorsqu'ils postuleront sur votre projet.",
+    "noResultsDesc": "Aucun freelance ne correspond à vos critères de recherche.",
+    "viewProject": "Voir le projet",
+    "verified": "Vérifié",
+    "proposedBudget": "Budget proposé",
+    "estimatedDuration": "Durée estimée",
+    "noMessage": "Aucun message fourni",
+    "profile": "Profil",
+    "contact": "Contacter",
+    "postedOn": "Posté le",
+    "budget": "Budget",
+    "fixedPrice": "Forfait",
+    "hourlyRate": "Taux horaire",
+    "open": "Public",
+    "loading": "Chargement des propositions...",
+    "errors": {
+      "fetch": "Erreur lors du chargement des propositions"
+    },
+    "messages": {
+      "chatSoon": "Fonctionnalité de messagerie bientôt disponible"
+    }
+  },
    "search": {
         "title": "Recherche",
     "filters": "Filtres",

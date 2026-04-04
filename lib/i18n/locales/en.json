@@ -1,4 +1,47 @@
 {
+   "proposal": {
+    "title": "Received Proposals",
+    "subtitle": "freelancer(s) applied",
+    "back": "Back",
+    "projectNotFound": "Project not found",
+    "projectNotFoundDesc": "The project you're looking for doesn't exist or has been deleted.",
+    "backToProjects": "Back to projects",
+    "totalProposals": "Total proposals",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "searchPlaceholder": "Search freelancer, skill...",
+    "sortBy": "Sort by",
+    "recent": "Most recent",
+    "bestRating": "Best rating",
+    "budgetAsc": "Budget ascending",
+    "mostExperienced": "Most experienced",
+    "allStatus": "All statuses",
+    "filters": "Filters",
+    "noProposals": "No proposals received",
+    "noResults": "No results found",
+    "noProposalsDesc": "Freelancers will appear here when they apply to your project.",
+    "noResultsDesc": "No freelancer matches your search criteria.",
+    "viewProject": "View project",
+    "verified": "Verified",
+    "proposedBudget": "Proposed budget",
+    "estimatedDuration": "Estimated duration",
+    "noMessage": "No message provided",
+    "profile": "Profile",
+    "contact": "Contact",
+    "postedOn": "Posted on",
+    "budget": "Budget",
+    "fixedPrice": "Fixed price",
+    "hourlyRate": "Hourly rate",
+    "open": "Open",
+    "loading": "Loading proposals...",
+    "errors": {
+      "fetch": "Error loading proposals"
+    },
+    "messages": {
+      "chatSoon": "Messaging feature coming soon"
+    }
+  },
  "search": {
     "title": "Search",
     "filters": "Filters",

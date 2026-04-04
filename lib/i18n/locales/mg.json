@@ -1,5 +1,47 @@
 {
-  
+    "proposal": {
+    "title": "Tolotra voaray",
+    "subtitle": "freelance(s) nangataka",
+    "back": "Hiverina",
+    "projectNotFound": "Tsy hita ny tetikasa",
+    "projectNotFoundDesc": "Ny tetikasa tadiavinao dia tsy misy na voafafa.",
+    "backToProjects": "Hiverina any amin'ny tetikasa",
+    "totalProposals": "Tolotra rehetra",
+    "pending": "Miandry",
+    "accepted": "Ekena",
+    "rejected": "Lavina",
+    "searchPlaceholder": "Mitady freelance, fahaizana...",
+    "sortBy": "Karohina araka ny",
+    "recent": "Vao haingana indrindra",
+    "bestRating": "Naoty tsara indrindra",
+    "budgetAsc": "Vidiny miakatra",
+    "mostExperienced": "Zaithra indrindra",
+    "allStatus": "Toe-javatra rehetra",
+    "filters": "Fanivanana",
+    "noProposals": "Tsy misy tolotra voaray",
+    "noResults": "Tsy misy vokatra hita",
+    "noProposalsDesc": "Hisèho eto ny freelancers rehefa mangataka amin'ny tetikasanao izy ireo.",
+    "noResultsDesc": "Tsy misy freelance mifanaraka amin'ny fikarohanao.",
+    "viewProject": "Jereo tetikasa",
+    "verified": "Voamarina",
+    "proposedBudget": "Tetibola natolotra",
+    "estimatedDuration": "Fotoana tombanana",
+    "noMessage": "Tsy misy hafatra nomena",
+    "profile": "Momba ahy",
+    "contact": "Hifandray",
+    "postedOn": "Navela tamin'ny",
+    "budget": "Tetibola",
+    "fixedPrice": "Vidiny raikitra",
+    "hourlyRate": "Saran'ny adiny iray",
+    "open": "Misokatra",
+    "loading": "Fandefasana tolotra...",
+    "errors": {
+      "fetch": "Tsy nahomby ny fitondrana ny tolotra"
+    },
+    "messages": {
+      "chatSoon": "Tsy ho ela ny fampiasa fandefasana hafatra"
+    }
+  },
 "search": {
     "title": "Fikarohana",
     "filters": "Sivana",

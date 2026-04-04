@@ -30,17 +30,17 @@ import {
   LayoutGrid,
   List,
   Loader2,
-  TrendingUp,
-  Award,
-  Zap,
   Sun,
   Moon,
+  Globe,
   Search
 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "next-themes"
+import { getDictionarySafe } from "@/lib/i18n/dictionaries"
+import type { Locale } from "@/lib/i18n/config"
 
 interface Freelancer {
   _id: string
@@ -102,8 +102,10 @@ export default function PublicProjectProposalsPage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.id as string
+  const lang = params.lang as Locale
   const { theme, setTheme } = useTheme()
 
+  const [dict, setDict] = useState<any>(null)
   const [project, setProject] = useState<Project | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
@@ -112,6 +114,11 @@ export default function PublicProjectProposalsPage() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [showFilters, setShowFilters] = useState(false)
+
+  // Charger les traductions
+  useEffect(() => {
+    getDictionarySafe(lang).then(setDict)
+  }, [lang])
 
   useEffect(() => {
     fetchProjectProposals()
@@ -131,7 +138,7 @@ export default function PublicProjectProposalsPage() {
       setApplications(data.applications || [])
     } catch (error) {
       console.error("Error fetching proposals:", error)
-      toast.error("Erreur lors du chargement des propositions")
+      toast.error(dict?.proposals?.errors?.fetch || "Erreur lors du chargement des propositions")
     } finally {
       setLoading(false)
     }
@@ -174,11 +181,17 @@ export default function PublicProjectProposalsPage() {
   }), [applications])
 
   const navigateToProfile = (freelancerId: string) => {
-    router.push(`/profile/${freelancerId}`)
+    router.push(`/${lang}/profile/${freelancerId}`)
   }
 
   const startChat = (freelancerId: string) => {
-    toast.info("Fonctionnalité de messagerie bientôt disponible")
+    toast.info(dict?.proposals?.messages?.chatSoon || "Fonctionnalité de messagerie bientôt disponible")
+  }
+
+  const changeLanguage = (newLang: Locale) => {
+    const currentPath = window.location.pathname
+    const newPath = currentPath.replace(`/${lang}`, `/${newLang}`)
+    router.push(newPath)
   }
 
   const containerVariants = {
@@ -191,7 +204,45 @@ export default function PublicProjectProposalsPage() {
     visible: { opacity: 1, y: 0 }
   }
 
-  if (loading) {
+  const t = dict?.proposal || {
+    title: "Propositions reçues",
+    subtitle: "freelance(s) ont postulé",
+    back: "Retour",
+    projectNotFound: "Projet non trouvé",
+    projectNotFoundDesc: "Le projet que vous recherchez n'existe pas ou a été supprimé.",
+    backToProjects: "Retour aux projets",
+    totalProposals: "Total propositions",
+    pending: "En attente",
+    accepted: "Acceptées",
+    rejected: "Rejetées",
+    searchPlaceholder: "Rechercher un freelance, compétence...",
+    sortBy: "Trier par",
+    recent: "Plus récent",
+    bestRating: "Meilleure note",
+    budgetAsc: "Budget croissant",
+    mostExperienced: "Plus d'expérience",
+    allStatus: "Tous les statuts",
+    filters: "Filtres",
+    noProposals: "Aucune proposition reçue",
+    noResults: "Aucun résultat trouvé",
+    noProposalsDesc: "Les freelancers apparaîtront ici lorsqu'ils postuleront sur votre projet.",
+    noResultsDesc: "Aucun freelance ne correspond à vos critères de recherche.",
+    viewProject: "Voir le projet",
+    verified: "Vérifié",
+    proposedBudget: "Budget proposé",
+    estimatedDuration: "Durée estimée",
+    noMessage: "Aucun message fourni",
+    profile: "Profil",
+    contact: "Contacter",
+    postedOn: "Posté le",
+    budget: "Budget",
+    fixedPrice: "Forfait",
+    hourlyRate: "Taux horaire",
+    open: "Public",
+    loading: "Chargement des propositions..."
+  }
+
+  if (!dict || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50/50 to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="container mx-auto px-4 py-8">
@@ -199,7 +250,7 @@ export default function PublicProjectProposalsPage() {
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="text-center">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                <p className="text-blue-600 dark:text-blue-400 font-medium">Chargement des propositions...</p>
+                <p className="text-blue-600 dark:text-blue-400 font-medium">{t.loading}</p>
               </div>
             </div>
           </div>
@@ -221,12 +272,12 @@ export default function PublicProjectProposalsPage() {
               <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Briefcase className="h-10 w-10 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Projet non trouvé</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">Le projet que vous recherchez n'existe pas ou a été supprimé.</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t.projectNotFound}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">{t.projectNotFoundDesc}</p>
               <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Link href="/projects">
+                <Link href={`/${lang}/projects`}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour aux projets
+                  {t.backToProjects}
                 </Link>
               </Button>
             </CardContent>
@@ -241,7 +292,7 @@ export default function PublicProjectProposalsPage() {
       <div className="container mx-auto px-4 py-6 lg:py-8">
         <div className="max-w-7xl mx-auto">
           
-          {/* Header avec bouton theme */}
+          {/* Header avec boutons theme et langue */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -256,23 +307,50 @@ export default function PublicProjectProposalsPage() {
                   asChild
                   className="hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
                 >
-                  <Link href={`/projects/${projectId}`}>
+                  <Link href={`/${lang}/projects/${projectId}`}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Retour
+                    {t.back}
                   </Link>
                 </Button>
                 <div className="h-8 w-px bg-blue-200 dark:bg-gray-700 hidden lg:block" />
                 <div>
                   <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-                    Propositions reçues
+                    {t.title}
                   </h1>
                   <p className="text-blue-600 dark:text-blue-400 mt-1">
-                    {stats.total} freelance{stats.total > 1 ? 's' : ''} ont postulé
+                    {stats.total} {t.subtitle}
                   </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3">
+                {/* Language Switcher */}
+                <div className="flex gap-1 border border-blue-200 dark:border-gray-700 rounded-lg p-1 bg-white dark:bg-gray-800">
+                  <Button
+                    variant={lang === 'fr' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => changeLanguage('fr')}
+                    className={lang === 'fr' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
+                      : 'hover:bg-blue-100 dark:hover:bg-gray-700'
+                    }
+                  >
+                    FR
+                  </Button>
+                  <Button
+                    variant={lang === 'en' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => changeLanguage('en')}
+                    className={lang === 'en' 
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
+                      : 'hover:bg-blue-100 dark:hover:bg-gray-700'
+                    }
+                  >
+                    EN
+                  </Button>
+                </div>
+
+                {/* Theme Switcher */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -284,7 +362,7 @@ export default function PublicProjectProposalsPage() {
                 
                 <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 text-sm px-4 py-2 w-fit">
                   <Sparkles className="h-4 w-4 mr-2" />
-                  {stats.total} proposition{stats.total > 1 ? 's' : ''}
+                  {stats.total} {stats.total > 1 ? 'propositions' : 'proposition'}
                 </Badge>
               </div>
             </div>
@@ -310,18 +388,18 @@ export default function PublicProjectProposalsPage() {
                       <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg">
                         <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {project.budget.min.toLocaleString()} - {project.budget.max.toLocaleString()} {project.budget.currency}
+                          {t.budget}: {project.budget.min.toLocaleString()} - {project.budget.max.toLocaleString()} {project.budget.currency}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 px-3 py-1.5 rounded-lg">
                         <Briefcase className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                         <span className="text-gray-700 dark:text-gray-300">
-                          {project.budget.type === 'fixed' ? 'Forfait' : 'Taux horaire'}
+                          {project.budget.type === 'fixed' ? t.fixedPrice : t.hourlyRate}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                         <Calendar className="h-4 w-4" />
-                        <span>Posté le {new Date(project.createdAt).toLocaleDateString('fr-FR')}</span>
+                        <span>{t.postedOn} {new Date(project.createdAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}</span>
                       </div>
                     </div>
                   </div>
@@ -330,7 +408,7 @@ export default function PublicProjectProposalsPage() {
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
                   }>
-                    {project.status === 'open' ? '🔓 Public' : '📝 ' + project.status}
+                    {project.status === 'open' ? `🔓 ${t.open}` : `📝 ${project.status}`}
                   </Badge>
                 </div>
               </CardContent>
@@ -345,10 +423,10 @@ export default function PublicProjectProposalsPage() {
             className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
           >
             {[
-              { label: 'Total propositions', value: stats.total, icon: Users, gradient: 'from-blue-500 to-blue-600' },
-              { label: 'En attente', value: stats.pending, icon: Clock, gradient: 'from-amber-500 to-amber-600' },
-              { label: 'Acceptées', value: stats.accepted, icon: CheckCircle2, gradient: 'from-green-500 to-green-600' },
-              { label: 'Rejetées', value: stats.rejected, icon: X, gradient: 'from-red-500 to-red-600' }
+              { label: t.totalProposals, value: stats.total, icon: Users, gradient: 'from-blue-500 to-blue-600' },
+              { label: t.pending, value: stats.pending, icon: Clock, gradient: 'from-amber-500 to-amber-600' },
+              { label: t.accepted, value: stats.accepted, icon: CheckCircle2, gradient: 'from-green-500 to-green-600' },
+              { label: t.rejected, value: stats.rejected, icon: X, gradient: 'from-red-500 to-red-600' }
             ].map((stat, index) => (
               <motion.div key={index} variants={itemVariants}>
                 <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
@@ -382,7 +460,7 @@ export default function PublicProjectProposalsPage() {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 dark:text-blue-500 h-4 w-4" />
                       <Input
-                        placeholder="Rechercher un freelance, compétence..."
+                        placeholder={t.searchPlaceholder}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 border-blue-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 bg-white dark:bg-gray-800"
@@ -397,10 +475,10 @@ export default function PublicProjectProposalsPage() {
                         onChange={(e) => setSortBy(e.target.value)}
                         className="pl-3 pr-8 py-2 border border-blue-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white cursor-pointer"
                       >
-                        <option value="recent">Plus récent</option>
-                        <option value="rating">Meilleure note</option>
-                        <option value="budget">Budget croissant</option>
-                        <option value="experience">Plus d'expérience</option>
+                        <option value="recent">{t.recent}</option>
+                        <option value="rating">{t.bestRating}</option>
+                        <option value="budget">{t.budgetAsc}</option>
+                        <option value="experience">{t.mostExperienced}</option>
                       </select>
                       <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-400 pointer-events-none" />
                     </div>
@@ -411,10 +489,10 @@ export default function PublicProjectProposalsPage() {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         className="pl-3 pr-8 py-2 border border-blue-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white cursor-pointer"
                       >
-                        <option value="all">Tous les statuts</option>
-                        <option value="pending">En attente</option>
-                        <option value="accepted">Acceptés</option>
-                        <option value="rejected">Rejetés</option>
+                        <option value="all">{t.allStatus}</option>
+                        <option value="pending">{t.pending}</option>
+                        <option value="accepted">{t.accepted}</option>
+                        <option value="rejected">{t.rejected}</option>
                       </select>
                       <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-400 pointer-events-none" />
                     </div>
@@ -451,7 +529,7 @@ export default function PublicProjectProposalsPage() {
                       className="lg:hidden border-blue-200 dark:border-gray-700 hover:bg-blue-100 dark:hover:bg-gray-800"
                     >
                       <SlidersHorizontal className="h-4 w-4 mr-2" />
-                      Filtres
+                      {t.filters}
                     </Button>
                   </div>
                 </div>
@@ -473,19 +551,16 @@ export default function PublicProjectProposalsPage() {
                       <Users className="h-12 w-12 text-blue-600 dark:text-blue-400" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                      {stats.total === 0 ? "Aucune proposition reçue" : "Aucun résultat trouvé"}
+                      {stats.total === 0 ? t.noProposals : t.noResults}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                      {stats.total === 0 
-                        ? "Les freelancers apparaîtront ici lorsqu'ils postuleront sur votre projet."
-                        : "Aucun freelance ne correspond à vos critères de recherche."
-                      }
+                      {stats.total === 0 ? t.noProposalsDesc : t.noResultsDesc}
                     </p>
                     {stats.total === 0 && (
                       <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                        <Link href={`/projects/${projectId}`}>
+                        <Link href={`/${lang}/projects/${projectId}`}>
                           <Eye className="mr-2 h-4 w-4" />
-                          Voir le projet
+                          {t.viewProject}
                         </Link>
                       </Button>
                     )}
@@ -548,7 +623,7 @@ export default function PublicProjectProposalsPage() {
                                     {application.freelancer?.verified && (
                                       <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs border-blue-200 dark:border-blue-800">
                                         <Shield className="h-3 w-3 mr-1" />
-                                        Vérifié
+                                        {t.verified}
                                       </Badge>
                                     )}
                                   </div>
@@ -559,18 +634,18 @@ export default function PublicProjectProposalsPage() {
                                   {application.status === 'accepted' && (
                                     <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 gap-1">
                                       <CheckCircle className="h-3 w-3" />
-                                      Accepté
+                                      {t.accepted.slice(0, -2)}
                                     </Badge>
                                   )}
                                   {application.status === 'rejected' && (
                                     <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 gap-1">
                                       <X className="h-3 w-3" />
-                                      Rejeté
+                                      {t.rejected.slice(0, -2)}
                                     </Badge>
                                   )}
                                   {application.status === 'pending' && (
                                     <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
-                                      En attente
+                                      {t.pending.slice(0, -2)}
                                     </Badge>
                                   )}
                                 </div>
@@ -605,7 +680,7 @@ export default function PublicProjectProposalsPage() {
                                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3">
                                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 text-xs mb-1">
                                     <DollarSign className="h-3 w-3" />
-                                    Budget proposé
+                                    {t.proposedBudget}
                                   </div>
                                   <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                                     {application.proposedBudget?.toLocaleString()} {project.budget.currency}
@@ -615,7 +690,7 @@ export default function PublicProjectProposalsPage() {
                                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-3">
                                   <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 text-xs mb-1">
                                     <Clock className="h-3 w-3" />
-                                    Durée estimée
+                                    {t.estimatedDuration}
                                   </div>
                                   <p className="text-lg font-bold text-purple-900 dark:text-purple-300">{application.estimatedDuration}</p>
                                 </div>
@@ -624,7 +699,7 @@ export default function PublicProjectProposalsPage() {
                               {/* Cover Letter */}
                               <div className="mb-4">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 italic">
-                                  "{application.coverLetter || "Aucun message fourni."}"
+                                  "{application.coverLetter || t.noMessage}"
                                 </p>
                               </div>
 
@@ -637,7 +712,7 @@ export default function PublicProjectProposalsPage() {
                                   className="border-blue-200 dark:border-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400"
                                 >
                                   <Eye className="h-4 w-4 mr-2" />
-                                  Profil
+                                  {t.profile}
                                 </Button>
                                 
                                 <Button
@@ -647,14 +722,14 @@ export default function PublicProjectProposalsPage() {
                                   className="border-purple-200 dark:border-gray-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-400"
                                 >
                                   <MessageSquare className="h-4 w-4 mr-2" />
-                                  Contacter
+                                  {t.contact}
                                 </Button>
                               </div>
 
                               {/* Date */}
                               <div className="mt-4 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                Postulé le {new Date(application.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                {t.postedOn} {new Date(application.createdAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </div>
                             </div>
                           </div>
