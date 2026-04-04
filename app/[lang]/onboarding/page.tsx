@@ -326,7 +326,7 @@ export default function OnboardingPage() {
 
       case 'portfolio':
         return (
-          <div className="space-y-4 sm:space-y-6 " translate="no">
+          <div className="space-y-4 sm:space-y-6 " >
             <div className="mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-1 sm:mb-2">
                 {dict.onboardingPage.portfolio.title}

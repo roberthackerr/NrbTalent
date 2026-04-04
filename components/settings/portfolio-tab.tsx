@@ -164,4 +164,4 @@ export function PortfolioTab({ user, dict, lang, onUpdate }: PortfolioTabProps) 
 
     </div>
   )
-}
+} 
