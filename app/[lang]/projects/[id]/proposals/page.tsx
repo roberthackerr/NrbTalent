@@ -34,7 +34,8 @@ import {
   Award,
   Zap,
   Sun,
-  Moon
+  Moon,
+  Search
 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
