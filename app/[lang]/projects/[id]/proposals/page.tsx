@@ -188,11 +188,7 @@ export default function PublicProjectProposalsPage() {
     toast.info(dict?.proposals?.messages?.chatSoon || "Fonctionnalité de messagerie bientôt disponible")
   }
 
-  const changeLanguage = (newLang: Locale) => {
-    const currentPath = window.location.pathname
-    const newPath = currentPath.replace(`/${lang}`, `/${newLang}`)
-    router.push(newPath)
-  }
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -325,30 +321,7 @@ export default function PublicProjectProposalsPage() {
               
               <div className="flex items-center gap-3">
                 {/* Language Switcher */}
-                <div className="flex gap-1 border border-blue-200 dark:border-gray-700 rounded-lg p-1 bg-white dark:bg-gray-800">
-                  <Button
-                    variant={lang === 'fr' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => changeLanguage('fr')}
-                    className={lang === 'fr' 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
-                      : 'hover:bg-blue-100 dark:hover:bg-gray-700'
-                    }
-                  >
-                    FR
-                  </Button>
-                  <Button
-                    variant={lang === 'en' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => changeLanguage('en')}
-                    className={lang === 'en' 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
-                      : 'hover:bg-blue-100 dark:hover:bg-gray-700'
-                    }
-                  >
-                    EN
-                  </Button>
-                </div>
+        
 
                 {/* Theme Switcher */}
                 <Button
