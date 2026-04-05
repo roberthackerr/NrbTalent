@@ -458,7 +458,7 @@ export default function EditProjectPage() {
     }
   }, [dict, loadProject])
 
-  const t = dict?.projects?.edit || {}
+  const t = dict?.edit || {}
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
