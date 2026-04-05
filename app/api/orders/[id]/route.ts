@@ -294,7 +294,7 @@ export async function GET(
             as: 'gig'
           }
         },
-        { $unwind: '$gig' },
+        { $unwind: { path: '$gig', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'users',
@@ -303,7 +303,7 @@ export async function GET(
             as: 'buyer'
           }
         },
-        { $unwind: '$buyer' },
+        { $unwind: { path: '$buyer', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'users',
@@ -312,7 +312,7 @@ export async function GET(
             as: 'seller'
           }
         },
-        { $unwind: '$seller' },
+        { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
             from: 'conversations',
@@ -395,10 +395,8 @@ export async function PUT(
     // Récupérer les détails du gig
     const gig = await db.collection('gigs').findOne({ _id: existingOrder.gigId })
 
-    const updateData: any = {
-      updatedAt: new Date()
-    }
-
+    // Utiliser $set pour les mises à jour
+    const updateFields: any = {}
     let notificationStatus: string | null = null
     let notificationRole: 'buyer' | 'seller' | null = null
     let otherUserId: string | null = null
@@ -408,7 +406,7 @@ export async function PUT(
       switch (action) {
         case 'accept':
           if (isSeller && existingOrder.status === 'pending') {
-            updateData.status = 'accepted'
+            updateFields.status = 'accepted'
             notificationStatus = 'accepted'
             notificationRole = 'buyer'
             otherUserId = existingOrder.buyerId.toString()
@@ -417,7 +415,7 @@ export async function PUT(
         
         case 'start':
           if (isSeller && existingOrder.status === 'accepted') {
-            updateData.status = 'in_progress'
+            updateFields.status = 'in_progress'
             notificationStatus = 'inProgress'
             notificationRole = 'buyer'
             otherUserId = existingOrder.buyerId.toString()
@@ -426,8 +424,8 @@ export async function PUT(
         
         case 'deliver':
           if (isSeller && existingOrder.status === 'in_progress') {
-            updateData.status = 'delivered'
-            updateData.deliveredAt = new Date()
+            updateFields.status = 'delivered'
+            updateFields.deliveredAt = new Date()
             notificationStatus = 'delivered'
             notificationRole = 'buyer'
             otherUserId = existingOrder.buyerId.toString()
@@ -436,8 +434,8 @@ export async function PUT(
         
         case 'complete':
           if (isBuyer && existingOrder.status === 'delivered') {
-            updateData.status = 'completed'
-            updateData.completedAt = new Date()
+            updateFields.status = 'completed'
+            updateFields.completedAt = new Date()
             notificationStatus = 'completed'
             notificationRole = 'seller'
             otherUserId = existingOrder.sellerId.toString()
@@ -446,9 +444,9 @@ export async function PUT(
         
         case 'cancel':
           if ((isBuyer || isSeller) && ['pending', 'accepted'].includes(existingOrder.status)) {
-            updateData.status = 'cancelled'
-            updateData.cancelledAt = new Date()
-            updateData.cancelledBy = userId
+            updateFields.status = 'cancelled'
+            updateFields.cancelledAt = new Date()
+            updateFields.cancelledBy = userId
             notificationStatus = 'cancelled'
             notificationRole = isBuyer ? 'seller' : 'buyer'
             otherUserId = isBuyer ? existingOrder.sellerId.toString() : existingOrder.buyerId.toString()
@@ -457,9 +455,9 @@ export async function PUT(
         
         case 'dispute':
           if (isBuyer || isSeller) {
-            updateData.status = 'disputed'
-            updateData.disputedAt = new Date()
-            updateData.disputedBy = userId
+            updateFields.status = 'disputed'
+            updateFields.disputedAt = new Date()
+            updateFields.disputedBy = userId
             notificationStatus = 'disputed'
             notificationRole = isBuyer ? 'seller' : 'buyer'
             otherUserId = isBuyer ? existingOrder.sellerId.toString() : existingOrder.buyerId.toString()
@@ -478,7 +476,7 @@ export async function PUT(
         return NextResponse.json({ error: 'Cannot start work on order that is not accepted' }, { status: 400 })
       }
       
-      updateData.status = status
+      updateFields.status = status
       
       // Déterminer le statut de notification
       if (status === 'accepted') notificationStatus = 'accepted'
@@ -494,22 +492,37 @@ export async function PUT(
       }
     }
 
-    // Ajouter un message système si nécessaire
-    if (message && typeof message === 'string') {
-      const systemMessage = {
-        _id: new ObjectId(),
-        senderId: userId,
-        senderName: userName,
-        content: message,
-        isSystemMessage: true,
-        createdAt: new Date()
+    // Ajouter updatedAt
+    updateFields.updatedAt = new Date()
+
+    // Construire l'objet de mise à jour avec $set
+    let updateDoc: any = {}
+    if (Object.keys(updateFields).length > 0) {
+      updateDoc.$set = updateFields
+    }
+
+    // Ajouter un message système si nécessaire (avec $push)
+    if (message && typeof message === 'string' && message.trim()) {
+      updateDoc.$push = {
+        messages: {
+          _id: new ObjectId(),
+          senderId: userId,
+          senderName: userName,
+          content: message,
+          isSystemMessage: true,
+          createdAt: new Date()
+        }
       }
-      updateData.$push = { messages: systemMessage }
+    }
+
+    // Vérifier qu'il y a des modifications
+    if (Object.keys(updateDoc).length === 0) {
+      return NextResponse.json({ error: 'No changes to apply' }, { status: 400 })
     }
 
     const result = await db.collection('orders').updateOne(
       { _id: new ObjectId(orderId) },
-      updateData
+      updateDoc
     )
 
     if (result.modifiedCount === 0 && !message) {
@@ -517,7 +530,7 @@ export async function PUT(
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 📢 ENVOI DES NOTIFICATIONS (avec try-catch pour ne pas bloquer la réponse)
+    // 📢 ENVOI DES NOTIFICATIONS
     // ──────────────────────────────────────────────────────────────────────────
     if (notificationStatus && otherUserId && gig) {
       try {
@@ -534,7 +547,7 @@ export async function PUT(
           }
         )
 
-        // Notification à l'utilisateur qui a fait l'action (confirmation)
+        // Notification à l'utilisateur qui a fait l'action
         await sendOrderStatusNotification(
           userId.toString(),
           notificationStatus,
@@ -548,10 +561,9 @@ export async function PUT(
         )
       } catch (notifError) {
         console.error('Error sending notifications:', notifError)
-        // Ne pas bloquer la réponse à cause des notifications
       }
 
-      // Fallback notification dans MongoDB
+      // Fallback notification
       try {
         const statusNames: Record<string, { fr: string; en: string; mg: string }> = {
           accepted: { fr: 'acceptée', en: 'accepted', mg: 'ekena' },
