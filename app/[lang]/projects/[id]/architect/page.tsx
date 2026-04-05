@@ -64,18 +64,22 @@ import {
   Target,
   Layers,
   Hash,
-   Briefcase,
+  CalendarDays,
+  Briefcase,
   Star,
   Loader2,
   Palette,
   Code,
   Smartphone,
   Cloud,
-  Lock
+  Lock,
+  Sun,
+  Moon
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTheme } from 'next-themes'
 
 interface AIModel {
   id: string
@@ -94,6 +98,7 @@ export default function AIArchitectPage() {
   const router = useRouter()
   const params = useParams()
   const { data: session, status } = useSession()
+  const { theme, setTheme } = useTheme()
   
   const projectId = params.id as string
   const [project, setProject] = useState<any>(null)
@@ -105,11 +110,16 @@ export default function AIArchitectPage() {
   const [regenerating, setRegenerating] = useState(false)
   const [blueprintStats, setBlueprintStats] = useState<any>(null)
   const [showModelDetails, setShowModelDetails] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const [modelFilters, setModelFilters] = useState({
     maxCost: 5,
     minTokens: 10000,
     providers: [] as string[]
   })
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -305,21 +315,21 @@ export default function AIArchitectPage() {
   const getModelIcon = (provider: string) => {
     switch (provider.toLowerCase()) {
       case 'deepseek':
-        return <Rocket className="h-4 w-4 text-blue-500" />
+        return <Rocket className="h-4 w-4 text-blue-500 dark:text-blue-400" />
       case 'openai':
-        return <Globe className="h-4 w-4 text-green-500" />
+        return <Globe className="h-4 w-4 text-green-500 dark:text-green-400" />
       case 'anthropic':
-        return <Shield className="h-4 w-4 text-purple-500" />
+        return <Shield className="h-4 w-4 text-purple-500 dark:text-purple-400" />
       case 'google':
-        return <BarChart3 className="h-4 w-4 text-red-500" />
+        return <BarChart3 className="h-4 w-4 text-red-500 dark:text-red-400" />
       case 'meta':
-        return <Server className="h-4 w-4 text-orange-500" />
+        return <Server className="h-4 w-4 text-orange-500 dark:text-orange-400" />
       default:
-        return <Zap className="h-4 w-4 text-gray-500" />
+        return <Zap className="h-4 w-4 text-gray-500 dark:text-gray-400" />
     }
   }
 
-  if (loading) {
+  if (!isMounted || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center">
         <div className="text-center">
@@ -337,9 +347,9 @@ export default function AIArchitectPage() {
   if (!hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center p-6">
-        <Card className="max-w-md w-full p-8 text-center border-purple-200 dark:border-gray-700 shadow-xl">
-          <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Brain className="h-10 w-10 text-red-600" />
+        <Card className="max-w-md w-full p-8 text-center border-purple-200 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-900">
+          <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Brain className="h-10 w-10 text-red-600 dark:text-red-400" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Accès restreint</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-6">
@@ -357,9 +367,9 @@ export default function AIArchitectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-purple-100 dark:border-gray-800">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-purple-100 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -387,13 +397,23 @@ export default function AIArchitectPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {/* Theme Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="border-purple-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-800"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+
               {/* Model Selector Button */}
               <Sheet>
                 <SheetTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                    className="gap-2 border-purple-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-800"
                   >
                     {selectedModel ? (
                       <>
@@ -412,10 +432,10 @@ export default function AIArchitectPage() {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="w-[400px] sm:w-[540px] flex flex-col bg-white dark:bg-gray-900 border-purple-200 dark:border-gray-800">
+                <SheetContent className="w-[400px] sm:w-[540px] flex flex-col bg-white dark:bg-gray-900 border-purple-200 dark:border-gray-700">
                   <SheetHeader>
                     <SheetTitle className="text-purple-700 dark:text-purple-300">Choisir un modèle AI</SheetTitle>
-                    <SheetDescription>
+                    <SheetDescription className="text-slate-500 dark:text-slate-400">
                       Sélectionnez le modèle qui correspond à vos besoins et budget
                     </SheetDescription>
                   </SheetHeader>
@@ -423,7 +443,7 @@ export default function AIArchitectPage() {
                   <div className="flex-1 overflow-hidden flex flex-col py-4">
                     <div className="mb-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl flex-shrink-0">
                       <div className="flex items-center gap-2 mb-3">
-                        <Filter className="h-4 w-4 text-purple-500" />
+                        <Filter className="h-4 w-4 text-purple-500 dark:text-purple-400" />
                         <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Filtres</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -432,7 +452,7 @@ export default function AIArchitectPage() {
                             Coût max (par M tokens)
                           </label>
                           <select 
-                            className="w-full text-sm border border-purple-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800"
+                            className="w-full text-sm border border-purple-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-slate-200"
                             value={modelFilters.maxCost}
                             onChange={(e) => setModelFilters(prev => ({
                               ...prev,
@@ -450,7 +470,7 @@ export default function AIArchitectPage() {
                             Longueur minimale
                           </label>
                           <select 
-                            className="w-full text-sm border border-purple-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800"
+                            className="w-full text-sm border border-purple-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-slate-200"
                             value={modelFilters.minTokens}
                             onChange={(e) => setModelFilters(prev => ({
                               ...prev,
@@ -471,7 +491,7 @@ export default function AIArchitectPage() {
                         {filteredModels.map((model) => (
                           <div
                             key={model.id}
-                            className={`border rounded-xl p-4 cursor-pointer transition-all hover:border-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 ${
+                            className={`border rounded-xl p-4 cursor-pointer transition-all hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 ${
                               selectedModel === model.id 
                                 ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 ring-2 ring-purple-500' 
                                 : 'border-purple-200 dark:border-gray-700'
@@ -493,7 +513,7 @@ export default function AIArchitectPage() {
                                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                     {model.bestFor.slice(0, 2).join(' • ')}
                                   </p>
-                                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
                                     <span>
                                       <DollarSign className="h-3 w-3 inline mr-1" />
                                       ${model.costPerMillion.input}/M input
@@ -511,7 +531,7 @@ export default function AIArchitectPage() {
                                     <CheckCircle className="h-3 w-3 text-white" />
                                   </div>
                                 ) : (
-                                  <div className="w-5 h-5 rounded-full border border-purple-300" />
+                                  <div className="w-5 h-5 rounded-full border border-purple-300 dark:border-gray-600" />
                                 )}
                               </div>
                             </div>
@@ -536,13 +556,13 @@ export default function AIArchitectPage() {
                         ))}
                         
                         {filteredModels.length === 0 && (
-                          <div className="text-center py-8 text-slate-500">
+                          <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                             <Filter className="h-8 w-8 mx-auto mb-2 text-purple-400" />
                             <p>Aucun modèle ne correspond à vos filtres</p>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="mt-2 text-purple-600"
+                              className="mt-2 text-purple-600 dark:text-purple-400"
                               onClick={() => setModelFilters({
                                 maxCost: 5,
                                 minTokens: 10000,
@@ -557,12 +577,12 @@ export default function AIArchitectPage() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between pt-4 border-t border-purple-200 dark:border-gray-800">
+                  <div className="flex justify-between pt-4 border-t border-purple-200 dark:border-gray-700">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowModelDetails(true)}
-                      className="text-purple-600"
+                      className="text-purple-600 dark:text-purple-400"
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Comparer les modèles
@@ -578,7 +598,7 @@ export default function AIArchitectPage() {
               
               {selectedModel && (
                 <Badge variant="outline" className="gap-1 border-purple-200 dark:border-purple-800">
-                  <Zap className="h-3 w-3 text-purple-500" />
+                  <Zap className="h-3 w-3 text-purple-500 dark:text-purple-400" />
                   {getModelName(selectedModel)}
                 </Badge>
               )}
@@ -591,7 +611,7 @@ export default function AIArchitectPage() {
                       size="sm" 
                       onClick={() => setRegenerateDialog(true)}
                       disabled={!selectedModel}
-                      className="border-purple-200 dark:border-purple-800 hover:bg-purple-50"
+                      className="border-purple-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-800"
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Générer
@@ -603,12 +623,12 @@ export default function AIArchitectPage() {
                 </Tooltip>
               </TooltipProvider>
               
-              <Button variant="outline" size="sm" onClick={shareBlueprint} className="border-purple-200 dark:border-purple-800 hover:bg-purple-50">
+              <Button variant="outline" size="sm" onClick={shareBlueprint} className="border-purple-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-800">
                 <Share2 className="h-4 w-4 mr-2" />
                 Partager
               </Button>
               
-              <Button variant="outline" size="sm" onClick={exportBlueprint} className="border-purple-200 dark:border-purple-800 hover:bg-purple-50">
+              <Button variant="outline" size="sm" onClick={exportBlueprint} className="border-purple-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-gray-800">
                 <Download className="h-4 w-4 mr-2" />
                 Exporter
               </Button>
@@ -656,16 +676,16 @@ export default function AIArchitectPage() {
               <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <span className="text-slate-600 dark:text-slate-400">Coût estimé:</span>
                     <span className="font-medium text-purple-700 dark:text-purple-300">
                       ${getModelCost(selectedModel)}/M tokens
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Server className="h-4 w-4 text-blue-600" />
+                    <Server className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-slate-600 dark:text-slate-400">Capacité:</span>
-                    <span className="font-medium">
+                    <span className="font-medium text-purple-700 dark:text-purple-300">
                       {(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens
                     </span>
                   </div>
@@ -678,12 +698,12 @@ export default function AIArchitectPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {[
-            { icon: Clock, label: 'Statut', value: project?.status || 'Non défini', color: 'from-blue-500 to-blue-600' },
-            { icon: DollarSign, label: 'Budget', value: project?.budget ? `${project.budget.min} - ${project.budget.max} ${project.budget.currency}` : 'Non défini', color: 'from-green-500 to-green-600' },
-            { icon: CalendarDays, label: 'Deadline', value: project?.deadline ? new Date(project.deadline).toLocaleDateString() : 'Non définie', color: 'from-orange-500 to-orange-600' },
-            { icon: Code, label: 'Compétences', value: `${project?.skills?.length || 0} requises`, color: 'from-purple-500 to-purple-600' },
-            { icon: TrendingUp, label: 'Complexité', value: project?.metadata?.complexityScore ? `${project.metadata.complexityScore}/10` : 'Non évaluée', color: 'from-red-500 to-red-600' },
-            { icon: Brain, label: 'AI Généré', value: project?.metadata?.aiEnhanced ? 'Oui' : 'Non', color: 'from-pink-500 to-pink-600' }
+            { icon: Clock, label: 'Statut', value: project?.status || 'Non défini', gradient: 'from-blue-500 to-blue-600' },
+            { icon: DollarSign, label: 'Budget', value: project?.budget ? `${project.budget.min} - ${project.budget.max} ${project.budget.currency}` : 'Non défini', gradient: 'from-green-500 to-green-600' },
+            { icon: CalendarDays, label: 'Deadline', value: project?.deadline ? new Date(project.deadline).toLocaleDateString() : 'Non définie', gradient: 'from-orange-500 to-orange-600' },
+            { icon: Code, label: 'Compétences', value: `${project?.skills?.length || 0} requises`, gradient: 'from-purple-500 to-purple-600' },
+            { icon: TrendingUp, label: 'Complexité', value: project?.metadata?.complexityScore ? `${project.metadata.complexityScore}/10` : 'Non évaluée', gradient: 'from-red-500 to-red-600' },
+            { icon: Brain, label: 'AI Généré', value: project?.metadata?.aiEnhanced ? 'Oui' : 'Non', gradient: 'from-pink-500 to-pink-600' }
           ].map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -695,7 +715,7 @@ export default function AIArchitectPage() {
               >
                 <Card className="p-4 border-purple-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className={`p-1.5 bg-gradient-to-br ${stat.color} rounded-lg`}>
+                    <div className={`p-1.5 bg-gradient-to-br ${stat.gradient} rounded-lg`}>
                       <Icon className="h-3 w-3 text-white" />
                     </div>
                     <span className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</span>
@@ -720,7 +740,7 @@ export default function AIArchitectPage() {
           >
             <Card className="max-w-md w-full p-8 text-center border-purple-200 dark:border-gray-700 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
               <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="h-10 w-10 text-purple-600" />
+                <Zap className="h-10 w-10 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Sélectionnez un modèle AI</h3>
               <p className="text-slate-600 dark:text-slate-400 mb-6">
@@ -764,7 +784,7 @@ export default function AIArchitectPage() {
           
           <Button 
             variant="secondary"
-            className="shadow-lg border-purple-200 dark:border-purple-800"
+            className="shadow-lg border-purple-200 dark:border-purple-800 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700"
             onClick={() => router.push(`/projects/${projectId}/apply`)}
           >
             <FileText className="h-4 w-4 mr-2" />
@@ -805,15 +825,15 @@ export default function AIArchitectPage() {
                 <div className="text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Coût input:</span>
-                    <span className="font-medium">${getModelCost(selectedModel)}/M tokens</span>
+                    <span className="font-medium text-purple-700 dark:text-purple-300">${getModelCost(selectedModel)}/M tokens</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Capacité max:</span>
-                    <span className="font-medium">{(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens</span>
+                    <span className="font-medium text-purple-700 dark:text-purple-300">{(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Fournisseur:</span>
-                    <span className="font-medium">{aiModels.find(m => m.id === selectedModel)?.provider}</span>
+                    <span className="font-medium text-purple-700 dark:text-purple-300">{aiModels.find(m => m.id === selectedModel)?.provider}</span>
                   </div>
                 </div>
               </div>
@@ -864,7 +884,7 @@ export default function AIArchitectPage() {
   )
 }
 
-// Composant Calendar manquant
+// Composant CalendarDays
 const CalendarDays = ({ className }: { className?: string }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 

@@ -37,12 +37,12 @@ export function ModelDetailsPanel({
 
   const getProviderColor = (provider: string) => {
     switch (provider.toLowerCase()) {
-      case 'deepseek': return 'bg-blue-100 text-blue-800'
-      case 'openai': return 'bg-green-100 text-green-800'
-      case 'anthropic': return 'bg-purple-100 text-purple-800'
-      case 'google': return 'bg-red-100 text-red-800'
-      case 'meta': return 'bg-orange-100 text-orange-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'deepseek': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+      case 'openai': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+      case 'anthropic': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+      case 'google': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+      case 'meta': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300'
     }
   }
 
@@ -71,23 +71,23 @@ export function ModelDetailsPanel({
       />
       
       {/* Panel */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${getProviderColor(model.provider)}`}>
               {getProviderIcon(model.provider)}
             </div>
             <div>
-              <h2 className="text-xl font-bold">{model.name}</h2>
-              <p className="text-sm text-gray-600">{model.provider}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{model.name}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{model.provider}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -97,56 +97,56 @@ export function ModelDetailsPanel({
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="border rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-1">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                 <DollarSign className="h-4 w-4" />
                 Coût input
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
                 ${model.costPerMillion.input}/M
               </div>
             </div>
-            <div className="border rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-1">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                 <DollarSign className="h-4 w-4" />
                 Coût output
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
                 ${model.costPerMillion.output}/M
               </div>
             </div>
-            <div className="border rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-1">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                 <Server className="h-4 w-4" />
                 Max tokens
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
                 {model.maxTokens.toLocaleString()}
               </div>
             </div>
-            <div className="border rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-1">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                 <Clock className="h-4 w-4" />
                 Estimation coût
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
                 ~${calculateCost(5000)}
               </div>
-              <div className="text-xs text-gray-500">pour 5000 tokens</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500">pour 5000 tokens</div>
             </div>
           </div>
 
           {/* Best for */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Idéal pour</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Idéal pour</h3>
             <div className="flex flex-wrap gap-2">
               {model.bestFor.map((useCase) => (
                 <Badge 
                   key={useCase} 
                   variant="secondary"
-                  className="text-sm py-1.5 px-3"
+                  className="text-sm py-1.5 px-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                 >
-                  <CheckCircle className="h-3 w-3 mr-1.5" />
+                  <CheckCircle className="h-3 w-3 mr-1.5 text-green-500 dark:text-green-400" />
                   {useCase}
                 </Badge>
               ))}
@@ -155,12 +155,12 @@ export function ModelDetailsPanel({
 
           {/* Capabilities */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Capacités</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Capacités</h3>
             <div className="grid grid-cols-2 gap-3">
               {model.capabilities.map((capability, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-sm">{capability}</span>
+                  <div className="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{capability}</span>
                 </div>
               ))}
             </div>
@@ -168,7 +168,7 @@ export function ModelDetailsPanel({
 
           {/* Comparison avec autres modèles */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Comparaison avec d'autres modèles</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Comparaison avec d'autres modèles</h3>
             <div className="space-y-2">
               {allModels
                 .filter(m => m.id !== model.id)
@@ -176,7 +176,7 @@ export function ModelDetailsPanel({
                 .map((otherModel) => (
                   <div
                     key={otherModel.id}
-                    className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
                     onClick={() => {
                       onSelectModel(otherModel.id)
                       onClose()
@@ -188,13 +188,13 @@ export function ModelDetailsPanel({
                           {getProviderIcon(otherModel.provider)}
                         </div>
                         <div>
-                          <div className="font-medium">{otherModel.name}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="font-medium text-gray-900 dark:text-white">{otherModel.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             ${otherModel.costPerMillion.input}/M • {otherModel.maxTokens.toLocaleString()} tokens
                           </div>
                         </div>
                       </div>
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" className="text-purple-600 dark:text-purple-400">
                         Sélectionner
                       </Button>
                     </div>
@@ -204,9 +204,9 @@ export function ModelDetailsPanel({
           </div>
 
           {/* Recommandation */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-800 mb-2">Notre recommandation</h4>
-            <p className="text-sm text-blue-700">
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Notre recommandation</h4>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
               {model.id === 'deepseek/deepseek-chat' 
                 ? 'Excellent choix pour un rapport qualité/prix. Parfait pour la plupart des projets freelance.'
                 : model.id === 'openai/gpt-4o-mini'
@@ -219,22 +219,22 @@ export function ModelDetailsPanel({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 border-t bg-white px-6 py-4 flex justify-between">
-          <Button variant="outline" onClick={onClose}>
+        <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4 flex justify-between">
+          <Button variant="outline" onClick={onClose} className="border-gray-300 dark:border-gray-700">
             Fermer
           </Button>
           <div className="flex gap-2">
             <Button 
               variant="outline"
               onClick={() => {
-                // Lancer une comparaison détaillée
                 window.open(`/ai/models/compare?model1=${model.id}`, '_blank')
               }}
+              className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400"
             >
               Comparer détaillée
             </Button>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
               onClick={() => {
                 onSelectModel(model.id)
                 onClose()
