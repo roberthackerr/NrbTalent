@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,11 +28,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { 
-  ArrowLeft, 
-  Sparkles, 
-  Brain, 
-  FileText, 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  ArrowLeft,
+  Sparkles,
+  Brain,
+  FileText,
   Users,
   Zap,
   Share2,
@@ -52,10 +58,25 @@ import {
   Shield,
   Rocket,
   Filter,
-  Eye
+  Eye,
+  TrendingUp,
+  Award,
+  Target,
+  Layers,
+  Hash,
+  CalendarDays,
+  Briefcase,
+  Star,
+  Loader2,
+  Palette,
+  Code,
+  Smartphone,
+  Cloud,
+  Lock
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface AIModel {
   id: string
@@ -86,7 +107,7 @@ export default function AIArchitectPage() {
   const [blueprintStats, setBlueprintStats] = useState<any>(null)
   const [showModelDetails, setShowModelDetails] = useState(false)
   const [modelFilters, setModelFilters] = useState({
-    maxCost: 5, // $ par million tokens
+    maxCost: 5,
     minTokens: 10000,
     providers: [] as string[]
   })
@@ -106,7 +127,6 @@ export default function AIArchitectPage() {
       if (response.ok) {
         setProject(data)
         
-        // Vérifier si l'utilisateur est le client
         const isClient = session?.user?.id === data.clientId?.toString()
         const isAdmin = session?.user?.role === 'admin'
         const isCollaborator = data.collaborators?.some((c: any) => 
@@ -130,29 +150,21 @@ export default function AIArchitectPage() {
     try {
       const response = await fetch('/api/ai/architect', {
         method: 'OPTIONS',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
+        headers: { 'Cache-Control': 'no-cache' }
       })
       
       const data = await response.json()
       
       if (response.ok) {
         if (data.error) {
-          // Si API retourne une erreur mais des modèles fallback
           console.warn('Using fallback models:', data.error)
-          toast.warning('Mode dégradé: ' + data.warning, {
-            duration: 5000
-          })
+          toast.warning('Mode dégradé: ' + data.warning, { duration: 5000 })
         }
         
         setAiModels(data.availableModels || [])
-        
-        // Sélectionner le modèle par défaut
         const defaultModel = data.defaultModel || 'deepseek/deepseek-chat'
         setSelectedModel(defaultModel)
         
-        // Afficher un warning si API non connectée
         if (!data.apiConnected) {
           toast.error('Connexion API limitée', {
             description: 'Les modèles premium peuvent ne pas être disponibles',
@@ -160,7 +172,6 @@ export default function AIArchitectPage() {
           })
         }
       } else {
-        // Si l'API échoue complètement, utiliser des modèles statiques
         console.error('API failed, using static models')
         setAiModels(getStaticModels())
         setSelectedModel('deepseek/deepseek-chat')
@@ -180,7 +191,6 @@ export default function AIArchitectPage() {
     }
   }
 
-  // Fonction de fallback pour les modèles statiques
   const getStaticModels = (): AIModel[] => {
     return [
       {
@@ -204,7 +214,6 @@ export default function AIArchitectPage() {
     ]
   }
 
-  // Gérer le cas où aiModels est vide
   useEffect(() => {
     if (aiModels.length === 0) {
       setAiModels(getStaticModels())
@@ -241,7 +250,6 @@ export default function AIArchitectPage() {
         setBlueprintStats(data.metadata)
         setRegenerateDialog(false)
         
-        // Recharger la page après 2 secondes
         setTimeout(() => {
           window.location.reload()
         }, 2000)
@@ -258,7 +266,6 @@ export default function AIArchitectPage() {
   }
 
   const exportBlueprint = () => {
-    // Implémenter l'export PDF ici
     toast.success('Blueprint exporté en PDF')
   }
 
@@ -288,18 +295,11 @@ export default function AIArchitectPage() {
     return model?.costPerMillion.input || 0
   }
 
-  // Filtrer les modèles selon les préférences
   const filteredModels = aiModels.filter(model => {
-    // Filtrer par coût maximum
     if (model.costPerMillion.input > modelFilters.maxCost) return false
-    
-    // Filtrer par nombre minimum de tokens
     if (model.maxTokens < modelFilters.minTokens) return false
-    
-    // Filtrer par provider si spécifié
     if (modelFilters.providers.length > 0 && 
         !modelFilters.providers.includes(model.provider)) return false
-    
     return true
   })
 
@@ -322,10 +322,14 @@ export default function AIArchitectPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement de l'AI Architect...</p>
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 blur-2xl opacity-20 animate-pulse rounded-full"></div>
+            <Loader2 className="h-16 w-16 text-purple-600 dark:text-purple-400 animate-spin relative z-10" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Chargement de l'AI Architect...</h3>
+          <p className="text-slate-600 dark:text-slate-400">Préparation de l'analyse intelligente</p>
         </div>
       </div>
     )
@@ -333,16 +337,16 @@ export default function AIArchitectPage() {
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md p-8 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Brain className="h-8 w-8 text-red-600" />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center p-6">
+        <Card className="max-w-md w-full p-8 text-center border-purple-200 dark:border-gray-700 shadow-xl">
+          <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Brain className="h-10 w-10 text-red-600" />
           </div>
-          <h2 className="text-xl font-bold mb-2">Accès restreint</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Accès restreint</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
             Seul le client propriétaire de ce projet peut accéder à l'AI Architect.
           </p>
-          <Button asChild>
+          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
             <Link href={`/projects/${projectId}`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour au projet
@@ -354,38 +358,44 @@ export default function AIArchitectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-purple-100 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link 
                 href={`/projects/${projectId}`}
-                className="inline-flex items-center gap-2 text-sm hover:underline"
+                className="inline-flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Retour au projet
               </Link>
               
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25">
+                  <Sparkles className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">AI Project Architect</h1>
-                  <p className="text-sm text-gray-600">
-                    Analyse complète pour: <span className="font-medium">{project?.title}</span>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-purple-700 to-pink-700 dark:from-purple-300 dark:to-pink-300 bg-clip-text text-transparent">
+                    AI Project Architect
+                  </h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Analyse complète pour: <span className="font-medium text-purple-600 dark:text-purple-400">{project?.title}</span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Sélecteur de modèle amélioré */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Model Selector Button */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                  >
                     {selectedModel ? (
                       <>
                         {getModelIcon(aiModels.find(m => m.id === selectedModel)?.provider || '')}
@@ -403,28 +413,27 @@ export default function AIArchitectPage() {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="w-[400px] sm:w-[540px] flex flex-col">
+                <SheetContent className="w-[400px] sm:w-[540px] flex flex-col bg-white dark:bg-gray-900 border-purple-200 dark:border-gray-800">
                   <SheetHeader>
-                    <SheetTitle>Choisir un modèle AI</SheetTitle>
+                    <SheetTitle className="text-purple-700 dark:text-purple-300">Choisir un modèle AI</SheetTitle>
                     <SheetDescription>
                       Sélectionnez le modèle qui correspond à vos besoins et budget
                     </SheetDescription>
                   </SheetHeader>
                   
                   <div className="flex-1 overflow-hidden flex flex-col py-4">
-                    {/* Filtres rapides */}
-                    <div className="mb-4 p-4 bg-gray-50 rounded-lg flex-shrink-0">
+                    <div className="mb-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl flex-shrink-0">
                       <div className="flex items-center gap-2 mb-3">
-                        <Filter className="h-4 w-4" />
-                        <span className="text-sm font-medium">Filtres</span>
+                        <Filter className="h-4 w-4 text-purple-500" />
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Filtres</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs text-gray-500 mb-1 block">
+                          <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
                             Coût max (par M tokens)
                           </label>
                           <select 
-                            className="w-full text-sm border rounded-md px-3 py-1.5"
+                            className="w-full text-sm border border-purple-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800"
                             value={modelFilters.maxCost}
                             onChange={(e) => setModelFilters(prev => ({
                               ...prev,
@@ -438,11 +447,11 @@ export default function AIArchitectPage() {
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 mb-1 block">
+                          <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
                             Longueur minimale
                           </label>
                           <select 
-                            className="w-full text-sm border rounded-md px-3 py-1.5"
+                            className="w-full text-sm border border-purple-200 dark:border-gray-700 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800"
                             value={modelFilters.minTokens}
                             onChange={(e) => setModelFilters(prev => ({
                               ...prev,
@@ -458,16 +467,15 @@ export default function AIArchitectPage() {
                       </div>
                     </div>
 
-                    {/* Liste des modèles avec scrollbar */}
                     <div className="flex-1 overflow-y-auto">
                       <div className="space-y-3 pr-2">
                         {filteredModels.map((model) => (
                           <div
                             key={model.id}
-                            className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-purple-300 hover:bg-purple-50 ${
+                            className={`border rounded-xl p-4 cursor-pointer transition-all hover:border-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 ${
                               selectedModel === model.id 
-                                ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500' 
-                                : 'border-gray-200'
+                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 ring-2 ring-purple-500' 
+                                : 'border-purple-200 dark:border-gray-700'
                             }`}
                             onClick={() => handleModelChange(model.id)}
                           >
@@ -477,16 +485,16 @@ export default function AIArchitectPage() {
                                   {getModelIcon(model.provider)}
                                 </div>
                                 <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium">{model.name}</h3>
-                                    <Badge variant="outline" className="text-xs">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-medium text-slate-900 dark:text-white">{model.name}</h3>
+                                    <Badge variant="outline" className="text-xs border-purple-200 dark:border-purple-800">
                                       {model.provider}
                                     </Badge>
                                   </div>
-                                  <p className="text-sm text-gray-600 mt-1">
+                                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                     {model.bestFor.slice(0, 2).join(' • ')}
                                   </p>
-                                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                                     <span>
                                       <DollarSign className="h-3 w-3 inline mr-1" />
                                       ${model.costPerMillion.input}/M input
@@ -504,18 +512,17 @@ export default function AIArchitectPage() {
                                     <CheckCircle className="h-3 w-3 text-white" />
                                   </div>
                                 ) : (
-                                  <div className="w-5 h-5 rounded-full border border-gray-300" />
+                                  <div className="w-5 h-5 rounded-full border border-purple-300" />
                                 )}
                               </div>
                             </div>
                             
-                            {/* Tags de capacités */}
                             <div className="flex flex-wrap gap-1 mt-3">
                               {model.capabilities.slice(0, 3).map((capability) => (
                                 <Badge 
                                   key={capability} 
                                   variant="secondary" 
-                                  className="text-xs"
+                                  className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                                 >
                                   {capability}
                                 </Badge>
@@ -530,13 +537,13 @@ export default function AIArchitectPage() {
                         ))}
                         
                         {filteredModels.length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            <Filter className="h-8 w-8 mx-auto mb-2" />
+                          <div className="text-center py-8 text-slate-500">
+                            <Filter className="h-8 w-8 mx-auto mb-2 text-purple-400" />
                             <p>Aucun modèle ne correspond à vos filtres</p>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="mt-2"
+                              className="mt-2 text-purple-600"
                               onClick={() => setModelFilters({
                                 maxCost: 5,
                                 minTokens: 10000,
@@ -551,17 +558,18 @@ export default function AIArchitectPage() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between pt-4 border-t">
+                  <div className="flex justify-between pt-4 border-t border-purple-200 dark:border-gray-800">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowModelDetails(true)}
+                      className="text-purple-600"
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Comparer les modèles
                     </Button>
                     <SheetTrigger asChild>
-                      <Button>
+                      <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                         {selectedModel ? 'Confirmer la sélection' : 'Fermer'}
                       </Button>
                     </SheetTrigger>
@@ -569,30 +577,39 @@ export default function AIArchitectPage() {
                 </SheetContent>
               </Sheet>
               
-              {/* Badge du modèle sélectionné */}
               {selectedModel && (
-                <Badge variant="outline" className="gap-1">
-                  <Zap className="h-3 w-3" />
+                <Badge variant="outline" className="gap-1 border-purple-200 dark:border-purple-800">
+                  <Zap className="h-3 w-3 text-purple-500" />
                   {getModelName(selectedModel)}
                 </Badge>
               )}
               
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setRegenerateDialog(true)}
-                disabled={!selectedModel}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Générer
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setRegenerateDialog(true)}
+                      disabled={!selectedModel}
+                      className="border-purple-200 dark:border-purple-800 hover:bg-purple-50"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Générer
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Régénérer l'analyse avec le modèle sélectionné</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               
-              <Button variant="outline" size="sm" onClick={shareBlueprint}>
+              <Button variant="outline" size="sm" onClick={shareBlueprint} className="border-purple-200 dark:border-purple-800 hover:bg-purple-50">
                 <Share2 className="h-4 w-4 mr-2" />
                 Partager
               </Button>
               
-              <Button variant="outline" size="sm" onClick={exportBlueprint}>
+              <Button variant="outline" size="sm" onClick={exportBlueprint} className="border-purple-200 dark:border-purple-800 hover:bg-purple-50">
                 <Download className="h-4 w-4 mr-2" />
                 Exporter
               </Button>
@@ -603,143 +620,143 @@ export default function AIArchitectPage() {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Bandeau d'information du modèle */}
-        {selectedModel && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {getModelIcon(aiModels.find(m => m.id === selectedModel)?.provider || '')}
-                <div>
-                  <h3 className="font-medium">
-                    Modèle sélectionné: {getModelName(selectedModel)}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Prêt à générer une analyse personnalisée pour ce projet
-                  </p>
+        {/* Model Info Banner */}
+        <AnimatePresence>
+          {selectedModel && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-xl"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                    {getModelIcon(aiModels.find(m => m.id === selectedModel)?.provider || '')}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-purple-900 dark:text-purple-300">
+                      Modèle sélectionné: {getModelName(selectedModel)}
+                    </h3>
+                    <p className="text-sm text-purple-700 dark:text-purple-400">
+                      Prêt à générer une analyse personnalisée pour ce projet
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowModelDetails(true)}
+                  className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Détails
+                </Button>
+              </div>
+              
+              <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
+                <div className="flex flex-wrap items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <span className="text-slate-600 dark:text-slate-400">Coût estimé:</span>
+                    <span className="font-medium text-purple-700 dark:text-purple-300">
+                      ${getModelCost(selectedModel)}/M tokens
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Server className="h-4 w-4 text-blue-600" />
+                    <span className="text-slate-600 dark:text-slate-400">Capacité:</span>
+                    <span className="font-medium">
+                      {(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => setShowModelDetails(true)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Détails
-              </Button>
-            </div>
-            
-            {/* Estimation de coût */}
-            <div className="mt-3 pt-3 border-t border-blue-100">
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="text-gray-600">Coût estimé:</span>
-                  <span className="font-medium">
-                    ${getModelCost(selectedModel)}/M tokens
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Server className="h-4 w-4 text-blue-600" />
-                  <span className="text-gray-600">Capacité:</span>
-                  <span className="font-medium">
-                    {(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Stats bar */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Clock className="h-4 w-4" />
-              Statut
-            </div>
-            <div className="text-lg font-semibold capitalize">{project?.status}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <DollarSign className="h-4 w-4" />
-              Budget
-            </div>
-            <div className="text-lg font-semibold">
-              {project?.budget?.min} - {project?.budget?.max} {project?.budget?.currency}
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              Deadline
-            </div>
-            <div className="text-lg font-semibold">
-              {project?.deadline ? new Date(project.deadline).toLocaleDateString() : 'Non définie'}
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Cpu className="h-4 w-4" />
-              Compétences
-            </div>
-            <div className="text-lg font-semibold">{project?.skills?.length || 0}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <CheckCircle className="h-4 w-4" />
-              Complexité
-            </div>
-            <div className="text-lg font-semibold">
-              {project?.metadata?.complexityScore 
-                ? `${project.metadata.complexityScore}/10` 
-                : 'Non évaluée'}
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Brain className="h-4 w-4" />
-              AI Généré
-            </div>
-            <div className="text-lg font-semibold">
-              {project?.metadata?.aiEnhanced ? 'Oui' : 'Non'}
-            </div>
-          </Card>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          {[
+            { icon: Clock, label: 'Statut', value: project?.status || 'Non défini', color: 'from-blue-500 to-blue-600' },
+            { icon: DollarSign, label: 'Budget', value: project?.budget ? `${project.budget.min} - ${project.budget.max} ${project.budget.currency}` : 'Non défini', color: 'from-green-500 to-green-600' },
+            { icon: CalendarDays, label: 'Deadline', value: project?.deadline ? new Date(project.deadline).toLocaleDateString() : 'Non définie', color: 'from-orange-500 to-orange-600' },
+            { icon: Code, label: 'Compétences', value: `${project?.skills?.length || 0} requises`, color: 'from-purple-500 to-purple-600' },
+            { icon: TrendingUp, label: 'Complexité', value: project?.metadata?.complexityScore ? `${project.metadata.complexityScore}/10` : 'Non évaluée', color: 'from-red-500 to-red-600' },
+            { icon: Brain, label: 'AI Généré', value: project?.metadata?.aiEnhanced ? 'Oui' : 'Non', color: 'from-pink-500 to-pink-600' }
+          ].map((stat, index) => {
+            const Icon = stat.icon
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="p-4 border-purple-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`p-1.5 bg-gradient-to-br ${stat.color} rounded-lg`}>
+                      <Icon className="h-3 w-3 text-white" />
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</span>
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2">
+                    {stat.value}
+                  </div>
+                </Card>
+              </motion.div>
+            )
+          })}
         </div>
 
-        <Separator className="my-6" />
+        <Separator className="my-6 bg-purple-200 dark:bg-gray-700" />
 
-        {/* Message si pas de modèle sélectionné */}
+        {/* AI Architect Content */}
         {!selectedModel ? (
-          <Card className="p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Zap className="h-8 w-8 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Sélectionnez un modèle AI</h3>
-            <p className="text-gray-600 mb-6">
-              Choisissez un modèle AI dans le menu en haut pour générer l'analyse de votre projet.
-            </p>
-            <Button onClick={() => document.querySelector('button[data-state="closed"]')?.click()}>
-              <Zap className="h-4 w-4 mr-2" />
-              Voir les modèles disponibles
-            </Button>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center justify-center py-16"
+          >
+            <Card className="max-w-md w-full p-8 text-center border-purple-200 dark:border-gray-700 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-10 w-10 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Sélectionnez un modèle AI</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                Choisissez un modèle AI dans le menu ci-dessus pour générer l'analyse de votre projet.
+              </p>
+              <Button 
+                onClick={() => document.querySelector('button[data-state="closed"]')?.click()}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Voir les modèles disponibles
+              </Button>
+            </Card>
+          </motion.div>
         ) : (
-          /* AI Architect Component */
-          <div className="mb-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
             <AIProjectArchitect 
               projectId={projectId}
               canGenerate={true}
               selectedModel={selectedModel}
               onRegenerate={() => setRegenerateDialog(true)}
             />
-          </div>
+          </motion.div>
         )}
 
-        {/* Action buttons */}
-        <div className="fixed bottom-6 right-6 flex gap-3">
+        {/* Floating Action Buttons */}
+        <div className="fixed bottom-6 right-6 flex gap-3 z-40">
           <Button 
             variant="default"
-            className="shadow-lg"
+            className="shadow-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
             onClick={() => router.push(`/projects/${projectId}/proposals`)}
           >
             <Users className="h-4 w-4 mr-2" />
@@ -748,6 +765,7 @@ export default function AIArchitectPage() {
           
           <Button 
             variant="secondary"
+            className="shadow-lg border-purple-200 dark:border-purple-800"
             onClick={() => router.push(`/projects/${projectId}/apply`)}
           >
             <FileText className="h-4 w-4 mr-2" />
@@ -756,9 +774,9 @@ export default function AIArchitectPage() {
         </div>
       </main>
 
-      {/* Footer note */}
-      <footer className="border-t mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-6 text-center text-sm text-gray-500">
+      {/* Footer */}
+      <footer className="border-t border-purple-200 dark:border-gray-800 mt-12 py-6">
+        <div className="max-w-7xl mx-auto px-6 text-center text-sm text-slate-500 dark:text-slate-400">
           <p>
             ⚡ AI Architect • 
             <span className="mx-2">•</span>
@@ -772,47 +790,47 @@ export default function AIArchitectPage() {
         </div>
       </footer>
 
-      {/* Regenerate Dialog - CORRIGÉ pour l'hydratation */}
+      {/* Regenerate Dialog */}
       <AlertDialog open={regenerateDialog} onOpenChange={setRegenerateDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-gray-900 border-purple-200 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>Générer le blueprint AI?</AlertDialogTitle>
-            <div className="text-sm text-gray-600 mt-2">
+            <AlertDialogTitle className="text-purple-700 dark:text-purple-300">Générer le blueprint AI?</AlertDialogTitle>
+            <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
               Cette action va créer une nouvelle analyse AI pour ce projet avec le modèle sélectionné.
               
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <div className="flex items-center gap-2 text-blue-800 mb-2">
+              <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-xl">
+                <div className="flex items-center gap-2 text-purple-800 dark:text-purple-300 mb-2">
                   {getModelIcon(aiModels.find(m => m.id === selectedModel)?.provider || '')}
                   <span className="font-medium">{getModelName(selectedModel)}</span>
                 </div>
-                <div className="text-sm text-blue-700 space-y-1">
+                <div className="text-sm space-y-1">
                   <div className="flex justify-between">
-                    <span>Coût input:</span>
-                    <span>${getModelCost(selectedModel)}/M tokens</span>
+                    <span className="text-slate-600 dark:text-slate-400">Coût input:</span>
+                    <span className="font-medium">${getModelCost(selectedModel)}/M tokens</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Capacité max:</span>
-                    <span>{(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens</span>
+                    <span className="text-slate-600 dark:text-slate-400">Capacité max:</span>
+                    <span className="font-medium">{(aiModels.find(m => m.id === selectedModel)?.maxTokens || 0).toLocaleString()} tokens</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Fournisseur:</span>
-                    <span>{aiModels.find(m => m.id === selectedModel)?.provider}</span>
+                    <span className="text-slate-600 dark:text-slate-400">Fournisseur:</span>
+                    <span className="font-medium">{aiModels.find(m => m.id === selectedModel)?.provider}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="mt-3 text-sm text-gray-600 flex items-center gap-2">
+              <div className="mt-3 text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>Une nouvelle génération remplacera l'analyse existante</span>
               </div>
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={regenerating}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={regenerating} className="border-purple-200 dark:border-gray-700">Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleRegenerate}
               disabled={regenerating || !selectedModel}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
             >
               {regenerating ? (
                 <>
@@ -847,8 +865,8 @@ export default function AIArchitectPage() {
   )
 }
 
-// Composant Calendar
-const Calendar = ({ className }: { className?: string }) => (
+// Composant Calendar manquant
+const CalendarDays = ({ className }: { className?: string }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     width="24" 
@@ -865,5 +883,11 @@ const Calendar = ({ className }: { className?: string }) => (
     <line x1="16" x2="16" y1="2" y2="6" />
     <line x1="8" x2="8" y1="2" y2="6" />
     <line x1="3" x2="21" y1="10" y2="10" />
+    <path d="M8 14h.01" />
+    <path d="M12 14h.01" />
+    <path d="M16 14h.01" />
+    <path d="M8 18h.01" />
+    <path d="M12 18h.01" />
+    <path d="M16 18h.01" />
   </svg>
 )
