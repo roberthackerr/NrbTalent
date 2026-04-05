@@ -83,41 +83,6 @@ export function SearchCommand({ isOpen, onClose, lang = 'fr' }: SearchCommandPro
 
   // Shortcuts
   const shortcuts: SearchResult[] = [
-    {
-      id: 'home',
-      title: t.goToHome || 'Accueil',
-      type: 'category',
-      icon: <Home className="h-4 w-4" />,
-      url: `/${lang}`
-    },
-    {
-      id: 'projects',
-      title: t.goToProjects || 'Projets',
-      type: 'category',
-      icon: <Briefcase className="h-4 w-4" />,
-      url: `/${lang}/projects`
-    },
-    {
-      id: 'messages',
-      title: t.goToMessages || 'Messages',
-      type: 'category',
-      icon: <MessageSquare className="h-4 w-4" />,
-      url: `/${lang}/messages`
-    },
-    {
-      id: 'profile',
-      title: t.goToProfile || 'Mon profil',
-      type: 'category',
-      icon: <User className="h-4 w-4" />,
-      url: `/${lang}/profile/${session?.user?.id}`
-    },
-    {
-      id: 'settings',
-      title: t.goToSettings || 'Paramètres',
-      type: 'category',
-      icon: <Settings className="h-4 w-4" />,
-      url: `/${lang}/settings`
-    }
   ]
 
   // Popular searches (statiques)
@@ -687,7 +652,7 @@ export function SearchButton({ onClick, lang = 'fr' }: { onClick?: () => void; l
     >
       <Search className="h-4 w-4 text-gray-400" />
       <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">
-        {t.placeholder || 'Rechercher...'}
+        {t.title || 'Rechercher...'}
       </span>
       <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-gray-100 dark:bg-gray-700 rounded">
         {isMac ? '⌘K' : 'Ctrl+K'}
