@@ -39,7 +39,13 @@ import {
   Star,
   Edit3,
   Layout,
-  Menu
+  Menu,
+  ImageIcon,
+  Paperclip,
+  ChevronDown,
+  Search,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -55,33 +61,33 @@ import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
+import { COUNTRIES } from '@/lib/constants/countries'
+import { CurrencySelector } from '@/components/currency/CurrencySelector'
+import Image from 'next/image'
 
-// Category options with icons
-const categories = [
-  { value: 'web-development', labelEn: 'Web Development', labelFr: 'Développement Web', labelMg: 'Fampandrosoana Web', icon: Code, color: 'text-blue-600', bg: 'bg-blue-100' },
-  { value: 'mobile-development', labelEn: 'Mobile Development', labelFr: 'Développement Mobile', labelMg: 'Fampandrosoana Mobile', icon: Smartphone, color: 'text-purple-600', bg: 'bg-purple-100' },
-  { value: 'ui-ux-design', labelEn: 'UI/UX Design', labelFr: 'Design UI/UX', labelMg: 'Dizain UI/UX', icon: Palette, color: 'text-pink-600', bg: 'bg-pink-100' },
-  { value: 'graphic-design', labelEn: 'Graphic Design', labelFr: 'Design Graphique', labelMg: 'Dizain Grafika', icon: Layout, color: 'text-rose-600', bg: 'bg-rose-100' },
-  { value: 'digital-marketing', labelEn: 'Digital Marketing', labelFr: 'Marketing Digital', labelMg: 'Varotra an-tserasera', icon: Megaphone, color: 'text-orange-600', bg: 'bg-orange-100' },
-  { value: 'content-writing', labelEn: 'Content Writing', labelFr: 'Rédaction de contenu', labelMg: 'Fanoratana lahatsoratra', icon: PenTool, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-  { value: 'video-editing', labelEn: 'Video Editing', labelFr: 'Montage Vidéo', labelMg: 'Fanamboarana horonantsary', icon: Video, color: 'text-red-600', bg: 'bg-red-100' },
-  { value: 'data-science', labelEn: 'Data Science', labelFr: 'Data Science', labelMg: 'Siyansa momba ny angona', icon: Cpu, color: 'text-indigo-600', bg: 'bg-indigo-100' },
-  { value: 'devops', labelEn: 'DevOps', labelFr: 'DevOps', labelMg: 'DevOps', icon: Cloud, color: 'text-cyan-600', bg: 'bg-cyan-100' },
-  { value: 'cybersecurity', labelEn: 'Cybersecurity', labelFr: 'Cybersécurité', labelMg: 'Fiarovana an-tserasera', icon: Shield, color: 'text-amber-600', bg: 'bg-amber-100' },
-  { value: 'consulting', labelEn: 'Consulting', labelFr: 'Consulting', labelMg: 'Mpanolo-tsaina', icon: Users, color: 'text-violet-600', bg: 'bg-violet-100' },
-  { value: 'other', labelEn: 'Other', labelFr: 'Autre', labelMg: 'Hafa', icon: Briefcase, color: 'text-gray-600', bg: 'bg-gray-100' }
-];
+interface Category {
+  name: string
+  count: number
+  subcategories: string[]
+}
 
-// Popular skills suggestions
-const popularSkills = [
-  'React', 'Node.js', 'TypeScript', 'Python', 'JavaScript',
-  'Next.js', 'Vue.js', 'Angular', 'Express', 'MongoDB',
-  'PostgreSQL', 'GraphQL', 'AWS', 'Docker', 'Kubernetes',
-  'Figma', 'Adobe XD', 'Sketch', 'Photoshop', 'Illustrator',
-  'SEO', 'Google Analytics', 'Social Media', 'Content Strategy',
-  'UI Design', 'UX Research', 'Prototyping', 'Wireframing'
-];
+interface Skill {
+  skill: string
+  count: number
+  avgBudget: number
+}
+
+interface UploadedFile {
+  url: string
+  publicId: string
+  name: string
+  type: string
+  size: number
+  thumbnail?: string
+}
 
 interface ProjectData {
   _id: string
@@ -97,7 +103,11 @@ interface ProjectData {
   subcategory?: string
   skills: string[]
   deadline: string
-  location?: string
+  location?: {
+    country: string
+    city: string
+    remote: boolean
+  }
   visibility: 'public' | 'private'
   status: 'draft' | 'open' | 'in-progress' | 'completed' | 'cancelled' | 'paused'
   tags: string[]
@@ -111,12 +121,25 @@ interface ProjectData {
   enableMilestones?: boolean
   requirements?: string
   deliverables?: string[]
-  attachments?: Array<{
-    name: string
-    url: string
-    type: string
+  attachments?: UploadedFile[]
+  milestones?: Array<{
+    title: string
+    amount: number
+    dueDate: string
+    description: string
+    currency: string
   }>
 }
+
+// Configuration pour l'upload
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain'
+]
 
 export default function EditProjectPage() {
   const params = useParams()
@@ -131,6 +154,14 @@ export default function EditProjectPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [popularSkills, setPopularSkills] = useState<Skill[]>([])
+  const [categorySearch, setCategorySearch] = useState("")
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Refs pour éviter les boucles infinies
   const hasLoaded = useRef(false)
@@ -149,10 +180,13 @@ export default function EditProjectPage() {
     budgetType: 'fixed' as 'fixed' | 'hourly',
     budgetMin: 0,
     budgetMax: 0,
-    currency: 'EUR',
+    currency: 'MGA',
     deadline: '',
-    location: '',
-    workType: 'remote' as 'remote' | 'onsite' | 'hybrid',
+    location: {
+      country: 'MG',
+      city: '',
+      remote: true
+    },
     visibility: 'public' as 'public' | 'private',
     status: 'draft' as ProjectData['status'],
     urgency: 'medium' as 'low' | 'medium' | 'high',
@@ -163,7 +197,14 @@ export default function EditProjectPage() {
     requirements: '',
     deliverables: [] as string[],
     newDeliverable: '',
-    attachments: [] as Array<{ name: string; url: string; type: string }>
+    attachments: [] as UploadedFile[],
+    milestones: [] as Array<{
+      title: string
+      amount: number
+      dueDate: string
+      description: string
+      currency: string
+    }>
   })
 
   // Détection mobile
@@ -176,7 +217,24 @@ export default function EditProjectPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Chargement du dictionnaire
+  // Charger les catégories et compétences
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/projects/categories')
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data.categories || [])
+          setPopularSkills(data.popularSkills || [])
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
     return () => {
@@ -184,103 +242,214 @@ export default function EditProjectPage() {
     }
   }, [lang])
 
-  // Fonction de chargement du projet
- const loadProject = useCallback(async () => {
-  if (hasLoaded.current || !dict) return
-  
-  const t = dict?.projects?.edit || {}
-  
-  try {
-    hasLoaded.current = true
-    setLoading(true)
-    
-    const response = await fetch(`/api/projects/${id}`)
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || t.loadError || 'Failed to load project')
-    }
-    
-    const data = await response.json()
-    
-    // Vérifier si l'utilisateur est le propriétaire
-    const sessionRes = await fetch('/api/auth/session')
-    const session = await sessionRes.json()
-    
-    if (!session.user?.id || session.user.id !== data.clientId) {
-      toast({
-        title: t.unauthorized || 'Unauthorized',
-        description: t.unauthorized || 'You are not authorized to edit this project',
-        variant: 'destructive'
+  // Fonctions de transformation
+  const transformComplexity = (value: string): 'beginner' | 'intermediate' | 'expert' => {
+    if (value === 'complex' || value === 'very-complex') return 'expert'
+    if (value === 'simple') return 'beginner'
+    if (value === 'beginner' || value === 'intermediate' || value === 'expert') return value
+    return 'intermediate'
+  }
+
+  const transformUrgency = (value: string): 'low' | 'medium' | 'high' => {
+    if (value === 'normal') return 'medium'
+    if (value === 'urgent') return 'high'
+    if (value === 'low' || value === 'medium' || value === 'high') return value
+    return 'medium'
+  }
+
+  // Upload de fichier vers Cloudinary
+  const uploadFile = async (file: File): Promise<UploadedFile | null> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', `projects/${id}`)
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
       })
-      router.push(`/${lang}/projects/${id}`)
-      return
-    }
-    
-    if (isMounted.current) {
-      setProjectData(data)
-      
-      // Fonctions de transformation
-      const transformComplexityValue = (value: string): 'beginner' | 'intermediate' | 'expert' => {
-        if (value === 'complex' || value === 'very-complex') return 'expert';
-        if (value === 'simple') return 'beginner';
-        if (value === 'beginner' || value === 'intermediate' || value === 'expert') return value;
-        return 'intermediate';
-      };
-      
-      const transformUrgencyValue = (value: string): 'low' | 'medium' | 'high' => {
-        if (value === 'normal') return 'medium';
-        if (value === 'urgent') return 'high';
-        if (value === 'low' || value === 'medium' || value === 'high') return value;
-        return 'medium';
-      };
-      
-      setFormData({
-        title: data.title || '',
-        description: data.description || '',
-        category: data.category || '',
-        subcategory: data.subcategory || '',
-        skills: data.skills || [],
-        newSkill: '',
-        tags: data.tags || [],
-        newTag: '',
-        budgetType: data.budget?.type || 'fixed',
-        budgetMin: data.budget?.min || 0,
-        budgetMax: data.budget?.max || 0,
-        currency: data.budget?.currency || 'EUR',
-        deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : '',
-        location: data.location || '',
-        workType: 'remote',
-        visibility: data.visibility || 'public',
-        status: data.status || 'draft',
-        urgency: transformUrgencyValue(data.urgency || 'medium'),
-        complexity: transformComplexityValue(data.complexity || 'intermediate'),
-        featured: data.featured || false,
-        acceptTeams: data.acceptTeams || false,
-        enableMilestones: data.enableMilestones || false,
-        requirements: data.requirements || '',
-        deliverables: data.deliverables || [],
-        newDeliverable: '',
-        attachments: data.attachments || []
-      })
-    }
-    
-  } catch (error) {
-    console.error('Error loading project:', error)
-    if (isMounted.current) {
-      toast({
-        title: t.loadError || 'Error',
-        description: error instanceof Error ? error.message : t.loadError || 'Failed to load project',
-        variant: 'destructive'
-      })
-      router.push(`/${lang}/projects/${id}`)
-    }
-  } finally {
-    if (isMounted.current) {
-      setLoading(false)
+
+      if (!response.ok) {
+        throw new Error('Upload failed')
+      }
+
+      const result = await response.json()
+      return {
+        url: result.url,
+        publicId: result.publicId,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        thumbnail: result.thumbnail
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      return null
     }
   }
-}, [id, lang, router, toast, dict])
+
+  // Gestion de l'upload multiple
+  const handleFileUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return
+
+    setUploading(true)
+    setUploadProgress(0)
+
+    const filesArray = Array.from(files)
+    const validFiles: File[] = []
+    const invalidFiles: string[] = []
+
+    for (const file of filesArray) {
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        invalidFiles.push(`${file.name} (type non supporté)`)
+        continue
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        invalidFiles.push(`${file.name} (taille > 10MB)`)
+        continue
+      }
+      validFiles.push(file)
+    }
+
+    if (invalidFiles.length > 0) {
+      toast.error(`${invalidFiles.length} fichier(s) ignoré(s): ${invalidFiles.join(', ')}`)
+    }
+
+    if (validFiles.length === 0) {
+      setUploading(false)
+      return
+    }
+
+    const newFiles: UploadedFile[] = []
+    let completed = 0
+
+    for (const file of validFiles) {
+      const uploadedFile = await uploadFile(file)
+      if (uploadedFile) {
+        newFiles.push(uploadedFile)
+      }
+      completed++
+      setUploadProgress((completed / validFiles.length) * 100)
+    }
+
+    if (newFiles.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, ...newFiles]
+      }))
+      toast.success(`${newFiles.length} fichier(s) uploadé(s) avec succès`)
+    }
+
+    setUploading(false)
+    setUploadProgress(0)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // Supprimer un fichier
+  const removeFile = async (index: number) => {
+    const fileToRemove = formData.attachments[index]
+    
+    // Si le fichier a un publicId, le supprimer de Cloudinary
+    if (fileToRemove.publicId) {
+      try {
+        await fetch('/api/upload', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicId: fileToRemove.publicId })
+        })
+      } catch (error) {
+        console.error('Error deleting file:', error)
+      }
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Charger le projet
+  const loadProject = useCallback(async () => {
+    if (hasLoaded.current || !dict) return
+    
+    const t = dict?.projects?.edit || {}
+    
+    try {
+      hasLoaded.current = true
+      setLoading(true)
+      
+      const response = await fetch(`/api/projects/${id}`)
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || t.loadError || 'Failed to load project')
+      }
+      
+      const data = await response.json()
+      
+      // Vérifier si l'utilisateur est le propriétaire
+      const sessionRes = await fetch('/api/auth/session')
+      const session = await sessionRes.json()
+      
+      if (!session.user?.id || session.user.id !== data.clientId) {
+        toast({
+          title: t.unauthorized || 'Unauthorized',
+          description: t.unauthorized || 'You are not authorized to edit this project',
+          variant: 'destructive'
+        })
+        router.push(`/${lang}/projects/${id}`)
+        return
+      }
+      
+      if (isMounted.current) {
+        setProjectData(data)
+        
+        setFormData({
+          title: data.title || '',
+          description: data.description || '',
+          category: data.category || '',
+          subcategory: data.subcategory || '',
+          skills: data.skills || [],
+          newSkill: '',
+          tags: data.tags || [],
+          newTag: '',
+          budgetType: data.budget?.type || 'fixed',
+          budgetMin: data.budget?.min || 0,
+          budgetMax: data.budget?.max || 0,
+          currency: data.budget?.currency || 'MGA',
+          deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : '',
+          location: data.location || { country: 'MG', city: '', remote: true },
+          visibility: data.visibility || 'public',
+          status: data.status || 'draft',
+          urgency: transformUrgency(data.urgency || 'medium'),
+          complexity: transformComplexity(data.complexity || 'intermediate'),
+          featured: data.featured || false,
+          acceptTeams: data.acceptTeams || false,
+          enableMilestones: data.enableMilestones || false,
+          requirements: data.requirements || '',
+          deliverables: data.deliverables || [],
+          newDeliverable: '',
+          attachments: data.attachments || [],
+          milestones: data.milestones || []
+        })
+      }
+      
+    } catch (error) {
+      console.error('Error loading project:', error)
+      if (isMounted.current) {
+        toast({
+          title: t.loadError || 'Error',
+          description: error instanceof Error ? error.message : t.loadError || 'Failed to load project',
+          variant: 'destructive'
+        })
+        router.push(`/${lang}/projects/${id}`)
+      }
+    } finally {
+      if (isMounted.current) {
+        setLoading(false)
+      }
+    }
+  }, [id, lang, router, toast, dict])
 
   // Chargement du projet quand le dictionnaire est prêt
   useEffect(() => {
@@ -346,6 +515,33 @@ export default function EditProjectPage() {
     }))
   }
 
+  const addMilestone = () => {
+    setFormData(prev => ({
+      ...prev,
+      milestones: [...prev.milestones, {
+        title: "",
+        amount: 0,
+        dueDate: "",
+        description: "",
+        currency: prev.currency
+      }]
+    }))
+  }
+
+  const updateMilestone = (index: number, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      milestones: prev.milestones.map((m, i) => i === index ? { ...m, [field]: value } : m)
+    }))
+  }
+
+  const removeMilestone = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      milestones: prev.milestones.filter((_, i) => i !== index)
+    }))
+  }
+
   const validateForm = () => {
     if (!formData.title.trim()) {
       toast({ title: t.validationError || 'Validation Error', description: t.titleRequired || 'Project title is required', variant: 'destructive' })
@@ -398,7 +594,7 @@ export default function EditProjectPage() {
           currency: formData.currency
         },
         deadline: new Date(formData.deadline).toISOString(),
-        location: formData.location || undefined,
+        location: formData.location,
         visibility: formData.visibility,
         status: formData.status,
         urgency: formData.urgency,
@@ -408,7 +604,8 @@ export default function EditProjectPage() {
         enableMilestones: formData.enableMilestones,
         requirements: formData.requirements,
         deliverables: formData.deliverables,
-        attachments: formData.attachments
+        attachments: formData.attachments,
+        milestones: formData.milestones
       }
       
       const response = await fetch(`/api/projects/${id}`, {
@@ -474,22 +671,74 @@ export default function EditProjectPage() {
     ? Math.ceil((new Date(formData.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     : 0
 
-  const getCategoryLabel = (value: string) => {
-    const cat = categories.find(c => c.value === value)
-    if (!cat) return value
-    if (lang === 'fr') return cat.labelFr
-    if (lang === 'mg') return cat.labelMg
-    return cat.labelEn
-  }
+  // Composant pour la catégorie avec scroll
+  const CategorySelector = () => (
+    <div className="relative">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setShowCategoryDialog(true)}
+        className="w-full justify-between border-purple-200 dark:border-purple-800"
+      >
+        {formData.category || t.selectCategory || "Sélectionnez une catégorie"}
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </Button>
 
-  const tabItems = [
-    { id: 'basic', label: t.basicInfo || 'Basic Info', icon: FileText },
-    { id: 'budget', label: t.budgetTimeline || 'Budget & Timeline', icon: DollarSign },
-    { id: 'skills', label: t.skillsTags || 'Skills & Tags', icon: Tag },
-    { id: 'advanced', label: t.advancedSettings || 'Advanced', icon: Target }
-  ]
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-purple-700 dark:text-purple-300">
+              {t.selectCategory || "Sélectionnez une catégorie"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+            <Input
+              placeholder={t.searchCategory || "Rechercher une catégorie..."}
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+              className="pl-10 border-purple-200 dark:border-purple-800"
+            />
+          </div>
+          
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-2">
+              {categories.filter(cat => 
+                cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+              ).length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  {t.noCategories || "Aucune catégorie trouvée"}
+                </div>
+              ) : (
+                categories.filter(cat => 
+                  cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+                ).map((category) => (
+                  <Button
+                    key={category.name}
+                    type="button"
+                    variant="ghost"
+                    className="w-full justify-between hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                    onClick={() => {
+                      handleChange("category", category.name)
+                      setShowCategoryDialog(false)
+                      setCategorySearch("")
+                    }}
+                  >
+                    <span>{category.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {category.count}
+                    </Badge>
+                  </Button>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
 
-  // Écran de chargement
   if (loading || !dict) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center">
@@ -507,7 +756,6 @@ export default function EditProjectPage() {
 
   const SidebarContent = () => (
     <div className="space-y-6">
-      {/* Progress Card */}
       <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -541,7 +789,6 @@ export default function EditProjectPage() {
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
       <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg text-slate-900 dark:text-white">{t.quickStats || 'Quick Stats'}</CardTitle>
@@ -592,7 +839,6 @@ export default function EditProjectPage() {
         </CardContent>
       </Card>
 
-      {/* AI Assistant */}
       <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-white dark:from-gray-800 dark:to-gray-900">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -617,6 +863,13 @@ export default function EditProjectPage() {
       </Card>
     </div>
   )
+
+  const tabItems = [
+    { id: 'basic', label: t.basicInfo || 'Basic Info', icon: FileText },
+    { id: 'budget', label: t.budgetTimeline || 'Budget & Timeline', icon: DollarSign },
+    { id: 'skills', label: t.skillsTags || 'Skills & Tags', icon: Tag },
+    { id: 'advanced', label: t.advancedSettings || 'Advanced', icon: Target }
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20">
@@ -745,9 +998,6 @@ export default function EditProjectPage() {
                           placeholder={t.titlePlaceholder || "e.g., Build a React E-commerce Website"}
                           className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                         />
-                        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2">
-                          <span>{formData.title.length}/200 {t.characters || 'characters'}</span>
-                        </div>
                       </div>
 
                       <div>
@@ -768,21 +1018,7 @@ export default function EditProjectPage() {
                           <Label className="text-sm font-medium text-slate-900 dark:text-white mb-2 block">
                             {t.category || 'Category'} *
                           </Label>
-                          <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
-                            <SelectTrigger className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700">
-                              <SelectValue placeholder={t.selectCategory || "Select category"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories.map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value}>
-                                  <div className="flex items-center gap-2">
-                                    <cat.icon className={`h-4 w-4 ${cat.color}`} />
-                                    {getCategoryLabel(cat.value)}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <CategorySelector />
                         </div>
 
                         <div>
@@ -798,6 +1034,57 @@ export default function EditProjectPage() {
                         </div>
                       </div>
 
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-slate-900 dark:text-white mb-2 block">
+                            {t.countryLabel || "Country"}
+                          </Label>
+                          <Select
+                            value={formData.location.country}
+                            onValueChange={(value) => handleChange("location", { ...formData.location, country: value })}
+                          >
+                            <SelectTrigger className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700">
+                              <SelectValue placeholder={t.selectCountry || "Select a country"} />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-64">
+                              <ScrollArea className="h-[300px]">
+                                {COUNTRIES.map((country) => (
+                                  <SelectItem key={country.code} value={country.code}>
+                                    <span className="flex items-center gap-2">
+                                      <span className="text-lg">{country.flag}</span>
+                                      <span>{country.name}</span>
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </ScrollArea>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-slate-900 dark:text-white mb-2 block">
+                            {t.cityLabel || "City"}
+                          </Label>
+                          <Input
+                            value={formData.location.city}
+                            onChange={(e) => handleChange("location", { ...formData.location, city: e.target.value })}
+                            placeholder={t.cityPlaceholder || "e.g., Antananarivo"}
+                            className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="remote"
+                          checked={formData.location.remote}
+                          onCheckedChange={(checked) => handleChange("location", { ...formData.location, remote: checked })}
+                        />
+                        <Label htmlFor="remote" className="cursor-pointer text-slate-700 dark:text-slate-300">
+                          {t.remoteWork || "Remote work accepted"}
+                        </Label>
+                      </div>
+
                       <div>
                         <Label className="text-sm font-medium text-slate-900 dark:text-white mb-2 block">
                           {t.technicalRequirements || 'Technical Requirements'}
@@ -805,7 +1092,7 @@ export default function EditProjectPage() {
                         <Textarea
                           value={formData.requirements}
                           onChange={(e) => handleChange('requirements', e.target.value)}
-                          placeholder={t.listRequirements || "List any technical requirements..."}
+                          placeholder={t.listRequirements || "List any technical requirements, constraints, or special considerations..."}
                           rows={4}
                           className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                         />
@@ -816,6 +1103,17 @@ export default function EditProjectPage() {
                   {/* Budget & Timeline Tab */}
                   <TabsContent value="budget" className="p-4 sm:p-6">
                     <div className="space-y-6">
+                      <div>
+                        <Label className="text-sm font-medium text-slate-900 dark:text-white mb-2 block">
+                          {t.currencyLabel || "Currency"}
+                        </Label>
+                        <CurrencySelector
+                          value={formData.currency}
+                          onChange={(currency) => handleChange('currency', currency)}
+                          className="mt-2"
+                        />
+                      </div>
+
                       <div>
                         <Label className="text-sm font-medium text-slate-900 dark:text-white mb-3 block">
                           {t.budgetType || 'Budget Type'} *
@@ -890,38 +1188,73 @@ export default function EditProjectPage() {
                             className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                           />
                         </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            {t.location || 'Location'}
-                          </Label>
-                          <Input
-                            value={formData.location}
-                            onChange={(e) => handleChange('location', e.target.value)}
-                            placeholder={t.locationPlaceholder || "e.g., Paris, France or Remote"}
-                            className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
-                          />
-                        </div>
                       </div>
 
+                      {/* Milestones */}
                       <div>
-                        <Label className="text-sm font-medium text-slate-900 dark:text-white mb-3 block">
-                          {t.workType || 'Work Type'}
-                        </Label>
-                        <div className="flex flex-wrap gap-3">
-                          {['remote', 'onsite', 'hybrid'].map((type) => (
-                            <Button
-                              key={type}
-                              type="button"
-                              variant={formData.workType === type ? 'default' : 'outline'}
-                              onClick={() => handleChange('workType', type)}
-                              className={formData.workType === type ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : ''}
-                            >
-                              {type === 'remote' && (t.remoteWork || 'Remote')}
-                              {type === 'onsite' && (t.onSite || 'On Site')}
-                              {type === 'hybrid' && (t.hybrid || 'Hybrid')}
-                            </Button>
+                        <div className="flex items-center justify-between mb-4">
+                          <Label className="text-sm font-medium text-slate-900 dark:text-white">
+                            {t.milestones || "Milestones"}
+                          </Label>
+                          <Button type="button" variant="outline" size="sm" onClick={addMilestone} className="border-slate-300">
+                            <Plus className="h-4 w-4 mr-2" />
+                            {t.addMilestone || "Add Milestone"}
+                          </Button>
+                        </div>
+
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                          {formData.milestones.map((milestone, index) => (
+                            <div key={index} className="flex gap-4 items-start p-4 border border-slate-200 dark:border-gray-700 rounded-xl">
+                              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>{t.milestoneTitle || "Title"}</Label>
+                                  <Input
+                                    value={milestone.title}
+                                    onChange={(e) => updateMilestone(index, "title", e.target.value)}
+                                    placeholder={t.milestoneTitlePlaceholder || "e.g., Finalized designs"}
+                                    className="border-slate-300 dark:border-gray-700"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>{t.milestoneAmount || "Amount"}</Label>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      type="number"
+                                      value={milestone.amount}
+                                      onChange={(e) => updateMilestone(index, "amount", Number(e.target.value))}
+                                      placeholder="0"
+                                      className="flex-1 border-slate-300 dark:border-gray-700"
+                                    />
+                                    <div className="text-sm text-slate-600 flex items-center px-3 border rounded bg-slate-50 dark:bg-slate-800">
+                                      {milestone.currency}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>{t.milestoneDueDate || "Due Date"}</Label>
+                                  <Input
+                                    type="date"
+                                    value={milestone.dueDate}
+                                    onChange={(e) => updateMilestone(index, "dueDate", e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="border-slate-300 dark:border-gray-700"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>{t.milestoneDescription || "Description"}</Label>
+                                  <Textarea
+                                    value={milestone.description}
+                                    onChange={(e) => updateMilestone(index, "description", e.target.value)}
+                                    placeholder={t.milestoneDescPlaceholder || "Description of expected deliverables..."}
+                                    rows={2}
+                                    className="border-slate-300 dark:border-gray-700"
+                                  />
+                                </div>
+                              </div>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => removeMilestone(index)} className="text-red-500 hover:text-red-700">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -1005,19 +1338,19 @@ export default function EditProjectPage() {
                           <div className="flex flex-wrap gap-2">
                             {popularSkills.slice(0, isMobile ? 12 : 20).map((skill) => (
                               <Badge
-                                key={skill}
-                                variant={formData.skills.includes(skill) ? 'default' : 'outline'}
+                                key={skill.skill}
+                                variant={formData.skills.includes(skill.skill) ? 'default' : 'outline'}
                                 className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30"
                                 onClick={() => {
-                                  if (formData.skills.includes(skill)) {
-                                    removeSkill(skill)
+                                  if (formData.skills.includes(skill.skill)) {
+                                    removeSkill(skill.skill)
                                   } else {
-                                    handleChange('skills', [...formData.skills, skill])
+                                    handleChange('skills', [...formData.skills, skill.skill])
                                   }
                                 }}
                               >
-                                {skill}
-                                {formData.skills.includes(skill) && <Check className="h-3 w-3 ml-1" />}
+                                {skill.skill}
+                                {formData.skills.includes(skill.skill) && <Check className="h-3 w-3 ml-1" />}
                               </Badge>
                             ))}
                           </div>
@@ -1228,49 +1561,208 @@ export default function EditProjectPage() {
                         </div>
                       </div>
 
+                      {/* Attachments */}
                       <div>
                         <Label className="text-sm font-medium text-slate-900 dark:text-white mb-3 block">
                           {t.attachments || 'Attachments'}
                         </Label>
-                        <div className="border-2 border-dashed border-slate-300 dark:border-gray-700 rounded-lg p-6 sm:p-8 text-center">
-                          <Upload className="h-10 w-10 sm:h-12 sm:w-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
-                          <p className="text-slate-600 dark:text-slate-400 font-medium mb-2">
-                            {t.dragAndDrop || 'Drag & drop files or click to upload'}
-                          </p>
-                          <p className="text-slate-500 dark:text-slate-500 text-sm mb-4">
-                            {t.supportsFiles || 'Supports PDF, DOC, JPG, PNG up to 10MB'}
-                          </p>
-                          <Button variant="outline" className="border-slate-300 dark:border-gray-700">
-                            <Upload className="h-4 w-4 mr-2" />
-                            {t.upload || 'Upload'}
-                          </Button>
-                        </div>
                         
+                        {/* Input file caché */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept="image/*,.pdf,.doc,.docx,.txt"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                              handleFileUpload(e.target.files)
+                            }
+                          }}
+                          className="hidden"
+                          id="file-upload-input"
+                        />
+                        
+                        {/* Zone de drop */}
+                        <div 
+                          className="border-2 border-dashed border-slate-300 dark:border-gray-700 rounded-xl p-6 text-center hover:border-purple-400 transition-colors cursor-pointer"
+                          onClick={() => fileInputRef.current?.click()}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.currentTarget.classList.add('border-purple-500', 'bg-purple-50/30')
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50/30')
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault()
+                            e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50/30')
+                            const files = e.dataTransfer.files
+                            if (files.length > 0) {
+                              handleFileUpload(files)
+                            }
+                          }}
+                        >
+                          <Upload className="h-10 w-10 text-purple-400 mx-auto mb-3" />
+                          <div className="font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            {t.dragDrop || "Drag & drop files here"}
+                          </div>
+                          <div className="text-sm text-slate-500 mb-4">
+                            {t.orClick || "or click to browse"}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            type="button" 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              fileInputRef.current?.click()
+                            }}
+                            className="border-slate-300 hover:bg-purple-50"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {t.selectFiles || "Select Files"}
+                          </Button>
+                          <p className="text-xs text-slate-400 mt-3">
+                            {t.fileHelp || "Images, PDF, DOC, TXT - Max 10MB per file"}
+                          </p>
+                        </div>
+
+                        {/* Upload progress */}
+                        {uploading && (
+                          <div className="mt-4 p-4 border border-purple-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm text-purple-600">{t.uploading || "Uploading..."}</span>
+                              <span className="text-sm text-purple-600">{Math.round(uploadProgress)}%</span>
+                            </div>
+                            <Progress value={uploadProgress} className="h-2" />
+                          </div>
+                        )}
+
+                        {/* Liste des fichiers */}
                         {formData.attachments.length > 0 && (
-                          <div className="mt-4 space-y-2">
-                            {formData.attachments.map((file, index) => (
-                              <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 dark:bg-gray-800 rounded-lg gap-2 sm:gap-4">
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                  <FileText className="h-5 w-5 text-slate-500 flex-shrink-0" />
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                                      {file.name}
-                                    </p>
-                                    <p className="text-xs text-slate-500">{file.type}</p>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-slate-500 hover:text-red-500 flex-shrink-0"
+                          <div className="mt-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-purple-700">
+                                {t.uploadedFiles || "Uploaded files"} ({formData.attachments.length})
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, attachments: [] }))
+                                }}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                {t.clearAll || "Clear all"}
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {formData.attachments.map((file, index) => (
+                                <div
+                                  key={index}
+                                  className="relative group border border-slate-200 dark:border-gray-700 rounded-lg p-2 hover:bg-purple-50/30 transition-colors"
                                 >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
+                                  {file.thumbnail ? (
+                                    <div className="aspect-video relative mb-2 rounded overflow-hidden bg-purple-50">
+                                      <Image
+                                        src={file.thumbnail}
+                                        alt={file.name}
+                                        fill
+                                        className="object-cover"
+                                      />
+                                    </div>
+                                  ) : file.type.startsWith('image/') ? (
+                                    <div className="aspect-video relative mb-2 rounded overflow-hidden bg-purple-50">
+                                      <Image
+                                        src={file.url}
+                                        alt={file.name}
+                                        fill
+                                        className="object-cover"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center h-20 bg-purple-50 rounded mb-2">
+                                      <FileText className="h-8 w-8 text-purple-400" />
+                                    </div>
+                                  )}
+                                  <div className="text-xs truncate" title={file.name}>
+                                    {file.name}
+                                  </div>
+                                  <div className="text-xs text-slate-500">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeFile(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
+
+                      {/* Preview Button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="w-full border-slate-300 hover:bg-purple-50"
+                      >
+                        {showPreview ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                        {showPreview ? t.hidePreview || "Hide Preview" : t.showPreview || "Show Preview"}
+                      </Button>
+
+                      {showPreview && (
+                        <Card className="border-slate-200 dark:border-gray-700 bg-purple-50/30 dark:bg-purple-950/20">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg text-purple-700 dark:text-purple-300">
+                              {t.preview || "Project Preview"}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.title || "Title"}</div>
+                                <div>{formData.title || "-"}</div>
+                              </div>
+                              <div>
+                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.category || "Category"}</div>
+                                <div>{formData.category || "-"}</div>
+                              </div>
+                              <div>
+                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.budget || "Budget"}</div>
+                                <div>{formData.budgetMin > 0 ? `${formData.budgetMin} - ${formData.budgetMax} ${formData.currency} (${formData.budgetType === "fixed" ? "Fixed" : "Hourly"})` : "-"}</div>
+                              </div>
+                              <div>
+                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.deadline || "Deadline"}</div>
+                                <div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "-"}</div>
+                              </div>
+                              <div className="col-span-2">
+                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.skills || "Skills"}</div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {formData.skills.map(s => <Badge key={s} variant="secondary" className="bg-purple-100">{s}</Badge>)}
+                                </div>
+                              </div>
+                              {formData.attachments.length > 0 && (
+                                <div className="col-span-2">
+                                  <div className="font-medium text-purple-600 dark:text-purple-400">{t.attachments || "Attachments"}</div>
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                    {formData.attachments.map((f, i) => (
+                                      <Badge key={i} variant="outline" className="text-xs">
+                                        {f.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
