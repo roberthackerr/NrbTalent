@@ -1,902 +1,729 @@
-// app/notifications/page.tsx
 "use client"
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNotifications } from '@/contexts/NotificationContext'
-import { useParams } from 'next/navigation'
-import { 
-  Bell, 
-  Check, 
-  CheckCheck, 
-  Trash2, 
-  Filter, 
-  Search, 
-  Settings, 
-  AlertCircle, 
-  MessageSquare, 
-  DollarSign, 
-  User, 
-  Calendar,
-  Archive,
-  RefreshCw,
-  Eye,
-  EyeOff,
-  MoreVertical,
-  ArrowUpDown,
-  Mail,
-  Shield,
-  Trophy,
-  Users,
-  Megaphone,
-  Clock,
-  ChevronRight,
-  Sparkles,
-  TrendingUp,
-  Award,
-  Gift,
-  Heart,
-  Zap,
-  Star,
-  Briefcase,
-  MessageCircle,
-  Wallet,
-  Lock,
-  PartyPopper,
-  Info
+import { useParams, useRouter } from 'next/navigation'
+import {
+  Bell, Check, CheckCheck, Trash2, Search, Settings,
+  MessageCircle, Wallet, Star, Gift, Lock, Users, Award,
+  Eye, ArrowLeft, RefreshCw, ChevronRight, SlidersHorizontal,
+  X, Filter, MoreHorizontal, AlertTriangle, TrendingUp,
+  Archive, Clock
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel,
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem
-} from '@/components/ui/dropdown-menu'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { formatDistanceToNow, format } from 'date-fns'
 import { fr, enUS } from 'date-fns/locale'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { Notifications, NotificationCategory } from '@/types/notifications'
+import { cn } from '@/lib/utils'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
+import type { NotificationCategory } from '@/types/notifications'
 
-// Type for notification filter
-type NotificationType = 'all' | 'unread' | 'projects' | 'messages' | 'payments' | 'system'
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-// Category mapping with icons and colors
-const getCategoryConfig = (t: any) => ({
-  MESSAGE: {
-    label: t?.messages || 'Messages',
-    icon: <MessageCircle className="h-4 w-4" />,
-    color: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-100 dark:bg-blue-950/30',
-    borderColor: 'border-blue-200 dark:border-blue-800'
-  },
-  ORDER: {
-    label: t?.orders || 'Commandes',
-    icon: <Wallet className="h-4 w-4" />,
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-100 dark:bg-green-950/30',
-    borderColor: 'border-green-200 dark:border-green-800'
-  },
-  REVIEW: {
-    label: t?.reviews || 'Avis',
-    icon: <Star className="h-4 w-4" />,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-950/30',
-    borderColor: 'border-yellow-200 dark:border-yellow-800'
-  },
-  SYSTEM: {
-    label: t?.system || 'Système',
-    icon: <Settings className="h-4 w-4" />,
-    color: 'text-gray-600 dark:text-gray-400',
-    bgColor: 'bg-gray-100 dark:bg-gray-800',
-    borderColor: 'border-gray-200 dark:border-gray-700'
-  },
-  PROMOTION: {
-    label: t?.promotions || 'Promotions',
-    icon: <Gift className="h-4 w-4" />,
-    color: 'text-purple-600 dark:text-purple-400',
-    bgColor: 'bg-purple-100 dark:bg-purple-950/30',
-    borderColor: 'border-purple-200 dark:border-purple-800'
-  },
-  SECURITY: {
-    label: t?.security || 'Sécurité',
-    icon: <Lock className="h-4 w-4" />,
-    color: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-100 dark:bg-red-950/30',
-    borderColor: 'border-red-200 dark:border-red-800'
-  },
-  COMMUNITY: {
-    label: t?.community || 'Communauté',
-    icon: <Users className="h-4 w-4" />,
-    color: 'text-indigo-600 dark:text-indigo-400',
-    bgColor: 'bg-indigo-100 dark:bg-indigo-950/30',
-    borderColor: 'border-indigo-200 dark:border-indigo-800'
-  },
-  ACHIEVEMENT: {
-    label: t?.achievements || 'Réussites',
-    icon: <Award className="h-4 w-4" />,
-    color: 'text-amber-600 dark:text-amber-400',
-    bgColor: 'bg-amber-100 dark:bg-amber-950/30',
-    borderColor: 'border-amber-200 dark:border-amber-800'
+type FilterType = 'all' | 'unread' | 'MESSAGE' | 'ORDER' | 'REVIEW' | 'SYSTEM' | 'PROMOTION' | 'SECURITY' | 'COMMUNITY' | 'ACHIEVEMENT'
+
+// ─── Category config ──────────────────────────────────────────────────────────
+
+const CATEGORY_CONFIG: Record<NotificationCategory, {
+  label: string
+  icon: React.ReactNode
+  pill: string
+  dot: string
+  border: string
+  bg: string
+}> = {
+  MESSAGE:     { label: 'Messages',     icon: <MessageCircle className="h-4 w-4" />, pill: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',     dot: 'bg-blue-500',    border: 'border-l-blue-500',    bg: 'bg-blue-50 dark:bg-blue-950/30' },
+  ORDER:       { label: 'Orders',       icon: <Wallet        className="h-4 w-4" />, pill: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300', dot: 'bg-emerald-500', border: 'border-l-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+  REVIEW:      { label: 'Reviews',      icon: <Star          className="h-4 w-4" />, pill: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',  dot: 'bg-yellow-500',  border: 'border-l-yellow-500',  bg: 'bg-yellow-50 dark:bg-yellow-950/30' },
+  SYSTEM:      { label: 'System',       icon: <Settings      className="h-4 w-4" />, pill: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',       dot: 'bg-slate-400',   border: 'border-l-slate-400',   bg: 'bg-slate-50 dark:bg-slate-800/30' },
+  PROMOTION:   { label: 'Promotions',   icon: <Gift          className="h-4 w-4" />, pill: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',   dot: 'bg-purple-500',  border: 'border-l-purple-500',  bg: 'bg-purple-50 dark:bg-purple-950/30' },
+  SECURITY:    { label: 'Security',     icon: <Lock          className="h-4 w-4" />, pill: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',               dot: 'bg-red-500',     border: 'border-l-red-500',     bg: 'bg-red-50 dark:bg-red-950/30' },
+  COMMUNITY:   { label: 'Community',    icon: <Users         className="h-4 w-4" />, pill: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300',   dot: 'bg-indigo-500',  border: 'border-l-indigo-500',  bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+  ACHIEVEMENT: { label: 'Achievements', icon: <Award         className="h-4 w-4" />, pill: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',       dot: 'bg-amber-500',   border: 'border-l-amber-500',   bg: 'bg-amber-50 dark:bg-amber-950/30' },
+}
+
+const FILTER_CHIPS: { id: FilterType; label: string }[] = [
+  { id: 'all',         label: 'All' },
+  { id: 'unread',      label: 'Unread' },
+  { id: 'MESSAGE',     label: 'Messages' },
+  { id: 'ORDER',       label: 'Orders' },
+  { id: 'REVIEW',      label: 'Reviews' },
+  { id: 'SYSTEM',      label: 'System' },
+  { id: 'PROMOTION',   label: 'Promotions' },
+  { id: 'SECURITY',    label: 'Security' },
+  { id: 'COMMUNITY',   label: 'Community' },
+  { id: 'ACHIEVEMENT', label: 'Achievements' },
+]
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function useFormatDate(lang: string) {
+  const locale = lang === 'fr' || lang === 'mg' ? fr : enUS
+  return (date: Date) => {
+    const now = new Date()
+    const d = new Date(date)
+    const diffH = (now.getTime() - d.getTime()) / 3_600_000
+    if (diffH < 24)  return formatDistanceToNow(d, { addSuffix: true, locale })
+    if (diffH < 48)  return lang === 'fr' ? 'Hier' : lang === 'mg' ? 'Omaly' : 'Yesterday'
+    if (diffH < 168) return format(d, 'EEEE', { locale })
+    return format(d, 'dd/MM/yyyy')
   }
-})
+}
+
+function groupByDate(notifications: any[]) {
+  const today   = new Date(); today.setHours(0,0,0,0)
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1)
+  const weekAgo   = new Date(today); weekAgo.setDate(weekAgo.getDate()-7)
+
+  const groups: { label: string; items: any[] }[] = [
+    { label: 'Today',     items: [] },
+    { label: 'Yesterday', items: [] },
+    { label: 'This week', items: [] },
+    { label: 'Earlier',   items: [] },
+  ]
+  for (const n of notifications) {
+    const d = new Date(n.createdAt); d.setHours(0,0,0,0)
+    if (d >= today)          groups[0].items.push(n)
+    else if (d >= yesterday) groups[1].items.push(n)
+    else if (d >= weekAgo)   groups[2].items.push(n)
+    else                     groups[3].items.push(n)
+  }
+  return groups.filter(g => g.items.length > 0)
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function StatPill({ value, label, accent }: { value: number; label: string; accent?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-800 px-3 py-2 min-w-[60px]">
+      <span className={cn("text-xl font-semibold tabular-nums", accent ?? "text-slate-800 dark:text-white")}>
+        {value}
+      </span>
+      <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 whitespace-nowrap">{label}</span>
+    </div>
+  )
+}
+
+function CategoryIcon({ category, size = 'md' }: { category: NotificationCategory; size?: 'sm' | 'md' }) {
+  const cfg = CATEGORY_CONFIG[category]
+  return (
+    <div className={cn(
+      "flex items-center justify-center rounded-xl flex-shrink-0",
+      cfg.bg,
+      size === 'sm' ? "w-8 h-8" : "w-10 h-10"
+    )}>
+      <span className={cn(
+        "text-current",
+        size === 'sm' ? "[&>svg]:h-3.5 [&>svg]:w-3.5" : "[&>svg]:h-4 [&>svg]:w-4"
+      )}>
+        {cfg.icon}
+      </span>
+    </div>
+  )
+}
+
+function NotifCard({
+  notification,
+  selected,
+  onSelect,
+  onMarkRead,
+  onDelete,
+  formatDate,
+}: {
+  notification: any
+  selected: boolean
+  onSelect: () => void
+  onMarkRead: () => void
+  onDelete: () => void
+  formatDate: (d: Date) => string
+}) {
+  const cfg = CATEGORY_CONFIG[notification.category as NotificationCategory]
+  const isUnread = notification.status === 'UNREAD'
+  const isUrgent = notification.priority === 'URGENT'
+
+  return (
+    <div
+      className={cn(
+        "relative flex items-start gap-3 px-4 py-4 transition-colors cursor-pointer",
+        "border-b border-slate-100 dark:border-gray-800/60",
+        "active:bg-slate-50 dark:active:bg-gray-800/50",
+        isUnread && "bg-white dark:bg-gray-900",
+        !isUnread && "bg-slate-50/50 dark:bg-gray-900/30",
+        selected && "bg-purple-50/60 dark:bg-purple-950/20",
+      )}
+      onClick={() => { if (isUnread) onMarkRead() }}
+    >
+      {/* Unread accent bar */}
+      {isUnread && (
+        <div className={cn("absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full", cfg.dot.replace('bg-', 'bg-'))} />
+      )}
+
+      {/* Select checkbox */}
+      <button
+        className={cn(
+          "mt-0.5 w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+          selected
+            ? "bg-purple-600 border-purple-600"
+            : "border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+        )}
+        onClick={(e) => { e.stopPropagation(); onSelect() }}
+      >
+        {selected && <Check className="h-3 w-3 text-white" />}
+      </button>
+
+      {/* Icon */}
+      <CategoryIcon category={notification.category} />
+
+      {/* Body */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+              <p className={cn(
+                "text-sm leading-snug",
+                isUnread ? "font-semibold text-slate-900 dark:text-white" : "font-medium text-slate-600 dark:text-slate-400"
+              )}>
+                {notification.title}
+              </p>
+              {isUrgent && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-1.5 py-0.5 rounded-md">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  URGENT
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+              {notification.message}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", cfg.pill)}>
+                {cfg.label}
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                {formatDate(notification.createdAt)}
+              </span>
+              {isUnread && (
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+              )}
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex items-center gap-0.5 flex-shrink-0 -mr-1">
+            <button
+              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onMarkRead() }}
+              title={isUnread ? "Mark as read" : "Already read"}
+            >
+              <Eye className={cn("h-3.5 w-3.5", isUnread ? "text-purple-500" : "text-slate-300 dark:text-gray-600")} />
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors">
+                  <MoreHorizontal className="h-3.5 w-3.5 text-slate-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="text-sm">
+                {notification.actionUrl && (
+                  <>
+                    <DropdownMenuItem onClick={() => { window.location.href = notification.actionUrl }}>
+                      <ChevronRight className="h-3.5 w-3.5 mr-2" />
+                      Go to page
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMarkRead() }}>
+                  <Eye className="h-3.5 w-3.5 mr-2" />
+                  {isUnread ? 'Mark as read' : 'Mark as unread'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600"
+                  onClick={(e) => { e.stopPropagation(); onDelete() }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Filter Bottom Sheet ──────────────────────────────────────────────────────
+
+function FilterSheet({
+  open,
+  onOpenChange,
+  showArchived,
+  onShowArchivedChange,
+  sortBy,
+  onSortByChange,
+  stats,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  showArchived: boolean
+  onShowArchivedChange: (v: boolean) => void
+  sortBy: 'newest' | 'oldest'
+  onSortByChange: (v: 'newest' | 'oldest') => void
+  stats: { byCategory: Record<NotificationCategory, number>; today: number; thisWeek: number }
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto px-0 pb-safe">
+        <SheetHeader className="px-4 pb-4 border-b border-slate-100 dark:border-gray-800">
+          <SheetTitle className="text-base font-semibold">Filters & Settings</SheetTitle>
+        </SheetHeader>
+
+        <div className="px-4 py-4 space-y-6">
+          {/* Sort */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Sort by</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(['newest', 'oldest'] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => onSortByChange(s)}
+                  className={cn(
+                    "py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors",
+                    sortBy === s
+                      ? "bg-purple-600 text-white border-purple-600"
+                      : "bg-white dark:bg-gray-900 border-slate-200 dark:border-gray-700 text-slate-700 dark:text-slate-300"
+                  )}
+                >
+                  {s === 'newest' ? 'Newest first' : 'Oldest first'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Options */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Options</p>
+            <div className="flex items-center justify-between py-3 px-4 bg-slate-50 dark:bg-gray-800/50 rounded-xl">
+              <div>
+                <p className="text-sm font-medium text-slate-800 dark:text-white">Show archived</p>
+                <p className="text-xs text-slate-400 mt-0.5">Include archived notifications</p>
+              </div>
+              <Switch checked={showArchived} onCheckedChange={onShowArchivedChange} />
+            </div>
+          </div>
+
+          {/* Category breakdown */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Category breakdown</p>
+            <div className="space-y-1">
+              {(Object.entries(CATEGORY_CONFIG) as [NotificationCategory, typeof CATEGORY_CONFIG[NotificationCategory]][]).map(([cat, cfg]) => (
+                <div key={cat} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-800/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className={cn("p-1.5 rounded-lg", cfg.bg)}>
+                      <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{cfg.icon}</span>
+                    </div>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{cfg.label}</span>
+                  </div>
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                    {stats.byCategory[cat] ?? 0}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Activity</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-purple-50 dark:bg-purple-950/30 rounded-xl p-3">
+                <p className="text-2xl font-semibold text-purple-700 dark:text-purple-300 tabular-nums">{stats.today}</p>
+                <p className="text-xs text-purple-500 mt-0.5">Today</p>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-3">
+                <p className="text-2xl font-semibold text-blue-700 dark:text-blue-300 tabular-nums">{stats.thisWeek}</p>
+                <p className="text-xs text-blue-500 mt-0.5">This week</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pb-6">
+          <Button asChild variant="outline" className="w-full rounded-xl border-slate-200 dark:border-gray-700">
+            <Link href="notifications/settings">
+              <Settings className="h-4 w-4 mr-2" />
+              Notification settings
+            </Link>
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function NotificationsPage() {
-  const params = useParams()
-  const lang = (params?.lang as Locale) || 'fr'
-  
+  const params  = useParams()
+  const router  = useRouter()
+  const lang    = (params?.lang as Locale) || 'fr'
+
   const [dict, setDict] = useState<any>(null)
   const { state, actions } = useNotifications()
-  const { notifications, unreadCount, isLoading, preferences } = state
+  const { notifications, unreadCount, isLoading } = state
   const { markAsRead, markAllAsRead, deleteNotification, refreshNotifications } = actions
-  
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<NotificationType>('all')
-  const [selectedCategory, setSelectedCategory] = useState<NotificationCategory | 'all'>('all')
-  const [showArchived, setShowArchived] = useState(false)
-  const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest')
-  
-  // Charger le dictionnaire
+
+  const [search,          setSearch]          = useState('')
+  const [filter,          setFilter]          = useState<FilterType>('all')
+  const [showArchived,    setShowArchived]    = useState(false)
+  const [sortBy,          setSortBy]          = useState<'newest' | 'oldest'>('newest')
+  const [selected,        setSelected]        = useState<string[]>([])
+  const [filterOpen,      setFilterOpen]      = useState(false)
+  const [searchFocused,   setSearchFocused]   = useState(false)
+
+  const chipScrollRef = useRef<HTMLDivElement>(null)
+  const formatDate    = useFormatDate(lang)
+
+  useEffect(() => { getDictionarySafe(lang).then(setDict) }, [lang])
+
+  // Auto-refresh
   useEffect(() => {
-    getDictionarySafe(lang).then(setDict)
-  }, [lang])
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') refreshNotifications()
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [refreshNotifications])
 
-  const t = dict?.notifications_page || {
-    title: 'Notifications',
-    subtitle: 'Gérez toutes vos notifications en un seul endroit',
-    total: 'Total des notifications',
-    unread: 'Non lues',
-    archived: 'Archivées',
-    filters: 'Filtres',
-    search: 'Rechercher',
-    status: 'Statut',
-    all: 'Toutes',
-    categories: 'Catégories',
-    allCategories: 'Toutes les catégories',
-    preferences: 'Préférences',
-    showArchived: 'Afficher les archivées',
-    sortNewest: 'Trier du plus récent',
-    quickStats: 'Statistiques rapides',
-    today: 'Aujourd\'hui',
-    thisWeek: 'Cette semaine',
-    settings: 'Paramètres des notifications',
-    noNotifications: 'Aucune notification',
-    noNotificationsMatch: 'Aucune notification ne correspond à vos filtres.',
-    resetFilters: 'Réinitialiser les filtres',
-    markAsRead: 'Marquer comme lu',
-    markAsUnread: 'Marquer comme non lu',
-    delete: 'Supprimer',
-    goToPage: 'Aller à la page',
-    copyDetails: 'Copier les détails',
-    deletePermanently: 'Supprimer définitivement',
-    showing: 'Affichage de',
-    notificationsFound: 'notification(s) trouvée(s)',
-    selected: 'sélectionnée(s)',
-    allRead: 'Tout est lu',
-    lastUpdate: 'Dernière mise à jour',
-    urgent: 'URGENT',
-    unreadBadge: 'Non lu',
-    refresh: 'Actualiser',
-    bulkActions: 'Actions groupées',
-    selectAll: 'Sélectionner tout',
-    deselectAll: 'Désélectionner tout',
-    markSelectedAsRead: 'Marquer comme lu',
-    deleteSelected: 'Supprimer'
-  }
-
-  const categoryConfig = getCategoryConfig(t)
-  const dateLocale = lang === 'fr' ? fr : lang === 'mg' ? fr : enUS
-
-  // Filter and sort notifications
-  const filteredNotifications = useMemo(() => {
-    let filtered = notifications.filter(notification => {
-      if (!showArchived && notification.status === 'ARCHIVED') return false
-      if (filterType === 'unread' && notification.status !== 'UNREAD') return false
-      if (filterType === 'projects' && notification.category !== 'ORDER') return false
-      if (filterType === 'messages' && notification.category !== 'MESSAGE') return false
-      if (filterType === 'payments' && notification.category !== 'ORDER') return false
-      if (filterType === 'system' && notification.category !== 'SYSTEM') return false
-      if (selectedCategory !== 'all' && notification.category !== selectedCategory) return false
-      
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        return (
-          notification.title.toLowerCase().includes(query) ||
-          notification.message.toLowerCase().includes(query)
-        )
+  const filtered = useMemo(() => {
+    let list = notifications.filter(n => {
+      if (!showArchived && n.status === 'ARCHIVED') return false
+      if (filter === 'unread'  && n.status !== 'UNREAD') return false
+      if (filter !== 'all' && filter !== 'unread' && n.category !== filter) return false
+      if (search) {
+        const q = search.toLowerCase()
+        return n.title.toLowerCase().includes(q) || n.message.toLowerCase().includes(q)
       }
-      
       return true
     })
-    
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime()
-      const dateB = new Date(b.createdAt).getTime()
-      return sortBy === 'newest' ? dateB - dateA : dateA - dateB
+    list.sort((a, b) => {
+      const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      return sortBy === 'newest' ? diff : -diff
     })
-    
-    return filtered
-  }, [notifications, filterType, selectedCategory, searchQuery, showArchived, sortBy])
-  
-  // Stats
+    return list
+  }, [notifications, filter, search, showArchived, sortBy])
+
   const stats = useMemo(() => {
-    const total = notifications.length
-    const unread = notifications.filter(n => n.status === 'UNREAD').length
-    const archived = notifications.filter(n => n.status === 'ARCHIVED').length
-    
-    const byCategory: Record<NotificationCategory, number> = {
-      MESSAGE: notifications.filter(n => n.category === 'MESSAGE').length,
-      ORDER: notifications.filter(n => n.category === 'ORDER').length,
-      REVIEW: notifications.filter(n => n.category === 'REVIEW').length,
-      SYSTEM: notifications.filter(n => n.category === 'SYSTEM').length,
-      PROMOTION: notifications.filter(n => n.category === 'PROMOTION').length,
-      SECURITY: notifications.filter(n => n.category === 'SECURITY').length,
-      COMMUNITY: notifications.filter(n => n.category === 'COMMUNITY').length,
-      ACHIEVEMENT: notifications.filter(n => n.category === 'ACHIEVEMENT').length
+    const byCategory = {} as Record<NotificationCategory, number>
+    for (const cat of Object.keys(CATEGORY_CONFIG) as NotificationCategory[]) {
+      byCategory[cat] = notifications.filter(n => n.category === cat).length
     }
-    
-    const today = notifications.filter(n => {
-      const todayDate = new Date()
-      const notifDate = new Date(n.createdAt)
-      return notifDate.toDateString() === todayDate.toDateString()
-    }).length
-    
-    const thisWeek = notifications.filter(n => {
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      return new Date(n.createdAt) > weekAgo
-    }).length
-    
-    return { total, unread, archived, byCategory, today, thisWeek }
+    const today = new Date(); today.setHours(0,0,0,0)
+    const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-7)
+    return {
+      total:    notifications.length,
+      unread:   notifications.filter(n => n.status === 'UNREAD').length,
+      archived: notifications.filter(n => n.status === 'ARCHIVED').length,
+      today:    notifications.filter(n => new Date(n.createdAt) >= today).length,
+      thisWeek: notifications.filter(n => new Date(n.createdAt) >= weekAgo).length,
+      byCategory,
+    }
   }, [notifications])
-  
-  // Format date
-  const formatDate = (date: Date) => {
-    const now = new Date()
-    const notificationDate = new Date(date)
-    const diffInHours = (now.getTime() - notificationDate.getTime()) / (1000 * 60 * 60)
-    
-    if (diffInHours < 24) {
-      return formatDistanceToNow(notificationDate, { addSuffix: true, locale: dateLocale })
-    } else if (diffInHours < 48) {
-      return lang === 'fr' ? 'Hier' : lang === 'mg' ? 'Omaly' : 'Yesterday'
-    } else if (diffInHours < 168) {
-      return format(notificationDate, 'EEEE', { locale: dateLocale })
-    } else {
-      return format(notificationDate, 'dd/MM/yyyy')
-    }
-  }
-  
-  const handleMarkAsRead = (id: string) => {
-    actions.markAsRead(id)
-    setSelectedNotifications(prev => prev.filter(nId => nId !== id))
-  }
-  
-  const handleDelete = (id: string) => {
-    actions.deleteNotification(id)
-    setSelectedNotifications(prev => prev.filter(nId => nId !== id))
-  }
-  
-  const handleSelectAll = () => {
-    if (selectedNotifications.length === filteredNotifications.length) {
-      setSelectedNotifications([])
-    } else {
-      setSelectedNotifications(filteredNotifications.map(n => n._id))
-    }
-  }
-  
-  const handleBulkAction = (action: 'read' | 'delete') => {
-    selectedNotifications.forEach(id => {
-      if (action === 'read') {
-        actions.markAsRead(id)
-      } else {
-        actions.deleteNotification(id)
-      }
-    })
-    setSelectedNotifications([])
-  }
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        refreshNotifications()
-      }
-    }, 30000)
-    
-    return () => clearInterval(interval)
-  }, [refreshNotifications])
-  
+
+  const grouped = useMemo(() => groupByDate(filtered), [filtered])
+
+  const toggleSelect = (id: string) =>
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const selectAll = () =>
+    setSelected(selected.length === filtered.length ? [] : filtered.map(n => n._id))
+
+  const bulkRead   = () => { selected.forEach(markAsRead);          setSelected([]) }
+  const bulkDelete = () => { selected.forEach(deleteNotification);  setSelected([]) }
+
+  // ── Loading skeleton ────────────────────────────────────────────────────────
   if (!dict || (isLoading && notifications.length === 0)) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-32" />
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-950">
+        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-slate-100 dark:border-gray-800 px-4 py-4">
+          <Skeleton className="h-7 w-40 mb-3" />
+          <div className="flex gap-2">
+            {[...Array(4)].map((_,i) => <Skeleton key={i} className="h-16 flex-1 rounded-xl" />)}
+          </div>
         </div>
-        <div className="grid gap-4">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
+        <div className="divide-y divide-slate-100 dark:divide-gray-800">
+          {[...Array(6)].map((_,i) => (
+            <div key={i} className="flex gap-3 px-4 py-4">
+              <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
     )
   }
-  
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-purple-950/20">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
-        >
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/25">
-                <Bell className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-700 to-pink-700 dark:from-purple-300 dark:to-pink-300 bg-clip-text text-transparent">
-                {t.title}
-              </h1>
-            </div>
-            <p className="text-muted-foreground ml-11">{t.subtitle}</p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshNotifications}
-              disabled={isLoading}
-              className="border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 pb-safe">
+
+      {/* ── Sticky header ─────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-slate-100 dark:border-gray-800">
+
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-1.5 -ml-1 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              {t.refresh}
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="border-purple-200 dark:border-purple-800">
-                  <Filter className="h-4 w-4 mr-2" />
-                  {t.bulkActions}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900">
-                <DropdownMenuLabel>{t.bulkActions} ({selectedNotifications.length})</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => handleBulkAction('read')}
-                  disabled={selectedNotifications.length === 0}
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  {t.markSelectedAsRead}
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handleBulkAction('delete')}
-                  disabled={selectedNotifications.length === 0}
-                  className="text-red-600"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t.deleteSelected}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Button
-              onClick={markAllAsRead}
-              disabled={unreadCount === 0 || isLoading}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <CheckCheck className="h-4 w-4 mr-2" />
-              {t.markAllAsRead}
-            </Button>
-          </div>
-        </motion.div>
-        
-        {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8"
-        >
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t.total}</p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-200">{stats.total}</p>
-                </div>
-                <Bell className="h-8 w-8 text-blue-600 dark:text-blue-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-700 dark:text-purple-300">{t.unread}</p>
-                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-200">{stats.unread}</p>
-                </div>
-                <Eye className="h-8 w-8 text-purple-600 dark:text-purple-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 border-gray-200 dark:border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.archived}</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.archived}</p>
-                </div>
-                <Archive className="h-8 w-8 text-gray-500 dark:text-gray-500 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">{t.thisWeek}</p>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-200">{stats.thisWeek}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Filters */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-1"
-          >
-            <Card className="sticky top-24 border-purple-200 dark:border-purple-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                  <Filter className="h-4 w-4" />
-                  {t.filters}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Search */}
-                <div className="space-y-2">
-                  <Label htmlFor="search">{t.search}</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-                    <Input
-                      id="search"
-                      placeholder={t.search}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 border-purple-200 dark:border-purple-800 focus:border-purple-500"
-                    />
-                  </div>
-                </div>
-                
-                {/* Status Filter */}
-                <div className="space-y-2">
-                  <Label>{t.status}</Label>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant={filterType === 'all' ? 'default' : 'ghost'}
-                      className={`justify-start ${filterType === 'all' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}`}
-                      onClick={() => setFilterType('all')}
-                    >
-                      {t.all} ({stats.total})
-                    </Button>
-                    <Button
-                      variant={filterType === 'unread' ? 'default' : 'ghost'}
-                      className={`justify-start ${filterType === 'unread' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}`}
-                      onClick={() => setFilterType('unread')}
-                    >
-                      <div className="flex items-center gap-2">
-                        {t.unread} ({stats.unread})
-                        {stats.unread > 0 && (
-                          <Badge variant="secondary" className="ml-auto bg-purple-100 dark:bg-purple-900">
-                            {stats.unread}
-                          </Badge>
-                        )}
-                      </div>
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Category Filter */}
-                <div className="space-y-2">
-                  <Label>{t.categories}</Label>
-                  <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-2">
-                    <Button
-                      variant={selectedCategory === 'all' ? 'default' : 'ghost'}
-                      className={`justify-start ${selectedCategory === 'all' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}`}
-                      onClick={() => setSelectedCategory('all')}
-                    >
-                      {t.allCategories}
-                    </Button>
-                    {Object.entries(categoryConfig).map(([category, config]) => (
-                      <Button
-                        key={category}
-                        variant={selectedCategory === category ? 'default' : 'ghost'}
-                        className={`justify-start ${selectedCategory === category ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}`}
-                        onClick={() => setSelectedCategory(category as NotificationCategory)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {config.icon}
-                          {config.label} ({stats.byCategory[category as NotificationCategory]})
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Preferences */}
-                <div className="space-y-2 pt-4 border-t border-purple-200 dark:border-purple-800">
-                  <Label>{t.preferences}</Label>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">{t.showArchived}</span>
-                    <Switch
-                      checked={showArchived}
-                      onCheckedChange={setShowArchived}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">{t.sortNewest}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : 'newest')}
-                      className="h-8 w-8 p-0"
-                    >
-                      <ArrowUpDown className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Quick Stats */}
-                <div className="space-y-2 pt-4 border-t border-purple-200 dark:border-purple-800">
-                  <Label>{t.quickStats}</Label>
-                  <div className="text-sm space-y-2">
-                    <div className="flex justify-between items-center p-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
-                      <span className="text-muted-foreground">{t.today}:</span>
-                      <span className="font-medium text-purple-700 dark:text-purple-300">{stats.today}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
-                      <span className="text-muted-foreground">{t.thisWeek}:</span>
-                      <span className="font-medium text-purple-700 dark:text-purple-300">{stats.thisWeek}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Settings Link */}
-                <div className="pt-4">
-                  <Button variant="outline" className="w-full border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30" asChild>
-                    <Link href={`/${lang}/notifications/settings`}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      {t.settings}
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          {/* Main Notifications List */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="lg:col-span-3"
-          >
-            {/* List Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {filterType === 'unread' ? t.unread : t.all}
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  {t.showing} {filteredNotifications.length} {t.notificationsFound}
-                </p>
-              </div>
-              
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={filteredNotifications.length === 0}
-                  className="border-purple-200 dark:border-purple-800"
-                >
-                  {selectedNotifications.length === filteredNotifications.length ? t.deselectAll : t.selectAll}
-                </Button>
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-white leading-none">
+                  Notifications
+                </h1>
+                {stats.unread > 0 && (
+                  <span className="text-xs font-semibold bg-purple-600 text-white px-2 py-0.5 rounded-full">
+                    {stats.unread}
+                  </span>
+                )}
               </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {stats.total} total · {stats.unread} unread
+              </p>
             </div>
-            
-            {/* Notifications List */}
-            {filteredNotifications.length === 0 ? (
-              <Card className="border-purple-200 dark:border-purple-800">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-4">
-                    <Bell className="h-10 w-10 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t.noNotifications}</h3>
-                  <p className="text-muted-foreground text-center mb-6">
-                    {searchQuery || selectedCategory !== 'all' || filterType !== 'all' 
-                      ? t.noNotificationsMatch
-                      : t.noNotifications}
-                  </p>
-                  {(searchQuery || selectedCategory !== 'all' || filterType !== 'all') && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setSearchQuery('')
-                        setSelectedCategory('all')
-                        setFilterType('all')
-                      }}
-                      className="border-purple-200 dark:border-purple-800"
-                    >
-                      {t.resetFilters}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <AnimatePresence>
-                <div className="space-y-3">
-                  {filteredNotifications.map((notification, index) => {
-                    const config = categoryConfig[notification.category]
-                    const isSelected = selectedNotifications.includes(notification._id)
-                    
-                    return (
-                      <motion.div
-                        key={notification._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -100 }}
-                        transition={{ delay: index * 0.03 }}
-                      >
-                        <Card 
-                          className={`transition-all duration-300 hover:shadow-lg cursor-pointer ${
-                            isSelected ? 'ring-2 ring-purple-500' : ''
-                          } ${
-                            notification.status === 'UNREAD' 
-                              ? `border-l-4 border-l-purple-500 bg-purple-50/30 dark:bg-purple-950/20`
-                              : 'border-purple-200 dark:border-purple-800'
-                          } bg-white dark:bg-gray-900`}
-                          onClick={() => {
-                            if (notification.actionUrl) {
-                              window.location.href = notification.actionUrl
-                            }
-                            if (notification.status === 'UNREAD') {
-                              handleMarkAsRead(notification._id)
-                            }
-                          }}
-                        >
-                          <CardContent className="p-5">
-                            <div className="flex items-start gap-4">
-                              {/* Checkbox */}
-                              <div className="flex-shrink-0 pt-1">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    e.stopPropagation()
-                                    setSelectedNotifications(prev =>
-                                      prev.includes(notification._id)
-                                        ? prev.filter(id => id !== notification._id)
-                                        : [...prev, notification._id]
-                                    )
-                                  }}
-                                  className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
-                                />
-                              </div>
-                              
-                              {/* Icon */}
-                              <div className={`p-2.5 rounded-xl ${config.bgColor} flex-shrink-0`}>
-                                <div className={config.color}>
-                                  {config.icon}
-                                </div>
-                              </div>
-                              
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <h3 className={`font-semibold ${
-                                        notification.status === 'UNREAD' 
-                                          ? 'text-purple-700 dark:text-purple-300' 
-                                          : 'text-gray-900 dark:text-white'
-                                      }`}>
-                                        {notification.title}
-                                      </h3>
-                                      {notification.priority === 'URGENT' && (
-                                        <Badge variant="destructive" className="text-xs animate-pulse">
-                                          {t.urgent}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mt-1.5">
-                                      {notification.message}
-                                    </p>
-                                    
-                                    {notification.data?.metadata && (
-                                      <div className="mt-3 flex flex-wrap gap-2">
-                                        {Object.entries(notification.data.metadata).slice(0, 3).map(([key, value]) => (
-                                          <Badge key={key} variant="outline" className="text-xs border-purple-200 dark:border-purple-800">
-                                            {key}: {String(value)}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Actions */}
-                                  <div className="flex flex-col items-end gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-muted-foreground">
-                                        {formatDate(notification.createdAt)}
-                                      </span>
-                                      {notification.status === 'UNREAD' && (
-                                        <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
-                                          {t.unreadBadge}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-1">
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-8 w-8 hover:bg-purple-100 dark:hover:bg-purple-900/30"
-                                              onClick={(e) => {
-                                                e.stopPropagation()
-                                                handleMarkAsRead(notification._id)
-                                              }}
-                                            >
-                                              {notification.status === 'UNREAD' ? (
-                                                <Eye className="h-4 w-4 text-purple-600" />
-                                              ) : (
-                                                <EyeOff className="h-4 w-4" />
-                                              )}
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            {notification.status === 'UNREAD' ? t.markAsRead : t.markAsUnread}
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                      
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                              onClick={(e) => {
-                                                e.stopPropagation()
-                                                handleDelete(notification._id)
-                                              }}
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            {t.delete}
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                      
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <MoreVertical className="h-4 w-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900">
-                                          <DropdownMenuItem 
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              if (notification.actionUrl) {
-                                                window.location.href = notification.actionUrl
-                                              }
-                                            }}
-                                            disabled={!notification.actionUrl}
-                                          >
-                                            <ChevronRight className="h-4 w-4 mr-2" />
-                                            {t.goToPage}
-                                          </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem 
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              navigator.clipboard.writeText(JSON.stringify(notification, null, 2))
-                                            }}
-                                          >
-                                            {t.copyDetails}
-                                          </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem 
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              handleDelete(notification._id)
-                                            }}
-                                            className="text-red-600"
-                                          >
-                                            <Trash2 className="h-4 w-4 mr-2" />
-                                            {t.deletePermanently}
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </AnimatePresence>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => refreshNotifications()}
+              disabled={isLoading}
+              className="p-2 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+            </button>
+            <button
+              onClick={() => setFilterOpen(true)}
+              className="p-2 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-gray-800 transition-colors relative"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {(showArchived || sortBy === 'oldest') && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-purple-500" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Stats pills */}
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-none">
+          <StatPill value={stats.total}    label="Total"     />
+          <StatPill value={stats.unread}   label="Unread"    accent="text-purple-600 dark:text-purple-400" />
+          <StatPill value={stats.archived} label="Archived"  />
+          <StatPill value={stats.thisWeek} label="This week" accent="text-emerald-600 dark:text-emerald-400" />
+        </div>
+
+        {/* Search bar */}
+        <div className="px-4 pb-3">
+          <div className={cn(
+            "flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors",
+            searchFocused
+              ? "border-purple-400 dark:border-purple-600 bg-white dark:bg-gray-900"
+              : "border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/50"
+          )}>
+            <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <input
+              type="search"
+              placeholder="Search notifications…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className="flex-1 bg-transparent text-sm text-slate-800 dark:text-white placeholder:text-slate-400 outline-none"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
-            
-            {/* Footer Stats */}
-            {filteredNotifications.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-purple-200 dark:border-purple-800">
-                <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span>
-                      {t.showing} {filteredNotifications.length} {t.notificationsFound}
-                      {selectedNotifications.length > 0 && ` (${selectedNotifications.length} ${t.selected})`}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1">
-                      {unreadCount > 0 ? (
-                        <span className="text-amber-600 dark:text-amber-400">{unreadCount} {t.unread}</span>
-                      ) : (
-                        <span className="text-green-600 dark:text-green-400">{t.allRead}</span>
-                      )}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {t.lastUpdate}: {state.lastUpdated ? format(new Date(state.lastUpdated), 'HH:mm') : '--:--'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div
+          ref={chipScrollRef}
+          className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-none"
+        >
+          {FILTER_CHIPS.map(chip => (
+            <button
+              key={chip.id}
+              onClick={() => setFilter(chip.id)}
+              className={cn(
+                "flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors",
+                filter === chip.id
+                  ? "bg-purple-600 text-white border-purple-600"
+                  : "bg-white dark:bg-gray-900 border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-400 hover:border-purple-300 dark:hover:border-purple-700"
+              )}
+            >
+              {chip.label}
+              {chip.id === 'unread' && stats.unread > 0 && (
+                <span className="ml-1.5 bg-white/20 px-1 py-0.5 rounded-full text-[10px]">
+                  {stats.unread}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* ── Bulk action bar ────────────────────────────────────────────────── */}
+      {selected.length > 0 && (
+        <div className="sticky top-[calc(var(--header-h,220px))] z-10 flex items-center justify-between px-4 py-2.5 bg-purple-50 dark:bg-purple-950/40 border-b border-purple-100 dark:border-purple-900">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelected([])}
+              className="p-1 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
+            >
+              <X className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </button>
+            <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+              {selected.length} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={bulkRead}
+              className="flex items-center gap-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 bg-white dark:bg-gray-900 border border-purple-200 dark:border-purple-800 px-3 py-1.5 rounded-lg"
+            >
+              <Eye className="h-3.5 w-3.5" /> Mark read
+            </button>
+            <button
+              onClick={bulkDelete}
+              className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900 px-3 py-1.5 rounded-lg"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── List header ────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          {filtered.length} notification{filtered.length !== 1 ? 's' : ''}
+        </p>
+        <div className="flex items-center gap-3">
+          {filtered.length > 0 && (
+            <button
+              onClick={selectAll}
+              className="text-xs font-medium text-purple-600 dark:text-purple-400"
+            >
+              {selected.length === filtered.length ? 'Deselect all' : 'Select all'}
+            </button>
+          )}
+          {stats.unread > 0 && (
+            <button
+              onClick={() => markAllAsRead()}
+              className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1"
+            >
+              <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Notification groups ────────────────────────────────────────────── */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+            <Bell className="h-7 w-7 text-slate-300 dark:text-gray-600" />
+          </div>
+          <p className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-1">No notifications</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mb-6">
+            {search || filter !== 'all'
+              ? 'No notifications match your current filters.'
+              : "You're all caught up!"}
+          </p>
+          {(search || filter !== 'all') && (
+            <button
+              onClick={() => { setSearch(''); setFilter('all') }}
+              className="text-sm font-medium text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 px-4 py-2 rounded-xl"
+            >
+              Reset filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800 divide-y-0">
+          {grouped.map(group => (
+            <div key={group.label}>
+              {/* Date group label */}
+              <div className="px-4 py-2 bg-slate-50 dark:bg-gray-950 border-y border-slate-100 dark:border-gray-800">
+                <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  {group.label}
+                </p>
+              </div>
+              {group.items.map(n => (
+                <NotifCard
+                  key={n._id}
+                  notification={n}
+                  selected={selected.includes(n._id)}
+                  onSelect={() => toggleSelect(n._id)}
+                  onMarkRead={() => markAsRead(n._id)}
+                  onDelete={() => deleteNotification(n._id)}
+                  formatDate={formatDate}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Footer ────────────────────────────────────────────────────────── */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-4 text-xs text-slate-400 dark:text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            <span>
+              Updated {state.lastUpdated ? format(new Date(state.lastUpdated), 'HH:mm') : '--:--'}
+            </span>
+          </div>
+          {stats.unread === 0 ? (
+            <span className="flex items-center gap-1 text-emerald-500">
+              <CheckCheck className="h-3.5 w-3.5" /> All caught up
+            </span>
+          ) : (
+            <span className="text-amber-500">{stats.unread} unread</span>
+          )}
+        </div>
+      )}
+
+      {/* ── Filter sheet ──────────────────────────────────────────────────── */}
+      <FilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        showArchived={showArchived}
+        onShowArchivedChange={setShowArchived}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        stats={stats}
+      />
     </div>
   )
 }
