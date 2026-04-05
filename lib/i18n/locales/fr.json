@@ -2224,8 +2224,7 @@
     "talents": "Talents"
   },
   
-  
-  "feed": {
+    "feed": {
     "recentPosts": "Publications récentes",
     "activeGroups": "Groupes actifs",
     "totalComments": "Commentaires totaux",
@@ -2238,7 +2237,7 @@
     "login": "Se connecter",
     "in": "dans",
     "event": "Événement",
-    "job": "Offre",
+    "job": "Offre d'emploi",
     "post": "Publication",
     "like": "Aimer",
     "comment": "Commenter",
@@ -2328,9 +2327,49 @@
     "monthAgo": "il y a 1 mois",
     "monthsAgo": "il y a {months} mois",
     "yearAgo": "il y a 1 an",
-    "yearsAgo": "il y a {years} ans"
-  }
-,
+    "yearsAgo": "il y a {years} ans",
+    "postComment": "Publier le commentaire",
+    "addComment": "Ajouter un commentaire",
+    "writePost": "Écrire une publication",
+    "sharePost": "Partager la publication",
+    "reportPost": "Signaler la publication",
+    "deletePost": "Supprimer la publication",
+    "editPost": "Modifier la publication",
+    "pinPost": "Épingler la publication",
+    "unpinPost": "Désépingler la publication",
+    "featurePost": "Mettre en vedette",
+    "unfeaturePost": "Retirer de la une",
+    "savePost": "Sauvegarder la publication",
+    "unsavePost": "Retirer des sauvegardes",
+    "copyPostLink": "Copier le lien de la publication",
+    "viewPost": "Voir la publication",
+    "viewComments": "Voir les commentaires",
+    "viewReplies": "Voir les réponses",
+    "showMore": "Afficher plus",
+    "showLess": "Afficher moins",
+    "readMore": "Lire la suite",
+    "readLess": "Réduire",
+    "sortBy": "Trier par",
+    "newest": "Plus récents",
+    "oldest": "Plus anciens",
+    "mostLiked": "Les plus aimés",
+    "mostCommented": "Les plus commentés",
+    "filterBy": "Filtrer par",
+    "allPosts": "Toutes les publications",
+    "myPosts": "Mes publications",
+    "savedPosts": "Publications sauvegardées",
+    "loadingPosts": "Chargement des publications...",
+    "noMorePosts": "Plus de publications à charger",
+    "errorLoadingPosts": "Erreur lors du chargement des publications",
+    "retry": "Réessayer",
+    "postDeleted": "Publication supprimée",
+    "postUpdated": "Publication mise à jour",
+    "postCreated": "Publication créée",
+    "postPinned": "Publication épinglée",
+    "postUnpinned": "Publication désépinglée",
+    "postFeatured": "Publication mise en vedette",
+    "postUnfeatured": "Publication retirée de la une"
+  },
   
   "projects": {
     "create": {
