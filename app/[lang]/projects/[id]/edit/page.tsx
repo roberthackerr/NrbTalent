@@ -1,7 +1,7 @@
 // app/projects/[id]/edit/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
@@ -19,7 +19,6 @@ import {
   Globe,
   Lock,
   Clock,
-  Zap,
   Target,
   Code,
   Palette,
@@ -31,17 +30,12 @@ import {
   Sparkles,
   Loader2,
   Check,
-  Building,
   Cpu,
   Cloud,
-  Database,
   Smartphone,
   Shield,
-  Layers,
   Briefcase,
   TrendingUp,
-  BarChart3,
-  Award,
   Star,
   Edit3,
   Layout,
@@ -53,15 +47,14 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 
 // Category options with icons
@@ -132,15 +125,16 @@ export default function EditProjectPage() {
   const id = params.id as string
   const lang = params.lang as string
   
-  const isMobile = useMediaQuery('(max-width: 768px)')
-  const isTablet = useMediaQuery('(min-width: 769px) and (max-width: 1024px)')
-  
+  const [isMobile, setIsMobile] = useState(false)
   const [dict, setDict] = useState<any>(null)
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  // Refs pour éviter les boucles infinies
+  const hasLoaded = useRef(false)
+  const isMounted = useRef(true)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -172,62 +166,59 @@ export default function EditProjectPage() {
     attachments: [] as Array<{ name: string; url: string; type: string }>
   })
 
+  // Détection mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Chargement du dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
+    return () => {
+      isMounted.current = false
+    }
   }, [lang])
 
-  const t = dict?.projects?.edit || {}
-
-  // Calculate progress
-  const calculateProgress = () => {
-    let progress = 0
-    const fields = [
-      formData.title,
-      formData.description,
-      formData.category,
-      formData.budgetMin > 0,
-      formData.budgetMax > 0,
-      formData.deadline,
-      formData.skills.length > 0,
-      formData.status
-    ]
+  // Fonction de chargement du projet
+  const loadProject = useCallback(async () => {
+    if (hasLoaded.current || !dict) return
     
-    const completed = fields.filter(Boolean).length
-    progress = Math.round((completed / fields.length) * 100)
-    return progress
-  }
-
-  // Load project data
-  useEffect(() => {
-    async function loadProject() {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/projects/${id}`)
-        
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || t.loadError)
-        }
-        
-        const data = await response.json()
-        
-        // Check if user is the owner
-        const sessionRes = await fetch('/api/auth/session')
-        const session = await sessionRes.json()
-        
-        if (!session.user?.id || session.user.id !== data.clientId) {
-          toast({
-            title: t.unauthorized,
-            description: t.unauthorized,
-            variant: 'destructive'
-          })
-          router.push(`/${lang}/projects/${id}`)
-          return
-        }
-        
+    const t = dict?.projects?.edit || {}
+    
+    try {
+      hasLoaded.current = true
+      setLoading(true)
+      
+      const response = await fetch(`/api/projects/${id}`)
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || t.loadError || 'Failed to load project')
+      }
+      
+      const data = await response.json()
+      
+      // Vérifier si l'utilisateur est le propriétaire
+      const sessionRes = await fetch('/api/auth/session')
+      const session = await sessionRes.json()
+      
+      if (!session.user?.id || session.user.id !== data.clientId) {
+        toast({
+          title: t.unauthorized || 'Unauthorized',
+          description: t.unauthorized || 'You are not authorized to edit this project',
+          variant: 'destructive'
+        })
+        router.push(`/${lang}/projects/${id}`)
+        return
+      }
+      
+      if (isMounted.current) {
         setProjectData(data)
-        
-        // Transform and set form data
         setFormData({
           title: data.title || '',
           description: data.description || '',
@@ -256,24 +247,33 @@ export default function EditProjectPage() {
           newDeliverable: '',
           attachments: data.attachments || []
         })
-        
-      } catch (error) {
-        console.error('Error loading project:', error)
+      }
+      
+    } catch (error) {
+      console.error('Error loading project:', error)
+      if (isMounted.current) {
         toast({
-          title: t.loadError,
-          description: error instanceof Error ? error.message : t.loadError,
+          title: t.loadError || 'Error',
+          description: error instanceof Error ? error.message : t.loadError || 'Failed to load project',
           variant: 'destructive'
         })
         router.push(`/${lang}/projects/${id}`)
-      } finally {
+      }
+    } finally {
+      if (isMounted.current) {
         setLoading(false)
       }
     }
-    
-    if (dict) {
+  }, [id, lang, router, toast, dict])
+
+  // Chargement du projet quand le dictionnaire est prêt
+  useEffect(() => {
+    if (dict && !hasLoaded.current) {
       loadProject()
     }
-  }, [id, router, toast, t, lang, dict])
+  }, [dict, loadProject])
+
+  const t = dict?.projects?.edit || {}
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -332,31 +332,31 @@ export default function EditProjectPage() {
 
   const validateForm = () => {
     if (!formData.title.trim()) {
-      toast({ title: t.validationError, description: t.titleRequired, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.titleRequired || 'Project title is required', variant: 'destructive' })
       return false
     }
     if (!formData.description.trim()) {
-      toast({ title: t.validationError, description: t.descriptionRequired, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.descriptionRequired || 'Project description is required', variant: 'destructive' })
       return false
     }
     if (!formData.category) {
-      toast({ title: t.validationError, description: t.categoryRequired, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.categoryRequired || 'Category is required', variant: 'destructive' })
       return false
     }
     if (formData.budgetMin <= 0 || formData.budgetMax <= 0) {
-      toast({ title: t.validationError, description: t.budgetRequired, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.budgetRequired || 'Budget is required', variant: 'destructive' })
       return false
     }
     if (formData.budgetMin > formData.budgetMax) {
-      toast({ title: t.validationError, description: t.budgetMinMax, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.budgetMinMax || 'Minimum budget must be less than maximum budget', variant: 'destructive' })
       return false
     }
     if (!formData.deadline) {
-      toast({ title: t.validationError, description: t.deadlineRequired, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.deadlineRequired || 'Deadline is required', variant: 'destructive' })
       return false
     }
     if (new Date(formData.deadline) < new Date()) {
-      toast({ title: t.validationError, description: t.deadlineFuture, variant: 'destructive' })
+      toast({ title: t.validationError || 'Validation Error', description: t.deadlineFuture || 'Deadline must be in the future', variant: 'destructive' })
       return false
     }
     return true
@@ -403,12 +403,12 @@ export default function EditProjectPage() {
       
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || t.updateError)
+        throw new Error(error.error || t.updateError || 'Failed to update project')
       }
       
       toast({
-        title: t.updateSuccess,
-        description: t.updateSuccess,
+        title: t.updateSuccess || 'Success',
+        description: t.updateSuccess || 'Project updated successfully!',
         className: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0'
       })
       
@@ -420,8 +420,8 @@ export default function EditProjectPage() {
     } catch (error) {
       console.error('Error updating project:', error)
       toast({
-        title: t.updateError,
-        description: error instanceof Error ? error.message : t.updateError,
+        title: t.updateError || 'Error',
+        description: error instanceof Error ? error.message : t.updateError || 'Failed to update project',
         variant: 'destructive'
       })
     } finally {
@@ -430,24 +430,27 @@ export default function EditProjectPage() {
   }
 
   const handleCancel = () => {
-    if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+    if (confirm(t.cancelConfirm || 'Are you sure you want to cancel? Any unsaved changes will be lost.')) {
       router.push(`/${lang}/projects/${id}`)
     }
   }
 
-  if (loading || !dict) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 blur-2xl opacity-20 animate-pulse rounded-full"></div>
-            <Loader2 className="h-16 w-16 text-blue-600 dark:text-blue-400 animate-spin relative z-10" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t.loading || 'Loading...'}</h3>
-          <p className="text-slate-600 dark:text-slate-400">{t.loadingDesc || 'Preparing your project editor'}</p>
-        </div>
-      </div>
-    )
+  const calculateProgress = () => {
+    let progress = 0
+    const fields = [
+      formData.title,
+      formData.description,
+      formData.category,
+      formData.budgetMin > 0,
+      formData.budgetMax > 0,
+      formData.deadline,
+      formData.skills.length > 0,
+      formData.status
+    ]
+    
+    const completed = fields.filter(Boolean).length
+    progress = Math.round((completed / fields.length) * 100)
+    return progress
   }
 
   const progress = calculateProgress()
@@ -469,6 +472,22 @@ export default function EditProjectPage() {
     { id: 'skills', label: t.skillsTags || 'Skills & Tags', icon: Tag },
     { id: 'advanced', label: t.advancedSettings || 'Advanced', icon: Target }
   ]
+
+  // Écran de chargement
+  if (loading || !dict) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 blur-2xl opacity-20 animate-pulse rounded-full"></div>
+            <Loader2 className="h-16 w-16 text-blue-600 dark:text-blue-400 animate-spin relative z-10" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t.loading || 'Loading...'}</h3>
+          <p className="text-slate-600 dark:text-slate-400">{t.loadingDesc || 'Preparing your project editor'}</p>
+        </div>
+      </div>
+    )
+  }
 
   const SidebarContent = () => (
     <div className="space-y-6">
@@ -570,7 +589,10 @@ export default function EditProjectPage() {
           <Button
             variant="outline"
             className="w-full border-purple-300 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/30"
-            onClick={() => toast({ title: t.comingSoon || 'Coming Soon', description: t.aiDescription || 'AI assistant will be available soon!' })}
+            onClick={() => toast({ 
+              title: t.comingSoon || 'Coming Soon', 
+              description: t.aiDescription || 'AI assistant will be available soon!' 
+            })}
           >
             <Sparkles className="h-4 w-4 mr-2" />
             {t.optimizeDescription || 'Optimize Description'}
@@ -709,9 +731,6 @@ export default function EditProjectPage() {
                         />
                         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2">
                           <span>{formData.title.length}/200 {t.characters || 'characters'}</span>
-                          <span className={formData.title.length > 180 ? 'text-amber-500' : ''}>
-                            {200 - formData.title.length} left
-                          </span>
                         </div>
                       </div>
 
@@ -726,12 +745,6 @@ export default function EditProjectPage() {
                           rows={6}
                           className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                         />
-                        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2">
-                          <span>{formData.description.length}/5000 {t.characters || 'characters'}</span>
-                          <span className={formData.description.length > 4500 ? 'text-amber-500' : ''}>
-                            {5000 - formData.description.length} left
-                          </span>
-                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -776,7 +789,7 @@ export default function EditProjectPage() {
                         <Textarea
                           value={formData.requirements}
                           onChange={(e) => handleChange('requirements', e.target.value)}
-                          placeholder={t.listRequirements || "List any technical requirements, constraints, or special considerations..."}
+                          placeholder={t.listRequirements || "List any technical requirements..."}
                           rows={4}
                           className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                         />
@@ -845,9 +858,6 @@ export default function EditProjectPage() {
                             </div>
                           </div>
                         </div>
-                        {formData.budgetMin > formData.budgetMax && (
-                          <p className="text-xs text-red-500 mt-2">{t.budgetMinMax}</p>
-                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -863,11 +873,6 @@ export default function EditProjectPage() {
                             min={new Date().toISOString().split('T')[0]}
                             className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                           />
-                          {daysLeft > 0 && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                              {daysLeft} {t.daysLeft || 'days left'}
-                            </p>
-                          )}
                         </div>
 
                         <div>
@@ -914,7 +919,7 @@ export default function EditProjectPage() {
                             value={formData.newDeliverable}
                             onChange={(e) => handleChange('newDeliverable', e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDeliverable())}
-                            placeholder={t.deliverablesPlaceholder || "e.g., Source code, Documentation, Deployment"}
+                            placeholder={t.deliverablesPlaceholder || "e.g., Source code, Documentation"}
                             className="flex-1 bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                           />
                           <Button
@@ -938,7 +943,7 @@ export default function EditProjectPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeDeliverable(deliverable)}
-                                className="h-8 w-8 p-0 text-slate-500 hover:text-red-500 flex-shrink-0 self-end sm:self-center"
+                                className="h-8 w-8 p-0 text-slate-500 hover:text-red-500 flex-shrink-0"
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -1241,7 +1246,7 @@ export default function EditProjectPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-slate-500 hover:text-red-500 flex-shrink-0 self-end sm:self-center"
+                                  className="h-8 w-8 p-0 text-slate-500 hover:text-red-500 flex-shrink-0"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
