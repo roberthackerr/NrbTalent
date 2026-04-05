@@ -57,10 +57,11 @@ const UpdateProjectSchema = z.object({
     .optional(),
   
   // Localisation
-  location: z.string()
-    .optional()
-    .nullable()
-    .transform(val => val === '' ? null : val),
+ location: z.object({
+  country: z.string().optional(),
+  city: z.string().optional(),
+  remote: z.boolean().optional(),
+}).optional().nullable(),
   
   // Visibilité et statut
   visibility: z.enum(["public", "private"])

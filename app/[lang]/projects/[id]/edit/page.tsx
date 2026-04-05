@@ -40,6 +40,8 @@ import {
   Edit3,
   Layout,
   Menu,
+  ImageIcon,
+  Paperclip,
   ChevronDown,
   Search,
   Eye,
@@ -129,6 +131,7 @@ interface ProjectData {
   }>
 }
 
+// Configuration pour l'upload
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ALLOWED_FILE_TYPES = [
   'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
@@ -160,9 +163,11 @@ export default function EditProjectPage() {
   const [showPreview, setShowPreview] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
+  // Refs pour éviter les boucles infinies
   const hasLoaded = useRef(false)
   const isMounted = useRef(true)
   
+  // Form state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -202,6 +207,7 @@ export default function EditProjectPage() {
     }>
   })
 
+  // Détection mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -211,6 +217,7 @@ export default function EditProjectPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Charger les catégories et compétences
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -227,6 +234,7 @@ export default function EditProjectPage() {
     fetchCategories()
   }, [])
 
+  // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
     return () => {
@@ -234,6 +242,7 @@ export default function EditProjectPage() {
     }
   }, [lang])
 
+  // Fonctions de transformation
   const transformComplexity = (value: string): 'beginner' | 'intermediate' | 'expert' => {
     if (value === 'complex' || value === 'very-complex') return 'expert'
     if (value === 'simple') return 'beginner'
@@ -248,6 +257,7 @@ export default function EditProjectPage() {
     return 'medium'
   }
 
+  // Upload de fichier vers Cloudinary
   const uploadFile = async (file: File): Promise<UploadedFile | null> => {
     const formData = new FormData()
     formData.append('file', file)
@@ -278,6 +288,7 @@ export default function EditProjectPage() {
     }
   }
 
+  // Gestion de l'upload multiple
   const handleFileUpload = async (files: FileList) => {
     if (!files || files.length === 0) return
 
@@ -334,9 +345,11 @@ export default function EditProjectPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  // Supprimer un fichier
   const removeFile = async (index: number) => {
     const fileToRemove = formData.attachments[index]
     
+    // Si le fichier a un publicId, le supprimer de Cloudinary
     if (fileToRemove.publicId) {
       try {
         await fetch('/api/upload', {
@@ -355,6 +368,7 @@ export default function EditProjectPage() {
     }))
   }
 
+  // Charger le projet
   const loadProject = useCallback(async () => {
     if (hasLoaded.current || !dict) return
     
@@ -373,6 +387,7 @@ export default function EditProjectPage() {
       
       const data = await response.json()
       
+      // Vérifier si l'utilisateur est le propriétaire
       const sessionRes = await fetch('/api/auth/session')
       const session = await sessionRes.json()
       
@@ -436,6 +451,7 @@ export default function EditProjectPage() {
     }
   }, [id, lang, router, toast, dict])
 
+  // Chargement du projet quand le dictionnaire est prêt
   useEffect(() => {
     if (dict && !hasLoaded.current) {
       loadProject()
@@ -655,6 +671,7 @@ export default function EditProjectPage() {
     ? Math.ceil((new Date(formData.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     : 0
 
+  // Composant pour la catégorie avec scroll
   const CategorySelector = () => (
     <div className="relative">
       <Button
@@ -856,6 +873,7 @@ export default function EditProjectPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20">
+      {/* Header */}
       <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-gray-800/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -916,11 +934,14 @@ export default function EditProjectPage() {
 
       <div className="container mx-auto px-4 py-6 lg:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+          {/* Sidebar - Desktop */}
           <div className="hidden lg:block lg:col-span-1">
             <SidebarContent />
           </div>
 
+          {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
+            {/* Mobile: Sidebar Trigger */}
             {isMobile && (
               <Sheet>
                 <SheetTrigger asChild>
@@ -941,6 +962,7 @@ export default function EditProjectPage() {
               </Sheet>
             )}
 
+            {/* Tabs Navigation */}
             <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden">
               <CardContent className="p-0">
                 <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -963,6 +985,7 @@ export default function EditProjectPage() {
                     </TabsList>
                   </div>
 
+                  {/* Basic Info Tab */}
                   <TabsContent value="basic" className="p-4 sm:p-6">
                     <div className="space-y-6">
                       <div>
@@ -1069,7 +1092,7 @@ export default function EditProjectPage() {
                         <Textarea
                           value={formData.requirements}
                           onChange={(e) => handleChange('requirements', e.target.value)}
-                          placeholder={t.listRequirements || "List any technical requirements..."}
+                          placeholder={t.listRequirements || "List any technical requirements, constraints, or special considerations..."}
                           rows={4}
                           className="bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-700"
                         />
@@ -1077,6 +1100,7 @@ export default function EditProjectPage() {
                     </div>
                   </TabsContent>
 
+                  {/* Budget & Timeline Tab */}
                   <TabsContent value="budget" className="p-4 sm:p-6">
                     <div className="space-y-6">
                       <div>
@@ -1166,6 +1190,7 @@ export default function EditProjectPage() {
                         </div>
                       </div>
 
+                      {/* Milestones */}
                       <div>
                         <div className="flex items-center justify-between mb-4">
                           <Label className="text-sm font-medium text-slate-900 dark:text-white">
@@ -1278,6 +1303,7 @@ export default function EditProjectPage() {
                     </div>
                   </TabsContent>
 
+                  {/* Skills & Tags Tab */}
                   <TabsContent value="skills" className="p-4 sm:p-6">
                     <div className="space-y-6">
                       <div>
@@ -1404,6 +1430,7 @@ export default function EditProjectPage() {
                     </div>
                   </TabsContent>
 
+                  {/* Advanced Settings Tab */}
                   <TabsContent value="advanced" className="p-4 sm:p-6">
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -1534,11 +1561,13 @@ export default function EditProjectPage() {
                         </div>
                       </div>
 
+                      {/* Attachments */}
                       <div>
                         <Label className="text-sm font-medium text-slate-900 dark:text-white mb-3 block">
                           {t.attachments || 'Attachments'}
                         </Label>
                         
+                        {/* Input file caché */}
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -1553,6 +1582,7 @@ export default function EditProjectPage() {
                           id="file-upload-input"
                         />
                         
+                        {/* Zone de drop */}
                         <div 
                           className="border-2 border-dashed border-slate-300 dark:border-gray-700 rounded-xl p-6 text-center hover:border-purple-400 transition-colors cursor-pointer"
                           onClick={() => fileInputRef.current?.click()}
@@ -1596,6 +1626,7 @@ export default function EditProjectPage() {
                           </p>
                         </div>
 
+                        {/* Upload progress */}
                         {uploading && (
                           <div className="mt-4 p-4 border border-purple-200 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
@@ -1606,6 +1637,7 @@ export default function EditProjectPage() {
                           </div>
                         )}
 
+                        {/* Liste des fichiers */}
                         {formData.attachments.length > 0 && (
                           <div className="mt-4 space-y-3">
                             <div className="flex items-center justify-between">
@@ -1673,6 +1705,7 @@ export default function EditProjectPage() {
                         )}
                       </div>
 
+                      {/* Preview Button */}
                       <Button
                         type="button"
                         variant="outline"
@@ -1736,6 +1769,7 @@ export default function EditProjectPage() {
               </CardContent>
             </Card>
 
+            {/* Important Note */}
             <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
