@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar, Users, Code2, Sparkles, Briefcase, UserPlus } from "lucide-react"
+import { Search, Rocket, Star, TrendingUp, Shield, Zap, Calendar, Users, Code2, Sparkles, Briefcase, UserPlus, ArrowRight, Crown, Award } from "lucide-react"
 import { useState } from "react"
 import { TeamAccessButton } from '@/components/ui/team-access-button';
 import { AIMatchingButtonHero } from "../ai-matching/AIMatchingButton"
@@ -46,6 +46,26 @@ export function HeroSection({
       
       <div className="relative container mx-auto px-4 py-16 lg:py-24">
         <div className="max-w-4xl mx-auto text-center">
+          {/* Bouton "Commencer" en évidence pour utilisateur non connecté */}
+          {!user && (
+            <div className="flex justify-center mb-8">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition duration-300"></div>
+                <Button 
+                  asChild
+                  size="lg"
+                  className="relative bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white px-8 py-4 rounded-full text-lg font-bold shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl animate-pulse"
+                >
+                  <a href="/auth/signup">
+                    <Rocket className="h-5 w-5 mr-2" />
+                    {actions.startFree || "🚀 Commencer gratuitement"}
+                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
             <Zap className="h-4 w-4 text-yellow-300" />
@@ -106,84 +126,62 @@ export function HeroSection({
             </div>
           )}
          
-          {/* Actions principales - Réarrangées professionnellement */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            {!user ? (
-              <>
-                <Button 
-                  asChild
-                  size="lg"
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5"
-                >
-                  <a href="/auth/signup">
-                    <Rocket className="h-5 w-5 mr-2" />
-                    {actions.startFree || "Commencer gratuitement"}
-                  </a>
-                </Button>
-                <Button 
-                  asChild
-                  variant="outline" 
-                  size="lg"
-                  className="border-2 border-white/80 text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  <a href="/project">
-                    <Briefcase className="h-5 w-5 mr-2" />
-                    {actions.viewProjects || "Voir les projets"}
-                  </a>
-                </Button>
-              </>
-            ) : user.role === "freelance" ? (
-              <>
-                <Button 
-                  asChild
-                  size="lg" 
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5"
-                >
-                  <a href="/projects/recommended">
-                    <TrendingUp className="h-5 w-5 mr-2" />
-                    {actions.recommendedProjects || "Projets recommandés"}
-                  </a>
-                </Button>
-                <Button 
-                  asChild
-                  variant="outline" 
-                  size="lg"
-                  className="border-2 border-white/80 text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  <a href="/gigs/create">
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    {actions.createService || "Créer un service"}
-                  </a>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button 
-                  asChild
-                  size="lg" 
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5"
-                >
-                  <a href="/projects/create">
-                    <Shield className="h-5 w-5 mr-2" />
-                    {actions.postProject || "Publier un projet"}
-                  </a>
-                </Button>
-                <Button 
-                  asChild
-                  variant="outline" 
-                  size="lg"
-                  className="border-2 border-white/80 text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  <a href="/search?type=users">
-                    <UserPlus className="h-5 w-5 mr-2" />
-                    {actions.findTalent || "Trouver un talent"}
-                  </a>
-                </Button>
-              </>
-            )}
-          </div>
+          {/* Actions principales - Pour utilisateur connecté seulement */}
+          {user && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              {user.role === "freelance" ? (
+                <>
+                  <Button 
+                    asChild
+                    size="lg" 
+                    className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5"
+                  >
+                    <a href="/projects/recommended">
+                      <TrendingUp className="h-5 w-5 mr-2" />
+                      {actions.recommendedProjects || "Projets recommandés"}
+                    </a>
+                  </Button>
+                  <Button 
+                    asChild
+                    variant="outline" 
+                    size="lg"
+                    className="border-2 border-white/80 text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5"
+                  >
+                    <a href="/gigs/create">
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      {actions.createService || "Créer un service"}
+                    </a>
+                  </Button>
+                </>
+              ) : user.role === "client" && (
+                <>
+                  <Button 
+                    asChild
+                    size="lg" 
+                    className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-xl text-lg font-semibold shadow-xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5"
+                  >
+                    <a href="/projects/create">
+                      <Shield className="h-5 w-5 mr-2" />
+                      {actions.postProject || "Publier un projet"}
+                    </a>
+                  </Button>
+                  <Button 
+                    asChild
+                    variant="outline" 
+                    size="lg"
+                    className="border-2 border-white/80 text-white hover:bg-white/10 px-8 py-3 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5"
+                  >
+                    <a href="/search?type=users">
+                      <UserPlus className="h-5 w-5 mr-2" />
+                      {actions.findTalent || "Trouver un talent"}
+                    </a>
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
 
-          {/* Features Grid - Calendar, IDE, Team */}
+          {/* Features Grid - Calendar, IDE, Team (pour utilisateur connecté) */}
           {user && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
               {/* Calendar Section */}
@@ -293,6 +291,35 @@ export function HeroSection({
                 <Users className="h-4 w-4 mr-2" />
                 {teams.createTeam || "Créer une équipe"}
               </TeamAccessButton>
+            </div>
+          )}
+
+          {/* Statistiques sociales */}
+          {!user && (
+            <div className="mt-12 pt-8 border-t border-white/20">
+              <div className="flex flex-wrap justify-center gap-8">
+                <div className="text-center">
+                  <div className="flex items-center gap-2 text-white">
+                    <Crown className="h-5 w-5 text-yellow-300" />
+                    <span className="text-2xl font-bold">10k+</span>
+                  </div>
+                  <p className="text-sm text-blue-200 mt-1">Freelances actifs</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-2 text-white">
+                    <Briefcase className="h-5 w-5 text-yellow-300" />
+                    <span className="text-2xl font-bold">5k+</span>
+                  </div>
+                  <p className="text-sm text-blue-200 mt-1">Projets complétés</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-2 text-white">
+                    <Award className="h-5 w-5 text-yellow-300" />
+                    <span className="text-2xl font-bold">98%</span>
+                  </div>
+                  <p className="text-sm text-blue-200 mt-1">Clients satisfaits</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
