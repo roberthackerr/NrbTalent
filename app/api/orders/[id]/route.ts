@@ -358,11 +358,19 @@ export async function PUT(
 
     const { id } = await params
     const orderId = id
-    const { status, message, action } = await request.json()
 
     if (!ObjectId.isValid(orderId)) {
       return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 })
     }
+
+    let body;
+    try {
+      body = await request.json()
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    const { status, message, action } = body
 
     const db = await getDatabase()
     const userId = new ObjectId((session.user as any).id)
@@ -464,6 +472,12 @@ export async function PUT(
       if (!validStatuses.includes(status)) {
         return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
       }
+      
+      // Vérifier la transition de statut
+      if (status === 'in_progress' && existingOrder.status !== 'accepted') {
+        return NextResponse.json({ error: 'Cannot start work on order that is not accepted' }, { status: 400 })
+      }
+      
       updateData.status = status
       
       // Déterminer le statut de notification
@@ -481,7 +495,7 @@ export async function PUT(
     }
 
     // Ajouter un message système si nécessaire
-    if (message) {
+    if (message && typeof message === 'string') {
       const systemMessage = {
         _id: new ObjectId(),
         senderId: userId,
@@ -503,67 +517,77 @@ export async function PUT(
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 📢 ENVOI DES NOTIFICATIONS
+    // 📢 ENVOI DES NOTIFICATIONS (avec try-catch pour ne pas bloquer la réponse)
     // ──────────────────────────────────────────────────────────────────────────
     if (notificationStatus && otherUserId && gig) {
-      // Notification à l'autre partie
-      await sendOrderStatusNotification(
-        otherUserId,
-        notificationStatus,
-        notificationRole!,
-        {
-          orderId: orderId,
-          gigId: existingOrder.gigId.toString(),
-          title: gig.title,
-          status: notificationStatus
-        }
-      )
+      try {
+        // Notification à l'autre partie
+        await sendOrderStatusNotification(
+          otherUserId,
+          notificationStatus,
+          notificationRole!,
+          {
+            orderId: orderId,
+            gigId: existingOrder.gigId.toString(),
+            title: gig.title,
+            status: notificationStatus
+          }
+        )
 
-      // Notification à l'utilisateur qui a fait l'action (confirmation)
-      await sendOrderStatusNotification(
-        userId.toString(),
-        notificationStatus,
-        isBuyer ? 'buyer' : 'seller',
-        {
-          orderId: orderId,
-          gigId: existingOrder.gigId.toString(),
-          title: gig.title,
-          status: notificationStatus
-        }
-      )
-
-      // Fallback notification dans MongoDB
-      const statusNames: Record<string, { fr: string; en: string; mg: string }> = {
-        accepted: { fr: 'acceptée', en: 'accepted', mg: 'ekena' },
-        inProgress: { fr: 'en cours', en: 'in progress', mg: 'mitohy' },
-        delivered: { fr: 'livrée', en: 'delivered', mg: 'natolotra' },
-        completed: { fr: 'terminée', en: 'completed', mg: 'vita' },
-        cancelled: { fr: 'annulée', en: 'cancelled', mg: 'nofoanana' },
-        disputed: { fr: 'en litige', en: 'disputed', mg: 'ady hevitra' }
+        // Notification à l'utilisateur qui a fait l'action (confirmation)
+        await sendOrderStatusNotification(
+          userId.toString(),
+          notificationStatus,
+          isBuyer ? 'buyer' : 'seller',
+          {
+            orderId: orderId,
+            gigId: existingOrder.gigId.toString(),
+            title: gig.title,
+            status: notificationStatus
+          }
+        )
+      } catch (notifError) {
+        console.error('Error sending notifications:', notifError)
+        // Ne pas bloquer la réponse à cause des notifications
       }
 
-      await db.collection("notifications").insertOne({
-        userId: new ObjectId(otherUserId),
-        type: `order_${notificationStatus}`,
-        title: `📦 Commande ${statusNames[notificationStatus]?.fr || notificationStatus}`,
-        message: `La commande "${gig.title}" a été ${statusNames[notificationStatus]?.fr || notificationStatus}`,
-        data: { orderId: orderId, gigId: existingOrder.gigId.toString(), status: notificationStatus },
-        createdAt: new Date(),
-        read: false,
-        category: "ORDER",
-        priority: notificationStatus === 'disputed' ? "URGENT" : "MEDIUM"
-      })
+      // Fallback notification dans MongoDB
+      try {
+        const statusNames: Record<string, { fr: string; en: string; mg: string }> = {
+          accepted: { fr: 'acceptée', en: 'accepted', mg: 'ekena' },
+          inProgress: { fr: 'en cours', en: 'in progress', mg: 'mitohy' },
+          delivered: { fr: 'livrée', en: 'delivered', mg: 'natolotra' },
+          completed: { fr: 'terminée', en: 'completed', mg: 'vita' },
+          cancelled: { fr: 'annulée', en: 'cancelled', mg: 'nofoanana' },
+          disputed: { fr: 'en litige', en: 'disputed', mg: 'ady hevitra' }
+        }
+
+        await db.collection("notifications").insertOne({
+          userId: new ObjectId(otherUserId),
+          type: `order_${notificationStatus}`,
+          title: `📦 Commande ${statusNames[notificationStatus]?.fr || notificationStatus}`,
+          message: `La commande "${gig.title}" a été ${statusNames[notificationStatus]?.fr || notificationStatus}`,
+          data: { orderId: orderId, gigId: existingOrder.gigId.toString(), status: notificationStatus },
+          createdAt: new Date(),
+          read: false,
+          category: "ORDER",
+          priority: notificationStatus === 'disputed' ? "URGENT" : "MEDIUM"
+        })
+      } catch (dbError) {
+        console.error('Error saving fallback notification:', dbError)
+      }
     }
 
     // Récupérer la commande mise à jour
     const updatedOrder = await db.collection('orders').findOne({ _id: new ObjectId(orderId) })
 
     return NextResponse.json({ 
+      success: true,
       message: 'Order updated successfully',
       order: updatedOrder
     })
   } catch (error) {
     console.error('Error updating order:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }
