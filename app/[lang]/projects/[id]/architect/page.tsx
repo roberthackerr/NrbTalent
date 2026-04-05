@@ -64,7 +64,6 @@ import {
   Target,
   Layers,
   Hash,
-  CalendarDays,
   Briefcase,
   Star,
   Loader2,
