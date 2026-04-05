@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
-import { MessageSquare, ChevronLeft, Users } from 'lucide-react'
+import { MessageSquare, ChevronLeft, Users, ArrowLeft, MessageCircle, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { PostCard } from './PostCard/PostCard'
 import { CommentsSection } from './Comments/CommentsSection'
@@ -14,6 +14,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface PostViewProps {
   postId: string
@@ -36,7 +37,6 @@ export function PostView({
   const router = useRouter()
   const params = useParams()
   
-  // Déterminer la langue (priorité: prop > params > 'fr')
   const lang = propLang || (params?.lang as Locale) || 'fr'
   
   const [dict, setDict] = useState<any>(null)
@@ -49,14 +49,11 @@ export function PostView({
   const [resolvingGroup, setResolvingGroup] = useState(false)
   const [isReacting, setIsReacting] = useState(false)
 
-  // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
-  // Fonction pour obtenir l'ObjectId du groupe à partir du slug
   const getGroupObjectId = async (slug: string): Promise<string> => {
-    // Si c'est déjà un ObjectId, on le garde
     if (slug.match(/^[0-9a-fA-F]{24}$/)) {
       return slug
     }
@@ -76,18 +73,15 @@ export function PostView({
     return slug
   }
 
-  // Charger le post spécifique
   useEffect(() => {
     const fetchPost = async () => {
       if (!postId || !initialGroupId || !dict) return
       
       setLoading(true)
       try {
-        // ÉTAPE 1: Obtenir l'ObjectId du groupe à partir du slug
         const objectId = await getGroupObjectId(initialGroupId)
         setGroupObjectId(objectId)
         
-        // ÉTAPE 2: Utiliser l'ObjectId pour l'appel API
         const response = await fetch(`/api/groups/${objectId}/posts/${postId}`)
         
         if (!response.ok) {
@@ -101,12 +95,10 @@ export function PostView({
         const data = await response.json()
         setPost(data)
         
-        // Récupérer le nom du groupe si disponible
         if (data.group?.name) {
           setGroupName(data.group.name)
         }
         
-        // Récupérer la réaction de l'utilisateur
         await fetchUserReaction(objectId)
         
         if (data.isSaved) {
@@ -123,7 +115,6 @@ export function PostView({
     fetchPost()
   }, [postId, initialGroupId, dict])
 
-  // Fonction pour charger la réaction de l'utilisateur
   const fetchUserReaction = async (groupId: string) => {
     try {
       const response = await fetch(`/api/groups/${groupId}/posts/${postId}/reactions`)
@@ -136,9 +127,7 @@ export function PostView({
     }
   }
 
-  // ✅ CORRECTION ICI: Signature identique à GroupPosts (postId, reaction)
   const handleReaction = async (clickedPostId: string, reaction: ReactionType) => {
-    // Vérifier que c'est le bon post
     if (clickedPostId !== postId) return
     
     if (!isMember || !groupObjectId) {
@@ -158,7 +147,6 @@ export function PostView({
       const data = await response.json()
 
       if (response.ok) {
-        // MISE À JOUR LOCALE (comme dans GroupPosts)
         setPost(prev => {
           if (!prev) return prev
           
@@ -201,7 +189,6 @@ export function PostView({
     }
   }
 
-  // ✅ CORRECTION: handleSavePost doit accepter postId
   const handleSavePost = async (clickedPostId: string) => {
     if (clickedPostId !== postId) return
     if (!groupObjectId) return
@@ -226,7 +213,6 @@ export function PostView({
     }
   }
 
-  // ✅ CORRECTION: handleShare doit accepter postId
   const handleShare = async (clickedPostId: string, platform?: string) => {
     if (clickedPostId !== postId) return
     
@@ -263,17 +249,17 @@ export function PostView({
 
   if (!dict || resolvingGroup) {
     return (
-      <Card className="animate-pulse overflow-hidden">
+      <Card className="animate-pulse overflow-hidden bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
         <CardHeader className="space-y-3">
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full bg-gray-200 dark:bg-gray-800" />
         </CardHeader>
         <CardContent className="space-y-3">
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-6 w-3/4 bg-gray-200 dark:bg-gray-800" />
+          <Skeleton className="h-40 w-full rounded-xl bg-gray-200 dark:bg-gray-800" />
+          <Skeleton className="h-6 w-1/2 bg-gray-200 dark:bg-gray-800" />
         </CardContent>
         <CardFooter>
-          <Skeleton className="h-10 w-full rounded-full" />
+          <Skeleton className="h-10 w-full rounded-full bg-gray-200 dark:bg-gray-800" />
         </CardFooter>
       </Card>
     )
@@ -281,17 +267,17 @@ export function PostView({
 
   if (loading) {
     return (
-      <Card className="animate-pulse overflow-hidden">
+      <Card className="animate-pulse overflow-hidden bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
         <CardHeader className="space-y-3">
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full bg-gray-200 dark:bg-gray-800" />
         </CardHeader>
         <CardContent className="space-y-3">
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-6 w-3/4 bg-gray-200 dark:bg-gray-800" />
+          <Skeleton className="h-40 w-full rounded-xl bg-gray-200 dark:bg-gray-800" />
+          <Skeleton className="h-6 w-1/2 bg-gray-200 dark:bg-gray-800" />
         </CardContent>
         <CardFooter>
-          <Skeleton className="h-10 w-full rounded-full" />
+          <Skeleton className="h-10 w-full rounded-full bg-gray-200 dark:bg-gray-800" />
         </CardFooter>
       </Card>
     )
@@ -299,39 +285,47 @@ export function PostView({
 
   if (!post) {
     return (
-      <div className="text-center py-16">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 rounded-full mb-6">
-          <MessageSquare className="h-10 w-10 text-red-600" />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-16"
+      >
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 rounded-full mb-6">
+          <MessageSquare className="h-12 w-12 text-red-600 dark:text-red-400" />
         </div>
-        <h3 className="text-2xl font-bold mb-3">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
           {dict?.feed?.noPosts || 'Post introuvable'}
         </h3>
-        <p className="text-gray-600 mb-8 max-w-md mx-auto text-lg">
+        <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-lg">
           {dict?.feed?.noPostsDesc || "Le post que vous cherchez n'existe pas ou a été supprimé."}
         </p>
         <Button 
           size="lg" 
-          className="gap-3 px-8 py-6 rounded-xl text-lg"
+          className="gap-3 px-8 py-6 rounded-xl text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           onClick={onBack || (() => router.back())}
         >
           <ChevronLeft className="h-5 w-5" />
           {dict?.common?.back || 'Retour'}
         </Button>
-      </div>
+      </motion.div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Barre de navigation */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Navigation Bar */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center justify-between gap-4"
+      >
         {onBack && (
           <Button
             variant="ghost"
             onClick={onBack}
-            className="gap-2"
+            className="gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             {dict?.feed?.backToPosts || 'Retour aux posts'}
           </Button>
         )}
@@ -340,36 +334,47 @@ export function PostView({
           onClick={() => router.push(`/${lang}/groups/${initialGroupId}`)}
           variant="outline"
           size="sm"
-          className="gap-2"
+          className="gap-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <Users className="h-4 w-4" />
           {dict?.feed?.viewGroup || 'Voir le groupe'}
         </Button>
-      </div>
+      </motion.div>
 
-      {/* Post */}
-      <PostCard
-        post={post}
-        groupId={initialGroupId}
-        isMember={isMember}
-        userRole={userRole}
-        isSaved={isSaved}
-        userReaction={userReaction}
-        isReacting={isReacting}
-        onSave={handleSavePost}      // ✅ Maintenant accepte (postId)
-        onShare={handleShare}         // ✅ Maintenant accepte (postId, platform?)
-        onReaction={handleReaction}   // ✅ Maintenant accepte (postId, reaction)
-        onComment={() => {}}          // Optionnel
-        expanded={true}
-        dict={dict}
-        lang={lang}
-      />
+      {/* Post Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <PostCard
+          post={post}
+          groupId={initialGroupId}
+          isMember={isMember}
+          userRole={userRole}
+          isSaved={isSaved}
+          userReaction={userReaction}
+          isReacting={isReacting}
+          onSave={handleSavePost}
+          onShare={handleShare}
+          onReaction={handleReaction}
+          onComment={() => {}}
+          expanded={true}
+          dict={dict}
+          lang={lang}
+        />
+      </motion.div>
 
-      {/* Section commentaires */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="p-6 border-b bg-gradient-to-r from-gray-50 to-white">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-blue-600" />
+      {/* Comments Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden"
+      >
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-900">
+          <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+            <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             {dict?.feed?.comments || 'Commentaires'}
             {post.commentCount ? ` (${post.commentCount})` : ''}
           </h3>
@@ -377,13 +382,17 @@ export function PostView({
         
         <div className="p-6">
           {!isMember ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {dict?.feed?.joinToComment || 'Rejoignez le groupe pour commenter'}
               </p>
               <Button 
                 variant="outline" 
                 onClick={() => router.push(`/${lang}/groups/${initialGroupId}`)}
+                className="border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
               >
                 <Users className="h-4 w-4 mr-2" />
                 {dict?.feed?.joinGroups || 'Rejoindre le groupe'}
@@ -403,7 +412,7 @@ export function PostView({
             />
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

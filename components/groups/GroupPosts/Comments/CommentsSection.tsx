@@ -1,12 +1,13 @@
-// /components/groups/GroupPosts/Comments/CommentsSection.tsx
+// components/groups/GroupPosts/Comments/CommentsSection.tsx
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { Loader2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Loader2, ChevronUp, ChevronDown, MessageCircle, Users, Sparkles } from 'lucide-react'
 import { Comment } from './types'
 import { CommentItem } from './CommentItem'
 import { CommentForm } from './CommentForm'
 import { addReplyToComment, updateCommentInTree, removeCommentFromTree } from './comment-utils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface CommentsSectionProps {
   postId: string
@@ -18,6 +19,8 @@ interface CommentsSectionProps {
   maxHeight?: string
   autoScrollToNew?: boolean
   scrollBehavior?: 'smooth' | 'auto'
+  lang?: string
+  dict?: any
 }
 
 export function CommentsSection({
@@ -29,7 +32,9 @@ export function CommentsSection({
   onCommentAdded,
   maxHeight = '500px',
   autoScrollToNew = true,
-  scrollBehavior = 'smooth'
+  scrollBehavior = 'smooth',
+  lang = 'fr',
+  dict
 }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
@@ -43,7 +48,14 @@ export function CommentsSection({
   const lastCommentCountRef = useRef(0)
   const initialLoadDoneRef = useRef(false)
 
-  // Fonction pour scroll vers un commentaire spécifique
+  const t = dict?.feed || {
+    noComments: 'Aucun commentaire pour l\'instant',
+    loadMore: 'Charger plus de commentaires',
+    joinToComment: 'Rejoignez le groupe pour commenter',
+    joinGroups: 'Rejoindre le groupe',
+    comments: 'Commentaires'
+  }
+
   const scrollToComment = useCallback((commentId: string) => {
     const commentElement = document.getElementById(`comment-${commentId}`)
     if (commentElement) {
@@ -52,15 +64,13 @@ export function CommentsSection({
         block: 'center'
       })
       
-      // Animation de mise en évidence
-      commentElement.classList.add('bg-blue-50', 'border-l-4', 'border-blue-500')
+      commentElement.classList.add('bg-blue-50', 'dark:bg-blue-950/30', 'border-l-4', 'border-blue-500')
       setTimeout(() => {
-        commentElement.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500')
+        commentElement.classList.remove('bg-blue-50', 'dark:bg-blue-950/30', 'border-l-4', 'border-blue-500')
       }, 2000)
     }
   }, [scrollBehavior])
 
-  // Fonction pour scroll vers le bas
   const scrollToBottom = useCallback(() => {
     if (commentsContainerRef.current) {
       commentsContainerRef.current.scrollTo({
@@ -70,7 +80,6 @@ export function CommentsSection({
     }
   }, [scrollBehavior])
 
-  // Fonction pour scroll vers le haut
   const scrollToTop = useCallback(() => {
     if (commentsContainerRef.current) {
       commentsContainerRef.current.scrollTo({
@@ -80,7 +89,6 @@ export function CommentsSection({
     }
   }, [scrollBehavior])
 
-  // Fonction pour gérer le scroll
   const handleScroll = useCallback(() => {
     if (!commentsContainerRef.current) return
 
@@ -90,13 +98,23 @@ export function CommentsSection({
     setShowScrollTop(scrollTop > 200)
     setShowScrollBottom(scrollBottom > 100)
     
-    // Charger plus de commentaires quand on est proche du bas
     if (scrollBottom < 100 && !loadingMore && hasMore && page > 1) {
       loadMoreComments()
     }
   }, [loadingMore, hasMore, page])
 
-  // Effet pour l'auto-scroll
+  useEffect(() => {
+    const container = commentsContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      handleScroll()
+      
+      return () => {
+        container.removeEventListener('scroll', handleScroll)
+      }
+    }
+  }, [handleScroll])
+
   useEffect(() => {
     if (!autoScrollToNew || !comments.length) return
 
@@ -121,19 +139,6 @@ export function CommentsSection({
     
     lastCommentCountRef.current = comments.length
   }, [comments, autoScrollToNew, scrollToBottom, scrollToComment])
-
-  // Ajouter l'écouteur de scroll
-  useEffect(() => {
-    const container = commentsContainerRef.current
-    if (container) {
-      container.addEventListener('scroll', handleScroll)
-      handleScroll() // Initial check
-      
-      return () => {
-        container.removeEventListener('scroll', handleScroll)
-      }
-    }
-  }, [handleScroll])
 
   const fetchComments = async (pageNum = 1) => {
     if (pageNum === 1) {
@@ -210,7 +215,7 @@ export function CommentsSection({
       
     } catch (error: any) {
       console.error('Error posting comment:', error)
-      alert(error.message || "Erreur lors de la publication du commentaire")
+      toast.error(error.message || "Erreur lors de la publication du commentaire")
     }
   }
 
@@ -274,64 +279,94 @@ export function CommentsSection({
 
   if (loading && comments.length === 0) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex justify-center items-center py-12">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 blur-xl opacity-20 animate-pulse rounded-full"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 relative z-10" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {isMember && (
-        <>
-          <div className="px-4">
-            <CommentForm
-              onSubmit={(content) => handleCommentSubmit(content)}
-              placeholder="Partagez vos pensées..."
-              autoFocus={false}
-            />
-          </div>
-          <Separator className="my-4" />
-        </>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4"
+        >
+          <CommentForm
+            onSubmit={(content) => handleCommentSubmit(content)}
+            placeholder={dict?.feed?.commentPlaceholder || "Partagez vos pensées..."}
+            autoFocus={false}
+          />
+          <Separator className="my-4 bg-gray-200 dark:bg-gray-800" />
+        </motion.div>
       )}
 
-      {/* Conteneur des commentaires - c'est ici que le scroll doit se faire */}
+      {/* Comments Container */}
       <div 
         ref={commentsContainerRef}
         className="flex-1 overflow-y-auto px-4 custom-scrollbar"
         style={{ 
           maxHeight,
-          minHeight: '0' // Important pour le flexbox
+          minHeight: '0'
         }}
       >
         <div className="space-y-4 pb-4">
-          {comments.map((comment) => (
-            <CommentItem
-              key={comment._id}
-              comment={comment}
-              groupId={groupId}
-              postId={postId}
-              isMember={isMember}
-              userId={userId}
-              userRole={userRole}
-              onLike={handleLike}
-              onReply={handleCommentSubmit}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onGoToComment={() => scrollToComment(comment._id)}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {comments.map((comment, index) => (
+              <motion.div
+                key={comment._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <CommentItem
+                  comment={comment}
+                  groupId={groupId}
+                  postId={postId}
+                  isMember={isMember}
+                  userId={userId}
+                  userRole={userRole}
+                  onLike={handleLike}
+                  onReply={handleCommentSubmit}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onGoToComment={() => scrollToComment(comment._id)}
+                  lang={lang}
+                  dict={dict}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
           
           {comments.length === 0 && !loading && (
-            <div className="text-center py-12 text-gray-500">
-              Aucun commentaire pour l'instant
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-16"
+            >
+              <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="h-10 w-10 text-gray-500 dark:text-gray-400" />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">
+                {t.noComments}
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                Soyez le premier à commenter
+              </p>
+            </motion.div>
           )}
         </div>
 
         {loadingMore && (
           <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            <div className="relative">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
         )}
 
@@ -340,40 +375,50 @@ export function CommentsSection({
             <Button
               variant="outline"
               onClick={loadMoreComments}
-              className="px-6"
+              className="px-6 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              Charger plus de commentaires
+              <Sparkles className="h-4 w-4 mr-2" />
+              {t.loadMore}
             </Button>
           </div>
         )}
       </div>
 
-      {/* Boutons de navigation flottants */}
-      <div className="absolute right-6 bottom-6 flex flex-col gap-2 z-10">
-        {showScrollTop && (
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-10 w-10 rounded-full shadow-lg hover:shadow-xl bg-white/90 backdrop-blur-sm"
-            onClick={scrollToTop}
-            title="Remonter en haut"
+      {/* Floating Navigation Buttons */}
+      <AnimatePresence>
+        {(showScrollTop || showScrollBottom) && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute right-4 bottom-4 flex flex-col gap-2 z-10"
           >
-            <ChevronUp className="h-5 w-5" />
-          </Button>
+            {showScrollTop && (
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-10 w-10 rounded-full shadow-lg hover:shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={scrollToTop}
+                title="Remonter en haut"
+              >
+                <ChevronUp className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Button>
+            )}
+            
+            {showScrollBottom && (
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-10 w-10 rounded-full shadow-lg hover:shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={scrollToBottom}
+                title="Aller en bas"
+              >
+                <ChevronDown className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Button>
+            )}
+          </motion.div>
         )}
-        
-        {showScrollBottom && (
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-10 w-10 rounded-full shadow-lg hover:shadow-xl bg-white/90 backdrop-blur-sm"
-            onClick={scrollToBottom}
-            title="Aller en bas"
-          >
-            <ChevronDown className="h-5 w-5" />
-          </Button>
-        )}
-      </div>
+      </AnimatePresence>
     </div>
   )
 }
