@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       // Get available freelancers with their complete profiles
       const freelancers = await db.collection('users')
         .find({ 
-          role: 'freelancer',
+          role: 'freelance',
           isActive: true 
         })
         .limit(testMode ? 20 : 50)
