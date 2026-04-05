@@ -77,7 +77,7 @@ export function QuickActions({ user, dict, lang = "fr" }: QuickActionsProps) {
       title: t.searchTitle,
       description: t.searchDesc,
       icon: Search,
-      action: `/${lang}/talents`,
+      action: `/${lang}/freelancers`,
       color: "from-green-500 to-emerald-600"
     },
     {
