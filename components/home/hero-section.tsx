@@ -70,7 +70,7 @@ export function HeroSection({
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6">
             <Zap className="h-4 w-4 text-yellow-300" />
             <span className="text-sm font-medium text-white">
-              {hero.badge || "Plateforme #1 pour les freelances en 2025"}
+              {hero.badge || "Plateforme #1 pour les freelances en 2026"}
             </span>
           </div>
 
