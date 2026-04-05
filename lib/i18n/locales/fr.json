@@ -1,5 +1,19 @@
 {
-  
+  "userMenu": {
+    "signIn": "Se connecter",
+    "signUp": "Commencer",
+    "dashboard": "Tableau de bord",
+    "profile": "Mon profil",
+    "messages": "Messages",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "version": "v",
+    "user": "Utilisateur",
+    "noMessages": "Aucun message",
+    "newMessage": "Nouveau message",
+    "freelance": "Freelance",
+    "client": "Client"
+  },
 "comments": {
     "title": "Commentaires",
     "reply": "Répondre",

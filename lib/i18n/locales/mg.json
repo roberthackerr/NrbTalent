@@ -1,4 +1,19 @@
 {
+   "userMenu": {
+    "signIn": "Hiditra",
+    "signUp": "Hanomboka",
+    "dashboard": "Takelaka fandraharahana",
+    "profile": "Momba ahy",
+    "messages": "Hafatra",
+    "settings": "Fandrindrana",
+    "logout": "Hivoaka",
+    "version": "v",
+    "user": "Mpampiasa",
+    "noMessages": "Tsy misy hafatra",
+    "newMessage": "Hafatra vaovao",
+    "freelance": "Freelance",
+    "client": "Mpanjifa"
+  },
   "comments": {
     "title": "Fanehoan-kevitra",
     "reply": "Hamaly",
