@@ -14,7 +14,6 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || 'year'
-    const projectId = searchParams.get('projectId')
     
     const db = await getDatabase()
     const userId = new ObjectId((session.user as any).id)
@@ -38,109 +37,185 @@ export async function GET(request: Request) {
       baseFilter.createdAt = { $gte: new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()) }
     }
 
+    // Fetch projects
+    const projects = await db.collection("projects").find(baseFilter).toArray()
+    
+    // If no projects, return empty stats
+    if (projects.length === 0) {
+      return NextResponse.json({
+        success: true,
+        period,
+        summary: {
+          period,
+          generatedAt: new Date().toISOString(),
+          hasData: false,
+          score: { activity: 0, engagement: 0, financial: 0, satisfaction: 0, overall: 0 }
+        },
+        projects: {
+          total: 0,
+          byStatus: { draft: 0, open: 0, inProgress: 0, completed: 0, cancelled: 0, paused: 0 },
+          byVisibility: { public: 0, private: 0 },
+          byCategory: {},
+          totalBudget: { min: 0, max: 0, average: 0 },
+          averageApplications: 0,
+          completionRate: 0,
+          successRate: 0
+        },
+        applications: {
+          total: 0,
+          byStatus: { pending: 0, accepted: 0, rejected: 0, withdrawn: 0 },
+          averagePerProject: 0,
+          acceptanceRate: 0,
+          averageProposedBudget: 0,
+          byProject: []
+        },
+        financial: {
+          totalSpent: 0,
+          totalCommitted: 0,
+          totalBudget: 0,
+          averageProjectCost: 0,
+          currency: 'EUR',
+          monthlyTrend: [],
+          byCategory: {}
+        },
+        timeline: {
+          averageCompletionTime: 0,
+          fastestProject: null,
+          slowestProject: null,
+          projectsByMonth: [],
+          completionByMonth: []
+        },
+        freelancers: {
+          totalHired: 0,
+          averageRating: 0,
+          topFreelancers: [],
+          mostHiredSkills: {}
+        },
+        trends: {
+          projectGrowth: 0,
+          applicationGrowth: 0,
+          spendingGrowth: 0,
+          popularCategories: [],
+          bestPerformingProjects: [],
+          recommendations: []
+        }
+      })
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // 1. PROJECT STATISTICS
     // ──────────────────────────────────────────────────────────────────────────
-    const projects = await db.collection("projects").find(baseFilter).toArray()
-    
+    let draftCount = 0, openCount = 0, inProgressCount = 0, completedCount = 0, cancelledCount = 0, pausedCount = 0
+    let publicCount = 0, privateCount = 0
+    const categoryMap: Record<string, number> = {}
+    let totalBudgetMin = 0, totalBudgetMax = 0
+    let totalApplicationsSum = 0
+
+    for (const project of projects) {
+      // Status counts
+      switch (project.status) {
+        case 'draft': draftCount++; break
+        case 'open': openCount++; break
+        case 'in-progress': inProgressCount++; break
+        case 'completed': completedCount++; break
+        case 'cancelled': cancelledCount++; break
+        case 'paused': pausedCount++; break
+      }
+      
+      // Visibility counts
+      if (project.visibility === 'public') publicCount++
+      else if (project.visibility === 'private') privateCount++
+      
+      // Category counts
+      if (project.category) {
+        categoryMap[project.category] = (categoryMap[project.category] || 0) + 1
+      }
+      
+      // Budget
+      totalBudgetMin += project.budget?.min || 0
+      totalBudgetMax += project.budget?.max || 0
+      
+      // Applications
+      totalApplicationsSum += project.applicationCount || 0
+    }
+
     const projectStats = {
       total: projects.length,
       byStatus: {
-        draft: projects.filter(p => p.status === 'draft').length,
-        open: projects.filter(p => p.status === 'open').length,
-        inProgress: projects.filter(p => p.status === 'in-progress').length,
-        completed: projects.filter(p => p.status === 'completed').length,
-        cancelled: projects.filter(p => p.status === 'cancelled').length,
-        paused: projects.filter(p => p.status === 'paused').length
+        draft: draftCount,
+        open: openCount,
+        inProgress: inProgressCount,
+        completed: completedCount,
+        cancelled: cancelledCount,
+        paused: pausedCount
       },
       byVisibility: {
-        public: projects.filter(p => p.visibility === 'public').length,
-        private: projects.filter(p => p.visibility === 'private').length
+        public: publicCount,
+        private: privateCount
       },
-      byCategory: {} as Record<string, number>,
+      byCategory: categoryMap,
       totalBudget: {
-        min: projects.reduce((sum, p) => sum + (p.budget?.min || 0), 0),
-        max: projects.reduce((sum, p) => sum + (p.budget?.max || 0), 0),
-        average: 0
+        min: totalBudgetMin,
+        max: totalBudgetMax,
+        average: projects.length > 0 ? Math.round(totalBudgetMax / projects.length) : 0
       },
-      averageApplications: 0,
-      completionRate: 0,
-      successRate: 0
+      averageApplications: projects.length > 0 ? Math.round(totalApplicationsSum / projects.length) : 0,
+      completionRate: projects.length > 0 ? Math.round((completedCount / projects.length) * 100) : 0,
+      successRate: (completedCount + cancelledCount) > 0 ? Math.round((completedCount / (completedCount + cancelledCount)) * 100) : 0
     }
-
-    // Calculate category distribution
-    projects.forEach(project => {
-      if (project.category) {
-        projectStats.byCategory[project.category] = (projectStats.byCategory[project.category] || 0) + 1
-      }
-    })
-
-    const totalBudgetMax = projectStats.totalBudget.max
-    projectStats.totalBudget.average = projectStats.total > 0 ? Math.round(totalBudgetMax / projectStats.total) : 0
-    
-    const totalApplications = projects.reduce((sum, p) => sum + (p.applicationCount || 0), 0)
-    projectStats.averageApplications = projectStats.total > 0 ? Math.round(totalApplications / projectStats.total) : 0
-    
-    projectStats.completionRate = projectStats.total > 0 ? Math.round((projectStats.byStatus.completed / projectStats.total) * 100) : 0
-    
-    const completedAndCancelled = projectStats.byStatus.completed + projectStats.byStatus.cancelled
-    projectStats.successRate = completedAndCancelled > 0 ? Math.round((projectStats.byStatus.completed / completedAndCancelled) * 100) : 0
 
     // ──────────────────────────────────────────────────────────────────────────
     // 2. APPLICATIONS STATISTICS
     // ──────────────────────────────────────────────────────────────────────────
     const projectIds = projects.map(p => p._id)
-    
     let applications: any[] = []
+    
     if (projectIds.length > 0) {
       applications = await db.collection("applications")
         .find({ projectId: { $in: projectIds } })
         .toArray()
     }
 
-    const acceptedApplicationsCount = applications.filter(a => a.status === 'accepted').length
-    const pendingApplicationsCount = applications.filter(a => a.status === 'pending').length
-    const rejectedApplicationsCount = applications.filter(a => a.status === 'rejected').length
-    const withdrawnApplicationsCount = applications.filter(a => a.status === 'withdrawn').length
+    let pendingApps = 0, acceptedApps = 0, rejectedApps = 0, withdrawnApps = 0
+    let totalProposedBudget = 0
+    
+    for (const app of applications) {
+      switch (app.status) {
+        case 'pending': pendingApps++; break
+        case 'accepted': acceptedApps++; break
+        case 'rejected': rejectedApps++; break
+        case 'withdrawn': withdrawnApps++; break
+      }
+      totalProposedBudget += app.proposedBudget || 0
+    }
+
+    // Applications by project
+    const appsByProjectList: Array<{ projectId: string; projectTitle: string; count: number }> = []
+    for (const project of projects) {
+      const appCount = applications.filter(a => a.projectId.toString() === project._id.toString()).length
+      if (appCount > 0) {
+        appsByProjectList.push({
+          projectId: project._id.toString(),
+          projectTitle: project.title,
+          count: appCount
+        })
+      }
+    }
+    appsByProjectList.sort((a, b) => b.count - a.count)
 
     const applicationStats = {
       total: applications.length,
       byStatus: {
-        pending: pendingApplicationsCount,
-        accepted: acceptedApplicationsCount,
-        rejected: rejectedApplicationsCount,
-        withdrawn: withdrawnApplicationsCount
+        pending: pendingApps,
+        accepted: acceptedApps,
+        rejected: rejectedApps,
+        withdrawn: withdrawnApps
       },
-      averagePerProject: projectStats.total > 0 ? applications.length / projectStats.total : 0,
-      acceptanceRate: 0,
-      averageProposedBudget: 0,
-      byProject: [] as Array<{ projectId: string; projectTitle: string; count: number }>
+      averagePerProject: projects.length > 0 ? applications.length / projects.length : 0,
+      acceptanceRate: applications.length > 0 ? Math.round((acceptedApps / applications.length) * 100) : 0,
+      averageProposedBudget: applications.length > 0 ? Math.round(totalProposedBudget / applications.length) : 0,
+      byProject: appsByProjectList.slice(0, 5)
     }
-
-    applicationStats.acceptanceRate = applications.length > 0 ? Math.round((acceptedApplicationsCount / applications.length) * 100) : 0
-    
-    const totalProposedBudget = applications.reduce((sum, a) => sum + (a.proposedBudget || 0), 0)
-    applicationStats.averageProposedBudget = applications.length > 0 ? Math.round(totalProposedBudget / applications.length) : 0
-
-    // Applications by project
-    const appsByProject = new Map<string, { projectId: string; projectTitle: string; count: number }>()
-    applications.forEach(app => {
-      const project = projects.find(p => p._id.toString() === app.projectId.toString())
-      if (project) {
-        const key = project._id.toString()
-        const existing = appsByProject.get(key)
-        if (existing) {
-          existing.count++
-        } else {
-          appsByProject.set(key, {
-            projectId: project._id.toString(),
-            projectTitle: project.title,
-            count: 1
-          })
-        }
-      }
-    })
-    applicationStats.byProject = Array.from(appsByProject.values()).sort((a, b) => b.count - a.count)
 
     // ──────────────────────────────────────────────────────────────────────────
     // 3. FINANCIAL STATISTICS
@@ -148,269 +223,273 @@ export async function GET(request: Request) {
     const completedProjects = projects.filter(p => p.status === 'completed')
     const inProgressProjects = projects.filter(p => p.status === 'in-progress')
     
-    const totalSpent = completedProjects.reduce((sum, p) => sum + (p.budget?.max || 0), 0)
-    const totalCommitted = inProgressProjects.reduce((sum, p) => sum + (p.budget?.max || 0), 0)
+    let totalSpent = 0
+    for (const p of completedProjects) {
+      totalSpent += p.budget?.max || 0
+    }
     
+    let totalCommitted = 0
+    for (const p of inProgressProjects) {
+      totalCommitted += p.budget?.max || 0
+    }
+    
+    // Spending by category
+    const spendingByCategory: Record<string, number> = {}
+    for (const p of completedProjects) {
+      if (p.category) {
+        spendingByCategory[p.category] = (spendingByCategory[p.category] || 0) + (p.budget?.max || 0)
+      }
+    }
+    
+    // Monthly trend (last 6 months)
+    const monthlyTrendList: Array<{ month: string; spent: number; committed: number }> = []
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
+      
+      let monthSpent = 0
+      let monthCommitted = 0
+      
+      for (const p of completedProjects) {
+        if (p.completedAt) {
+          const pDate = new Date(p.completedAt)
+          const pMonthKey = pDate.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
+          if (pMonthKey === monthKey) {
+            monthSpent += p.budget?.max || 0
+          }
+        }
+      }
+      
+      for (const p of inProgressProjects) {
+        if (p.createdAt) {
+          const pDate = new Date(p.createdAt)
+          const pMonthKey = pDate.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
+          if (pMonthKey === monthKey) {
+            monthCommitted += p.budget?.max || 0
+          }
+        }
+      }
+      
+      monthlyTrendList.push({ month: monthKey, spent: monthSpent, committed: monthCommitted })
+    }
+
     const financialStats = {
       totalSpent,
       totalCommitted,
       totalBudget: projectStats.totalBudget.max,
-      averageProjectCost: projectStats.total > 0 ? Math.round(projectStats.totalBudget.max / projectStats.total) : 0,
+      averageProjectCost: projects.length > 0 ? Math.round(projectStats.totalBudget.max / projects.length) : 0,
       currency: projects[0]?.budget?.currency || 'EUR',
-      monthlyTrend: [] as Array<{ month: string; spent: number; committed: number }>,
-      byCategory: {} as Record<string, number>
+      monthlyTrend: monthlyTrendList,
+      byCategory: spendingByCategory
     }
-
-    // Calculate spending by category
-    completedProjects.forEach(project => {
-      if (project.category) {
-        const current = financialStats.byCategory[project.category] || 0
-        financialStats.byCategory[project.category] = current + (project.budget?.max || 0)
-      }
-    })
-
-    // Monthly trend for last 6 months
-    const monthlyData = new Map<string, { month: string; spent: number; committed: number }>()
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
-      monthlyData.set(monthKey, { month: monthKey, spent: 0, committed: 0 })
-    }
-
-    completedProjects.forEach(project => {
-      if (project.completedAt) {
-        const date = new Date(project.completedAt)
-        const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
-        const existing = monthlyData.get(monthKey)
-        if (existing) {
-          existing.spent += project.budget?.max || 0
-        }
-      }
-    })
-
-    inProgressProjects.forEach(project => {
-      if (project.createdAt) {
-        const date = new Date(project.createdAt)
-        const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
-        const existing = monthlyData.get(monthKey)
-        if (existing) {
-          existing.committed += project.budget?.max || 0
-        }
-      }
-    })
-
-    financialStats.monthlyTrend = Array.from(monthlyData.values())
 
     // ──────────────────────────────────────────────────────────────────────────
     // 4. TIMELINE STATISTICS
     // ──────────────────────────────────────────────────────────────────────────
-    const timelineStats = {
-      averageCompletionTime: 0,
-      fastestProject: null as { title: string; days: number } | null,
-      slowestProject: null as { title: string; days: number } | null,
-      projectsByMonth: [] as Array<{ month: string; count: number }>,
-      completionByMonth: [] as Array<{ month: string; count: number }>
-    }
-
-    // Calculate completion times for completed projects
-    const completionTimes: number[] = []
-    let fastestDays = Infinity
-    let fastestTitle = ''
-    let slowestDays = 0
-    let slowestTitle = ''
+    const completionTimesList: number[] = []
+    let fastestDays = Infinity, fastestTitle = ''
+    let slowestDays = 0, slowestTitle = ''
     
-    completedProjects.forEach(project => {
-      if (project.createdAt && project.completedAt) {
-        const created = new Date(project.createdAt)
-        const completed = new Date(project.completedAt)
+    for (const p of completedProjects) {
+      if (p.createdAt && p.completedAt) {
+        const created = new Date(p.createdAt)
+        const completed = new Date(p.completedAt)
         const days = Math.ceil((completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
-        completionTimes.push(days)
+        completionTimesList.push(days)
         
         if (days < fastestDays) {
           fastestDays = days
-          fastestTitle = project.title
+          fastestTitle = p.title
         }
         if (days > slowestDays) {
           slowestDays = days
-          slowestTitle = project.title
+          slowestTitle = p.title
         }
       }
-    })
-
-    timelineStats.averageCompletionTime = completionTimes.length > 0
-      ? Math.round(completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length)
-      : 0
-    timelineStats.fastestProject = fastestDays !== Infinity ? { title: fastestTitle, days: fastestDays } : null
-    timelineStats.slowestProject = slowestDays > 0 ? { title: slowestTitle, days: slowestDays } : null
-
+    }
+    
+    let avgCompletionTime = 0
+    if (completionTimesList.length > 0) {
+      let sum = 0
+      for (const t of completionTimesList) sum += t
+      avgCompletionTime = Math.round(sum / completionTimesList.length)
+    }
+    
     // Projects by month (last 12 months)
-    const projectsByMonth = new Map<string, { month: string; count: number; completed: number }>()
+    const projectsByMonthList: Array<{ month: string; count: number }> = []
+    const completionByMonthList: Array<{ month: string; count: number }> = []
+    
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
-      projectsByMonth.set(monthKey, { month: monthKey, count: 0, completed: 0 })
-    }
-
-    projects.forEach(project => {
-      const date = new Date(project.createdAt)
-      const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
-      const existing = projectsByMonth.get(monthKey)
-      if (existing) {
-        existing.count++
+      
+      let monthProjectCount = 0
+      let monthCompletionCount = 0
+      
+      for (const p of projects) {
+        const pDate = new Date(p.createdAt)
+        const pMonthKey = pDate.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
+        if (pMonthKey === monthKey) monthProjectCount++
       }
-    })
-
-    completedProjects.forEach(project => {
-      if (project.completedAt) {
-        const date = new Date(project.completedAt)
-        const monthKey = date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
-        const existing = projectsByMonth.get(monthKey)
-        if (existing) {
-          existing.completed++
+      
+      for (const p of completedProjects) {
+        if (p.completedAt) {
+          const pDate = new Date(p.completedAt)
+          const pMonthKey = pDate.toLocaleString('fr-FR', { month: 'short', year: 'numeric' })
+          if (pMonthKey === monthKey) monthCompletionCount++
         }
       }
-    })
+      
+      projectsByMonthList.push({ month: monthKey, count: monthProjectCount })
+      completionByMonthList.push({ month: monthKey, count: monthCompletionCount })
+    }
 
-    timelineStats.projectsByMonth = Array.from(projectsByMonth.values()).map(v => ({ month: v.month, count: v.count }))
-    timelineStats.completionByMonth = Array.from(projectsByMonth.values()).map(v => ({ month: v.month, count: v.completed }))
+    const timelineStats = {
+      averageCompletionTime: avgCompletionTime,
+      fastestProject: fastestDays !== Infinity ? { title: fastestTitle, days: fastestDays } : null,
+      slowestProject: slowestDays > 0 ? { title: slowestTitle, days: slowestDays } : null,
+      projectsByMonth: projectsByMonthList,
+      completionByMonth: completionByMonthList
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // 5. FREELANCER STATISTICS
     // ──────────────────────────────────────────────────────────────────────────
-    const acceptedApplicationsList = applications.filter(a => a.status === 'accepted')
-    const freelancerIdsSet = new Set<string>()
-    acceptedApplicationsList.forEach(a => freelancerIdsSet.add(a.freelancerId.toString()))
-    const freelancerIdsArray = Array.from(freelancerIdsSet)
+    const acceptedApplications = applications.filter(a => a.status === 'accepted')
+    const freelancerIdSet: Set<string> = new Set()
+    for (const app of acceptedApplications) {
+      freelancerIdSet.add(app.freelancerId.toString())
+    }
+    const freelancerIds = Array.from(freelancerIdSet)
     
     let freelancersList: any[] = []
-    if (freelancerIdsArray.length > 0) {
+    if (freelancerIds.length > 0) {
       freelancersList = await db.collection("users")
-        .find({ _id: { $in: freelancerIdsArray.map(id => new ObjectId(id)) } })
+        .find({ _id: { $in: freelancerIds.map(id => new ObjectId(id)) } })
         .project({ _id: 1, name: 1, avatar: 1, rating: 1, skills: 1, statistics: 1 })
         .toArray()
     }
-
-    const freelancerStats = {
-      totalHired: freelancerIdsArray.length,
-      averageRating: 0,
-      topFreelancers: [] as Array<{ _id: string; name: string; rating: number; projectsCount: number }>,
-      mostHiredSkills: {} as Record<string, number>
-    }
-
-    // Calculate average rating
-    let totalRatingSum = 0
-    const freelancerProjectsCount = new Map<string, number>()
     
-    freelancersList.forEach(f => {
-      totalRatingSum += f.rating || 0
+    let totalRating = 0
+    const freelancerProjectsMap: Record<string, number> = {}
+    const skillsMap: Record<string, number> = {}
+    
+    for (const f of freelancersList) {
+      totalRating += f.rating || 0
+      const count = acceptedApplications.filter(a => a.freelancerId.toString() === f._id.toString()).length
+      freelancerProjectsMap[f._id.toString()] = count
       
-      // Count projects per freelancer
-      const count = acceptedApplicationsList.filter(a => a.freelancerId.toString() === f._id.toString()).length
-      freelancerProjectsCount.set(f._id.toString(), count)
-      
-      // Count skills
-      (f.skills || []).forEach((skill: string) => {
-        freelancerStats.mostHiredSkills[skill] = (freelancerStats.mostHiredSkills[skill] || 0) + 1
-      })
-    })
-
-    freelancerStats.averageRating = freelancersList.length > 0 ? totalRatingSum / freelancersList.length : 0
-    freelancerStats.topFreelancers = freelancersList
-      .map(f => ({
-        _id: f._id.toString(),
-        name: f.name,
-        rating: f.rating || 0,
-        projectsCount: freelancerProjectsCount.get(f._id.toString()) || 0
-      }))
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 5)
+      for (const skill of (f.skills || [])) {
+        skillsMap[skill] = (skillsMap[skill] || 0) + 1
+      }
+    }
+    
+    const topFreelancersList = freelancersList.map(f => ({
+      _id: f._id.toString(),
+      name: f.name,
+      rating: f.rating || 0,
+      projectsCount: freelancerProjectsMap[f._id.toString()] || 0
+    })).sort((a, b) => b.rating - a.rating).slice(0, 5)
+    
+    const freelancerStats = {
+      totalHired: freelancerIds.length,
+      averageRating: freelancersList.length > 0 ? totalRating / freelancersList.length : 0,
+      topFreelancers: topFreelancersList,
+      mostHiredSkills: skillsMap
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // 6. TRENDS & INSIGHTS
     // ──────────────────────────────────────────────────────────────────────────
     const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
-
-    const recentProjectsList = projects.filter(p => new Date(p.createdAt) >= threeMonthsAgo)
-    const previousProjectsList = projects.filter(p => new Date(p.createdAt) >= sixMonthsAgo && new Date(p.createdAt) < threeMonthsAgo)
     
-    const recentApplicationsList = applications.filter(a => new Date(a.createdAt) >= threeMonthsAgo)
-    const previousApplicationsList = applications.filter(a => new Date(a.createdAt) >= sixMonthsAgo && new Date(a.createdAt) < threeMonthsAgo)
+    let recentProjectsCount = 0, previousProjectsCount = 0
+    let recentAppsCount = 0, previousAppsCount = 0
+    let recentSpending = 0, previousSpending = 0
     
-    const recentSpending = completedProjects
-      .filter(p => p.completedAt && new Date(p.completedAt) >= threeMonthsAgo)
-      .reduce((sum, p) => sum + (p.budget?.max || 0), 0)
-    const previousSpending = completedProjects
-      .filter(p => p.completedAt && new Date(p.completedAt) >= sixMonthsAgo && new Date(p.completedAt) < threeMonthsAgo)
-      .reduce((sum, p) => sum + (p.budget?.max || 0), 0)
-
-    const trendsStats = {
-      projectGrowth: 0,
-      applicationGrowth: 0,
-      spendingGrowth: 0,
-      popularCategories: [] as Array<{ category: string; count: number; percentage: number }>,
-      bestPerformingProjects: [] as Array<{ title: string; applications: number; acceptanceRate: number }>,
-      recommendations: [] as string[]
+    for (const p of projects) {
+      const pDate = new Date(p.createdAt)
+      if (pDate >= threeMonthsAgo) recentProjectsCount++
+      else if (pDate >= sixMonthsAgo && pDate < threeMonthsAgo) previousProjectsCount++
     }
-
-    trendsStats.projectGrowth = previousProjectsList.length > 0 
-      ? Math.round(((recentProjectsList.length - previousProjectsList.length) / previousProjectsList.length) * 100)
-      : recentProjectsList.length > 0 ? 100 : 0
-    trendsStats.applicationGrowth = previousApplicationsList.length > 0
-      ? Math.round(((recentApplicationsList.length - previousApplicationsList.length) / previousApplicationsList.length) * 100)
-      : recentApplicationsList.length > 0 ? 100 : 0
-    trendsStats.spendingGrowth = previousSpending > 0
+    
+    for (const a of applications) {
+      const aDate = new Date(a.createdAt)
+      if (aDate >= threeMonthsAgo) recentAppsCount++
+      else if (aDate >= sixMonthsAgo && aDate < threeMonthsAgo) previousAppsCount++
+    }
+    
+    for (const p of completedProjects) {
+      if (p.completedAt) {
+        const pDate = new Date(p.completedAt)
+        if (pDate >= threeMonthsAgo) recentSpending += p.budget?.max || 0
+        else if (pDate >= sixMonthsAgo && pDate < threeMonthsAgo) previousSpending += p.budget?.max || 0
+      }
+    }
+    
+    const projectGrowth = previousProjectsCount > 0 
+      ? Math.round(((recentProjectsCount - previousProjectsCount) / previousProjectsCount) * 100)
+      : recentProjectsCount > 0 ? 100 : 0
+    const applicationGrowth = previousAppsCount > 0
+      ? Math.round(((recentAppsCount - previousAppsCount) / previousAppsCount) * 100)
+      : recentAppsCount > 0 ? 100 : 0
+    const spendingGrowth = previousSpending > 0
       ? Math.round(((recentSpending - previousSpending) / previousSpending) * 100)
       : recentSpending > 0 ? 100 : 0
-
+    
     // Popular categories
-    const totalProjectsWithCategory = projects.filter(p => p.category).length
-    trendsStats.popularCategories = Object.entries(projectStats.byCategory)
+    const popularCategoriesList = Object.entries(categoryMap)
       .map(([category, count]) => ({
         category,
         count,
-        percentage: totalProjectsWithCategory > 0 ? Math.round((count / totalProjectsWithCategory) * 100) : 0
+        percentage: Math.round((count / projects.length) * 100)
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
-
+    
     // Best performing projects
-    trendsStats.bestPerformingProjects = projects
-      .map(p => {
-        const projectApplications = applications.filter(a => a.projectId.toString() === p._id.toString())
-        const acceptedCount = projectApplications.filter(a => a.status === 'accepted').length
-        return {
-          title: p.title,
-          applications: p.applicationCount || 0,
-          acceptanceRate: p.applicationCount > 0 ? (acceptedCount / p.applicationCount) * 100 : 0
-        }
-      })
-      .sort((a, b) => b.applications - a.applications)
-      .slice(0, 5)
-
-    // Generate recommendations
-    const recommendations: string[] = []
+    const bestProjectsList = projects.map(p => {
+      const projectApps = applications.filter(a => a.projectId.toString() === p._id.toString())
+      const acceptedCount = projectApps.filter(a => a.status === 'accepted').length
+      return {
+        title: p.title,
+        applications: p.applicationCount || 0,
+        acceptanceRate: p.applicationCount > 0 ? (acceptedCount / p.applicationCount) * 100 : 0
+      }
+    }).sort((a, b) => b.applications - a.applications).slice(0, 5)
+    
+    // Recommendations
+    const recommendationsList: string[] = []
     if (projectStats.byStatus.draft > 0) {
-      recommendations.push(`Vous avez ${projectStats.byStatus.draft} projet(s) en brouillon. Publiez-les pour recevoir des candidatures.`)
+      recommendationsList.push(`Vous avez ${projectStats.byStatus.draft} projet(s) en brouillon. Publiez-les pour recevoir des candidatures.`)
     }
     if (projectStats.averageApplications < 3 && projectStats.byStatus.open > 0) {
-      recommendations.push("Vos projets reçoivent peu de candidatures. Améliorez la description ou augmentez le budget.")
+      recommendationsList.push("Vos projets reçoivent peu de candidatures. Améliorez la description ou augmentez le budget.")
     }
     if (applicationStats.acceptanceRate < 30 && applicationStats.total > 5) {
-      recommendations.push("Votre taux d'acceptation des candidatures est bas. Soyez plus sélectif ou clarifiez vos attentes.")
+      recommendationsList.push("Votre taux d'acceptation des candidatures est bas. Soyez plus sélectif ou clarifiez vos attentes.")
     }
     if (financialStats.totalSpent > 10000 && freelancerStats.totalHired > 0) {
-      recommendations.push("Vous avez dépensé un montant significatif. Envisagez de fidéliser vos meilleurs freelances.")
+      recommendationsList.push("Vous avez dépensé un montant significatif. Envisagez de fidéliser vos meilleurs freelances.")
     }
-    if (trendsStats.projectGrowth > 50) {
-      recommendations.push("Votre activité est en forte croissance ! Continuez sur cette lancée.")
+    if (projectGrowth > 50) {
+      recommendationsList.push("Votre activité est en forte croissance ! Continuez sur cette lancée.")
     }
-    trendsStats.recommendations = recommendations
+    
+    const trendsStats = {
+      projectGrowth,
+      applicationGrowth,
+      spendingGrowth,
+      popularCategories: popularCategoriesList,
+      bestPerformingProjects: bestProjectsList,
+      recommendations: recommendationsList
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // 7. SUMMARY SCORES
     // ──────────────────────────────────────────────────────────────────────────
-    const activityScore = Math.min(100, Math.round((projectStats.total / 10) * 100))
+    const activityScore = Math.min(100, Math.round((projects.length / 10) * 100))
     const engagementScore = Math.min(100, Math.round((applicationStats.averagePerProject / 5) * 100))
     const financialScore = Math.min(100, Math.round((financialStats.totalSpent / 10000) * 100))
     const satisfactionScore = Math.min(100, Math.round((freelancerStats.averageRating || 0) * 20))
@@ -419,7 +498,7 @@ export async function GET(request: Request) {
     const summary = {
       period,
       generatedAt: new Date().toISOString(),
-      hasData: projects.length > 0,
+      hasData: true,
       score: {
         activity: activityScore,
         engagement: engagementScore,
@@ -441,13 +520,7 @@ export async function GET(request: Request) {
       financial: financialStats,
       timeline: timelineStats,
       freelancers: freelancerStats,
-      trends: trendsStats,
-      raw: {
-        projectsCount: projects.length,
-        applicationsCount: applications.length,
-        completedProjectsCount: completedProjects.length,
-        totalSpent: financialStats.totalSpent
-      }
+      trends: trendsStats
     })
 
   } catch (error) {
