@@ -60,46 +60,7 @@ const pill = "text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shri
 
 // ─── SearchTrigger Button ─────────────────────────────────────────────────────
 // Design puissant : différent sur desktop (barre étendue) et mobile (icône)
-function SearchTriggerDesktop({ onClick, isMac }: { onClick: () => void; isMac: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "group relative flex items-center gap-2.5 h-9",
-        // On xl+ : barre étendue avec placeholder et raccourci clavier
-        "xl:w-64 xl:px-3 xl:rounded-xl xl:border xl:border-border/60",
-        "xl:bg-accent/20 xl:hover:bg-accent/40 xl:hover:border-border",
-        // On lg–xl : icône seule dans un bouton
-        "lg:w-9 lg:px-0 lg:rounded-xl lg:border lg:border-border/60",
-        "lg:bg-accent/20 lg:hover:bg-accent/40 lg:justify-center",
-        "transition-all duration-200"
-      )}
-    >
-      {/* Icône — toujours visible */}
-      <Search className={cn(
-        "h-4 w-4 shrink-0 transition-colors",
-        "text-muted-foreground group-hover:text-foreground",
-        // Centré sur lg, décalé à gauche sur xl
-        "lg:mx-auto xl:mx-0"
-      )} />
 
-      {/* Placeholder texte — xl seulement */}
-      <span className="hidden xl:flex flex-1 items-center text-sm text-muted-foreground group-hover:text-foreground/70 whitespace-nowrap transition-colors">
-        Rechercher...
-      </span>
-
-      {/* Raccourci clavier — xl seulement */}
-      <kbd className={cn(
-        "hidden xl:inline-flex items-center gap-0.5 shrink-0",
-        "px-1.5 py-0.5 text-[10px] font-mono font-medium",
-        "bg-background/80 border border-border/60 rounded-md",
-        "text-muted-foreground group-hover:border-border transition-colors"
-      )}>
-        {isMac ? "⌘" : "⌃"}<span>K</span>
-      </kbd>
-    </button>
-  )
-}
 
 function SearchTriggerMobile({ onClick }: { onClick: () => void }) {
   return (
@@ -128,7 +89,46 @@ export function Navigation() {
   const { data: session, update: updateSession } = useSession()
   const navRef    = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
+function SearchTriggerDesktop({ onClick, isMac }: { onClick: () => void; isMac: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "group relative flex items-center gap-2.5 h-9",
+        // On xl+ : barre étendue avec placeholder et raccourci clavier
+        "xl:w-64 xl:px-3 xl:rounded-xl xl:border xl:border-border/60",
+        "xl:bg-accent/20 xl:hover:bg-accent/40 xl:hover:border-border",
+        // On lg–xl : icône seule dans un bouton
+        "lg:w-9 lg:px-0 lg:rounded-xl lg:border lg:border-border/60",
+        "lg:bg-accent/20 lg:hover:bg-accent/40 lg:justify-center",
+        "transition-all duration-200"
+      )}
+    >
+      {/* Icône — toujours visible */}
+      <Search className={cn(
+        "h-4 w-4 shrink-0 transition-colors",
+        "text-muted-foreground group-hover:text-foreground",
+        // Centré sur lg, décalé à gauche sur xl
+        "lg:mx-auto xl:mx-0"
+      )} />
 
+      {/* Placeholder texte — xl seulement */}
+      <span className="hidden xl:flex flex-1 items-center text-sm text-muted-foreground group-hover:text-foreground/70 whitespace-nowrap transition-colors">
+        {dict?.search.title || 'Rechercher...'}
+      </span>
+
+      {/* Raccourci clavier — xl seulement */}
+      <kbd className={cn(
+        "hidden xl:inline-flex items-center gap-0.5 shrink-0",
+        "px-1.5 py-0.5 text-[10px] font-mono font-medium",
+        "bg-background/80 border border-border/60 rounded-md",
+        "text-muted-foreground group-hover:border-border transition-colors"
+      )}>
+        {isMac ? "⌘" : "⌃"}<span>K</span>
+      </kbd>
+    </button>
+  )
+}
   // ✅ SearchCommand state
   const search = useSearchCommand()
 
