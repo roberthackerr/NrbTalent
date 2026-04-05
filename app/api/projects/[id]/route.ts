@@ -42,12 +42,13 @@ const UpdateProjectSchema = z.object({
   thumbnail: z.string().optional(),
   base64Data: z.string().optional(),
 })).optional(),
+
 milestones: z.array(z.object({
   title: z.string(),
-  amount: z.number(),
-  dueDate: z.string(),
-  description: z.string(),
-  currency: z.string(),
+  amount: z.number().optional(),
+  dueDate: z.string().optional(),
+  description: z.string().optional(),
+  currency: z.string().optional(),
 })).optional(),
 
   // Budget
