@@ -600,7 +600,7 @@ export async function POST(
         priority: 'MEDIUM',
         title: '📝 New Application',
         message: `${freelancerName} has applied to your project "${project.title}"`,
-        actionUrl: `/projects/${projectId.toString()}/applications`,
+        actionUrl: `/dashboard/client/projects/${projectId.toString()}/proposals`,
         data: {
           applicationId: result.insertedId.toString(),
           applicationType: 'individual',
