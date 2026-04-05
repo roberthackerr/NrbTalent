@@ -155,7 +155,7 @@ export default function NotificationsPage() {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
-  const t = dict?.notifications || {
+  const t = dict?.notifications_page || {
     title: 'Notifications',
     subtitle: 'Gérez toutes vos notifications en un seul endroit',
     total: 'Total des notifications',
