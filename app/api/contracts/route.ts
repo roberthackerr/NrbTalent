@@ -1,12 +1,185 @@
-// app/api/contracts/route.ts - CORRECTION COMPLÈTE POUR FILTRAGE
+// app/api/contracts/route.ts
 import { NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateDefaultTerms } from "@/lib/contract-helpers"
+import { notificationService } from "@/services/NotificationService"
 
-// GET - Lister les contrats avec les informations utilisateurs
+// ─── Helpers multilingues ─────────────────────────────────────────────────────
+async function getUserLanguage(userId: string): Promise<"fr" | "en" | "mg"> {
+  try {
+    const db = await getDatabase()
+    let objectId: ObjectId
+    try { objectId = new ObjectId(userId) } catch { return "fr" }
+    const user = await db.collection("users").findOne(
+      { _id: objectId },
+      { projection: { language: 1, preferences: 1 } }
+    )
+    const lang = user?.language || user?.preferences?.language || "fr"
+    return lang === "fr" || lang === "en" || lang === "mg" ? lang : "fr"
+  } catch {
+    return "fr"
+  }
+}
+
+// ─── Templates de notifications ────────────────────────────────────────────────
+const contractNotificationMessages = {
+  contractCreated: {
+    fr: {
+      client: {
+        title: "📄 Contrat créé",
+        message: (title: string) => `Votre contrat "${title}" a été créé et envoyé au freelance`
+      },
+      freelancer: {
+        title: "📄 Nouveau contrat",
+        message: (clientName: string, title: string) => `${clientName} vous a envoyé un contrat pour "${title}"`
+      }
+    },
+    en: {
+      client: {
+        title: "📄 Contract created",
+        message: (title: string) => `Your contract "${title}" has been created and sent to the freelancer`
+      },
+      freelancer: {
+        title: "📄 New contract",
+        message: (clientName: string, title: string) => `${clientName} sent you a contract for "${title}"`
+      }
+    },
+    mg: {
+      client: {
+        title: "📄 Fifanarahana noforonina",
+        message: (title: string) => `Ny fifanarahanao "${title}" dia noforonina sy nalefa tany amin'ny freelance`
+      },
+      freelancer: {
+        title: "📄 Fifanarahana vaovao",
+        message: (clientName: string, title: string) => `${clientName} nandefa fifanarahana ho an'ny "${title}"`
+      }
+    }
+  },
+  contractSigned: {
+    fr: {
+      client: {
+        title: "✍️ Contrat signé",
+        message: (freelancerName: string, title: string) => `${freelancerName} a signé le contrat "${title}"`
+      },
+      freelancer: {
+        title: "✍️ Contrat signé",
+        message: (clientName: string, title: string) => `Vous avez signé le contrat "${title}" avec ${clientName}`
+      }
+    },
+    en: {
+      client: {
+        title: "✍️ Contract signed",
+        message: (freelancerName: string, title: string) => `${freelancerName} signed the contract "${title}"`
+      },
+      freelancer: {
+        title: "✍️ Contract signed",
+        message: (clientName: string, title: string) => `You signed the contract "${title}" with ${clientName}`
+      }
+    },
+    mg: {
+      client: {
+        title: "✍️ Fifanarahana nosoniavina",
+        message: (freelancerName: string, title: string) => `Nosoniavin'i ${freelancerName} ny fifanarahana "${title}"`
+      },
+      freelancer: {
+        title: "✍️ Fifanarahana nosoniavina",
+        message: (clientName: string, title: string) => `Nosoniavinao ny fifanarahana "${title}" miaraka amin'i ${clientName}`
+      }
+    }
+  },
+  contractStatusChanged: {
+    fr: {
+      accepted: {
+        title: "✅ Contrat accepté",
+        message: (title: string) => `Le contrat "${title}" a été accepté`
+      },
+      rejected: {
+        title: "❌ Contrat refusé",
+        message: (title: string) => `Le contrat "${title}" a été refusé`
+      },
+      completed: {
+        title: "🏁 Contrat terminé",
+        message: (title: string) => `Le contrat "${title}" est terminé`
+      }
+    },
+    en: {
+      accepted: {
+        title: "✅ Contract accepted",
+        message: (title: string) => `The contract "${title}" has been accepted`
+      },
+      rejected: {
+        title: "❌ Contract rejected",
+        message: (title: string) => `The contract "${title}" has been rejected`
+      },
+      completed: {
+        title: "🏁 Contract completed",
+        message: (title: string) => `The contract "${title}" is completed`
+      }
+    },
+    mg: {
+      accepted: {
+        title: "✅ Fifanarahana ekena",
+        message: (title: string) => `Ekena ny fifanarahana "${title}"`
+      },
+      rejected: {
+        title: "❌ Fifanarahana lavina",
+        message: (title: string) => `Lavina ny fifanarahana "${title}"`
+      },
+      completed: {
+        title: "🏁 Fifanarahana vita",
+        message: (title: string) => `Vita ny fifanarahana "${title}"`
+      }
+    }
+  }
+}
+
+async function sendContractNotification(
+  userId: string,
+  templateKey: keyof typeof contractNotificationMessages,
+  role: 'client' | 'freelancer',
+  data: any
+) {
+  try {
+    const userLang = await getUserLanguage(userId)
+    const messages = contractNotificationMessages[templateKey] as any
+    const roleMessages = messages[userLang]?.[role] ?? messages.fr[role]
+    
+    let title: string
+    let message: string
+    
+    if (typeof roleMessages.message === 'function') {
+      title = roleMessages.title
+      message = roleMessages.message(data.clientName, data.title)
+    } else {
+      title = roleMessages.title
+      message = roleMessages.message
+    }
+    
+    return await notificationService.send({
+      userId,
+      category: "ORDER",
+      priority: "HIGH",
+      title,
+      message,
+      actionUrl: `/contracts/${data.contractId}`,
+      data: { 
+        entityId: data.contractId, 
+        entityType: "contract",
+        contractId: data.contractId,
+        projectId: data.projectId,
+        ...data 
+      },
+    })
+  } catch (error) {
+    console.error("Error sending contract notification:", error)
+    return null
+  }
+}
+
+// ─── GET - Lister les contrats ─────────────────────────────────────────────────
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,8 +190,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const role = searchParams.get("role")
-    const projectId = searchParams.get("projectId") || searchParams.get("project") // Support both
-    const freelancerId = searchParams.get("freelancerId") || searchParams.get("freelancer") // Support both
+    const projectId = searchParams.get("projectId") || searchParams.get("project")
+    const freelancerId = searchParams.get("freelancerId") || searchParams.get("freelancer")
     
     const db = await getDatabase()
     const userId = new ObjectId((session.user as any).id)
@@ -29,27 +202,20 @@ export async function GET(request: Request) {
 
     const filter: any = {}
 
-    // 🔥 CRITICAL: Filter by projectId if specified
     if (projectId && ObjectId.isValid(projectId)) {
       filter.projectId = new ObjectId(projectId)
-      console.log("🔍 Filtering by projectId:", projectId)
     }
 
-    // 🔥 CRITICAL: Filter by freelancerId if specified
     if (freelancerId && ObjectId.isValid(freelancerId)) {
       filter.freelancerId = new ObjectId(freelancerId)
-      console.log("🔍 Filtering by freelancerId:", freelancerId)
     }
 
-    // If both projectId and freelancerId are specified, we already have the filter
-    // If not, add role-based filtering
     if (!projectId && !freelancerId) {
       if (role === "client") {
         filter.clientId = userId
       } else if (role === "freelancer") {
         filter.freelancerId = userId
       } else {
-        // Par défaut: voir tous les contrats où l'utilisateur est impliqué
         filter.$or = [
           { clientId: userId },
           { freelancerId: userId }
@@ -57,14 +223,10 @@ export async function GET(request: Request) {
       }
     }
 
-    // Add status filter if specified
     if (status && status !== "all") {
       filter.status = status
     }
 
-    console.log("📊 Final filter:", JSON.stringify(filter, null, 2))
-
-    // Utiliser aggregation pour inclure les informations utilisateurs
     const contracts = await db.collection("contracts").aggregate([
       { $match: filter },
       {
@@ -120,20 +282,17 @@ export async function GET(request: Request) {
           signedAt: 1,
           version: 1,
           previousVersionId: 1,
-          
           "client._id": 1,
           "client.name": 1,
           "client.avatar": 1,
           "client.title": 1,
           "client.rating": 1,
-          
           "freelancer._id": 1,
           "freelancer.name": 1,
           "freelancer.avatar": 1,
           "freelancer.title": 1,
           "freelancer.rating": 1,
           "freelancer.skills": 1,
-          
           "project._id": 1,
           "project.title": 1,
           "project.description": 1,
@@ -152,7 +311,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST - Créer un contrat (reste inchangé)
+// ─── POST - Créer un contrat ──────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
     console.log("📝 POST /api/contracts called")
@@ -181,7 +340,6 @@ export async function POST(request: Request) {
       paymentSchedule
     } = body
 
-    // Validation
     if (!projectId || !freelancerId || !title || !amount) {
       console.log("❌ Missing required fields")
       return NextResponse.json({ 
@@ -197,6 +355,7 @@ export async function POST(request: Request) {
 
     const db = await getDatabase()
     const clientId = new ObjectId((session.user as any).id)
+    const clientName = (session.user as any).name
 
     console.log("👤 Client ID:", clientId.toString())
 
@@ -236,7 +395,6 @@ export async function POST(request: Request) {
 
     console.log("✅ Freelancer found:", freelancer.name, "- Role:", freelancer.role)
 
-    // Calculer la durée si endDate est fourni
     let duration: number | undefined = undefined
     if (endDate) {
       const start = new Date(startDate)
@@ -245,7 +403,6 @@ export async function POST(request: Request) {
       duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     }
 
-    // Créer le contrat
     const contract = {
       projectId: new ObjectId(projectId),
       clientId,
@@ -274,7 +431,8 @@ export async function POST(request: Request) {
     console.log("📄 Creating contract:", contract)
 
     const result = await db.collection("contracts").insertOne(contract)
-    console.log("✅ Contract created with ID:", result.insertedId)
+    const contractId = result.insertedId.toString()
+    console.log("✅ Contract created with ID:", contractId)
 
     // Mettre à jour le projet
     await db.collection("projects").updateOne(
@@ -290,25 +448,78 @@ export async function POST(request: Request) {
 
     console.log("✅ Project updated")
 
-    // Envoyer notification au freelancer
-    await db.collection("notifications").insertOne({
-      userId: new ObjectId(freelancerId),
-      type: "contract_created",
-      title: "Nouveau contrat reçu",
-      message: `${session.user?.name} vous a envoyé un contrat pour "${title}"`,
-      data: { 
-        contractId: result.insertedId, 
-        projectId: new ObjectId(projectId) 
-      },
-      read: false,
-      createdAt: new Date()
-    })
+    // ──────────────────────────────────────────────────────────────────────────
+    // 📢 ENVOI DES NOTIFICATIONS MULTILINGUES
+    // ──────────────────────────────────────────────────────────────────────────
+    
+    // 1. Notification au client (créateur du contrat)
+    await sendContractNotification(
+      clientId.toString(),
+      "contractCreated",
+      "client",
+      {
+        clientName: clientName,
+        title: title,
+        contractId: contractId,
+        projectId: projectId,
+        freelancerName: freelancer.name
+      }
+    )
+    console.log("✅ Notification sent to client")
 
-    console.log("✅ Notification sent")
+    // 2. Notification au freelance
+    await sendContractNotification(
+      freelancerId,
+      "contractCreated",
+      "freelancer",
+      {
+        clientName: clientName,
+        title: title,
+        contractId: contractId,
+        projectId: projectId
+      }
+    )
+    console.log("✅ Notification sent to freelancer")
+
+    // 3. Notification supplémentaire via la collection notifications (fallback)
+    await db.collection("notifications").insertMany([
+      {
+        userId: clientId,
+        type: "contract_created",
+        title: "📄 Contrat créé",
+        message: `Votre contrat "${title}" a été créé et envoyé à ${freelancer.name}`,
+        data: { 
+          contractId: contractId, 
+          projectId: new ObjectId(projectId),
+          freelancerId: new ObjectId(freelancerId)
+        },
+        read: false,
+        createdAt: new Date(),
+        category: "ORDER",
+        priority: "HIGH"
+      },
+      {
+        userId: new ObjectId(freelancerId),
+        type: "contract_received",
+        title: "📄 Nouveau contrat",
+        message: `${clientName} vous a envoyé un contrat pour "${title}"`,
+        data: { 
+          contractId: contractId, 
+          projectId: new ObjectId(projectId),
+          clientId: clientId
+        },
+        read: false,
+        createdAt: new Date(),
+        category: "ORDER",
+        priority: "HIGH"
+      }
+    ])
+
+    console.log("✅ Fallback notifications sent")
 
     return NextResponse.json({ 
       success: true, 
-      contractId: result.insertedId,
+      contractId: contractId,
       message: "Contrat créé avec succès" 
     }, { status: 201 })
   } catch (error: any) {
@@ -318,5 +529,96 @@ export async function POST(request: Request) {
       error: "Erreur interne",
       details: error.message 
     }, { status: 500 })
+  }
+}
+
+// ─── PATCH - Mettre à jour le statut du contrat ───────────────────────────────
+export async function PATCH(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { contractId, status, action } = body
+
+    if (!contractId || !ObjectId.isValid(contractId)) {
+      return NextResponse.json({ error: "ID de contrat invalide" }, { status: 400 })
+    }
+
+    const db = await getDatabase()
+    const userId = new ObjectId((session.user as any).id)
+    const userName = (session.user as any).name
+
+    const contract = await db.collection("contracts").findOne({
+      _id: new ObjectId(contractId)
+    })
+
+    if (!contract) {
+      return NextResponse.json({ error: "Contrat non trouvé" }, { status: 404 })
+    }
+
+    const isClient = contract.clientId.toString() === userId.toString()
+    const isFreelancer = contract.freelancerId.toString() === userId.toString()
+
+    let updateData: any = { status, updatedAt: new Date() }
+    let notificationRole: 'client' | 'freelancer' | null = null
+    let notificationData: any = {}
+
+    if (action === 'sign' && status === 'signed') {
+      if (isClient) {
+        updateData.clientSignature = { signedAt: new Date(), ip: "pending" }
+        if (contract.freelancerSignature) {
+          updateData.status = 'active'
+          updateData.signedAt = new Date()
+        }
+        notificationRole = isFreelancer ? 'freelancer' : 'client'
+      } else if (isFreelancer) {
+        updateData.freelancerSignature = { signedAt: new Date(), ip: "pending" }
+        if (contract.clientSignature) {
+          updateData.status = 'active'
+          updateData.signedAt = new Date()
+        }
+        notificationRole = isClient ? 'client' : 'freelancer'
+      }
+      notificationData = { contractId, title: contract.title, projectId: contract.projectId }
+    } else if (action === 'accept' && status === 'accepted') {
+      updateData.status = 'accepted'
+      notificationRole = 'client'
+      notificationData = { contractId, title: contract.title, projectId: contract.projectId }
+    } else if (action === 'reject' && status === 'rejected') {
+      updateData.status = 'rejected'
+      notificationRole = 'client'
+      notificationData = { contractId, title: contract.title, projectId: contract.projectId }
+    }
+
+    await db.collection("contracts").updateOne(
+      { _id: new ObjectId(contractId) },
+      { $set: updateData }
+    )
+
+    // Envoyer notification si nécessaire
+    if (notificationRole && notificationData) {
+      await sendContractNotification(
+        notificationRole === 'client' ? contract.clientId.toString() : contract.freelancerId.toString(),
+        "contractSigned",
+        notificationRole,
+        {
+          clientName: userName,
+          title: contract.title,
+          contractId: contractId,
+          projectId: contract.projectId
+        }
+      )
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Contrat mis à jour avec succès" 
+    })
+  } catch (error) {
+    console.error("❌ Error updating contract:", error)
+    return NextResponse.json({ error: "Erreur interne" }, { status: 500 })
   }
 }
