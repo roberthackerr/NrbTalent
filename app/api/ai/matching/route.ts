@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Determine if user is freelancer or client
-      if (user.role === 'freelancer') {
+      if (user.role === 'freelance') {
         return await getFreelancerRecommendations(user, db, limit);
       } else {
         return await getClientRecommendations(user, db, limit);
@@ -241,7 +241,7 @@ async function getClientRecommendations(client: any, db: any, limit: number) {
     // Find similar freelancers based on client's project history
     const allFreelancers = await db.collection('users')
       .find({ 
-        role: 'freelancer',
+        role: 'freelance',
         isActive: true 
       })
       .limit(30)
