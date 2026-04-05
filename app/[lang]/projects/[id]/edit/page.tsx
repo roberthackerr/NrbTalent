@@ -185,86 +185,102 @@ export default function EditProjectPage() {
   }, [lang])
 
   // Fonction de chargement du projet
-  const loadProject = useCallback(async () => {
-    if (hasLoaded.current || !dict) return
+ const loadProject = useCallback(async () => {
+  if (hasLoaded.current || !dict) return
+  
+  const t = dict?.projects?.edit || {}
+  
+  try {
+    hasLoaded.current = true
+    setLoading(true)
     
-    const t = dict?.projects?.edit || {}
+    const response = await fetch(`/api/projects/${id}`)
     
-    try {
-      hasLoaded.current = true
-      setLoading(true)
-      
-      const response = await fetch(`/api/projects/${id}`)
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || t.loadError || 'Failed to load project')
-      }
-      
-      const data = await response.json()
-      
-      // Vérifier si l'utilisateur est le propriétaire
-      const sessionRes = await fetch('/api/auth/session')
-      const session = await sessionRes.json()
-      
-      if (!session.user?.id || session.user.id !== data.clientId) {
-        toast({
-          title: t.unauthorized || 'Unauthorized',
-          description: t.unauthorized || 'You are not authorized to edit this project',
-          variant: 'destructive'
-        })
-        router.push(`/${lang}/projects/${id}`)
-        return
-      }
-      
-      if (isMounted.current) {
-        setProjectData(data)
-        setFormData({
-          title: data.title || '',
-          description: data.description || '',
-          category: data.category || '',
-          subcategory: data.subcategory || '',
-          skills: data.skills || [],
-          newSkill: '',
-          tags: data.tags || [],
-          newTag: '',
-          budgetType: data.budget?.type || 'fixed',
-          budgetMin: data.budget?.min || 0,
-          budgetMax: data.budget?.max || 0,
-          currency: data.budget?.currency || 'EUR',
-          deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : '',
-          location: data.location || '',
-          workType: 'remote',
-          visibility: data.visibility || 'public',
-          status: data.status || 'draft',
-          urgency: data.urgency || 'medium',
-          complexity: data.complexity || 'intermediate',
-          featured: data.featured || false,
-          acceptTeams: data.acceptTeams || false,
-          enableMilestones: data.enableMilestones || false,
-          requirements: data.requirements || '',
-          deliverables: data.deliverables || [],
-          newDeliverable: '',
-          attachments: data.attachments || []
-        })
-      }
-      
-    } catch (error) {
-      console.error('Error loading project:', error)
-      if (isMounted.current) {
-        toast({
-          title: t.loadError || 'Error',
-          description: error instanceof Error ? error.message : t.loadError || 'Failed to load project',
-          variant: 'destructive'
-        })
-        router.push(`/${lang}/projects/${id}`)
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false)
-      }
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || t.loadError || 'Failed to load project')
     }
-  }, [id, lang, router, toast, dict])
+    
+    const data = await response.json()
+    
+    // Vérifier si l'utilisateur est le propriétaire
+    const sessionRes = await fetch('/api/auth/session')
+    const session = await sessionRes.json()
+    
+    if (!session.user?.id || session.user.id !== data.clientId) {
+      toast({
+        title: t.unauthorized || 'Unauthorized',
+        description: t.unauthorized || 'You are not authorized to edit this project',
+        variant: 'destructive'
+      })
+      router.push(`/${lang}/projects/${id}`)
+      return
+    }
+    
+    if (isMounted.current) {
+      setProjectData(data)
+      
+      // Fonctions de transformation
+      const transformComplexityValue = (value: string): 'beginner' | 'intermediate' | 'expert' => {
+        if (value === 'complex' || value === 'very-complex') return 'expert';
+        if (value === 'simple') return 'beginner';
+        if (value === 'beginner' || value === 'intermediate' || value === 'expert') return value;
+        return 'intermediate';
+      };
+      
+      const transformUrgencyValue = (value: string): 'low' | 'medium' | 'high' => {
+        if (value === 'normal') return 'medium';
+        if (value === 'urgent') return 'high';
+        if (value === 'low' || value === 'medium' || value === 'high') return value;
+        return 'medium';
+      };
+      
+      setFormData({
+        title: data.title || '',
+        description: data.description || '',
+        category: data.category || '',
+        subcategory: data.subcategory || '',
+        skills: data.skills || [],
+        newSkill: '',
+        tags: data.tags || [],
+        newTag: '',
+        budgetType: data.budget?.type || 'fixed',
+        budgetMin: data.budget?.min || 0,
+        budgetMax: data.budget?.max || 0,
+        currency: data.budget?.currency || 'EUR',
+        deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : '',
+        location: data.location || '',
+        workType: 'remote',
+        visibility: data.visibility || 'public',
+        status: data.status || 'draft',
+        urgency: transformUrgencyValue(data.urgency || 'medium'),
+        complexity: transformComplexityValue(data.complexity || 'intermediate'),
+        featured: data.featured || false,
+        acceptTeams: data.acceptTeams || false,
+        enableMilestones: data.enableMilestones || false,
+        requirements: data.requirements || '',
+        deliverables: data.deliverables || [],
+        newDeliverable: '',
+        attachments: data.attachments || []
+      })
+    }
+    
+  } catch (error) {
+    console.error('Error loading project:', error)
+    if (isMounted.current) {
+      toast({
+        title: t.loadError || 'Error',
+        description: error instanceof Error ? error.message : t.loadError || 'Failed to load project',
+        variant: 'destructive'
+      })
+      router.push(`/${lang}/projects/${id}`)
+    }
+  } finally {
+    if (isMounted.current) {
+      setLoading(false)
+    }
+  }
+}, [id, lang, router, toast, dict])
 
   // Chargement du projet quand le dictionnaire est prêt
   useEffect(() => {
