@@ -85,7 +85,7 @@ function SearchTriggerDesktop({ onClick, isMac }: { onClick: () => void; isMac: 
 
       {/* Placeholder texte — xl seulement */}
       <span className="hidden xl:flex flex-1 items-center text-sm text-muted-foreground group-hover:text-foreground/70 whitespace-nowrap transition-colors">
-        Rechercher...
+        {dict?.search?.title || 'Rechercher...'}
       </span>
 
       {/* Raccourci clavier — xl seulement */}
@@ -550,7 +550,7 @@ export function Navigation() {
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/40 bg-accent/10 hover:bg-accent/30 text-muted-foreground transition-all text-sm"
                         >
                           <Search className="h-4 w-4 shrink-0" />
-                          <span className="flex-1 text-left">Rechercher...</span>
+                          <span className="flex-1 text-left">{dict?.search.title || 'Rechercher...'}</span>
                           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-background/80 border border-border/60 rounded">
                             {isMac ? "⌘K" : "Ctrl+K"}
                           </kbd>
