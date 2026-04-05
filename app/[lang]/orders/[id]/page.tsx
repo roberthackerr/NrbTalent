@@ -180,7 +180,7 @@ export default function OrderDetailPage() {
     }
   }, [session, orderId, router, lang, dict])
 
-  const t = dict?.orders || {
+  const t = dict?.orders_id || {
     backToOrders: 'Retour aux commandes',
     order: 'Commande',
     details: 'Détails de la commande',
