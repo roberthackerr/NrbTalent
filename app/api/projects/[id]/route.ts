@@ -33,7 +33,23 @@ const UpdateProjectSchema = z.object({
   skills: z.array(z.string())
     .max(20, "Maximum 20 compétences")
     .optional(),
-  
+  attachments: z.array(z.object({
+  url: z.string(),
+  publicId: z.string(),
+  name: z.string(),
+  type: z.string(),
+  size: z.number(),
+  thumbnail: z.string().optional(),
+  base64Data: z.string().optional(),
+})).optional(),
+milestones: z.array(z.object({
+  title: z.string(),
+  amount: z.number(),
+  dueDate: z.string(),
+  description: z.string(),
+  currency: z.string(),
+})).optional(),
+
   // Budget
   budget: z.object({
     min: z.number()
