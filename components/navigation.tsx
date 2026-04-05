@@ -85,7 +85,7 @@ function SearchTriggerDesktop({ onClick, isMac }: { onClick: () => void; isMac: 
 
       {/* Placeholder texte — xl seulement */}
       <span className="hidden xl:flex flex-1 items-center text-sm text-muted-foreground group-hover:text-foreground/70 whitespace-nowrap transition-colors">
-        {dict?.search?.title || 'Rechercher...'}
+        Rechercher...
       </span>
 
       {/* Raccourci clavier — xl seulement */}
