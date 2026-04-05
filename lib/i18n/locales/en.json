@@ -1,6 +1,6 @@
 {
 
-  "comments": {
+ "comments": {
     "title": "Comments",
     "reply": "Reply",
     "edit": "Edit",
@@ -36,7 +36,10 @@
     "monthAgo": "1 month ago",
     "monthsAgo": "{months} months ago",
     "yearAgo": "1 year ago",
-    "yearsAgo": "{years} years ago"
+    "yearsAgo": "{years} years ago",
+    "publish": "Publish",
+    "characterLimit": "characters",
+    "addComment": "Add a comment..."
   },
    "edit": {
     "pageTitle": "Edit Project",

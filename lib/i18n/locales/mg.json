@@ -1,5 +1,5 @@
 {
-    "comments": {
+  "comments": {
     "title": "Fanehoan-kevitra",
     "reply": "Hamaly",
     "edit": "Hanova",
@@ -35,7 +35,10 @@
     "monthAgo": "1 volana lasa izay",
     "monthsAgo": "{months} volana lasa izay",
     "yearAgo": "1 taona lasa izay",
-    "yearsAgo": "{years} taona lasa izay"
+    "yearsAgo": "{years} taona lasa izay",
+    "publish": "Hametraka",
+    "characterLimit": "endri-tsoratra",
+    "addComment": "Hanampy fanehoan-kevitra..."
   },
    "feed": {
     "recentPosts": "Lahatsoratra vao haingana",
