@@ -1,3855 +1,749 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url>
-<loc>https://nrb-talent.vercel.app/en</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>1</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>1</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>1</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/about</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/about</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/about</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/blog</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/blog</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/blog</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/calendar</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/calendar</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/calendar</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/contact</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/contact</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/contact</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/cookies</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.3</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/cookies</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.3</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/cookies</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.3</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/docs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/docs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/docs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/faq</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/faq</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/faq</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/freelancers</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/freelancers</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/freelancers</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/how-it-works</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/how-it-works</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/how-it-works</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/ide</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/ide</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/ide</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/meet</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/meet</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/meet</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/news</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/news</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/news</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/notifications</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/notifications</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/notifications</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/pricing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/pricing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/pricing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/privacy</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.4</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/privacy</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.4</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/privacy</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.4</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/talents</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/talents</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/talents</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/terms</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.4</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/terms</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.4</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/terms</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.4</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/gigs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/gigs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/gigs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/gigs/create</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/gigs/create</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/gigs/create</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/projects</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/projects</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/projects</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/projects/create</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/projects/create</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/projects/create</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/teams</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/teams</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/teams</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/messages</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/messages</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/messages</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/profile</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/profile</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/profile</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/contracts</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/contracts</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/contracts</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/orders</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/orders</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/orders</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/auth/signin</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/auth/signin</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/auth/signin</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/auth/signup</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/auth/signup</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/auth/signup</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/academy</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/academy</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/academy</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/messages</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/messages</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/messages</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/settings</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/settings</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/settings</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/referrals</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/referrals</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/referrals</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/client</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/client</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/client</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/client/ai-matching</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/client/ai-matching</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/client/ai-matching</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/client/post-project</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/client/post-project</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/client/post-project</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelance/applications</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelance/applications</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelance/applications</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelance/gigs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelance/gigs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelance/gigs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelance/profile</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelance/profile</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelance/profile</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelancer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelancer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelancer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelancer/bank</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelancer/bank</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelancer/bank</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/dashboard/freelancer/payments</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/dashboard/freelancer/payments</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/dashboard/freelancer/payments</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/ai-matching</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/ai-matching</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/ai-matching</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/onboarding</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/onboarding</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/onboarding</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/onboarding/role</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/onboarding/role</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/onboarding/role</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/admin/verification</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/admin/verification</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/admin/verification</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.95</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.95</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.95</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.95</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.95</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.95</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=users</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=projects</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=users</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=projects</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=users</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=projects</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.85</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?sort=relevance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?sort=rating</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?sort=date</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?sort=relevance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?sort=rating</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?sort=date</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?sort=relevance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?sort=rating</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?sort=date</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=web-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=mobile-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=software-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=graphic-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=ui-ux-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=digital-marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=writing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=content-creation</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=translation</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=data-science</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=machine-learning</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=ai</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=consulting</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=virtual-assistance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?category=administration</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=web-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=mobile-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=software-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=graphic-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=ui-ux-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=digital-marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=writing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=content-creation</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=translation</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=data-science</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=machine-learning</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=ai</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=consulting</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=virtual-assistance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?category=administration</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=web-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=mobile-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=software-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=graphic-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=ui-ux-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=digital-marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=writing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=content-creation</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=translation</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=data-science</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=machine-learning</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=ai</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=consulting</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=virtual-assistance</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?category=administration</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=antananarivo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=tamatave</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=mahajanga</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=fianarantsoa</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=paris</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=lyon</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=marseille</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=bordeaux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=montreal</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=dakar</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=abidjan</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=remote</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=teletravail</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=any</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?location=lavian-davitra</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=antananarivo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=tamatave</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=mahajanga</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=fianarantsoa</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=paris</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=lyon</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=marseille</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=bordeaux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=montreal</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=dakar</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=abidjan</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=remote</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=teletravail</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=any</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?location=lavian-davitra</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=antananarivo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=tamatave</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=mahajanga</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=fianarantsoa</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=paris</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=lyon</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=marseille</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=bordeaux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=montreal</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=dakar</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=abidjan</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=remote</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=teletravail</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=any</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?location=lavian-davitra</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=javascript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=python</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=figma</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=photoshop</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=ui-ux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=graphic-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=facebook-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=social-media</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=sql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=mongodb</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=postgresql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=firebase</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=wordpress</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=shopify</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=woocommerce</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=webflow</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=react,nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=javascript,typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=python,django</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=figma,ui-ux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=photoshop,illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?skills=seo,google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=javascript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=python</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=figma</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=photoshop</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=ui-ux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=graphic-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=facebook-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=social-media</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=sql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=mongodb</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=postgresql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=firebase</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=wordpress</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=shopify</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=woocommerce</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=webflow</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=react,nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=javascript,typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=python,django</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=figma,ui-ux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=photoshop,illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?skills=seo,google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=javascript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=python</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=figma</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=photoshop</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=ui-ux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=graphic-design</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=facebook-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=social-media</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=sql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=mongodb</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=postgresql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=firebase</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=wordpress</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=shopify</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=woocommerce</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=webflow</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.75</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=react,nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=javascript,typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=python,django</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=figma,ui-ux</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=photoshop,illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?skills=seo,google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=all</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=0&amp;budgetMax=100&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=100&amp;budgetMax=500&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=500&amp;budgetMax=1000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=1000&amp;budgetMax=5000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?budgetMin=5000&amp;budgetMax=10000&amp;budgetType=hourly</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.65</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?minRating=3.5</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?minRating=4</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?minRating=4.5</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?minRating=3.5</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?minRating=4</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?minRating=4.5</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?minRating=3.5</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?minRating=4</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?minRating=4.5</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.7</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=developpeur-web</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=web-developer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=mpamoratra-tranonkala</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=nextjs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=javascript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=python</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=django</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=flask</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=java</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=spring-boot</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=php</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=laravel</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=symfony</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=ruby-on-rails</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=mobile-developer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=flutter</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=react-native</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=swift</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=kotlin</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=fullstack</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=frontend</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=backend</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=devops</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=cloud</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=designer-graphique</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=graphic-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=mpamorona-sary</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=ui-ux-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=web-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=logo-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=figma</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=adobe-xd</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=photoshop</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=motion-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=video-editor</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=3d-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=marketing-digital</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=digital-marketer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=mpivarotra-antserasera</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=sem</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=facebook-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=social-media-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=content-creator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=copywriter</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=email-marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=community-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=data-scientist</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=data-analyst</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=mpandinika-angona</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=machine-learning</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=ai-engineer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=big-data</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=sql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=power-bi</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=tableau</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=redacteur</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=writer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=mpanoratra</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=consultant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=virtual-assistant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=project-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=customer-support</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=sales</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?q=administrative-assistant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=developpeur-web</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=web-developer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=mpamoratra-tranonkala</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=nextjs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=javascript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=python</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=django</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=flask</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=java</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=spring-boot</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=php</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=laravel</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=symfony</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=ruby-on-rails</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=mobile-developer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=flutter</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=react-native</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=swift</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=kotlin</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=fullstack</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=frontend</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=backend</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=devops</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=cloud</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=designer-graphique</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=graphic-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=mpamorona-sary</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=ui-ux-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=web-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=logo-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=figma</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=adobe-xd</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=photoshop</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=motion-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=video-editor</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=3d-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=marketing-digital</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=digital-marketer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=mpivarotra-antserasera</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=sem</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=facebook-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=social-media-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=content-creator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=copywriter</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=email-marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=community-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=data-scientist</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=data-analyst</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=mpandinika-angona</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=machine-learning</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=ai-engineer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=big-data</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=sql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=power-bi</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=tableau</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=redacteur</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=writer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=mpanoratra</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=consultant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=virtual-assistant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=project-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=customer-support</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=sales</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?q=administrative-assistant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=developpeur-web</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=web-developer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=mpamoratra-tranonkala</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=nextjs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=nodejs</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=javascript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=typescript</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=python</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=django</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=flask</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=java</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=spring-boot</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=php</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=laravel</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=symfony</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=ruby-on-rails</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=mobile-developer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=flutter</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=react-native</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=swift</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=kotlin</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=fullstack</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=frontend</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=backend</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=devops</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=cloud</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=designer-graphique</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=graphic-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=mpamorona-sary</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=ui-ux-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=web-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=logo-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=figma</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=adobe-xd</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=photoshop</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=illustrator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=motion-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=video-editor</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=3d-designer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=marketing-digital</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=digital-marketer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=mpivarotra-antserasera</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=seo</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=sem</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=google-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=facebook-ads</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=social-media-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=content-creator</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=copywriter</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=email-marketing</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=community-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=data-scientist</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=data-analyst</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=mpandinika-angona</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=machine-learning</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=ai-engineer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=big-data</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=sql</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=power-bi</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=tableau</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=redacteur</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=writer</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=mpanoratra</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=consultant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=virtual-assistant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=project-manager</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=customer-support</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=sales</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?q=administrative-assistant</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?page=2</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?page=3</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?page=2</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?page=3</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?page=2</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?page=3</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.5</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=users&amp;sort=rating&amp;minRating=4</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=users&amp;sort=date&amp;location=remote</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=projects&amp;sort=date&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=projects&amp;sort=relevance&amp;category=web-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=all&amp;sort=relevance&amp;skills=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=users&amp;sort=rating&amp;skills=javascript,react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/en/search?type=projects&amp;sort=date&amp;budgetMin=500&amp;budgetMax=5000</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=users&amp;sort=rating&amp;minRating=4</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=users&amp;sort=date&amp;location=remote</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=projects&amp;sort=date&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=projects&amp;sort=relevance&amp;category=web-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=all&amp;sort=relevance&amp;skills=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=users&amp;sort=rating&amp;skills=javascript,react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/fr/search?type=projects&amp;sort=date&amp;budgetMin=500&amp;budgetMax=5000</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=users&amp;sort=rating&amp;minRating=4</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=users&amp;sort=date&amp;location=remote</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=projects&amp;sort=date&amp;budgetType=fixed</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=projects&amp;sort=relevance&amp;category=web-development</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=all&amp;sort=relevance&amp;skills=react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=users&amp;sort=rating&amp;skills=javascript,react</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
-<url>
-<loc>https://nrb-talent.vercel.app/mg/search?type=projects&amp;sort=date&amp;budgetMin=500&amp;budgetMax=5000</loc>
-<lastmod>2026-04-06T17:21:11.938Z</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.6</priority>
-</url>
+  <!-- ==================== PAGES PRINCIPALES ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/about</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/talents</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/freelancers</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/projects</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/gigs</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/ai-matching</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/how-it-works</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/pricing</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/blog</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/faq</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/contact</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR TYPE ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=all</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+    <!-- ==================== ROUTES D'AUTHENTIFICATION ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/signin</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/signup</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/forgot-password</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/reset-password</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/verify-email</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/verify-email-prompt</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/2fa</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/auth/error</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+
+  <!-- ==================== ROUTES DASHBOARD ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/dashboard</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/dashboard/academy</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=users</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=projects</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR TRI ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?sort=relevance</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?sort=rating</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?sort=date</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR CATÉGORIE ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=web-development</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=mobile-development</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=software-development</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=design</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=graphic-design</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=ui-ux-design</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=marketing</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=digital-marketing</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=seo</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=writing</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=content-creation</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=translation</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=data-science</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=machine-learning</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=ai</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=consulting</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=virtual-assistance</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?category=administration</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR LOCALISATION ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=antananarivo</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=tamatave</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=mahajanga</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=fianarantsoa</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=paris</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=lyon</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=marseille</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=bordeaux</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=montreal</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=dakar</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=abidjan</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=remote</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?location=teletravail</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR COMPÉTENCES ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=react</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=javascript</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=python</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=nodejs</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=typescript</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=figma</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=photoshop</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=illustrator</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=ui-ux</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=graphic-design</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=seo</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=google-ads</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=facebook-ads</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=sql</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=wordpress</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=shopify</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Combinaisons de compétences -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=react,nodejs</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=javascript,typescript</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=python,django</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=figma,ui-ux</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=photoshop,illustrator</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?skills=seo,google-ads</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR BUDGET ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=0&budgetMax=100&budgetType=all</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=100&budgetMax=500&budgetType=all</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=500&budgetMax=1000&budgetType=all</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=1000&budgetMax=5000&budgetType=all</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=5000&budgetMax=10000&budgetType=all</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=0&budgetMax=100&budgetType=fixed</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=100&budgetMax=500&budgetType=fixed</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=500&budgetMax=1000&budgetType=fixed</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=1000&budgetMax=5000&budgetType=fixed</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=5000&budgetMax=10000&budgetType=fixed</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=0&budgetMax=100&budgetType=hourly</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=100&budgetMax=500&budgetType=hourly</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=500&budgetMax=1000&budgetType=hourly</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=1000&budgetMax=5000&budgetType=hourly</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?budgetMin=5000&budgetMax=10000&budgetType=hourly</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <!-- ==================== RECHERCHES PAR NOTE ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?minRating=3.5</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?minRating=4</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?minRating=4.5</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ==================== REQUÊTES DE RECHERCHE POPULAIRES ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=developpeur-web</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=react</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=javascript</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=python</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=designer-graphique</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=marketing-digital</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=data-scientist</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=ui-ux-designer</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=fullstack</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=seo</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?q=wordpress</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ==================== PAGINATION ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?page=2</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?page=3</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- ==================== COMBINAISONS AVANCÉES ==================== -->
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=users&sort=rating&minRating=4</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=users&sort=date&location=remote</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=projects&sort=date&budgetType=fixed</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=projects&sort=relevance&category=web-development</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=all&sort=relevance&skills=react</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=users&sort=rating&skills=javascript,react</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nrb-talent.vercel.app/search?type=projects&sort=date&budgetMin=500&budgetMax=5000</loc>
+    <lastmod>2026-04-06T18:19:22.138Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>
