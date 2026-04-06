@@ -1,6 +1,13 @@
 // app/sitemap.ts
 import type { MetadataRoute } from "next"
 
+// Helper pour encoder les URLs pour le XML
+function encodeSitemapUrl(url: string): string {
+  // Remplacer & par &amp; pour le XML
+  // Mais attention à ne pas remplacer &amp; déjà présent
+  return url.replace(/&(?!amp;)/g, '&amp;')
+}
+
 // Types de recherche possibles
 type SearchType = 'all' | 'users' | 'projects'
 type BudgetType = 'all' | 'fixed' | 'hourly'
@@ -11,75 +18,70 @@ const searchOptions = {
   types: ['all', 'users', 'projects'] as SearchType[],
   budgetTypes: ['all', 'fixed', 'hourly'] as BudgetType[],
   sortOptions: ['relevance', 'rating', 'date'] as SortType[],
-  ratings: [0, 3.5, 4, 4.5],
-  pageLimits: [1, 2, 3], // Pages populaires à indexer
+  ratings: [3.5, 4, 4.5], // Enlever 0 car inutile
+  pageLimits: [2, 3], // Pages 2 et 3 seulement
 }
 
-// Requêtes de recherche populaires (basées sur l'usage réel)
+// Requêtes de recherche populaires - EN VERSION URL-SAFE UNIQUEMENT
 const popularQueries = [
   // Développement
-  "développeur web", "web developer", "mpamoratra tranonkala",
-  "react", "next.js", "node.js", "javascript", "typescript",
-  "python", "django", "flask", "java", "spring boot",
-  "php", "laravel", "symfony", "ruby on rails",
-  "mobile developer", "flutter", "react native", "swift", "kotlin",
+  "developpeur-web", "web-developer", "mpamoratra-tranonkala",
+  "react", "nextjs", "nodejs", "javascript", "typescript",
+  "python", "django", "flask", "java", "spring-boot",
+  "php", "laravel", "symfony", "ruby-on-rails",
+  "mobile-developer", "flutter", "react-native", "swift", "kotlin",
   "fullstack", "frontend", "backend", "devops", "cloud",
   
   // Design
-  "designer graphique", "graphic designer", "mpamorona sary",
-  "ui/ux designer", "web designer", "logo designer",
-  "figma", "adobe xd", "photoshop", "illustrator",
-  "motion designer", "video editor", "3d designer",
+  "designer-graphique", "graphic-designer", "mpamorona-sary",
+  "ui-ux-designer", "web-designer", "logo-designer",
+  "figma", "adobe-xd", "photoshop", "illustrator",
+  "motion-designer", "video-editor", "3d-designer",
   
   // Marketing
-  "marketing digital", "digital marketer", "mpivarotra an-tserasera",
-  "seo", "sem", "google ads", "facebook ads",
-  "social media manager", "content creator", "copywriter",
-  "email marketing", "community manager",
+  "marketing-digital", "digital-marketer", "mpivarotra-antserasera",
+  "seo", "sem", "google-ads", "facebook-ads",
+  "social-media-manager", "content-creator", "copywriter",
+  "email-marketing", "community-manager",
   
   // Data
-  "data scientist", "data analyst", "mpandinika angona",
-  "machine learning", "ai engineer", "big data",
-  "sql", "power bi", "tableau",
+  "data-scientist", "data-analyst", "mpandinika-angona",
+  "machine-learning", "ai-engineer", "big-data",
+  "sql", "power-bi", "tableau",
   
   // Autres
-  "rédacteur", "writer", "mpanoratra",
-  "consultant", "virtual assistant", "project manager",
-  "customer support", "sales", "administrative assistant",
+  "redacteur", "writer", "mpanoratra",
+  "consultant", "virtual-assistant", "project-manager",
+  "customer-support", "sales", "administrative-assistant",
 ]
 
-// Catégories populaires pour les projets
+// Catégories populaires - UNIQUEMENT caractères URL-safe
 const popularCategories = [
-  "web development", "mobile development", "software development",
-  "design", "graphic design", "ui/ux design",
-  "marketing", "digital marketing", "seo",
-  "writing", "content creation", "translation",
-  "data science", "machine learning", "ai",
-  "consulting", "virtual assistance", "administration",
+  "web-development", "mobile-development", "software-development",
+  "design", "graphic-design", "ui-ux-design",
+  "marketing", "digital-marketing", "seo",
+  "writing", "content-creation", "translation",
+  "data-science", "machine-learning", "ai",
+  "consulting", "virtual-assistance", "administration",
 ]
 
 // Localisations populaires
 const popularLocations = [
   "antananarivo", "tamatave", "mahajanga", "fianarantsoa",
   "paris", "lyon", "marseille", "bordeaux",
-  "montreal", /* "paris", <-- remove this duplicate */ "dakar", "abidjan",
-  "remote", "télétravail", "any", "lavian-davitra",
+  "montreal", "dakar", "abidjan",
+  "remote", "teletravail", "any", "lavian-davitra",
 ]
-
 
 // Compétences populaires
 const popularSkills = [
-  "react", "javascript", "python", "node.js", "typescript",
-  "figma", "photoshop", "illustrator", "ui/ux", "graphic design",
-  "seo", "google ads", "facebook ads", "social media",
+  "react", "javascript", "python", "nodejs", "typescript",
+  "figma", "photoshop", "illustrator", "ui-ux", "graphic-design",
+  "seo", "google-ads", "facebook-ads", "social-media",
   "sql", "mongodb", "postgresql", "firebase",
   "wordpress", "shopify", "woocommerce", "webflow",
 ]
-// Add this helper at the top of the file, before the sitemap() function
-function xmlSafeUrl(url: string): string {
-  // Replace bare & in query strings with &amp; for valid XML
-  return url.replace(/&(?!amp;)/g, '&amp;')
-}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXTAUTH_URL || "https://nrb-talent.vercel.app"
   const languages = ["en", "fr", "mg"]
@@ -137,6 +139,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "onboarding", priority: 0.6, changefreq: "monthly" },
     { path: "onboarding/role", priority: 0.6, changefreq: "monthly" },
     { path: "admin/verification", priority: 0.5, changefreq: "daily" },
+    { path: "search", priority: 0.95, changefreq: "daily" },
   ]
 
   // Générer les URLs statiques pour chaque langue
@@ -147,7 +150,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         : `${baseUrl}/${lang}/${route.path}`
       
       sitemapEntries.push({
-        url,
+        url: encodeSitemapUrl(url),
         lastModified,
         changeFrequency: route.changefreq as MetadataRoute.Sitemap[number]["changeFrequency"],
         priority: route.priority,
@@ -156,11 +159,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // ==================== 2. ROUTES DE RECHERCHE PRINCIPALES ====================
-  
-  // Page search sans paramètres (par langue)
   for (const lang of languages) {
     sitemapEntries.push({
-      url: `${baseUrl}/${lang}/search`,
+      url: encodeSitemapUrl(`${baseUrl}/${lang}/search`),
       lastModified,
       changeFrequency: "daily",
       priority: 0.95,
@@ -171,7 +172,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const lang of languages) {
     for (const type of searchOptions.types) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?type=${type}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?type=${type}`),
         lastModified,
         changeFrequency: "daily",
         priority: 0.85,
@@ -183,7 +184,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const lang of languages) {
     for (const sort of searchOptions.sortOptions) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?sort=${sort}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?sort=${sort}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.7,
@@ -195,7 +196,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const lang of languages) {
     for (const category of popularCategories) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?category=${encodeURIComponent(category)}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?category=${category}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.75,
@@ -207,7 +208,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const lang of languages) {
     for (const location of popularLocations) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?location=${encodeURIComponent(location)}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?location=${location}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.7,
@@ -219,28 +220,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const lang of languages) {
     for (const skill of popularSkills) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?skills=${encodeURIComponent(skill)}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?skills=${skill}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.75,
       })
     }
     
-    // Combinaisons de compétences populaires
     const skillCombinations = [
-      "react,node.js",
+      "react,nodejs",
       "javascript,typescript",
       "python,django",
-      "figma,ui/ux",
+      "figma,ui-ux",
       "photoshop,illustrator",
-      "seo,google ads",
-      "react,native",
-      "laravel,vue.js",
+      "seo,google-ads",
     ]
     
     for (const skills of skillCombinations) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?skills=${encodeURIComponent(skills)}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?skills=${skills}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.65,
@@ -251,7 +249,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ==================== 8. RECHERCHES PAR BUDGET ====================
   for (const lang of languages) {
     for (const budgetType of searchOptions.budgetTypes) {
-      // Budget min-max populaires
       const budgetRanges = [
         { min: 0, max: 100 },
         { min: 100, max: 500 },
@@ -262,7 +259,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       
       for (const range of budgetRanges) {
         sitemapEntries.push({
-          url: `${baseUrl}/${lang}/search?budgetMin=${range.min}&budgetMax=${range.max}&budgetType=${budgetType}`,
+          url: encodeSitemapUrl(`${baseUrl}/${lang}/search?budgetMin=${range.min}&budgetMax=${range.max}&budgetType=${budgetType}`),
           lastModified,
           changeFrequency: "weekly",
           priority: 0.65,
@@ -274,93 +271,54 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // ==================== 9. RECHERCHES PAR NOTE ====================
   for (const lang of languages) {
     for (const rating of searchOptions.ratings) {
-      if (rating > 0) {
-        sitemapEntries.push({
-          url: `${baseUrl}/${lang}/search?minRating=${rating}`,
-          lastModified,
-          changeFrequency: "weekly",
-          priority: 0.7,
-        })
-      }
+      sitemapEntries.push({
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?minRating=${rating}`),
+        lastModified,
+        changeFrequency: "weekly",
+        priority: 0.7,
+      })
     }
   }
 
-  // ==================== 10. RECHERCHES POPULAIRES (QUERIES) ====================
+  // ==================== 10. RECHERCHES POPULAIRES ====================
   for (const lang of languages) {
     for (const query of popularQueries) {
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?q=${encodeURIComponent(query)}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?q=${query}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.8,
       })
-      
-      // Combinaisons query + type
-      for (const type of searchOptions.types) {
-        if (type !== 'all') {
-          sitemapEntries.push({
-            url: `${baseUrl}/${lang}/search?q=${encodeURIComponent(query)}&type=${type}`,
-            lastModified,
-            changeFrequency: "weekly",
-            priority: 0.7,
-          })
-        }
-      }
     }
   }
 
-  // ==================== 11. RECHERCHES AVEC PAGINATION ====================
+  // ==================== 11. PAGINATION ====================
   for (const lang of languages) {
     for (const page of searchOptions.pageLimits) {
-      if (page > 1) {
-        sitemapEntries.push({
-          url: `${baseUrl}/${lang}/search?page=${page}`,
-          lastModified,
-          changeFrequency: "weekly",
-          priority: 0.5,
-        })
-        
-        // Pagination + type
-        for (const type of searchOptions.types) {
-          if (type !== 'all') {
-            sitemapEntries.push({
-              url: `${baseUrl}/${lang}/search?type=${type}&page=${page}`,
-              lastModified,
-              changeFrequency: "weekly",
-              priority: 0.45,
-            })
-          }
-        }
-      }
+      sitemapEntries.push({
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?page=${page}`),
+        lastModified,
+        changeFrequency: "weekly",
+        priority: 0.5,
+      })
     }
   }
 
-  // ==================== 12. COMBINAISONS AVANCÉES (populaires) ====================
+  // ==================== 12. COMBINAISONS AVANCÉES ====================
   const advancedCombinations = [
-    { type: "users", sort: "rating", minRating: 4 },
-    { type: "users", sort: "date", location: "remote" },
-    { type: "projects", sort: "date", budgetType: "fixed" },
-    { type: "projects", sort: "relevance", category: "web development" },
-    { type: "all", sort: "relevance", skills: "react" },
-    { type: "users", sort: "rating", skills: "javascript,react" },
-    { type: "projects", sort: "date", budgetMin: 500, budgetMax: 5000 },
+    "type=users&sort=rating&minRating=4",
+    "type=users&sort=date&location=remote",
+    "type=projects&sort=date&budgetType=fixed",
+    "type=projects&sort=relevance&category=web-development",
+    "type=all&sort=relevance&skills=react",
+    "type=users&sort=rating&skills=javascript,react",
+    "type=projects&sort=date&budgetMin=500&budgetMax=5000",
   ]
   
   for (const lang of languages) {
     for (const combo of advancedCombinations) {
-      const params = new URLSearchParams()
-      if (combo.type) params.set("type", combo.type)
-      if (combo.sort) params.set("sort", combo.sort)
-      if (combo.minRating) params.set("minRating", combo.minRating.toString())
-      if (combo.location) params.set("location", combo.location)
-      if (combo.budgetType) params.set("budgetType", combo.budgetType)
-      if (combo.category) params.set("category", combo.category)
-      if (combo.skills) params.set("skills", combo.skills)
-      if (combo.budgetMin) params.set("budgetMin", combo.budgetMin.toString())
-      if (combo.budgetMax) params.set("budgetMax", combo.budgetMax.toString())
-      
       sitemapEntries.push({
-        url: `${baseUrl}/${lang}/search?${params.toString()}`,
+        url: encodeSitemapUrl(`${baseUrl}/${lang}/search?${combo}`),
         lastModified,
         changeFrequency: "weekly",
         priority: 0.6,
@@ -368,8 +326,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
- return sitemapEntries.map(entry => ({
-  ...entry,
-  url: entry.url.replace(/&(?!amp;)/g, '&amp;')
-}))
+  return sitemapEntries
 }
