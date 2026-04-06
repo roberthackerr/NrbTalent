@@ -57,6 +57,22 @@ const authRoutes = [
   '/auth/verify-email-prompt'
 ]
 
+// 🔥 NOUVEAU: Routes SEO à exclure complètement du middleware
+const seoRoutes = [
+  '/sitemap.xml',
+  '/robots.txt',
+  '/sitemap',
+  '/favicon.ico',
+  '/manifest.json',
+  '/sw.js',
+  '/workbox-',
+  '/_next/static',
+  '/_next/image',
+  '/images',
+  '/fonts',
+  '/icons',
+]
+
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|public|api/ws).*)',
@@ -67,6 +83,12 @@ export const config = {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
+  // 🔥 CRUCIAL: Exclure les fichiers SEO du middleware
+  if (seoRoutes.some(route => pathname === route || pathname.startsWith(route))) {
+    return NextResponse.next()
+  }
+  
+  // Exclure les fichiers statiques et API WebSocket
   if (
     pathname.startsWith('/_next') ||
     pathname.includes('.') ||
@@ -165,12 +187,17 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Middleware d'authentification
+// Middleware d'authentification - MODIFIÉ pour ne pas s'exécuter sur les routes SEO
 export default withAuth(
   async function middleware(req) {
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
     const lang = path.split('/')[1] || defaultLocale
+
+    // 🔥 CRUCIAL: Ignorer complètement l'authentification pour les routes SEO
+    if (seoRoutes.some(route => path === route || path.startsWith(route))) {
+      return NextResponse.next()
+    }
 
     const pathWithoutLang = path.replace(/^\/[^\/]+/, '') || '/'
 
@@ -280,7 +307,15 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      // 🔥 MODIFIÉ: Autoriser les routes SEO sans authentification
+      authorized: ({ req, token }) => {
+        const path = req.nextUrl.pathname
+        // Les routes SEO sont toujours autorisées
+        if (seoRoutes.some(route => path === route || path.startsWith(route))) {
+          return true
+        }
+        return !!token
+      },
     },
   }
 )
