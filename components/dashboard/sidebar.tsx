@@ -413,9 +413,9 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
         "flex items-center gap-2 px-4 py-4 border-b border-purple-100 dark:border-purple-900/50 flex-shrink-0",
         isCollapsed && !isMobile && "justify-center px-2"
       )}>
-        <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-md">
-          <Image src={"/logo.png"} alt="logo"  className="w-40 h-40 "/>
-        </div>
+       
+          <Image src={"/logo.png"} alt="logo"  width={20} height={20}/>
+
         {(!isCollapsed || isMobile) && (
           <span className="font-bold text-base bg-gradient-to-r from-purple-700 to-fuchsia-700 bg-clip-text text-transparent">
             NRBTalents
