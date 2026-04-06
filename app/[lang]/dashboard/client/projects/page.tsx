@@ -57,7 +57,8 @@ import {
   Mail,
   Phone,
   MapPin,
-  Briefcase
+  Briefcase,
+  Menu
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -155,7 +156,7 @@ export default function ClientProjectsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 100000])
   const [showNewProjectsOnly, setShowNewProjectsOnly] = useState(false)
-
+const [sidebarOpen, setSidebarOpen] = useState(false)
   // Categories from existing projects
   const categories = useMemo(() => {
     const cats = new Set(projects.map(p => p.category).filter(Boolean))
@@ -469,8 +470,36 @@ export default function ClientProjectsPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/30">
       <DashboardSidebar role="client" />
+     {/* Fixed sidebar — takes no space in the flow */}
+      <DashboardSidebar
+        role="client"
+        isMobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
+      />
 
-      <main className="flex-1 overflow-y-auto">
+      {/*
+        Main content area.
+        On md+ we offset left by the sidebar width so content isn't hidden behind it.
+        On mobile there's no offset — the sidebar is an overlay drawer.
+
+        If you use the collapsible feature, swap md:pl-72 / md:pl-16 dynamically,
+        or drive it from shared state / CSS custom property.
+      */}
+      <div className="md:pl-72 transition-all duration-300 ease-in-out">
+
+        {/* Mobile top bar */}
+        <header className="sticky top-0 z-20 flex items-center gap-3 md:hidden px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="font-semibold text-slate-800 dark:text-white text-sm">Dashboard</span>
+        </header>
+
+        {/* Page content */}
+   <main className="flex-1 overflow-y-auto">
         {/* Animated Background Elements - Dark mode aware */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-purple-300 dark:bg-purple-950 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob"></div>
@@ -1581,6 +1610,8 @@ export default function ClientProjectsPage() {
           )}
         </div>
       </main>
+      </div>
+   
 
       {/* Styles CSS pour l'animation blob */}
       <style jsx global>{`
