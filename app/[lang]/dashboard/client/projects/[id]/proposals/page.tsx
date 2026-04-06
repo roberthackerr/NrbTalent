@@ -679,16 +679,7 @@ export default function ProposalsPage() {
             {/* Page content */}
       
       <main className="flex-1 overflow-y-auto">
-        <div className="md:hidden fixed top-4 left-4 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsSidebarOpen(true)}
-            className="bg-white/80 backdrop-blur-sm border-purple-200 shadow-lg hover:bg-purple-50"
-          >
-            <Menu className="h-5 w-5 text-purple-600" />
-          </Button>
-        </div>
+
 
         <div className="p-4 md:p-6 lg:p-8">
           <div className="mb-8">
