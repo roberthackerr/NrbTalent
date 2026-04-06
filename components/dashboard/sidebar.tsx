@@ -18,6 +18,7 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useEffect } from "react"
+import Image from "next/image"
 
 interface SidebarProps {
   role: "freelance" | "client"
@@ -413,7 +414,7 @@ export function DashboardSidebar({ role, isMobileOpen, onMobileClose }: SidebarP
         isCollapsed && !isMobile && "justify-center px-2"
       )}>
         <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-md">
-          <span className="text-white font-bold text-xs">NR</span>
+          <Image src={"/logo.png"} alt="logo"  className="w-40 h-40 "/>
         </div>
         {(!isCollapsed || isMobile) && (
           <span className="font-bold text-base bg-gradient-to-r from-purple-700 to-fuchsia-700 bg-clip-text text-transparent">
