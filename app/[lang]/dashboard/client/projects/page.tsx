@@ -918,19 +918,38 @@ export default function ClientProjectsPage() {
                                 <ExternalLink className="h-3.5 w-3.5" /> Gérer
                               </Button>
                             </Link>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="px-2">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 dark:bg-gray-900 dark:border-gray-800">
-                                <DropdownMenuItem asChild><Link href={`/projects/${project._id}/edit`} className="flex items-center gap-2"><Edit2 className="h-3.5 w-3.5" /> Modifier</Link></DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => duplicateProject(project._id)} className="gap-2"><Copy className="h-3.5 w-3.5" /> Dupliquer</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => deleteProject(project._id)} className="text-red-600 gap-2"><Trash2 className="h-3.5 w-3.5" /> Supprimer</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                               <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="px-2">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52 dark:bg-gray-900 dark:border-gray-800">
+                                  <DropdownMenuItem asChild><Link href={`/projects/${project._id}/edit`} className="flex items-center gap-2"><Edit2 className="h-3.5 w-3.5" /> Modifier</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/projects/${project._id}`} className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Voir détails</Link></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><AIArchitectBadge projectId={project._id} clientId={session?.user?.id} /></DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/dashboard/client/projects/${project._id}/proposals`} className="flex items-center gap-2">
+                                      <Users className="h-3.5 w-3.5" /> Toutes les propositions
+                                      {appStats.total > 0 && <Badge variant="secondary" className="ml-auto text-[10px]">{appStats.total}</Badge>}
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  {hasNewApplications && (
+                                    <DropdownMenuItem onClick={() => markAllAsRead(project._id)} className="text-blue-600 dark:text-blue-400 gap-2">
+                                      <Check className="h-3.5 w-3.5" /> Marquer comme lu
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => duplicateProject(project._id)} className="gap-2"><Copy className="h-3.5 w-3.5" /> Dupliquer</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/projects/${project._id}`); toast({ title: "Lien copié" }) }} className="gap-2">
+                                    <Copy className="h-3.5 w-3.5" /> Copier le lien
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => deleteProject(project._id)} className="text-red-600 dark:text-red-400 gap-2">
+                                    <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                           </div>
 
                           <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-2 flex items-center gap-1">
