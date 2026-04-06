@@ -62,9 +62,10 @@ const popularCategories = [
 const popularLocations = [
   "antananarivo", "tamatave", "mahajanga", "fianarantsoa",
   "paris", "lyon", "marseille", "bordeaux",
-  "montreal", "paris", "dakar", "abidjan",
+  "montreal", /* "paris", <-- remove this duplicate */ "dakar", "abidjan",
   "remote", "télétravail", "any", "lavian-davitra",
 ]
+
 
 // Compétences populaires
 const popularSkills = [
@@ -74,7 +75,11 @@ const popularSkills = [
   "sql", "mongodb", "postgresql", "firebase",
   "wordpress", "shopify", "woocommerce", "webflow",
 ]
-
+// Add this helper at the top of the file, before the sitemap() function
+function xmlSafeUrl(url: string): string {
+  // Replace bare & in query strings with &amp; for valid XML
+  return url.replace(/&(?!amp;)/g, '&amp;')
+}
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXTAUTH_URL || "https://nrb-talent.vercel.app"
   const languages = ["en", "fr", "mg"]
@@ -132,7 +137,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "onboarding", priority: 0.6, changefreq: "monthly" },
     { path: "onboarding/role", priority: 0.6, changefreq: "monthly" },
     { path: "admin/verification", priority: 0.5, changefreq: "daily" },
-    { path: "search", priority: 0.95, changefreq: "daily" }, // Page search principale
   ]
 
   // Générer les URLs statiques pour chaque langue
@@ -364,5 +368,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  return sitemapEntries
+ return sitemapEntries.map(entry => ({
+  ...entry,
+  url: entry.url.replace(/&(?!amp;)/g, '&amp;')
+}))
 }
