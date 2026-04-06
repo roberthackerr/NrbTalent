@@ -120,6 +120,7 @@ export default function ProposalsPage() {
   const [processingAction, setProcessingAction] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [existingContracts, setExistingContracts] = useState<Record<string, Contract>>({})
+    const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -299,7 +300,37 @@ export default function ProposalsPage() {
   if (!project) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
-        <DashboardSidebar role="client" isMobileOpen={isSidebarOpen} onMobileClose={() => setIsSidebarOpen(false)} />
+        
+              {/* Fixed sidebar — takes no space in the flow */}
+              <DashboardSidebar
+                role="client"
+                isMobileOpen={sidebarOpen}
+                onMobileClose={() => setSidebarOpen(false)}
+              />
+        
+              {/*
+                Main content area.
+                On md+ we offset left by the sidebar width so content isn't hidden behind it.
+                On mobile there's no offset — the sidebar is an overlay drawer.
+        
+                If you use the collapsible feature, swap md:pl-72 / md:pl-16 dynamically,
+                or drive it from shared state / CSS custom property.
+              */}
+              <div className="md:pl-72 transition-all duration-300 ease-in-out">
+        
+                {/* Mobile top bar */}
+                <header className="sticky top-0 z-20 flex items-center gap-3 md:hidden px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                  <span className="font-semibold text-slate-800 dark:text-white text-sm">Dashboard</span>
+                </header>
+        
+                {/* Page content */}
+          
         <main className="flex-1 overflow-y-auto">
           <div className="p-8 text-center">
             <div className="max-w-md mx-auto">
@@ -320,7 +351,9 @@ export default function ProposalsPage() {
               </Button>
             </div>
           </div>
-        </main>
+        </main> 
+              </div>
+     
       </div>
     )
   }
@@ -614,11 +647,36 @@ export default function ProposalsPage() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
-      <DashboardSidebar 
-        role="client" 
-        isMobileOpen={isSidebarOpen}
-        onMobileClose={() => setIsSidebarOpen(false)}
-      />
+    
+          {/* Fixed sidebar — takes no space in the flow */}
+          <DashboardSidebar
+            role="client"
+            isMobileOpen={sidebarOpen}
+            onMobileClose={() => setSidebarOpen(false)}
+          />
+    
+          {/*
+            Main content area.
+            On md+ we offset left by the sidebar width so content isn't hidden behind it.
+            On mobile there's no offset — the sidebar is an overlay drawer.
+    
+            If you use the collapsible feature, swap md:pl-72 / md:pl-16 dynamically,
+            or drive it from shared state / CSS custom property.
+          */}
+          <div className="md:pl-72 transition-all duration-300 ease-in-out">
+    
+            {/* Mobile top bar */}
+            <header className="sticky top-0 z-20 flex items-center gap-3 md:hidden px-4 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <span className="font-semibold text-slate-800 dark:text-white text-sm">Dashboard</span>
+            </header>
+    
+            {/* Page content */}
       
       <main className="flex-1 overflow-y-auto">
         <div className="md:hidden fixed top-4 left-4 z-50">
@@ -786,6 +844,8 @@ export default function ProposalsPage() {
           </Tabs>
         </div>
       </main>
+          </div>
+    
     </div>
   )
 }
