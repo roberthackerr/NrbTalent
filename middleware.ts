@@ -87,7 +87,15 @@ export async function middleware(request: NextRequest) {
   if (seoRoutes.some(route => pathname === route || pathname.startsWith(route))) {
     return NextResponse.next()
   }
-  
+   // 🔥 FIX: Redirect /auth/singup to /auth/signup (typo fix)
+  if (pathname === '/auth/singup') {
+    const newUrl = new URL('/auth/signup', request.url)
+    // Preserve query parameters if any
+    request.nextUrl.searchParams.forEach((value, key) => {
+      newUrl.searchParams.set(key, value)
+    })
+    return NextResponse.redirect(newUrl, 301) // Permanent redirect
+  }
   // Exclure les fichiers statiques et API WebSocket
   if (
     pathname.startsWith('/_next') ||
