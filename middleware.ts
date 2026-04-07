@@ -93,7 +93,7 @@ export async function middleware(request: NextRequest) {
     // Preserve query parameters if any
     request.nextUrl.searchParams.forEach((value, key) => {
       newUrl.searchParams.set(key, value)
-    })
+    }) 
     return NextResponse.redirect(newUrl, 301) // Permanent redirect
   }
   // Exclure les fichiers statiques et API WebSocket
