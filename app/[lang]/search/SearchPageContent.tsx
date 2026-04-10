@@ -8,16 +8,11 @@ import {
   Search, 
   User, 
   Briefcase,
-  Loader2,
-  Filter,
   X,
   SlidersHorizontal,
   Grid3X3,
   List,
-  DollarSign,
   MapPin,
-  Clock,
-  Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -108,26 +103,26 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   const router = useRouter()
   const pathname = usePathname()
   const { lang } = params
-  
+
   const [dict, setDict] = useState<any>(null)
   const [query, setQuery] = useState(searchParams.q || '')
   const [activeTab, setActiveTab] = useState<SearchTab>(searchParams.type as SearchTab || 'all')
   const [page, setPage] = useState(parseInt(searchParams.page || '1'))
   const [sort, setSort] = useState(searchParams.sort || 'relevance')
-  
+
   // Filtres communs
   const [location, setLocation] = useState(searchParams.location || '')
   const [skillsFilter, setSkillsFilter] = useState<string[]>(
     searchParams.skills ? searchParams.skills.split(',') : []
   )
   const [minRating, setMinRating] = useState(parseFloat(searchParams.minRating || '0'))
-  
+
   // Filtres projets
   const [budgetMin, setBudgetMin] = useState(parseInt(searchParams.budgetMin || '0'))
   const [budgetMax, setBudgetMax] = useState(parseInt(searchParams.budgetMax || '1000000'))
   const [budgetType, setBudgetType] = useState(searchParams.budgetType || 'all')
   const [category, setCategory] = useState(searchParams.category || '')
-  
+
   // États des résultats
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -140,71 +135,45 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [error, setError] = useState<string | null>(null)
-  
+
+  const isFirstRender = useRef(true)
+
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
-  
+
   const t = dict?.search || {}
-  
-  // Synchroniser l'URL avec les filtres
- const isMounted = useRef(false)
 
-useEffect(() => {
-  if (!isMounted.current) {
-    isMounted.current = true
-    return  // Skip on mount — URL already has correct params
-  }
-
-  const params = new URLSearchParams()
-  if (query) params.set('q', query)
-  if (activeTab !== 'all') params.set('type', activeTab)
-  if (page > 1) params.set('page', page.toString())
-  if (sort !== 'relevance') params.set('sort', sort)
-  if (location) params.set('location', location)
-  if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
-  if (minRating > 0) params.set('minRating', minRating.toString())
-  if (budgetMin > 0) params.set('budgetMin', budgetMin.toString())
-  if (budgetMax < 1000000) params.set('budgetMax', budgetMax.toString())
-  if (budgetType !== 'all') params.set('budgetType', budgetType)
-  if (category) params.set('category', category)
-
-  const newUrl = `${pathname}?${params.toString()}`
-  router.replace(newUrl, { scroll: false })
-}, [query, activeTab, page, sort, location, skillsFilter, minRating, 
-    budgetMin, budgetMax, budgetType, category, pathname, router])
-  
   // Rechercher des utilisateurs
   const fetchUsers = useCallback(async () => {
     if (activeTab === 'projects') return
-    
+
     setLoadingUsers(true)
     setError(null)
-    
+
     try {
-      const params = new URLSearchParams()
-      if (query) params.set('q', query)
-      if (location) params.set('location', location)
-      if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
-      if (minRating > 0) params.set('minRating', minRating.toString())
-      
-      // Gestion du tri pour les utilisateurs
+      const p = new URLSearchParams()
+      if (query) p.set('q', query)
+      if (location) p.set('location', location)
+      if (skillsFilter.length) p.set('skills', skillsFilter.join(','))
+      if (minRating > 0) p.set('minRating', minRating.toString())
+
       if (sort === 'rating') {
-        params.set('sortBy', 'rating')
-        params.set('sortOrder', 'desc')
+        p.set('sortBy', 'rating')
+        p.set('sortOrder', 'desc')
       } else if (sort === 'date') {
-        params.set('sortBy', 'createdAt')
-        params.set('sortOrder', 'desc')
+        p.set('sortBy', 'createdAt')
+        p.set('sortOrder', 'desc')
       } else {
-        params.set('sortBy', 'relevance')
+        p.set('sortBy', 'relevance')
       }
-      
-      params.set('page', page.toString())
-      params.set('limit', activeTab === 'all' ? '5' : '12')
-      
-      const response = await fetch(`/api/users/search?${params}`)
+
+      p.set('page', page.toString())
+      p.set('limit', activeTab === 'all' ? '5' : '12')
+
+      const response = await fetch(`/api/users/search?${p}`)
       const data = await response.json()
-      
+
       if (data.success) {
         setUsers(data.users || [])
         setTotalUsers(data.pagination?.total || 0)
@@ -212,49 +181,47 @@ useEffect(() => {
       } else {
         setError(data.error || 'Erreur lors de la recherche des utilisateurs')
       }
-    } catch (error) {
-      console.error('Error fetching users:', error)
+    } catch (err) {
+      console.error('Error fetching users:', err)
       setError('Erreur de connexion lors de la recherche des utilisateurs')
     } finally {
       setLoadingUsers(false)
     }
   }, [query, location, skillsFilter, minRating, sort, page, activeTab])
-  
+
   // Rechercher des projets
   const fetchProjects = useCallback(async () => {
     if (activeTab === 'users') return
-    
+
     setLoadingProjects(true)
     setError(null)
-    
+
     try {
-      const params = new URLSearchParams()
-      if (query) params.set('q', query)
-      if (location) params.set('location', location)
-      if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
-      if (budgetMin > 0) params.set('budgetMin', budgetMin.toString())
-      if (budgetMax < 1000000) params.set('budgetMax', budgetMax.toString())
-      if (budgetType !== 'all') params.set('budgetType', budgetType)
-      if (category) params.set('category', category)
-      
-      // Gestion du tri pour les projets
+      const p = new URLSearchParams()
+      if (query) p.set('q', query)
+      if (location) p.set('location', location)
+      if (skillsFilter.length) p.set('skills', skillsFilter.join(','))
+      if (budgetMin > 0) p.set('budgetMin', budgetMin.toString())
+      if (budgetMax < 1000000) p.set('budgetMax', budgetMax.toString())
+      if (budgetType !== 'all') p.set('budgetType', budgetType)
+      if (category) p.set('category', category)
+
       if (sort === 'date') {
-        params.set('sortBy', 'createdAt')
-        params.set('sortOrder', 'desc')
+        p.set('sortBy', 'createdAt')
+        p.set('sortOrder', 'desc')
       } else if (sort === 'rating') {
-        // Pour les projets, on trie par popularité (nombre de candidatures)
-        params.set('sortBy', 'applications')
-        params.set('sortOrder', 'desc')
+        p.set('sortBy', 'applications')
+        p.set('sortOrder', 'desc')
       } else {
-        params.set('sortBy', 'relevance')
+        p.set('sortBy', 'relevance')
       }
-      
-      params.set('page', page.toString())
-      params.set('limit', activeTab === 'all' ? '5' : '12')
-      
-      const response = await fetch(`/api/projects/search?${params}`)
+
+      p.set('page', page.toString())
+      p.set('limit', activeTab === 'all' ? '5' : '12')
+
+      const response = await fetch(`/api/projects/search?${p}`)
       const data = await response.json()
-      
+
       if (data.success) {
         setProjects(data.data?.projects || [])
         setTotalProjects(data.data?.pagination?.total || 0)
@@ -262,30 +229,55 @@ useEffect(() => {
       } else {
         setError(data.error || 'Erreur lors de la recherche des projets')
       }
-    } catch (error) {
-      console.error('Error fetching projects:', error)
+    } catch (err) {
+      console.error('Error fetching projects:', err)
       setError('Erreur de connexion lors de la recherche des projets')
     } finally {
       setLoadingProjects(false)
     }
   }, [query, location, skillsFilter, budgetMin, budgetMax, budgetType, category, sort, page, activeTab])
-  
-  // Effet pour charger les données
+
+  // Unified effect: on first render trigger fetches directly (preserving URL),
+  // on subsequent changes sync URL (which re-creates callbacks and re-triggers fetches)
   useEffect(() => {
-    if (activeTab === 'users' || activeTab === 'all') {
-      fetchUsers()
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      // Trigger fetches with initial state from URL params
+      if (activeTab === 'users' || activeTab === 'all') fetchUsers()
+      if (activeTab === 'projects' || activeTab === 'all') fetchProjects()
+      return
     }
-    if (activeTab === 'projects' || activeTab === 'all') {
-      fetchProjects()
-    }
-  }, [fetchUsers, fetchProjects, activeTab])
-  
+
+    // Sync URL
+    const p = new URLSearchParams()
+    if (query) p.set('q', query)
+    if (activeTab !== 'all') p.set('type', activeTab)
+    if (page > 1) p.set('page', page.toString())
+    if (sort !== 'relevance') p.set('sort', sort)
+    if (location) p.set('location', location)
+    if (skillsFilter.length) p.set('skills', skillsFilter.join(','))
+    if (minRating > 0) p.set('minRating', minRating.toString())
+    if (budgetMin > 0) p.set('budgetMin', budgetMin.toString())
+    if (budgetMax < 1000000) p.set('budgetMax', budgetMax.toString())
+    if (budgetType !== 'all') p.set('budgetType', budgetType)
+    if (category) p.set('category', category)
+
+    router.replace(`${pathname}?${p.toString()}`, { scroll: false })
+
+    // Trigger fetches after state changes
+    if (activeTab === 'users' || activeTab === 'all') fetchUsers()
+    if (activeTab === 'projects' || activeTab === 'all') fetchProjects()
+  }, [query, activeTab, page, sort, location, skillsFilter, minRating,
+      budgetMin, budgetMax, budgetType, category, pathname, router,
+      fetchUsers, fetchProjects])
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
-    // Les fetch seront déclenchés par l'effet de mise à jour de l'URL
+    fetchUsers()
+    fetchProjects()
   }
-  
+
   const clearFilters = () => {
     setQuery('')
     setLocation('')
@@ -298,29 +290,29 @@ useEffect(() => {
     setCategory('')
     setPage(1)
   }
-  
-  const hasFilters = query || location || skillsFilter.length > 0 || minRating > 0 || 
-                     sort !== 'relevance' || budgetMin > 0 || budgetMax < 1000000 || 
-                     budgetType !== 'all' || category
-  
+
+  const hasFilters = query || location || skillsFilter.length > 0 || minRating > 0 ||
+    sort !== 'relevance' || budgetMin > 0 || budgetMax < 1000000 ||
+    budgetType !== 'all' || category
+
   const tabs = [
     { id: 'all', label: t.all || 'Tout', icon: Search },
     { id: 'users', label: t.freelancers || 'Freelances', icon: User },
     { id: 'projects', label: t.projects || 'Projets', icon: Briefcase },
   ]
-  
+
   const sortOptions = [
     { value: 'relevance', label: 'Pertinence' },
     { value: 'rating', label: 'Meilleure note' },
     { value: 'date', label: 'Plus récent' },
   ]
-  
+
   const budgetTypeOptions = [
     { value: 'all', label: 'Tous' },
     { value: 'fixed', label: 'Forfait' },
     { value: 'hourly', label: 'Horaire' },
   ]
-  
+
   if (!dict) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -328,12 +320,11 @@ useEffect(() => {
       </div>
     )
   }
-  
-  const loading = (activeTab === 'users' && loadingUsers) || 
-                  (activeTab === 'projects' && loadingProjects) || 
-                  (activeTab === 'all' && (loadingUsers || loadingProjects))
-  
-  // Rendu des résultats selon l'onglet actif
+
+  const loading = (activeTab === 'users' && loadingUsers) ||
+    (activeTab === 'projects' && loadingProjects) ||
+    (activeTab === 'all' && (loadingUsers || loadingProjects))
+
   const renderResults = () => {
     if (error) {
       return (
@@ -346,10 +337,7 @@ useEffect(() => {
               onClick={() => {
                 if (activeTab === 'users') fetchUsers()
                 if (activeTab === 'projects') fetchProjects()
-                if (activeTab === 'all') {
-                  fetchUsers()
-                  fetchProjects()
-                }
+                if (activeTab === 'all') { fetchUsers(); fetchProjects() }
               }}
             >
               Réessayer
@@ -358,20 +346,18 @@ useEffect(() => {
         </div>
       )
     }
-    
+
     if (activeTab === 'users') {
       if (loadingUsers) {
         return (
-          <div className={cn(
-            viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"
-          )}>
+          <div className={cn(viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4")}>
             {[...Array(6)].map((_, i) => (
               <UserCardSkeleton key={i} variant={viewMode === 'grid' ? 'minimal' : 'default'} />
             ))}
           </div>
         )
       }
-      
+
       if (users.length === 0) {
         return (
           <div className="text-center py-16">
@@ -380,16 +366,14 @@ useEffect(() => {
               {t.noUsersFound || 'Aucun freelance trouvé'}
             </h3>
             <p className="text-sm text-gray-500">
-              {t.tryDifferentKeywords || 'Essayez avec d\'autres mots-clés'}
+              {t.tryDifferentKeywords || "Essayez avec d'autres mots-clés"}
             </p>
           </div>
         )
       }
-      
+
       return (
-        <div className={cn(
-          viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"
-        )}>
+        <div className={cn(viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4")}>
           {users.map((user, index) => (
             <motion.div
               key={user._id}
@@ -402,16 +386,14 @@ useEffect(() => {
                 lang={lang}
                 variant={viewMode === 'grid' ? 'minimal' : 'default'}
                 showContactButton
-                onContact={(user) => {
-                  console.log('Contact', user.name)
-                }}
+                onContact={(u) => console.log('Contact', u.name)}
               />
             </motion.div>
           ))}
         </div>
       )
     }
-    
+
     if (activeTab === 'projects') {
       if (loadingProjects) {
         return (
@@ -422,7 +404,7 @@ useEffect(() => {
           </div>
         )
       }
-      
+
       if (projects.length === 0) {
         return (
           <div className="text-center py-16">
@@ -431,12 +413,12 @@ useEffect(() => {
               {t.noProjectsFound || 'Aucun projet trouvé'}
             </h3>
             <p className="text-sm text-gray-500">
-              {t.tryDifferentKeywords || 'Essayez avec d\'autres mots-clés'}
+              {t.tryDifferentKeywords || "Essayez avec d'autres mots-clés"}
             </p>
           </div>
         )
       }
-      
+
       return (
         <div className="space-y-4">
           {projects.map((project, index) => (
@@ -460,18 +442,18 @@ useEffect(() => {
         </div>
       )
     }
-    
-    // Onglet "Tout" - affiche les deux types
+
+    // Tab "Tout"
     const hasUsers = users.length > 0
     const hasProjects = projects.length > 0
     const isLoading = loadingUsers || loadingProjects
-    
+
     if (isLoading) {
       return (
         <div className="space-y-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-32 rounded"></h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-32 rounded" />
             </div>
             {[...Array(2)].map((_, i) => (
               <UserCardSkeleton key={`user-${i}`} variant="minimal" />
@@ -479,7 +461,7 @@ useEffect(() => {
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-32 rounded"></h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-32 rounded" />
             </div>
             {[...Array(2)].map((_, i) => (
               <ProjectCardSkeleton key={`project-${i}`} variant="minimal" />
@@ -488,7 +470,7 @@ useEffect(() => {
         </div>
       )
     }
-    
+
     if (!hasUsers && !hasProjects) {
       return (
         <div className="text-center py-16">
@@ -497,12 +479,12 @@ useEffect(() => {
             {t.noResultsFound || 'Aucun résultat trouvé'}
           </h3>
           <p className="text-sm text-gray-500">
-            {t.tryDifferentKeywords || 'Essayez avec d\'autres mots-clés'}
+            {t.tryDifferentKeywords || "Essayez avec d'autres mots-clés"}
           </p>
         </div>
       )
     }
-    
+
     return (
       <div className="space-y-8">
         {hasUsers && (
@@ -511,7 +493,7 @@ useEffect(() => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {t.freelancers || 'Freelances'} ({totalUsers})
               </h2>
-              <button 
+              <button
                 onClick={() => setActiveTab('users')}
                 className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
@@ -531,14 +513,14 @@ useEffect(() => {
             </div>
           </div>
         )}
-        
+
         {hasProjects && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {t.projects || 'Projets'} ({totalProjects})
               </h2>
-              <button 
+              <button
                 onClick={() => setActiveTab('projects')}
                 className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
@@ -562,7 +544,7 @@ useEffect(() => {
       </div>
     )
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -590,7 +572,7 @@ useEffect(() => {
                 )}
               </div>
             </form>
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -599,7 +581,7 @@ useEffect(() => {
             >
               <SlidersHorizontal className="h-5 w-5" />
             </Button>
-            
+
             <div className="hidden sm:flex items-center gap-1">
               <Button
                 variant="ghost"
@@ -621,7 +603,7 @@ useEffect(() => {
           </div>
         </div>
       </div>
-      
+
       <div className="container mx-auto px-4 py-6">
         <div className="flex gap-6">
           {/* Sidebar Filtres */}
@@ -639,15 +621,15 @@ useEffect(() => {
                       {t.filters || 'Filtres'}
                     </h3>
                     {hasFilters && (
-                      <button 
-                        onClick={clearFilters} 
+                      <button
+                        onClick={clearFilters}
                         className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                       >
                         {t.clearAll || 'Effacer tout'}
                       </button>
                     )}
                   </div>
-                  
+
                   {/* Localisation */}
                   <div className="mb-4">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -664,7 +646,7 @@ useEffect(() => {
                       />
                     </div>
                   </div>
-                  
+
                   {/* Compétences */}
                   <div className="mb-4">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -678,7 +660,7 @@ useEffect(() => {
                       className="text-sm"
                     />
                   </div>
-                  
+
                   {/* Note minimum */}
                   <div className="mb-4">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -695,11 +677,10 @@ useEffect(() => {
                       <option value={3.5}>3.5+</option>
                     </select>
                   </div>
-                  
-                  {/* Filtres projets (visible si onglet projets ou tout) */}
+
+                  {/* Filtres projets */}
                   {(activeTab === 'projects' || activeTab === 'all') && (
                     <>
-                      {/* Budget */}
                       <div className="mb-4">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                           {t.budget || 'Budget'}
@@ -721,8 +702,7 @@ useEffect(() => {
                           />
                         </div>
                       </div>
-                      
-                      {/* Type de budget */}
+
                       <div className="mb-4">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                           {t.budgetType || 'Type de budget'}
@@ -744,8 +724,7 @@ useEffect(() => {
                           ))}
                         </div>
                       </div>
-                      
-                      {/* Catégorie */}
+
                       <div className="mb-4">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                           {t.category || 'Catégorie'}
@@ -760,7 +739,7 @@ useEffect(() => {
                       </div>
                     </>
                   )}
-                  
+
                   {/* Tri */}
                   <div>
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -782,10 +761,9 @@ useEffect(() => {
               </motion.div>
             )}
           </AnimatePresence>
-          
+
           {/* Résultats */}
           <div className="flex-1 min-w-0">
-            {/* Tabs */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SearchTab)} className="mb-6">
               <TabsList className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
                 {tabs.map(tab => {
@@ -803,45 +781,35 @@ useEffect(() => {
                 })}
               </TabsList>
             </Tabs>
-            
-            {/* Résultats count */}
+
             {!loading && !error && (
               <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {activeTab === 'users' 
-                    ? totalUsers 
-                    : activeTab === 'projects' 
-                      ? totalProjects 
+                  {activeTab === 'users'
+                    ? totalUsers
+                    : activeTab === 'projects'
+                      ? totalProjects
                       : totalUsers + totalProjects}
                 </span> {t.results || 'résultats'}
               </div>
             )}
-            
-            {/* Liste des résultats */}
+
             <AnimatePresence mode="wait">
               {renderResults()}
             </AnimatePresence>
-            
+
             {/* Pagination */}
             {activeTab !== 'all' && !error && (
               activeTab === 'users' ? (
                 totalPagesUsers > 1 && (
                   <div className="flex justify-center gap-2 mt-8">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setPage(p => Math.max(1, p - 1))} 
-                      disabled={page === 1}
-                    >
+                    <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                       {t.previous || 'Précédent'}
                     </Button>
                     <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
                       {t.page || 'Page'} {page} {t.of || 'sur'} {totalPagesUsers}
                     </span>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setPage(p => Math.min(totalPagesUsers, p + 1))} 
-                      disabled={page === totalPagesUsers}
-                    >
+                    <Button variant="outline" onClick={() => setPage(p => Math.min(totalPagesUsers, p + 1))} disabled={page === totalPagesUsers}>
                       {t.next || 'Suivant'}
                     </Button>
                   </div>
@@ -849,21 +817,13 @@ useEffect(() => {
               ) : (
                 totalPagesProjects > 1 && (
                   <div className="flex justify-center gap-2 mt-8">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setPage(p => Math.max(1, p - 1))} 
-                      disabled={page === 1}
-                    >
+                    <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                       {t.previous || 'Précédent'}
                     </Button>
                     <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
                       {t.page || 'Page'} {page} {t.of || 'sur'} {totalPagesProjects}
                     </span>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setPage(p => Math.min(totalPagesProjects, p + 1))} 
-                      disabled={page === totalPagesProjects}
-                    >
+                    <Button variant="outline" onClick={() => setPage(p => Math.min(totalPagesProjects, p + 1))} disabled={page === totalPagesProjects}>
                       {t.next || 'Suivant'}
                     </Button>
                   </div>
@@ -873,6 +833,6 @@ useEffect(() => {
           </div>
         </div>
       </div>
-    </div> 
+    </div>
   )
 }
