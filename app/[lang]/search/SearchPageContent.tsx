@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
@@ -148,24 +148,31 @@ export function SearchPageContent({ params, searchParams }: SearchPageContentPro
   const t = dict?.search || {}
   
   // Synchroniser l'URL avec les filtres
-  useEffect(() => {
-    const params = new URLSearchParams()
-    
-    if (query) params.set('q', query)
-    if (activeTab !== 'all') params.set('type', activeTab)
-    if (page > 1) params.set('page', page.toString())
-    if (sort !== 'relevance') params.set('sort', sort)
-    if (location) params.set('location', location)
-    if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
-    if (minRating > 0) params.set('minRating', minRating.toString())
-    if (budgetMin > 0) params.set('budgetMin', budgetMin.toString())
-    if (budgetMax < 1000000) params.set('budgetMax', budgetMax.toString())
-    if (budgetType !== 'all') params.set('budgetType', budgetType)
-    if (category) params.set('category', category)
-    
-    const newUrl = `${pathname}?${params.toString()}`
-    router.replace(newUrl, { scroll: false })
-  }, [query, activeTab, page, sort, location, skillsFilter, minRating, budgetMin, budgetMax, budgetType, category, pathname, router])
+ const isMounted = useRef(false)
+
+useEffect(() => {
+  if (!isMounted.current) {
+    isMounted.current = true
+    return  // Skip on mount — URL already has correct params
+  }
+
+  const params = new URLSearchParams()
+  if (query) params.set('q', query)
+  if (activeTab !== 'all') params.set('type', activeTab)
+  if (page > 1) params.set('page', page.toString())
+  if (sort !== 'relevance') params.set('sort', sort)
+  if (location) params.set('location', location)
+  if (skillsFilter.length) params.set('skills', skillsFilter.join(','))
+  if (minRating > 0) params.set('minRating', minRating.toString())
+  if (budgetMin > 0) params.set('budgetMin', budgetMin.toString())
+  if (budgetMax < 1000000) params.set('budgetMax', budgetMax.toString())
+  if (budgetType !== 'all') params.set('budgetType', budgetType)
+  if (category) params.set('category', category)
+
+  const newUrl = `${pathname}?${params.toString()}`
+  router.replace(newUrl, { scroll: false })
+}, [query, activeTab, page, sort, location, skillsFilter, minRating, 
+    budgetMin, budgetMax, budgetType, category, pathname, router])
   
   // Rechercher des utilisateurs
   const fetchUsers = useCallback(async () => {
