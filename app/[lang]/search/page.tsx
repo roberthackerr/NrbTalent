@@ -51,7 +51,7 @@ export async function generateMetadata({ params, searchParams }: SearchPageProps
       type: 'website',
       locale: lang,
       siteName: 'NRBTalents',
-      url: `https://nrbtalents.com/${lang}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`,
+      url: `https://nrb-talent.vercel.app/${lang}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`,
     },
     alternates: {
       canonical: `/${lang}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`,

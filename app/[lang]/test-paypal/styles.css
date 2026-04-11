@@ -1,0 +1,125 @@
+.paypal-test-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.note {
+  background: #fff3cd;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 4px solid #ffc107;
+  margin-bottom: 2rem;
+}
+
+.button-container {
+  margin: 2rem 0;
+  min-height: 100px;
+  display: flex;
+  justify-content: center;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.reset-btn, .simulate-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.reset-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.reset-btn:hover {
+  background: #5a6268;
+}
+
+.simulate-btn {
+  background: #0d6efd;
+  color: white;
+}
+
+.simulate-btn:hover {
+  background: #0b5ed7;
+}
+
+.status-panel {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.status-badge.ready,
+.status-badge.completed {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-badge.failed,
+.status-badge.error {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status-badge.cancelled {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.info-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #0d6efd;
+  margin: 1rem 0;
+}
+
+.instructions {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.instructions ol {
+  padding-left: 1.5rem;
+}
+
+.tip {
+  background: #e7f1ff;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.env-info {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
