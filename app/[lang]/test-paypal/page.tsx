@@ -59,7 +59,7 @@ export default function PayPalTestPage() {
   const buttonsContainerRef = useRef<HTMLDivElement>(null);
 
   // Use your Client ID directly
-  const CLIENT_ID = 'AePPpL4b3aAqGE7RJHMs3ldqAkRTMQh7aohqZgnCh9hrsRgs0_tXT8Gt109m-RGFoKZv8vZX-mcRxk15';
+  const CLIENT_ID = 'AXSep6sQDhFM_CmLQ11nj7ygAxiU44-dnHfxp58Slvr2VIWKUAbzSussGMk0eaAn7c2bxBATqQhWe4fs';
 
   useEffect(() => {
     // Check if PayPal is already loaded
