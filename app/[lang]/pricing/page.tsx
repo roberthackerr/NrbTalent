@@ -87,7 +87,7 @@ export default function PricingPage() {
 
   const handlePaymentSuccess = () => {
     setIsPaymentDialogOpen(false);
-    window.location.href = '/dashboard';
+    window.location.href = '/payment/success';
   };
 
   const handlePaymentError = (error: string) => {
