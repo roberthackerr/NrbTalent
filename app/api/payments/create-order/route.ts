@@ -12,20 +12,35 @@ const PAYPAL_API_URL = PAYPAL_MODE === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com';
 
-async function getPayPalAccessToken(): Promise<string> {
-  const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
-  
-  const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  });
+// Vérification des variables d'environnement
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  console.error('❌ PayPal credentials missing!');
+}
 
-  const data = await response.json();
-  return data.access_token;
+async function getPayPalAccessToken(): Promise<string> {
+  try {
+    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
+    
+    const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to get access token: ${error}`);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error('Error getting PayPal access token:', error);
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -35,10 +50,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { planId, planName, amount, currency = 'EUR' } = await request.json();
+    const body = await request.json();
+    const { planId, planName, amount, currency = 'EUR' } = body;
 
+    // Validation
     if (!planId || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields: planId and amount' }, { status: 400 });
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    // Vérifier que l'utilisateur n'a pas déjà un abonnement actif
+    const db = await getDatabase();
+    const existingSubscription = await db.collection('user_subscriptions').findOne({
+      userId: new ObjectId(session.user.id),
+      status: 'active',
+      endDate: { $gt: new Date() }
+    });
+
+    if (existingSubscription) {
+      return NextResponse.json({ error: 'You already have an active subscription' }, { status: 400 });
     }
 
     const accessToken = await getPayPalAccessToken();
@@ -55,24 +88,25 @@ export async function POST(request: NextRequest) {
         purchase_units: [
           {
             reference_id: planId,
-            description: `Abonnement ${planName} - NRB Talents`,
+            description: `Subscription ${planName} - NRB Talents`,
+            custom_id: session.user.id,
             amount: {
               currency_code: currency,
-              value: amount.toString(),
+              value: amount.toFixed(2),
               breakdown: {
                 item_total: {
                   currency_code: currency,
-                  value: amount.toString(),
+                  value: amount.toFixed(2),
                 },
               },
             },
             items: [
               {
-                name: `Plan ${planName}`,
-                description: `Abonnement ${planName} sur NRB Talents`,
+                name: `${planName} Plan`,
+                description: `Monthly subscription to ${planName} plan on NRB Talents`,
                 unit_amount: {
                   currency_code: currency,
-                  value: amount.toString(),
+                  value: amount.toFixed(2),
                 },
                 quantity: '1',
                 category: 'DIGITAL_GOODS',
@@ -94,30 +128,42 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error('PayPal order creation failed:', order);
-      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to create PayPal order',
+        details: order.message || order.error_description 
+      }, { status: 500 });
+    }
+
+    // Find approval link
+    const approvalLink = order.links?.find((link: any) => link.rel === 'approve');
+    
+    if (!approvalLink) {
+      return NextResponse.json({ error: 'No approval link found' }, { status: 500 });
     }
 
     // Store order in database
-    const db = await getDatabase();
     await db.collection('payment_transactions').insertOne({
       userId: new ObjectId(session.user.id),
       planId,
+      planName,
       amount,
       currency,
       status: 'pending',
       paypalOrderId: order.id,
       createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
-    // Find approval link
-    const approvalLink = order.links.find((link: any) => link.rel === 'approve');
-
     return NextResponse.json({
+      success: true,
       orderId: order.id,
-      approvalUrl: approvalLink?.href,
+      approvalUrl: approvalLink.href,
     });
   } catch (error) {
     console.error('Error creating PayPal order:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
