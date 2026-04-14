@@ -1,727 +1,818 @@
-// components/tracking/project-timeline.tsx
+// components/tracking/time-tracker.tsx
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Calendar } from '@/components/ui/calendar'
-import { 
+import { Progress } from '@/components/ui/progress'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
+  SelectValue,
 } from '@/components/ui/select'
-import { CalendarEvent, CreateEventRequest } from '@/lib/models/event'
-import { eventsApi } from '@/lib/api'
-import { format, isSameDay, parseISO, addHours, startOfMonth, endOfMonth } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import { Project, Task, TimeEntry } from '@/lib/tracking/types'
+import { usePersistentTimer } from '@/hooks/usePersistentTimer'
 import { 
-  Calendar as CalendarIcon, 
+  Play, 
+  StopCircle, 
   Clock, 
-  Flag, 
-  Loader2, 
-  Plus, 
-  Dot, 
-  Link, 
-  Unlink, 
+  Calendar, 
   Trash2, 
-  X,
-  MapPin,
-  CheckCircle2,
-  AlertCircle,
+  RefreshCw,
   TrendingUp,
-  BarChart3
+  Award,
+  Target,
+  Zap,
+  BarChart3,
+  PieChart,
+  Timer,
+  Loader2,
+  Sparkles,
+  CloudOff,
+  CheckCircle2,
+  Circle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useToast } from '@/components/ui/use-toast'
-import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 
-interface Task {
-  id: string
-  title: string
-  description?: string
-  dueDate?: string
-  estimatedHours?: number
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  status: 'todo' | 'in_progress' | 'done'
-  projectId: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface Project {
-  id: string
-  name: string
-  description?: string
-  status: 'active' | 'completed' | 'on_hold'
-  client?: string
-  startDate?: string
-  endDate?: string
-  createdAt: string
-  updatedAt: string
-}
-
-interface ProjectTimelineProps {
+interface TimeTrackerProps {
   project: Project
   tasks: Task[]
-  onRefresh?: () => void
 }
 
-const tasksApi = {
-  async getTasks(filters?: { projectId?: string }): Promise<Task[]> {
-    try {
-      const params = new URLSearchParams()
-      if (filters?.projectId) params.append('projectId', filters.projectId)
-      const response = await fetch(`/api/tasks?${params}`)
-      if (!response.ok) throw new Error('Erreur lors de la récupération des tâches')
-      const result = await response.json()
-      return result.data || []
-    } catch (error) {
-      console.error('Error fetching tasks:', error)
-      return []
-    }
-  },
+export function TimeTracker({ project, tasks }: TimeTrackerProps) {
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
+  const [selectedTask, setSelectedTask] = useState<string>('')
+  const [description, setDescription] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [isOffline, setIsOffline] = useState(false)
+  
+  const { activeTimer, elapsedTime, startTimer, stopTimer } = usePersistentTimer()
 
-  async createTask(taskData: Partial<Task>): Promise<Task> {
-    const response = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(taskData),
-    })
-    if (!response.ok) throw new Error('Erreur lors de la création de la tâche')
-    const result = await response.json()
-    return result.data
+  const getProjectId = (): string | null => {
+    return project?.id || (project as any)?._id || null
   }
-}
 
-export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelineProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [allTasks, setAllTasks] = useState<Task[]>(tasks)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [linkingTask, setLinkingTask] = useState<string | null>(null)
-  const [creatingEvent, setCreatingEvent] = useState(false)
-  const [showEventForm, setShowEventForm] = useState(false)
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
-  const [eventFormData, setEventFormData] = useState({
-    title: '',
-    description: '',
-    type: 'meeting' as 'meeting' | 'deadline' | 'milestone' | 'task',
-    location: '',
-    startTime: '09:00',
-    endTime: '10:00'
-  })
-  const { toast } = useToast()
+  const projectId = getProjectId()
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const [projectTasks, projectEvents] = await Promise.all([
-        tasksApi.getTasks({ projectId: project.id }),
-        eventsApi.getEvents({
-          projectId: project.id,
-          startDate: startOfMonth(selectedDate),
-          endDate: endOfMonth(selectedDate)
-        })
-      ])
-      
-      setAllTasks(projectTasks)
-      setEvents(projectEvents)
-    } catch (err) {
-      console.error('Error loading data:', err)
-      setError(err instanceof Error ? err.message : 'Erreur inconnue')
-    } finally {
-      setLoading(false)
-    }
-  }, [project.id, selectedDate])
-
+  // Vérifier l'état de la connexion
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    const handleOnline = () => {
+      setIsOffline(false)
+      toast.success('Connexion rétablie', { description: 'Synchronisation des données...' })
+      syncTimerWithServer()
+      loadTimeEntries()
+    }
+    const handleOffline = () => {
+      setIsOffline(true)
+      toast.warning('Connexion perdue', { description: 'Les données seront synchronisées automatiquement' })
+    }
+    
+    setIsOffline(!navigator.onLine)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
-  const resetEventForm = () => {
-    setEventFormData({
-      title: '',
-      description: '',
-      type: 'meeting',
-      location: '',
-      startTime: '09:00',
-      endTime: '10:00'
-    })
-    setShowEventForm(false)
-  }
+  // Synchroniser le timer avec le serveur au chargement
+  const syncTimerWithServer = useCallback(async () => {
+    if (isOffline) return
+    
+    try {
+      setIsSyncing(true)
+      const response = await fetch('/api/time-entries/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync' })
+      })
 
-  const createEventWithForm = async () => {
-    if (!eventFormData.title.trim()) {
-      toast({ title: "Erreur", description: "Le titre est obligatoire", variant: "destructive" })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.hasActiveTimer && !activeTimer) {
+          startTimer(
+            data.timer.taskId,
+            data.timer.description,
+            data.timer.entryId
+          )
+          toast.info('Timer restauré', { description: 'Votre session de travail a été rechargée' })
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing timer:', error)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [activeTimer, startTimer, isOffline])
+
+  // Charger les time entries
+  const loadTimeEntries = useCallback(async () => {
+    if (!projectId) return
+    if (isOffline) {
+      const cached = localStorage.getItem(`timeEntries_${projectId}`)
+      if (cached) {
+        setTimeEntries(JSON.parse(cached))
+      }
       return
     }
 
-    setCreatingEvent(true)
     try {
-      const startDateTime = new Date(selectedDate)
-      const [startHours, startMinutes] = eventFormData.startTime.split(':').map(Number)
-      startDateTime.setHours(startHours, startMinutes)
-
-      const endDateTime = new Date(selectedDate)
-      const [endHours, endMinutes] = eventFormData.endTime.split(':').map(Number)
-      endDateTime.setHours(endHours, endMinutes)
-      if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1)
-
-      const eventData: CreateEventRequest = {
-        title: eventFormData.title,
-        description: eventFormData.description,
-        start: startDateTime,
-        end: endDateTime,
-        type: eventFormData.type,
-        status: 'scheduled',
-        location: eventFormData.location,
-        projectId: project.id,
+      setIsLoading(true)
+      const response = await fetch(`/api/projects/${projectId}/time-entries`)
+      if (response.ok) {
+        const entries = await response.json()
+        setTimeEntries(entries)
+        localStorage.setItem(`timeEntries_${projectId}`, JSON.stringify(entries))
       }
-
-      const newEvent = await eventsApi.createEvent(eventData)
-      setEvents(prev => [...prev, newEvent])
-      resetEventForm()
-      toast({ title: "Événement créé", description: "Le nouvel événement a été ajouté au calendrier" })
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      console.error('Error creating event:', err)
-      toast({ title: "Erreur", description: "Impossible de créer l'événement", variant: "destructive" })
+    } catch (error) {
+      console.error('Error loading time entries:', error)
     } finally {
-      setCreatingEvent(false)
+      setIsLoading(false)
     }
-  }
+  }, [projectId, isOffline])
 
-  const linkTaskToCalendar = async (task: Task) => {
-    setLinkingTask(task.id)
+  useEffect(() => {
+    syncTimerWithServer()
+    loadTimeEntries()
+  }, [syncTimerWithServer, loadTimeEntries])
+
+  // Démarrer le timer
+  const handleStartTimer = async () => {
+    if (!selectedTask) {
+      toast.error('Erreur', { description: 'Veuillez sélectionner une tâche' })
+      return
+    }
+
+    if (isOffline) {
+      startTimer(selectedTask, description || 'Travail en cours')
+      toast.success('Timer démarré (mode hors ligne)', { 
+        description: 'Le temps sera synchronisé à la reconnexion' 
+      })
+      return
+    }
+
     try {
-      const taskDueDate = task.dueDate ? parseISO(task.dueDate) : selectedDate
-      const eventData: CreateEventRequest = {
-        title: `📋 ${task.title}`,
-        description: task.description || `Tâche: ${task.title}\nPriorité: ${task.priority}`,
-        start: taskDueDate,
-        end: addHours(taskDueDate, task.estimatedHours || 1),
-        type: 'task',
-        status: 'scheduled',
-        location: `Projet: ${project.name}`,
-        projectId: project.id,
-        taskId: task.id,
+      const response = await fetch('/api/time-entries/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          taskId: selectedTask,
+          startTime: new Date().toISOString(),
+          description: description || 'Travail en cours'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        startTimer(selectedTask, description || 'Travail en cours', data.entryId)
+        toast.success('Timer démarré', { description: 'Bon travail !' })
+      } else if (response.status === 409) {
+        const data = await response.json()
+        toast.warning('Timer déjà actif', { 
+          description: 'Un timer est déjà en cours sur une autre tâche' 
+        })
+        if (data.activeTimer) {
+          startTimer(
+            data.activeTimer.taskId.toString(),
+            data.activeTimer.description,
+            data.activeTimer._id.toString()
+          )
+        }
+      } else {
+        throw new Error('Failed to start timer')
       }
-      const newEvent = await eventsApi.createEvent(eventData)
-      setEvents(prev => [...prev, newEvent])
-      toast({ title: "Tâche liée", description: "La tâche a été ajoutée au calendrier" })
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      console.error('Error linking task:', err)
-      toast({ title: "Erreur", description: "Impossible de lier la tâche", variant: "destructive" })
-    } finally {
-      setLinkingTask(null)
+    } catch (error) {
+      console.error('Error starting timer:', error)
+      startTimer(selectedTask, description || 'Travail en cours')
+      toast.warning('Mode dégradé', { 
+        description: 'Timer démarré localement, synchronisation à la reconnexion' 
+      })
     }
   }
 
-  const deleteEvent = async (eventId: string) => {
-    try {
-      await eventsApi.deleteEvent(eventId)
-      setEvents(prev => prev.filter(event => event.id !== eventId))
-      toast({ title: "Événement supprimé", description: "L'événement a été supprimé du calendrier" })
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      console.error('Error deleting event:', err)
-      toast({ title: "Erreur", description: "Impossible de supprimer l'événement", variant: "destructive" })
-    }
-  }
+  // Arrêter le timer
+  const handleStopTimer = async () => {
+    if (!activeTimer) return
 
-  const convertEventToTask = async (event: CalendarEvent) => {
-    try {
-      const taskData = {
-        title: event.title.replace('📋 ', ''),
-        description: event.description || `Créé depuis l'événement: ${event.title}`,
-        projectId: project.id,
-        dueDate: event.start.toISOString(),
-        estimatedHours: Math.ceil((event.end.getTime() - event.start.getTime()) / (1000 * 60 * 60)),
-        priority: 'medium' as const,
-        status: 'todo' as const
+    const endTime = new Date()
+    const duration = Math.floor((endTime.getTime() - activeTimer.startTime.getTime()) / 1000)
+
+    if (isOffline) {
+      const offlineEntry = {
+        id: `offline_${Date.now()}`,
+        taskId: activeTimer.taskId,
+        startTime: activeTimer.startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        duration,
+        description: activeTimer.description,
+        billable: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
-      await tasksApi.createTask(taskData)
-      toast({ title: "Événement converti", description: "L'événement a été converti en tâche" })
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      console.error('Error converting event:', err)
-      toast({ title: "Erreur", description: "Impossible de convertir l'événement", variant: "destructive" })
+      
+      const cached = localStorage.getItem(`offlineEntries_${projectId}`)
+      const offlineEntries = cached ? JSON.parse(cached) : []
+      offlineEntries.push(offlineEntry)
+      localStorage.setItem(`offlineEntries_${projectId}`, JSON.stringify(offlineEntries))
+      
+      stopTimer()
+      toast.success('Timer arrêté (mode hors ligne)', { 
+        description: 'Les données seront synchronisées à la reconnexion' 
+      })
+      return
+    }
+
+    try {
+      const response = await fetch('/api/time-entries/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'stop',
+          entryId: activeTimer.entryId,
+          endTime: endTime.toISOString(),
+          duration,
+          description: activeTimer.description
+        })
+      })
+
+      if (response.ok) {
+        stopTimer()
+        toast.success('Timer arrêté', { 
+          description: `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m enregistrés` 
+        })
+        loadTimeEntries()
+      } else {
+        throw new Error('Failed to stop timer')
+      }
+    } catch (error) {
+      console.error('Error stopping timer:', error)
+      stopTimer()
+      toast.warning('Mode dégradé', { 
+        description: 'Timer arrêté localement, synchronisation à la reconnexion' 
+      })
     }
   }
 
-  const dateHasEvents = (date: Date) => events.some(event => isSameDay(event.start, date))
-  const dateHasTasks = (date: Date) => allTasks.some(task => task.dueDate && isSameDay(parseISO(task.dueDate), date))
-
-  const getEventTypeColor = (event: CalendarEvent) => {
-    const colors = {
-      meeting: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800',
-      deadline: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800',
-      milestone: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950/30 dark:text-green-300 dark:border-green-800',
-      task: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
+  // Synchroniser les entrées hors ligne
+  const syncOfflineEntries = useCallback(async () => {
+    if (isOffline) return
+    
+    const offlineEntriesKey = `offlineEntries_${projectId}`
+    const offlineEntries = localStorage.getItem(offlineEntriesKey)
+    
+    if (offlineEntries) {
+      const entries = JSON.parse(offlineEntries)
+      for (const entry of entries) {
+        try {
+          await fetch('/api/time-entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              taskId: entry.taskId,
+              startTime: entry.startTime,
+              endTime: entry.endTime,
+              duration: entry.duration,
+              description: entry.description
+            })
+          })
+        } catch (error) {
+          console.error('Error syncing offline entry:', error)
+        }
+      }
+      localStorage.removeItem(offlineEntriesKey)
+      toast.success('Synchronisation terminée', { 
+        description: 'Les données hors ligne ont été synchronisées' 
+      })
+      loadTimeEntries()
     }
-    return colors[event.type] || 'bg-gray-100 text-gray-800 border-gray-200'
-  }
+  }, [projectId, isOffline, loadTimeEntries])
 
-  const getEventTypeLabel = (type: string) => {
-    const labels = { meeting: 'Réunion', deadline: 'Échéance', milestone: 'Jalon', task: 'Tâche' }
-    return labels[type as keyof typeof labels] || type
-  }
-
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      low: 'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-300',
-      medium: 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-300',
-      high: 'bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-300',
-      urgent: 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-300'
+  useEffect(() => {
+    if (!isOffline) {
+      syncOfflineEntries()
     }
-    return colors[priority as keyof typeof colors] || colors.medium
+  }, [isOffline, syncOfflineEntries])
+
+  const deleteTimeEntry = async (entryId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette entrée de temps ?')) return
+    
+    try {
+      const response = await fetch(`/api/time-entries/${entryId}`, { method: 'DELETE' })
+      if (response.ok) {
+        loadTimeEntries()
+        toast.success('Entrée supprimée')
+      }
+    } catch (error) {
+      console.error('Error deleting time entry:', error)
+      toast.error('Erreur', { description: 'Impossible de supprimer l\'entrée' })
+    }
   }
 
-  const getStatusLabel = (status: string) => {
-    const labels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' }
-    return labels[status as keyof typeof labels] || status
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    if (hours > 0) return `${hours}h ${minutes.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`
+    if (minutes > 0) return `${minutes}m ${secs.toString().padStart(2, '0')}s`
+    return `${secs}s`
   }
 
-  const eventsForSelectedDate = events.filter(event => isSameDay(event.start, selectedDate))
-  const tasksForSelectedDate = allTasks.filter(task => task.dueDate && isSameDay(parseISO(task.dueDate), selectedDate))
-  const tasksWithoutCalendarEvent = allTasks.filter(task => task.dueDate && !events.some(event => event.taskId === task.id))
-  const eventsWithoutTasks = events.filter(event => !event.taskId)
-
-  const stats = {
-    events: events.length,
-    tasks: allTasks.length,
-    linkedTasks: allTasks.filter(task => events.some(event => event.taskId === task.id)).length,
-    linkedEvents: events.filter(event => event.taskId).length,
-    completionRate: allTasks.length > 0 ? Math.round((allTasks.filter(t => t.status === 'done').length / allTasks.length) * 100) : 0
+  const getTotalHours = () => timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0) / 3600
+  const getTaskHours = (taskId: string) => timeEntries.filter(e => e.taskId === taskId).reduce((t, e) => t + (e.duration || 0), 0) / 3600
+  const getWeeklyHours = () => {
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    return timeEntries.filter(e => new Date(e.startTime) > oneWeekAgo).reduce((t, e) => t + (e.duration || 0), 0) / 3600
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 blur-2xl opacity-20 animate-pulse rounded-full"></div>
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600 relative z-10" />
-        </div>
-        <span className="ml-3 text-gray-600 dark:text-gray-400">Chargement du planning...</span>
-      </div>
-    )
-  }
+  const activeTask = activeTimer ? tasks.find(t => t.id === activeTimer.taskId) : null
+  const availableTasks = tasks.filter(task => task.status !== 'done')
+  const ongoingTasks = tasks.filter(task => task.status === 'in_progress' && getTaskHours(task.id) > 0)
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {[
-          { label: 'Événements', value: stats.events, icon: CalendarIcon, color: 'from-purple-500 to-pink-500' },
-          { label: 'Tâches', value: stats.tasks, icon: CheckCircle2, color: 'from-green-500 to-emerald-500' },
-          { label: 'Tâches liées', value: stats.linkedTasks, icon: Link, color: 'from-blue-500 to-cyan-500' },
-          { label: 'Événements liés', value: stats.linkedEvents, icon: Link, color: 'from-indigo-500 to-purple-500' },
-          { label: 'Progression', value: `${stats.completionRate}%`, icon: TrendingUp, color: 'from-orange-500 to-red-500' }
-        ].map((stat, index) => (
+      {/* Offline Banner */}
+      <AnimatePresence>
+        {isOffline && (
           <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4"
           >
-            <Card className="border-gray-200 dark:border-gray-800 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                  </div>
-                  <div className={`p-2 bg-gradient-to-br ${stat.color} rounded-xl`}>
-                    <stat.icon className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400">
+              <CloudOff className="h-5 w-5" />
+              <span className="font-medium">Mode hors ligne</span>
+            </div>
+            <p className="text-amber-700 dark:text-amber-500 text-sm mt-1">
+              Les modifications seront synchronisées automatiquement à la reconnexion.
+            </p>
           </motion.div>
-        ))}
-      </div>
+        )}
+      </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                  <CalendarIcon className="h-5 w-5 text-purple-500" />
-                  Calendrier
-                </CardTitle>
-                <Button 
-                  onClick={() => setShowEventForm(true)}
-                  size="sm"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+      {/* Timer Section */}
+      <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+        
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <Timer className="h-5 w-5" />
+              Timer de travail
+            </div>
+            {isSyncing && (
+              <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                  Tâche *
+                </label>
+                <Select 
+                  value={selectedTask} 
+                  onValueChange={setSelectedTask}
+                  disabled={!!activeTimer}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Événement
-                </Button>
+                  <SelectTrigger className="border-purple-200 dark:border-purple-800">
+                    <SelectValue placeholder="Sélectionner une tâche" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTasks.map(task => (
+                      <SelectItem key={task.id} value={task.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            task.priority === 'urgent' ? 'bg-red-500' :
+                            task.priority === 'high' ? 'bg-orange-500' :
+                            task.priority === 'medium' ? 'bg-blue-500' : 'bg-green-500'
+                          )} />
+                          <span className="truncate">{task.title}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {task.status === 'in_progress' ? 'En cours' : 
+                             task.status === 'review' ? 'En revue' : 
+                             task.status === 'todo' ? 'À faire' : task.status}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    {availableTasks.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-500">
+                        Aucune tâche disponible
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardHeader>
-            <CardContent>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                className="rounded-md border"
-                modifiers={{
-                  hasEvents: (date) => dateHasEvents(date),
-                  hasTasks: (date) => dateHasTasks(date),
-                }}
-                modifiersStyles={{
-                  hasEvents: { backgroundColor: '#f3e8ff', border: '1px solid #d8b4fe' },
-                  hasTasks: { backgroundColor: '#dcfce7', border: '1px solid #86efac' },
-                }}
-              />
               
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Légende</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Dot className="h-4 w-4 text-purple-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Événements ({stats.events})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-600 dark:text-gray-400">Tâches ({stats.tasks})</span>
-                  </div>
-                </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                  Description du travail
+                </label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Décrivez le travail effectué..."
+                  rows={2}
+                  disabled={!!activeTimer}
+                  className="border-purple-200 dark:border-purple-800"
+                />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Event Form */}
+            <div className="flex flex-col gap-3 justify-center">
+              {!activeTimer ? (
+                <Button
+                  onClick={handleStartTimer}
+                  disabled={!selectedTask}
+                  className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 min-w-[140px]"
+                >
+                  <Play className="h-4 w-4" />
+                  Démarrer
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleStopTimer}
+                  className="gap-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 min-w-[140px]"
+                >
+                  <StopCircle className="h-4 w-4" />
+                  Arrêter
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Timer Display */}
           <AnimatePresence>
-            {showEventForm && (
+            {activeTimer && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
+                className="mt-6 p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-2 border-purple-200 dark:border-purple-800 rounded-xl"
               >
-                <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-gray-900 dark:text-white">Nouvel Événement</CardTitle>
-                      <Button variant="ghost" size="sm" onClick={resetEventForm}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Titre *</Label>
-                      <Input
-                        id="title"
-                        placeholder="Titre de l'événement"
-                        value={eventFormData.title}
-                        onChange={(e) => setEventFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Description..."
-                        value={eventFormData.description}
-                        onChange={(e) => setEventFormData(prev => ({ ...prev, description: e.target.value }))}
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="type">Type</Label>
-                        <Select value={eventFormData.type} onValueChange={(value: any) => setEventFormData(prev => ({ ...prev, type: value }))}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="meeting">Réunion</SelectItem>
-                            <SelectItem value="deadline">Échéance</SelectItem>
-                            <SelectItem value="milestone">Jalon</SelectItem>
-                            <SelectItem value="task">Tâche</SelectItem>
-                          </SelectContent>
-                        </Select>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-75"></div>
+                        <div className="relative w-3 h-3 bg-red-500 rounded-full"></div>
                       </div>
-                      <div>
-                        <Label htmlFor="location">Lieu</Label>
-                        <Input
-                          id="location"
-                          placeholder="Lieu"
-                          value={eventFormData.location}
-                          onChange={(e) => setEventFormData(prev => ({ ...prev, location: e.target.value }))}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="startTime">Début</Label>
-                        <Input
-                          id="startTime"
-                          type="time"
-                          value={eventFormData.startTime}
-                          onChange={(e) => setEventFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="endTime">Fin</Label>
-                        <Input
-                          id="endTime"
-                          type="time"
-                          value={eventFormData.endTime}
-                          onChange={(e) => setEventFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                    <div className="pt-2">
-                      <p className="text-sm text-gray-500 mb-2">
-                        Date: {format(selectedDate, 'dd MMMM yyyy', { locale: fr })}
+                      <p className="font-semibold text-purple-900 dark:text-purple-300 text-lg">
+                        ⏱️ Timer en cours
                       </p>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={createEventWithForm}
-                          disabled={creatingEvent || !eventFormData.title.trim()}
-                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
-                        >
-                          {creatingEvent ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                          Créer
-                        </Button>
-                        <Button variant="outline" onClick={resetEventForm}>Annuler</Button>
-                      </div>
+                      {isOffline && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          Hors ligne
+                        </Badge>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="space-y-2 text-sm text-purple-800 dark:text-purple-400">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        <strong>Tâche:</strong> {activeTask?.title || 'Tâche inconnue'}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <strong>Débuté à:</strong> {activeTimer.startTime.toLocaleTimeString('fr-FR')}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <strong>Date:</strong> {activeTimer.startTime.toLocaleDateString('fr-FR')}
+                      </div>
+                      {activeTimer.description && activeTimer.description !== 'Travail en cours' && (
+                        <div className="flex items-start gap-2">
+                          <Zap className="h-4 w-4 mt-0.5" />
+                          <strong>Description:</strong> {activeTimer.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-purple-900 dark:text-purple-300 bg-white/50 dark:bg-gray-900/50 px-6 py-3 rounded-xl border-2 border-purple-300 dark:border-purple-700 shadow-lg">
+                      {formatDuration(elapsedTime)}
+                    </div>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+                      Temps écoulé
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Activities */}
-        <Card className="lg:col-span-2 border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-white">
-              Activités du {format(selectedDate, 'dd MMMM yyyy', { locale: fr })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {eventsForSelectedDate.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-purple-500" />
-                  Événements ({eventsForSelectedDate.length})
-                </h3>
-                <div className="space-y-3">
-                  {eventsForSelectedDate.map((event, index) => (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={cn("p-4 border rounded-lg transition-all hover:shadow-md", getEventTypeColor(event))}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{event.title}</h4>
-                          {event.taskId && (
-                            <Badge variant="secondary" className="mt-1 text-xs">
-                              <Link className="h-3 w-3 mr-1" /> Lié à une tâche
-                            </Badge>
-                          )}
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => deleteEvent(event.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {event.description && <p className="text-sm mt-2 opacity-80">{event.description}</p>}
-                      <div className="flex items-center gap-4 text-xs mt-3 opacity-80">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {event.location}
-                          </div>
-                        )}
-                      </div>
-                      {!event.taskId && event.type !== 'task' && (
-                        <Button variant="outline" size="sm" className="mt-2" onClick={() => convertEventToTask(event)}>
-                          <Plus className="h-3 w-3 mr-1" /> Convertir en tâche
-                        </Button>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {tasksForSelectedDate.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Tâches ({tasksForSelectedDate.length})
-                </h3>
-                <div className="space-y-3">
-                  {tasksForSelectedDate.map((task, index) => {
-                    const hasCalendarEvent = events.some(event => event.taskId === task.id)
-                    return (
-                      <motion.div
-                        key={task.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-white">{task.title}</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
-                              <Badge variant="outline">{getStatusLabel(task.status)}</Badge>
-                              {hasCalendarEvent && <Badge variant="secondary"><Link className="h-3 w-3 mr-1" /> Lié</Badge>}
-                            </div>
-                          </div>
-                          {!hasCalendarEvent && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => linkTaskToCalendar(task)}
-                              disabled={linkingTask === task.id}
-                            >
-                              {linkingTask === task.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarIcon className="h-3 w-3" />}
-                            </Button>
-                          )}
-                        </div>
-                        {task.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{task.description}</p>}
-                        <div className="flex items-center gap-4 text-xs text-gray-500 mt-3">
-                          {task.estimatedHours && <span>⏱️ {task.estimatedHours}h estimées</span>}
-                          {task.dueDate && <span>📅 {format(parseISO(task.dueDate), 'dd/MM/yyyy')}</span>}
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {eventsForSelectedDate.length === 0 && tasksForSelectedDate.length === 0 && (
-              <div className="text-center py-12">
-                <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Aucune activité planifiée pour cette date</p>
-                <Button variant="outline" className="mt-4" onClick={() => setShowEventForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Créer un événement
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Unlinked Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-              <Unlink className="h-5 w-5 text-orange-500" />
-              Tâches sans calendrier ({tasksWithoutCalendarEvent.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {tasksWithoutCalendarEvent.length > 0 ? (
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {tasksWithoutCalendarEvent.map(task => (
-                  <div key={task.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div>
-                      <p className="font-medium text-sm">{task.title}</p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge className={getPriorityColor(task.priority)} className="text-xs">{task.priority}</Badge>
-                        {task.dueDate && <span className="text-xs text-gray-500">📅 {format(parseISO(task.dueDate), 'dd/MM/yyyy')}</span>}
-                      </div>
-                    </div>
-                    <Button size="sm" onClick={() => linkTaskToCalendar(task)} disabled={linkingTask === task.id}>
-                      {linkingTask === task.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarIcon className="h-3 w-3" />}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Link className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Toutes les tâches sont liées</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-              <CalendarIcon className="h-5 w-5 text-blue-500" />
-              Événements indépendants ({eventsWithoutTasks.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {eventsWithoutTasks.length > 0 ? (
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {eventsWithoutTasks.map(event => (
-                  <div key={event.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-sm">{event.title}</h4>
-                      <Badge variant="secondary" className="text-xs">{getEventTypeLabel(event.type)}</Badge>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-2">{format(event.start, 'dd/MM/yyyy HH:mm')}</p>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => convertEventToTask(event)}>
-                        <Plus className="h-3 w-3 mr-1" /> Convertir
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => deleteEvent(event.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <CalendarIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Tous les événements sont liés</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {error && (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <p className="text-red-600 font-medium">{error}</p>
+              <div>
+                <p className="text-sm opacity-90">Total projet</p>
+                <p className="text-2xl font-bold">{getTotalHours().toFixed(1)}h</p>
               </div>
-              <Button variant="outline" size="sm" onClick={loadData}>Réessayer</Button>
+              <TrendingUp className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Cette semaine</p>
+                <p className="text-2xl font-bold">{getWeeklyHours().toFixed(1)}h</p>
+              </div>
+              <Calendar className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Sessions</p>
+                <p className="text-2xl font-bold">{timeEntries.filter(e => e.billable).length}</p>
+              </div>
+              <Sparkles className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Jours travaillés</p>
+                <p className="text-2xl font-bold">{new Set(timeEntries.map(e => new Date(e.startTime).toDateString())).size}</p>
+              </div>
+              <Award className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Ongoing Tasks Section */}
+      {ongoingTasks.length > 0 && (
+        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <Zap className="h-5 w-5" />
+              Tâches en cours ({ongoingTasks.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ongoingTasks.map(task => {
+                const taskHours = getTaskHours(task.id)
+                const taskProgress = task.estimatedHours ? (taskHours / task.estimatedHours) * 100 : 0
+                return (
+                  <div
+                    key={task.id}
+                    className="p-4 border border-purple-200 dark:border-purple-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/20"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{task.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={cn(
+                            "text-xs",
+                            task.priority === 'urgent' ? 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400' :
+                            task.priority === 'high' ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-400' :
+                            task.priority === 'medium' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400' :
+                            'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400'
+                          )}>
+                            {task.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                      {taskHours > 0 && (
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                            {taskHours.toFixed(1)}h
+                          </p>
+                          <p className="text-xs text-gray-500">travaillées</p>
+                        </div>
+                      )}
+                    </div>
+                    {task.estimatedHours && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          <span>Progression</span>
+                          <span>{Math.min(taskProgress, 100).toFixed(0)}%</span>
+                        </div>
+                        <Progress value={Math.min(taskProgress, 100)} className="h-1.5" />
+                        <p className="text-xs text-gray-500 mt-2">
+                          Objectif: {task.estimatedHours}h
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Time Distribution Chart */}
+      {tasks.filter(task => getTaskHours(task.id) > 0).length > 0 && (
+        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <PieChart className="h-5 w-5" />
+              Répartition du temps par tâche
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {tasks
+                .filter(task => getTaskHours(task.id) > 0)
+                .sort((a, b) => getTaskHours(b.id) - getTaskHours(a.id))
+                .map(task => {
+                  const taskHours = getTaskHours(task.id)
+                  const percentage = (taskHours / Math.max(getTotalHours(), 1)) * 100
+                  
+                  return (
+                    <div key={task.id} className="group">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-3 h-3 rounded-full",
+                            task.status === 'done' ? 'bg-green-500' : 'bg-purple-500'
+                          )} />
+                          <span className="font-medium text-sm text-gray-900 dark:text-white">
+                            {task.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="text-xs">
+                            {taskHours.toFixed(1)}h
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {percentage.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      <Progress value={percentage} className="h-2" />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>{task.status === 'done' ? '✅ Terminée' : '🟡 En cours'}</span>
+                        {task.estimatedHours && (
+                          <span>Prévu: {task.estimatedHours}h</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Time Entries History */}
+      <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <BarChart3 className="h-5 w-5" />
+              Historique du temps
+            </CardTitle>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {timeEntries.length} entrée(s) de temps enregistrée(s)
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadTimeEntries}
+            disabled={isLoading}
+            className="gap-2 border-purple-300 dark:border-purple-700"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Chargement...' : 'Actualiser'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-purple-200 dark:border-purple-800">
+                  <TableHead>Date</TableHead>
+                  <TableHead>Tâche</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Durée</TableHead>
+                  <TableHead>Facturable</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {timeEntries.map(entry => {
+                  const task = tasks.find(t => t.id === entry.taskId)
+                  const durationHours = (entry.duration || 0) / 3600
+                  const startDate = new Date(entry.startTime)
+                  
+                  return (
+                    <TableRow key={entry.id} className="hover:bg-purple-50/30 dark:hover:bg-purple-950/20">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">
+                            {startDate.toLocaleDateString('fr-FR')}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {task?.title || 'Tâche inconnue'}
+                          {task && (
+                            <Badge variant="outline" className="text-xs">
+                              {task.status}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[250px]">
+                        <div className="truncate" title={entry.description}>
+                          {entry.description}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-mono bg-purple-100 dark:bg-purple-950/30">
+                          {durationHours.toFixed(1)}h
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={entry.billable ? "default" : "secondary"}>
+                          {entry.billable ? '💰 Oui' : '❌ Non'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTimeEntry(entry.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+                
+                {timeEntries.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12">
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-purple-100 dark:bg-purple-950/30 rounded-full flex items-center justify-center mb-4">
+                          <Timer className="h-8 w-8 text-purple-500" />
+                        </div>
+                        <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                          Aucun temps enregistré
+                        </p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Commencez par démarrer un timer pour tracker votre temps de travail.
+                        </p>
+                        <Button 
+                          onClick={loadTimeEntries} 
+                          variant="outline"
+                          className="gap-2 border-purple-300 dark:border-purple-700"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Recharger
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
