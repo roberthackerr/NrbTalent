@@ -665,7 +665,7 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                           Recharger
                         </Button>
                       </div>
-                    </TableCell>
+                    </TableCell> 
                   </TableRow>
                 )}
               </TableBody>
