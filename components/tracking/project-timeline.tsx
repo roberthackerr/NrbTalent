@@ -251,6 +251,7 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
         priority: 'medium' as const,
         status: 'todo' as const
       }
+      console.log(taskData);
       await tasksApi.createTask(taskData)
       toast({ title: "Événement converti", description: "L'événement a été converti en tâche" })
       if (onRefresh) onRefresh()
