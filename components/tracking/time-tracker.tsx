@@ -42,14 +42,8 @@ import {
   Loader2,
   Sparkles,
   CloudOff,
-  CheckCircle2,
-  Circle,
   ChevronDown,
-  ChevronUp,
-  MoreVertical,
-  Edit2,
-  Copy,
-  Archive
+  ChevronUp
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -83,6 +77,16 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
   }
 
   const projectId = getProjectId()
+
+  // ✅ CORRECTION: Définir getWeeklyHours AVANT de l'utiliser
+  const getWeeklyHours = useCallback(() => {
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    const weeklySeconds = timeEntries
+      .filter(entry => new Date(entry.startTime) > oneWeekAgo)
+      .reduce((total, entry) => total + (entry.duration || 0), 0)
+    return weeklySeconds / 3600
+  }, [timeEntries])
 
   // Vérifier l'état de la connexion
   useEffect(() => {
@@ -390,6 +394,8 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
   const tasksWithTime = getTasksWithTime()
   const totalProjectSeconds = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0)
   const totalFormatted = formatDuration(totalProjectSeconds, timeFormat)
+  const weeklyHours = getWeeklyHours()
+  const weeklyFormatted = formatDuration(weeklyHours * 3600, timeFormat)
 
   const toggleTaskExpand = (taskId: string) => {
     const newExpanded = new Set(expandedTasks)
@@ -521,7 +527,7 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
             </div>
           </div>
 
-          {/* Active Timer Display - Style Clockify */}
+          {/* Active Timer Display */}
           <AnimatePresence>
             {activeTimer && (
               <motion.div
@@ -585,7 +591,7 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-90">Cette semaine</p>
-                <p className="text-2xl font-bold">{formatDuration(getWeeklyHours() * 3600, timeFormat)}</p>
+                <p className="text-2xl font-bold">{weeklyFormatted}</p>
               </div>
               <Calendar className="h-8 w-8 opacity-80" />
             </div>
@@ -800,7 +806,6 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
               <TableBody>
                 {timeEntries.slice(0, 20).map(entry => {
                   const task = tasks.find(t => t.id === entry.taskId)
-                  const durationHours = (entry.duration || 0) / 3600
                   const startDate = new Date(entry.startTime)
                   
                   return (
