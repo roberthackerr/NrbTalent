@@ -149,22 +149,22 @@ export async function POST(request: NextRequest) {
 
     // Formater la réponse
     const formattedEvent = {
-      id: createdEvent._id.toString(),
-      userId: createdEvent.userId.toString(),
-      title: createdEvent.title,
-      description: createdEvent.description,
-      start: createdEvent.start.toISOString(),
-      end: createdEvent.end.toISOString(),
-      type: createdEvent.type,
-      status: createdEvent.status,
-      location: createdEvent.location,
-      projectId: createdEvent.projectId?.toString(),
-      taskId: createdEvent.taskId?.toString(),
-      color: createdEvent.color,
-      tags: createdEvent.tags,
-      isAllDay: createdEvent.isAllDay,
-      createdAt: createdEvent.createdAt.toISOString(),
-      updatedAt: createdEvent.updatedAt.toISOString()
+      id: createdEvent?._id.toString(),
+      userId: createdEvent?.userId.toString(),
+      title: createdEvent?.title,
+      description: createdEvent?.description,
+      start: createdEvent?.start.toISOString(),
+      end: createdEvent?.end.toISOString(),
+      type: createdEvent?.type,
+      status: createdEvent?.status,
+      location: createdEvent?.location,
+      projectId: createdEvent?.projectId?.toString(),
+      taskId: createdEvent?.taskId?.toString(),
+      color: createdEvent?.color,
+      tags: createdEvent?.tags,
+      isAllDay: createdEvent?.isAllDay,
+      createdAt: createdEvent?.createdAt.toISOString(),
+      updatedAt: createdEvent?.updatedAt.toISOString()
     }
 
     return NextResponse.json({ 
