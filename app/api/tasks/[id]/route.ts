@@ -5,10 +5,8 @@ import { authOptions } from '@/lib/auth'
 import { getDatabase } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -21,7 +19,9 @@ export async function PATCH(
     // Valider l'ID de la tâche
     let taskId
     try {
-      taskId = new ObjectId(params.id)
+      const { id } = await params
+     taskId = new ObjectId(id); 
+
     } catch (error) {
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 })
     }
@@ -81,8 +81,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request, { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -94,7 +93,8 @@ export async function DELETE(
     
     let taskId
     try {
-      taskId = new ObjectId(params.id)
+     const { id } = await params
+     taskId = new ObjectId(id); 
     } catch (error) {
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 })
     }
