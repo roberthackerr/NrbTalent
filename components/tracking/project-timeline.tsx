@@ -1,7 +1,7 @@
 // components/tracking/project-timeline.tsx
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,12 +18,11 @@ import {
 } from '@/components/ui/select'
 import { CalendarEvent, CreateEventRequest } from '@/lib/models/event'
 import { eventsApi } from '@/lib/api'
-import { format, isSameDay, parseISO, addDays, addHours } from 'date-fns'
+import { format, isSameDay, parseISO, addHours, startOfMonth, endOfMonth } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { 
   Calendar as CalendarIcon, 
   Clock, 
-  User, 
   Flag, 
   Loader2, 
   Plus, 
@@ -32,12 +31,16 @@ import {
   Unlink, 
   Trash2, 
   X,
-  MapPin
+  MapPin,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/components/ui/use-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
-// Types locaux pour les tâches et projets
 interface Task {
   id: string
   title: string
@@ -69,20 +72,13 @@ interface ProjectTimelineProps {
   onRefresh?: () => void
 }
 
-// API pour les tâches
 const tasksApi = {
   async getTasks(filters?: { projectId?: string }): Promise<Task[]> {
     try {
       const params = new URLSearchParams()
-      if (filters?.projectId) {
-        params.append('projectId', filters.projectId)
-      }
-
+      if (filters?.projectId) params.append('projectId', filters.projectId)
       const response = await fetch(`/api/tasks?${params}`)
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des tâches')
-      }
-      
+      if (!response.ok) throw new Error('Erreur lors de la récupération des tâches')
       const result = await response.json()
       return result.data || []
     } catch (error) {
@@ -94,16 +90,10 @@ const tasksApi = {
   async createTask(taskData: Partial<Task>): Promise<Task> {
     const response = await fetch('/api/tasks', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(taskData),
     })
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de la création de la tâche')
-    }
-
+    if (!response.ok) throw new Error('Erreur lors de la création de la tâche')
     const result = await response.json()
     return result.data
   }
@@ -118,6 +108,7 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
   const [linkingTask, setLinkingTask] = useState<string | null>(null)
   const [creatingEvent, setCreatingEvent] = useState(false)
   const [showEventForm, setShowEventForm] = useState(false)
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
   const [eventFormData, setEventFormData] = useState({
     title: '',
     description: '',
@@ -128,46 +119,34 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
   })
   const { toast } = useToast()
 
-  // Charger les données
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        console.log('Chargement des données pour le projet:', project.id)
-
-        // Charger les tâches du projet
-        const projectTasks = await tasksApi.getTasks({ projectId: project.id })
-        setAllTasks(projectTasks)
-        console.log('Tâches chargées:', projectTasks.length)
-
-        // Charger les événements du projet
-        try {
-          const projectEvents = await eventsApi.getEvents({
-            projectId: project.id,
-            startDate: new Date(new Date().getFullYear(), 0, 1),
-            endDate: new Date(new Date().getFullYear(), 11, 31)
-          })
-          console.log('Événements chargés:', projectEvents.length)
-          setEvents(projectEvents)
-        } catch (eventsError) {
-          console.error('Erreur eventsApi:', eventsError)
-          setEvents([])
-        }
-
-      } catch (err) {
-        console.error('Erreur lors du chargement des données:', err)
-        setError(err instanceof Error ? err.message : 'Erreur inconnue')
-      } finally {
-        setLoading(false)
-      }
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const [projectTasks, projectEvents] = await Promise.all([
+        tasksApi.getTasks({ projectId: project.id }),
+        eventsApi.getEvents({
+          projectId: project.id,
+          startDate: startOfMonth(selectedDate),
+          endDate: endOfMonth(selectedDate)
+        })
+      ])
+      
+      setAllTasks(projectTasks)
+      setEvents(projectEvents)
+    } catch (err) {
+      console.error('Error loading data:', err)
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+    } finally {
+      setLoading(false)
     }
+  }, [project.id, selectedDate])
 
+  useEffect(() => {
     loadData()
-  }, [project.id])
+  }, [loadData])
 
-  // Réinitialiser le formulaire
   const resetEventForm = () => {
     setEventFormData({
       title: '',
@@ -180,21 +159,14 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
     setShowEventForm(false)
   }
 
-  // Créer un événement avec le formulaire
   const createEventWithForm = async () => {
+    if (!eventFormData.title.trim()) {
+      toast({ title: "Erreur", description: "Le titre est obligatoire", variant: "destructive" })
+      return
+    }
+
+    setCreatingEvent(true)
     try {
-      if (!eventFormData.title.trim()) {
-        toast({
-          title: "Erreur",
-          description: "Le titre est obligatoire",
-          variant: "destructive"
-        })
-        return
-      }
-
-      setCreatingEvent(true)
-
-      // Combiner la date sélectionnée avec l'heure
       const startDateTime = new Date(selectedDate)
       const [startHours, startMinutes] = eventFormData.startTime.split(':').map(Number)
       startDateTime.setHours(startHours, startMinutes)
@@ -202,11 +174,7 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
       const endDateTime = new Date(selectedDate)
       const [endHours, endMinutes] = eventFormData.endTime.split(':').map(Number)
       endDateTime.setHours(endHours, endMinutes)
-
-      // Si l'heure de fin est avant l'heure de début, ajouter un jour
-      if (endDateTime <= startDateTime) {
-        endDateTime.setDate(endDateTime.getDate() + 1)
-      }
+      if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1)
 
       const eventData: CreateEventRequest = {
         title: eventFormData.title,
@@ -217,46 +185,28 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
         status: 'scheduled',
         location: eventFormData.location,
         projectId: project.id,
-        recurring: undefined
       }
 
-      console.log('Création événement avec données:', eventData)
-      
       const newEvent = await eventsApi.createEvent(eventData)
-      console.log('Événement créé:', newEvent)
-      
       setEvents(prev => [...prev, newEvent])
       resetEventForm()
-      
-      toast({
-        title: "Événement créé",
-        description: "Le nouvel événement a été ajouté au calendrier",
-      })
-
+      toast({ title: "Événement créé", description: "Le nouvel événement a été ajouté au calendrier" })
       if (onRefresh) onRefresh()
     } catch (err) {
-      console.error('Erreur création événement:', err)
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer l'événement",
-        variant: "destructive"
-      })
+      console.error('Error creating event:', err)
+      toast({ title: "Erreur", description: "Impossible de créer l'événement", variant: "destructive" })
     } finally {
       setCreatingEvent(false)
     }
   }
 
-  // Lier une tâche à un événement calendrier (AMÉLIORÉ)
   const linkTaskToCalendar = async (task: Task) => {
+    setLinkingTask(task.id)
     try {
-      setLinkingTask(task.id)
-      
-      // Utiliser la date de la tâche ou la date sélectionnée
       const taskDueDate = task.dueDate ? parseISO(task.dueDate) : selectedDate
-      
       const eventData: CreateEventRequest = {
         title: `📋 ${task.title}`,
-        description: task.description || `Tâche: ${task.title}\nPriorité: ${task.priority}\nStatut: ${task.status}`,
+        description: task.description || `Tâche: ${task.title}\nPriorité: ${task.priority}`,
         start: taskDueDate,
         end: addHours(taskDueDate, task.estimatedHours || 1),
         type: 'task',
@@ -264,56 +214,31 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
         location: `Projet: ${project.name}`,
         projectId: project.id,
         taskId: task.id,
-        recurring: undefined
       }
-
-      console.log('Liaison tâche -> événement:', eventData)
-      
       const newEvent = await eventsApi.createEvent(eventData)
       setEvents(prev => [...prev, newEvent])
-      
-      toast({
-        title: "Tâche liée au calendrier",
-        description: "La tâche a été ajoutée au calendrier avec succès",
-      })
-
+      toast({ title: "Tâche liée", description: "La tâche a été ajoutée au calendrier" })
       if (onRefresh) onRefresh()
     } catch (err) {
-      console.error('Erreur liaison tâche:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue'
-      toast({
-        title: "Erreur de liaison",
-        description: `Impossible de lier la tâche: ${errorMessage}`,
-        variant: "destructive"
-      })
+      console.error('Error linking task:', err)
+      toast({ title: "Erreur", description: "Impossible de lier la tâche", variant: "destructive" })
     } finally {
       setLinkingTask(null)
     }
   }
 
-  // Supprimer un événement
   const deleteEvent = async (eventId: string) => {
     try {
       await eventsApi.deleteEvent(eventId)
       setEvents(prev => prev.filter(event => event.id !== eventId))
-      
-      toast({
-        title: "Événement supprimé",
-        description: "L'événement a été supprimé du calendrier",
-      })
-
+      toast({ title: "Événement supprimé", description: "L'événement a été supprimé du calendrier" })
       if (onRefresh) onRefresh()
     } catch (err) {
-      console.error('Erreur suppression événement:', err)
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer l'événement",
-        variant: "destructive"
-      })
+      console.error('Error deleting event:', err)
+      toast({ title: "Erreur", description: "Impossible de supprimer l'événement", variant: "destructive" })
     }
   }
 
-  // Convertir un événement en tâche
   const convertEventToTask = async (event: CalendarEvent) => {
     try {
       const taskData = {
@@ -321,158 +246,127 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
         description: event.description || `Créé depuis l'événement: ${event.title}`,
         projectId: project.id,
         dueDate: event.start.toISOString(),
-        estimatedHours: Math.ceil((event.end.getTime() - event.start.getTime()) / (1000 * 60 * 60)), // Calcul basé sur la durée
+        estimatedHours: Math.ceil((event.end.getTime() - event.start.getTime()) / (1000 * 60 * 60)),
         priority: 'medium' as const,
         status: 'todo' as const
       }
-
       await tasksApi.createTask(taskData)
-      
-      toast({
-        title: "Événement converti",
-        description: "L'événement a été converti en tâche avec succès",
-      })
-
+      toast({ title: "Événement converti", description: "L'événement a été converti en tâche" })
       if (onRefresh) onRefresh()
     } catch (err) {
-      console.error('Erreur conversion événement:', err)
-      toast({
-        title: "Erreur",
-        description: "Impossible de convertir l'événement en tâche",
-        variant: "destructive"
-      })
+      console.error('Error converting event:', err)
+      toast({ title: "Erreur", description: "Impossible de convertir l'événement", variant: "destructive" })
     }
   }
 
-  // Fonctions utilitaires pour le calendrier
-  const dateHasEvents = (date: Date) => {
-    return events.some(event => isSameDay(event.start, date))
-  }
-
-  const dateHasTasks = (date: Date) => {
-    return allTasks.some(task => 
-      task.dueDate && isSameDay(parseISO(task.dueDate), date)
-    )
-  }
+  const dateHasEvents = (date: Date) => events.some(event => isSameDay(event.start, date))
+  const dateHasTasks = (date: Date) => allTasks.some(task => task.dueDate && isSameDay(parseISO(task.dueDate), date))
 
   const getEventTypeColor = (event: CalendarEvent) => {
-    switch (event.type) {
-      case 'meeting':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'deadline':
-        return 'bg-red-100 text-red-800 border-red-200'
-      case 'milestone':
-        return 'bg-green-100 text-green-800 border-green-200'
-      case 'task':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      default:
-        return 'bg-slate-100 text-slate-800 border-slate-200'
+    const colors = {
+      meeting: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800',
+      deadline: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800',
+      milestone: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950/30 dark:text-green-300 dark:border-green-800',
+      task: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
     }
+    return colors[event.type] || 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
   const getEventTypeLabel = (type: string) => {
-    switch (type) {
-      case 'meeting': return 'Réunion'
-      case 'deadline': return 'Échéance'
-      case 'milestone': return 'Jalon'
-      case 'task': return 'Tâche'
-      default: return type
+    const labels = { meeting: 'Réunion', deadline: 'Échéance', milestone: 'Jalon', task: 'Tâche' }
+    return labels[type as keyof typeof labels] || type
+  }
+
+  const getPriorityColor = (priority: string) => {
+    const colors = {
+      low: 'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-300',
+      medium: 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-300',
+      high: 'bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-300',
+      urgent: 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-300'
     }
+    return colors[priority as keyof typeof colors] || colors.medium
   }
 
-  // Composant personnalisé pour le rendu des jours du calendrier
-  const DayContent = ({ date }: { date: Date }) => {
-    const hasEvents = dateHasEvents(date)
-    const hasTasks = dateHasTasks(date)
-
-    return (
-      <div className="relative w-full h-full flex flex-col items-center justify-center">
-        <span>{format(date, 'd')}</span>
-        
-        {(hasEvents || hasTasks) && (
-          <div className="absolute bottom-1 flex justify-center gap-1">
-            {hasEvents && <Dot className="h-3 w-3 text-blue-500" />}
-            {hasTasks && <Dot className="h-3 w-3 text-green-500" />}
-          </div>
-        )}
-      </div>
-    )
+  const getStatusLabel = (status: string) => {
+    const labels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' }
+    return labels[status as keyof typeof labels] || status
   }
 
-  // Données filtrées pour la date sélectionnée
-  const eventsForSelectedDate = events.filter(event => 
-    isSameDay(event.start, selectedDate)
-  )
-  
-  const tasksForSelectedDate = allTasks.filter(task => 
-    task.dueDate && isSameDay(parseISO(task.dueDate), selectedDate)
-  )
-
-  // Données pour les statistiques
-  const tasksWithoutCalendarEvent = allTasks.filter(task => 
-    task.dueDate && !events.some(event => event.taskId === task.id)
-  )
-
+  const eventsForSelectedDate = events.filter(event => isSameDay(event.start, selectedDate))
+  const tasksForSelectedDate = allTasks.filter(task => task.dueDate && isSameDay(parseISO(task.dueDate), selectedDate))
+  const tasksWithoutCalendarEvent = allTasks.filter(task => task.dueDate && !events.some(event => event.taskId === task.id))
   const eventsWithoutTasks = events.filter(event => !event.taskId)
+
+  const stats = {
+    events: events.length,
+    tasks: allTasks.length,
+    linkedTasks: allTasks.filter(task => events.some(event => event.taskId === task.id)).length,
+    linkedEvents: events.filter(event => event.taskId).length,
+    completionRate: allTasks.length > 0 ? Math.round((allTasks.filter(t => t.status === 'done').length / allTasks.length) * 100) : 0
+  }
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <span className="ml-2 text-slate-600">Chargement des données...</span>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 blur-2xl opacity-20 animate-pulse rounded-full"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600 relative z-10" />
+        </div>
+        <span className="ml-3 text-gray-600 dark:text-gray-400">Chargement du planning...</span>
+      </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec statistiques */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{events.length}</div>
-              <div className="text-sm text-slate-600">Événements</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{allTasks.length}</div>
-              <div className="text-sm text-slate-600">Tâches total</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {allTasks.filter(task => events.some(event => event.taskId === task.id)).length}
-              </div>
-              <div className="text-sm text-slate-600">Tâches liées</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {events.filter(event => event.taskId).length}
-              </div>
-              <div className="text-sm text-slate-600">Événements liés</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {[
+          { label: 'Événements', value: stats.events, icon: CalendarIcon, color: 'from-purple-500 to-pink-500' },
+          { label: 'Tâches', value: stats.tasks, icon: CheckCircle2, color: 'from-green-500 to-emerald-500' },
+          { label: 'Tâches liées', value: stats.linkedTasks, icon: Link, color: 'from-blue-500 to-cyan-500' },
+          { label: 'Événements liés', value: stats.linkedEvents, icon: Link, color: 'from-indigo-500 to-purple-500' },
+          { label: 'Progression', value: `${stats.completionRate}%`, icon: TrendingUp, color: 'from-orange-500 to-red-500' }
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Card className="border-gray-200 dark:border-gray-800 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                  </div>
+                  <div className={`p-2 bg-gradient-to-br ${stat.color} rounded-xl`}>
+                    <stat.icon className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendrier et Formulaire */}
+        {/* Calendar Sidebar */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Calendrier */}
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  Calendrier du projet
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <CalendarIcon className="h-5 w-5 text-purple-500" />
+                  Calendrier
                 </CardTitle>
                 <Button 
                   onClick={() => setShowEventForm(true)}
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 mr-1" />
                   Événement
                 </Button>
               </div>
@@ -488,336 +382,252 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
                   hasTasks: (date) => dateHasTasks(date),
                 }}
                 modifiersStyles={{
-                  hasEvents: {
-                    backgroundColor: '#dbeafe',
-                    border: '1px solid #93c5fd',
-                  },
-                  hasTasks: {
-                    backgroundColor: '#dcfce7',
-                    border: '1px solid #86efac',
-                  },
-                }}
-                components={{
-                  DayContent: (props) => <DayContent {...props} />
+                  hasEvents: { backgroundColor: '#f3e8ff', border: '1px solid #d8b4fe' },
+                  hasTasks: { backgroundColor: '#dcfce7', border: '1px solid #86efac' },
                 }}
               />
               
-              <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                <h4 className="font-medium text-slate-900 mb-3">Légende</h4>
-                <div className="space-y-3 text-sm">
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Légende</h4>
+                <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <Dot className="h-4 w-4 text-blue-500" />
-                    <span>Événements ({events.length})</span>
+                    <Dot className="h-4 w-4 text-purple-500" />
+                    <span className="text-gray-600 dark:text-gray-400">Événements ({stats.events})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Dot className="h-4 w-4 text-green-500" />
-                    <span>Tâches ({allTasks.length})</span>
+                    <span className="text-gray-600 dark:text-gray-400">Tâches ({stats.tasks})</span>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Formulaire de création d'événement */}
-          {showEventForm && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Nouvel Événement</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetEventForm}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Titre *</Label>
-                  <Input
-                    id="title"
-                    placeholder="Titre de l'événement"
-                    value={eventFormData.title}
-                    onChange={(e) => setEventFormData(prev => ({ ...prev, title: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Description de l'événement"
-                    value={eventFormData.description}
-                    onChange={(e) => setEventFormData(prev => ({ ...prev, description: e.target.value }))}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
-                    <Select
-                      value={eventFormData.type}
-                      onValueChange={(value: any) => setEventFormData(prev => ({ ...prev, type: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="meeting">Réunion</SelectItem>
-                        <SelectItem value="deadline">Échéance</SelectItem>
-                        <SelectItem value="milestone">Jalon</SelectItem>
-                        <SelectItem value="task">Tâche</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">
-                      <MapPin className="h-4 w-4 inline mr-1" />
-                      Lieu
-                    </Label>
-                    <Input
-                      id="location"
-                      placeholder="Lieu"
-                      value={eventFormData.location}
-                      onChange={(e) => setEventFormData(prev => ({ ...prev, location: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Heure de début</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={eventFormData.startTime}
-                      onChange={(e) => setEventFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">Heure de fin</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={eventFormData.endTime}
-                      onChange={(e) => setEventFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <p className="text-sm text-slate-500 mb-2">
-                    Date: {format(selectedDate, 'dd MMMM yyyy', { locale: fr })}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={createEventWithForm}
-                      disabled={creatingEvent || !eventFormData.title.trim()}
-                      className="flex-1"
-                    >
-                      {creatingEvent ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      Créer l'événement
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={resetEventForm}
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Event Form */}
+          <AnimatePresence>
+            {showEventForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-gray-900 dark:text-white">Nouvel Événement</CardTitle>
+                      <Button variant="ghost" size="sm" onClick={resetEventForm}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="title">Titre *</Label>
+                      <Input
+                        id="title"
+                        placeholder="Titre de l'événement"
+                        value={eventFormData.title}
+                        onChange={(e) => setEventFormData(prev => ({ ...prev, title: e.target.value }))}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Description..."
+                        value={eventFormData.description}
+                        onChange={(e) => setEventFormData(prev => ({ ...prev, description: e.target.value }))}
+                        className="mt-1"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="type">Type</Label>
+                        <Select value={eventFormData.type} onValueChange={(value: any) => setEventFormData(prev => ({ ...prev, type: value }))}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="meeting">Réunion</SelectItem>
+                            <SelectItem value="deadline">Échéance</SelectItem>
+                            <SelectItem value="milestone">Jalon</SelectItem>
+                            <SelectItem value="task">Tâche</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="location">Lieu</Label>
+                        <Input
+                          id="location"
+                          placeholder="Lieu"
+                          value={eventFormData.location}
+                          onChange={(e) => setEventFormData(prev => ({ ...prev, location: e.target.value }))}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="startTime">Début</Label>
+                        <Input
+                          id="startTime"
+                          type="time"
+                          value={eventFormData.startTime}
+                          onChange={(e) => setEventFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="endTime">Fin</Label>
+                        <Input
+                          id="endTime"
+                          type="time"
+                          value={eventFormData.endTime}
+                          onChange={(e) => setEventFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <p className="text-sm text-gray-500 mb-2">
+                        Date: {format(selectedDate, 'dd MMMM yyyy', { locale: fr })}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={createEventWithForm}
+                          disabled={creatingEvent || !eventFormData.title.trim()}
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
+                        >
+                          {creatingEvent ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                          Créer
+                        </Button>
+                        <Button variant="outline" onClick={resetEventForm}>Annuler</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Colonne centrale - Activités du jour */}
-        <Card className="lg:col-span-2">
+        {/* Activities */}
+        <Card className="lg:col-span-2 border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>
-              Activités pour le {format(selectedDate, 'dd MMMM yyyy', { locale: fr })}
+            <CardTitle className="text-gray-900 dark:text-white">
+              Activités du {format(selectedDate, 'dd MMMM yyyy', { locale: fr })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Événements */}
             {eventsForSelectedDate.length > 0 && (
               <div>
-                <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-purple-500" />
                   Événements ({eventsForSelectedDate.length})
                 </h3>
                 <div className="space-y-3">
-                  {eventsForSelectedDate.map(event => {
-                    const linkedTask = event.taskId ? allTasks.find(t => t.id === event.taskId) : null
-                    return (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "p-4 border rounded-lg transition-colors",
-                          getEventTypeColor(event)
-                        )}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{event.title}</h4>
-                            {linkedTask && (
-                              <Badge variant="secondary" className="mt-1 text-xs">
-                                <Link className="h-3 w-3 mr-1" />
-                                Lié à: {linkedTask.title}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {getEventTypeLabel(event.type)}
+                  {eventsForSelectedDate.map((event, index) => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={cn("p-4 border rounded-lg transition-all hover:shadow-md", getEventTypeColor(event))}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{event.title}</h4>
+                          {event.taskId && (
+                            <Badge variant="secondary" className="mt-1 text-xs">
+                              <Link className="h-3 w-3 mr-1" /> Lié à une tâche
                             </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteEvent(event.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {event.description && (
-                          <p className="text-sm mb-3 opacity-80 line-clamp-2">
-                            {event.description}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center gap-4 text-xs opacity-80">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                          </div>
-                          {event.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </div>
                           )}
                         </div>
-
-                        {!linkedTask && event.type !== 'task' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => convertEventToTask(event)}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Convertir en tâche
-                          </Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteEvent(event.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {event.description && <p className="text-sm mt-2 opacity-80">{event.description}</p>}
+                      <div className="flex items-center gap-4 text-xs mt-3 opacity-80">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {event.location}
+                          </div>
                         )}
                       </div>
-                    )
-                  })}
+                      {!event.taskId && event.type !== 'task' && (
+                        <Button variant="outline" size="sm" className="mt-2" onClick={() => convertEventToTask(event)}>
+                          <Plus className="h-3 w-3 mr-1" /> Convertir en tâche
+                        </Button>
+                      )}
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Tâches */}
             {tasksForSelectedDate.length > 0 && (
               <div>
-                <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <Flag className="h-4 w-4" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                   Tâches ({tasksForSelectedDate.length})
                 </h3>
                 <div className="space-y-3">
-                  {tasksForSelectedDate.map(task => {
+                  {tasksForSelectedDate.map((task, index) => {
                     const hasCalendarEvent = events.some(event => event.taskId === task.id)
                     return (
-                      <div
+                      <motion.div
                         key={task.id}
-                        className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-slate-900">{task.title}</h4>
-                          <div className="flex items-center gap-2">
-                            <Badge className={cn(
-                              "text-xs",
-                              task.status === 'done' ? 'bg-green-100 text-green-800' :
-                              task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            )}>
-                              {task.status === 'done' ? 'Terminé' :
-                              task.status === 'in_progress' ? 'En cours' : 'À faire'}
-                            </Badge>
-                            {!hasCalendarEvent && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => linkTaskToCalendar(task)}
-                                disabled={linkingTask === task.id}
-                                title="Convertir en événement calendrier"
-                              >
-                                {linkingTask === task.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <CalendarIcon className="h-3 w-3" />
-                                )}
-                              </Button>
-                            )}
-                            {hasCalendarEvent && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Link className="h-3 w-3 mr-1" />
-                                Lié
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {task.description && (
-                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <div className="flex items-center gap-1">
-                            <Flag className="h-3 w-3" />
-                            {task.priority}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {task.estimatedHours}h estimées
-                          </div>
-                          {task.dueDate && (
-                            <div className="flex items-center gap-1">
-                              <CalendarIcon className="h-3 w-3" />
-                              {format(parseISO(task.dueDate), 'dd/MM/yyyy')}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900 dark:text-white">{task.title}</h4>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                              <Badge variant="outline">{getStatusLabel(task.status)}</Badge>
+                              {hasCalendarEvent && <Badge variant="secondary"><Link className="h-3 w-3 mr-1" /> Lié</Badge>}
                             </div>
+                          </div>
+                          {!hasCalendarEvent && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => linkTaskToCalendar(task)}
+                              disabled={linkingTask === task.id}
+                            >
+                              {linkingTask === task.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarIcon className="h-3 w-3" />}
+                            </Button>
                           )}
                         </div>
-                      </div>
+                        {task.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{task.description}</p>}
+                        <div className="flex items-center gap-4 text-xs text-gray-500 mt-3">
+                          {task.estimatedHours && <span>⏱️ {task.estimatedHours}h estimées</span>}
+                          {task.dueDate && <span>📅 {format(parseISO(task.dueDate), 'dd/MM/yyyy')}</span>}
+                        </div>
+                      </motion.div>
                     )
                   })}
                 </div>
               </div>
             )}
 
-            {/* Aucune activité */}
             {eventsForSelectedDate.length === 0 && tasksForSelectedDate.length === 0 && (
-              <div className="text-center py-12 text-slate-500">
-                <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Aucune activité planifiée pour cette date</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => setShowEventForm(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Créer un événement
+              <div className="text-center py-12">
+                <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Aucune activité planifiée pour cette date</p>
+                <Button variant="outline" className="mt-4" onClick={() => setShowEventForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Créer un événement
                 </Button>
               </div>
             )}
@@ -825,12 +635,11 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
         </Card>
       </div>
 
-      {/* Section de gestion des liens */}
+      {/* Unlinked Items */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tâches sans événement calendrier */}
-        <Card>
+        <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
               <Unlink className="h-5 w-5 text-orange-500" />
               Tâches sans calendrier ({tasksWithoutCalendarEvent.length})
             </CardTitle>
@@ -839,45 +648,32 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
             {tasksWithoutCalendarEvent.length > 0 ? (
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {tasksWithoutCalendarEvent.map(task => (
-                  <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{task.title}</h4>
-                      <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
-                        <span>Priorité: {task.priority}</span>
-                        <span>Statut: {task.status}</span>
-                        {task.dueDate && (
-                          <span>Échéance: {format(parseISO(task.dueDate), 'dd/MM/yyyy')}</span>
-                        )}
+                  <div key={task.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{task.title}</p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge className={getPriorityColor(task.priority)} className="text-xs">{task.priority}</Badge>
+                        {task.dueDate && <span className="text-xs text-gray-500">📅 {format(parseISO(task.dueDate), 'dd/MM/yyyy')}</span>}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => linkTaskToCalendar(task)}
-                      disabled={linkingTask === task.id}
-                      title="Convertir en événement calendrier"
-                    >
-                      {linkingTask === task.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <CalendarIcon className="h-3 w-3" />
-                      )}
+                    <Button size="sm" onClick={() => linkTaskToCalendar(task)} disabled={linkingTask === task.id}>
+                      {linkingTask === task.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarIcon className="h-3 w-3" />}
                     </Button>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-gray-500">
                 <Link className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Toutes les tâches sont liées au calendrier</p>
+                <p>Toutes les tâches sont liées</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Événements sans tâche liée */}
-        <Card>
+        <Card className="border-gray-200 dark:border-gray-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
               <CalendarIcon className="h-5 w-5 text-blue-500" />
               Événements indépendants ({eventsWithoutTasks.length})
             </CardTitle>
@@ -886,30 +682,17 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
             {eventsWithoutTasks.length > 0 ? (
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {eventsWithoutTasks.map(event => (
-                  <div key={event.id} className="p-3 border rounded-lg">
+                  <div key={event.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-sm">{event.title}</h4>
-                      <Badge variant="secondary" className="text-xs">
-                        {getEventTypeLabel(event.type)}
-                      </Badge>
+                      <Badge variant="secondary" className="text-xs">{getEventTypeLabel(event.type)}</Badge>
                     </div>
-                    <p className="text-xs text-slate-500 mb-2">
-                      {format(event.start, 'dd/MM/yyyy HH:mm')}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-2">{format(event.start, 'dd/MM/yyyy HH:mm')}</p>
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => convertEventToTask(event)}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Convertir en tâche
+                      <Button size="sm" variant="outline" onClick={() => convertEventToTask(event)}>
+                        <Plus className="h-3 w-3 mr-1" /> Convertir
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deleteEvent(event.id)}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => deleteEvent(event.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -917,9 +700,9 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-500">
+              <div className="text-center py-8 text-gray-500">
                 <CalendarIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Tous les événements sont liés à des tâches</p>
+                <p>Tous les événements sont liés</p>
               </div>
             )}
           </CardContent>
@@ -927,20 +710,14 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
       </div>
 
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-600 font-medium">Erreur de chargement</p>
-                <p className="text-red-500 text-sm mt-1">{error}</p>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <p className="text-red-600 font-medium">{error}</p>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.location.reload()}
-              >
-                Réessayer
-              </Button>
+              <Button variant="outline" size="sm" onClick={loadData}>Réessayer</Button>
             </div>
           </CardContent>
         </Card>
