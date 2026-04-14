@@ -2,11 +2,13 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Table,
   TableBody,
@@ -23,7 +25,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Project, Task, TimeEntry } from '@/lib/tracking/types'
-import { Play, Pause, StopCircle, Clock, Calendar, Trash2, AlertTriangle, RefreshCw } from 'lucide-react'
+import { 
+  Play, 
+  Pause, 
+  StopCircle, 
+  Clock, 
+  Calendar, 
+  Trash2, 
+  AlertTriangle, 
+  RefreshCw,
+  TrendingUp,
+  Award,
+  Target,
+  Zap,
+  ChevronRight,
+  BarChart3,
+  PieChart,
+  Timer,
+  User,
+  Briefcase,
+  CheckCircle2,
+  Circle,
+  Loader2,
+  Sparkles
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface TimeTrackerProps {
   project: Project
@@ -31,7 +57,6 @@ interface TimeTrackerProps {
 }
 
 export function TimeTracker({ project, tasks }: TimeTrackerProps) {
-  // États principaux
   const [activeTimer, setActiveTimer] = useState<{ 
     taskId: string; 
     startTime: Date;
@@ -43,89 +68,60 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
   const [description, setDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
+  const [isExpanded, setIsExpanded] = useState(true)
   
-  // Références
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Récupération robuste de l'ID du projet
   const getProjectId = (): string | null => {
     return project?.id || (project as any)?._id || null
   }
 
   const projectId = getProjectId()
 
-  // Chargement des time entries
   useEffect(() => {
-    if (projectId) {
-      loadTimeEntries()
-    }
+    if (projectId) loadTimeEntries()
   }, [projectId])
 
-  // Gestion du timer en temps réel
   useEffect(() => {
     if (activeTimer) {
       intervalRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - activeTimer.startTime.getTime()) / 1000))
       }, 1000)
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current)
       setElapsedTime(0)
     }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [activeTimer])
 
-  // Chargement des entrées de temps
   const loadTimeEntries = async () => {
-    if (!projectId) {
-      console.error('❌ Cannot load time entries: projectId is undefined')
-      return
-    }
-
+    if (!projectId) return
     try {
       setIsLoading(true)
-      console.log('🔍 Loading time entries for project:', projectId)
-      
       const response = await fetch(`/api/projects/${projectId}/time-entries`)
-      
       if (response.ok) {
         const entries = await response.json()
-        console.log('✅ Time entries loaded:', entries.length)
         setTimeEntries(entries)
       } else {
-        console.error('❌ Failed to load project time entries, using fallback')
         await loadAllUserTimeEntries()
       }
     } catch (error) {
-      console.error('💥 Error loading time entries:', error)
+      console.error('Error loading time entries:', error)
       await loadAllUserTimeEntries()
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Fallback: charger tous les time entries de l'utilisateur
   const loadAllUserTimeEntries = async () => {
     try {
-      console.log('🔄 Fallback: loading all user time entries')
       const response = await fetch('/api/time-entries')
       if (response.ok) {
         const allEntries = await response.json()
-        console.log('✅ All user time entries loaded:', allEntries.length)
-        
-        // Filtrer pour n'avoir que les entrées des tâches de ce projet
         const projectTaskIds = tasks.map(task => task.id)
         const projectEntries = allEntries.filter((entry: TimeEntry) => 
           projectTaskIds.includes(entry.taskId)
         )
-        console.log('📋 Filtered project entries:', projectEntries.length)
         setTimeEntries(projectEntries)
       }
     } catch (error) {
@@ -133,7 +129,6 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
     }
   }
 
-  // Démarrer le timer
   const startTimer = async () => {
     if (!selectedTask) {
       alert('Veuillez sélectionner une tâche')
@@ -143,8 +138,6 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
     const startTime = new Date()
     
     try {
-      console.log('🚀 Starting timer for task:', selectedTask)
-      
       const response = await fetch('/api/time-entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,8 +151,6 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
 
       if (response.ok) {
         const newEntry = await response.json()
-        console.log('✅ Timer started, entry created:', newEntry.id)
-        
         setActiveTimer({
           taskId: selectedTask,
           startTime,
@@ -167,28 +158,23 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
           entryId: newEntry.id
         })
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to start timer')
+        throw new Error('Failed to start timer')
       }
     } catch (error) {
-      console.error('💥 Error starting timer:', error)
-      setActiveTimer(null)
-      alert('Erreur lors du démarrage du timer: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Error starting timer:', error)
+      alert('Erreur lors du démarrage du timer')
     }
   }
 
-  // Arrêter le timer
   const stopTimer = async () => {
     if (!activeTimer) return
 
     const endTime = new Date()
-    const duration = Math.round((endTime.getTime() - activeTimer.startTime.getTime()) / 1000) // secondes
+    const duration = Math.round((endTime.getTime() - activeTimer.startTime.getTime()) / 1000)
 
     try {
-      console.log('🛑 Stopping timer, duration:', duration, 'seconds')
-      
       if (activeTimer.entryId) {
-        const response = await fetch(`/api/time-entries/${activeTimer.entryId}`, {
+        await fetch(`/api/time-entries/${activeTimer.entryId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -197,112 +183,26 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
             description: activeTimer.description
           })
         })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to update time entry')
-        }
-
-        console.log('✅ Timer stopped successfully')
       }
 
       setActiveTimer(null)
       setDescription('')
       setSelectedTask('')
-      
-      // Recharger les time entries
-      if (projectId) {
-        loadTimeEntries()
-      } else {
-        loadAllUserTimeEntries()
-      }
+      if (projectId) loadTimeEntries()
+      else loadAllUserTimeEntries()
     } catch (error) {
-      console.error('💥 Error stopping timer:', error)
-      alert('Erreur lors de l\'arrêt du timer: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Error stopping timer:', error)
+      alert('Erreur lors de l\'arrêt du timer')
     }
   }
 
-  // Mettre en pause le timer (arrêt simple pour l'instant)
-  const pauseTimer = () => {
-    if (activeTimer) {
-      stopTimer()
-    }
-  }
-
-  // Formater la durée en texte lisible
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`
-    } else if (minutes > 0) {
-      return `${minutes}m ${secs.toString().padStart(2, '0')}s`
-    } else {
-      return `${secs}s`
-    }
-  }
-
-  // Formater les heures décimales
-  const formatHours = (seconds: number) => {
-    const hours = seconds / 3600
-    return hours.toFixed(1)
-  }
-
-  // Calculer le total des heures travaillées
-  const getTotalHours = () => {
-    const totalSeconds = timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0)
-    return totalSeconds / 3600
-  }
-
-  // Calculer les heures par tâche
-  const getTaskHours = (taskId: string) => {
-    const taskSeconds = timeEntries
-      .filter(entry => entry.taskId === taskId)
-      .reduce((total, entry) => total + (entry.duration || 0), 0)
-    return taskSeconds / 3600
-  }
-
-  // Calculer les heures de la semaine
-  const getWeeklyHours = () => {
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-    
-    const weeklySeconds = timeEntries
-      .filter(entry => new Date(entry.startTime) > oneWeekAgo)
-      .reduce((total, entry) => total + (entry.duration || 0), 0)
-    return weeklySeconds / 3600
-  }
-
-  // Calculer les heures du mois
-  const getMonthlyHours = () => {
-    const oneMonthAgo = new Date()
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-    
-    const monthlySeconds = timeEntries
-      .filter(entry => new Date(entry.startTime) > oneMonthAgo)
-      .reduce((total, entry) => total + (entry.duration || 0), 0)
-    return monthlySeconds / 3600
-  }
-
-  // Supprimer une entrée de temps
   const deleteTimeEntry = async (entryId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette entrée de temps ?')) return
-
     try {
-      const response = await fetch(`/api/time-entries/${entryId}`, {
-        method: 'DELETE'
-      })
-
+      const response = await fetch(`/api/time-entries/${entryId}`, { method: 'DELETE' })
       if (response.ok) {
-        if (projectId) {
-          loadTimeEntries()
-        } else {
-          loadAllUserTimeEntries()
-        }
-      } else {
-        throw new Error('Failed to delete time entry')
+        if (projectId) loadTimeEntries()
+        else loadAllUserTimeEntries()
       }
     } catch (error) {
       console.error('Error deleting time entry:', error)
@@ -310,41 +210,97 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
     }
   }
 
-  // Obtenir la tâche active
-  const activeTask = activeTimer ? tasks.find(t => t.id === activeTimer.taskId) : null
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    if (hours > 0) return `${hours}h ${minutes.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`
+    if (minutes > 0) return `${minutes}m ${secs.toString().padStart(2, '0')}s`
+    return `${secs}s`
+  }
 
-  // Tâches disponibles pour le timer (exclure les tâches terminées)
+  const getTotalHours = () => timeEntries.reduce((total, entry) => total + (entry.duration || 0), 0) / 3600
+  const getTaskHours = (taskId: string) => timeEntries.filter(e => e.taskId === taskId).reduce((t, e) => t + (e.duration || 0), 0) / 3600
+  const getWeeklyHours = () => {
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    return timeEntries.filter(e => new Date(e.startTime) > oneWeekAgo).reduce((t, e) => t + (e.duration || 0), 0) / 3600
+  }
+  const getMonthlyHours = () => {
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    return timeEntries.filter(e => new Date(e.startTime) > oneMonthAgo).reduce((t, e) => t + (e.duration || 0), 0) / 3600
+  }
+
+  const activeTask = activeTimer ? tasks.find(t => t.id === activeTimer.taskId) : null
   const availableTasks = tasks.filter(task => task.status !== 'done')
+  const ongoingTasks = tasks.filter(task => task.status === 'in_progress' && getTaskHours(task.id) > 0)
 
   return (
     <div className="space-y-6">
-      {/* Avertissement si projectId manquant */}
-      {!projectId && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <AlertTriangle className="h-5 w-5" />
-            <span className="font-medium">Attention</span>
-          </div>
-          <p className="text-yellow-700 text-sm mt-1">
-            L'identifiant du projet n'est pas disponible. Le chargement des temps peut être limité.
-          </p>
-        </div>
-      )}
+      {/* Header avec stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total projet</p>
+                <p className="text-2xl font-bold">{getTotalHours().toFixed(1)}h</p>
+              </div>
+              <TrendingUp className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Cette semaine</p>
+                <p className="text-2xl font-bold">{getWeeklyHours().toFixed(1)}h</p>
+              </div>
+              <Calendar className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Sessions</p>
+                <p className="text-2xl font-bold">{timeEntries.filter(e => e.billable).length}</p>
+              </div>
+              <Timer className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Jours travaillés</p>
+                <p className="text-2xl font-bold">{new Set(timeEntries.map(e => new Date(e.startTime).toDateString())).size}</p>
+              </div>
+              <Award className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Timer actif */}
-      <Card>
+      {/* Timer Section */}
+      <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+        
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+            <Timer className="h-5 w-5" />
             Timer de travail
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Formulaire de configuration du timer */}
             <div className="flex-1 space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   Tâche *
                 </label>
                 <Select 
@@ -352,13 +308,19 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                   onValueChange={setSelectedTask}
                   disabled={!!activeTimer}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-purple-200 dark:border-purple-800">
                     <SelectValue placeholder="Sélectionner une tâche" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableTasks.map(task => (
                       <SelectItem key={task.id} value={task.id}>
                         <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            task.priority === 'urgent' ? 'bg-red-500' :
+                            task.priority === 'high' ? 'bg-orange-500' :
+                            task.priority === 'medium' ? 'bg-blue-500' : 'bg-green-500'
+                          )} />
                           <span className="truncate">{task.title}</span>
                           <Badge variant="outline" className="text-xs">
                             {task.status === 'in_progress' ? 'En cours' : 
@@ -368,17 +330,12 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                         </div>
                       </SelectItem>
                     ))}
-                    {availableTasks.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-slate-500">
-                        Aucune tâche disponible
-                      </div>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   Description du travail
                 </label>
                 <Textarea
@@ -387,17 +344,17 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                   placeholder="Décrivez le travail effectué..."
                   rows={2}
                   disabled={!!activeTimer}
+                  className="border-purple-200 dark:border-purple-800 focus:border-purple-500"
                 />
               </div>
             </div>
 
-            {/* Contrôles du timer */}
             <div className="flex flex-col gap-3 justify-center">
               {!activeTimer ? (
                 <Button
                   onClick={startTimer}
-                  disabled={!selectedTask || availableTasks.length === 0}
-                  className="gap-2 bg-green-600 hover:bg-green-700 min-w-[120px]"
+                  disabled={!selectedTask}
+                  className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 min-w-[140px]"
                 >
                   <Play className="h-4 w-4" />
                   Démarrer
@@ -406,15 +363,15 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                 <>
                   <Button
                     onClick={stopTimer}
-                    className="gap-2 bg-red-600 hover:bg-red-700 min-w-[120px]"
+                    className="gap-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 min-w-[140px]"
                   >
                     <StopCircle className="h-4 w-4" />
                     Arrêter
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={pauseTimer}
-                    className="gap-2 min-w-[120px]"
+                    onClick={stopTimer}
+                    className="gap-2 min-w-[140px] border-purple-300 dark:border-purple-700"
                   >
                     <Pause className="h-4 w-4" />
                     Pause
@@ -424,83 +381,129 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
             </div>
           </div>
 
-          {/* Affichage du timer actif */}
-          {activeTimer && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <p className="font-semibold text-blue-900 text-lg">
-                      ⏱️ Timer en cours
+          {/* Active Timer Display */}
+          <AnimatePresence>
+            {activeTimer && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-6 p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-2 border-purple-200 dark:border-purple-800 rounded-xl"
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-75"></div>
+                        <div className="relative w-3 h-3 bg-red-500 rounded-full"></div>
+                      </div>
+                      <p className="font-semibold text-purple-900 dark:text-purple-300 text-lg">
+                        ⏱️ Timer en cours
+                      </p>
+                    </div>
+                    <div className="space-y-2 text-sm text-purple-800 dark:text-purple-400">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        <strong>Tâche:</strong> {activeTask?.title || 'Tâche inconnue'}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <strong>Débuté à:</strong> {activeTimer.startTime.toLocaleTimeString('fr-FR')}
+                      </div>
+                      {activeTimer.description && activeTimer.description !== 'Travail en cours' && (
+                        <div className="flex items-start gap-2">
+                          <Zap className="h-4 w-4 mt-0.5" />
+                          <strong>Description:</strong> {activeTimer.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-purple-900 dark:text-purple-300 bg-white/50 dark:bg-gray-900/50 px-6 py-3 rounded-xl border-2 border-purple-300 dark:border-purple-700 shadow-lg">
+                      {formatDuration(elapsedTime)}
+                    </div>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+                      Temps écoulé
                     </p>
                   </div>
-                  <div className="space-y-1 text-sm text-blue-800">
-                    <p><strong>📋 Tâche:</strong> {activeTask?.title || 'Tâche inconnue'}</p>
-                    <p><strong>🕐 Débuté à:</strong> {activeTimer.startTime.toLocaleTimeString('fr-FR')}</p>
-                    <p><strong>📅 Date:</strong> {activeTimer.startTime.toLocaleDateString('fr-FR')}</p>
-                    {activeTimer.description && activeTimer.description !== 'Travail en cours' && (
-                      <p><strong>📝 Description:</strong> {activeTimer.description}</p>
-                    )}
-                  </div>
                 </div>
-                <div className="text-3xl font-bold text-blue-900 bg-white px-6 py-3 rounded-lg border-2 border-blue-300 shadow-sm">
-                  {formatDuration(elapsedTime)}
-                </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-50 to-slate-100">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-slate-900">{getTotalHours().toFixed(1)}h</div>
-              <p className="text-sm text-slate-600">Total projet</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-900">{getWeeklyHours().toFixed(1)}h</div>
-              <p className="text-sm text-blue-600">Cette semaine</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-green-50 to-green-100">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-900">
-                {timeEntries.filter(e => e.billable).length}
-              </div>
-              <p className="text-sm text-green-600">Sessions</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-900">
-                {new Set(timeEntries.map(e => new Date(e.startTime).toDateString())).size}
-              </div>
-              <p className="text-sm text-purple-600">Jours travaillés</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Temps par tâche */}
-      {tasks.filter(task => getTaskHours(task.id) > 0).length > 0 && (
-        <Card>
+      {/* Ongoing Tasks Section */}
+      {ongoingTasks.length > 0 && (
+        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Répartition du temps par tâche</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <Zap className="h-5 w-5" />
+              Tâches en cours ({ongoingTasks.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ongoingTasks.map(task => {
+                const taskHours = getTaskHours(task.id)
+                const taskProgress = task.estimatedHours ? (taskHours / task.estimatedHours) * 100 : 0
+                return (
+                  <div
+                    key={task.id}
+                    className="p-4 border border-purple-200 dark:border-purple-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/20"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{task.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={cn(
+                            "text-xs",
+                            task.priority === 'urgent' ? 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400' :
+                            task.priority === 'high' ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-400' :
+                            task.priority === 'medium' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400' :
+                            'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400'
+                          )}>
+                            {task.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                      {taskHours > 0 && (
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                            {taskHours.toFixed(1)}h
+                          </p>
+                          <p className="text-xs text-gray-500">travaillées</p>
+                        </div>
+                      )}
+                    </div>
+                    {task.estimatedHours && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          <span>Progression</span>
+                          <span>{Math.min(taskProgress, 100).toFixed(0)}%</span>
+                        </div>
+                        <Progress value={Math.min(taskProgress, 100)} className="h-1.5" />
+                        <p className="text-xs text-gray-500 mt-2">
+                          Objectif: {task.estimatedHours}h
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Time Distribution Chart */}
+      {tasks.filter(task => getTaskHours(task.id) > 0).length > 0 && (
+        <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <PieChart className="h-5 w-5" />
+              Répartition du temps par tâche
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -512,143 +515,162 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                   const percentage = (taskHours / Math.max(getTotalHours(), 1)) * 100
                   
                   return (
-                    <div key={task.id} className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-sm">{task.title}</span>
+                    <div key={task.id} className="group">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-3 h-3 rounded-full",
+                            task.status === 'done' ? 'bg-green-500' : 'bg-purple-500'
+                          )} />
+                          <span className="font-medium text-sm text-gray-900 dark:text-white">
+                            {task.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
                           <Badge variant="secondary" className="text-xs">
                             {taskHours.toFixed(1)}h
                           </Badge>
+                          <span className="text-xs text-gray-500">
+                            {percentage.toFixed(1)}%
+                          </span>
                         </div>
-                        <Progress value={percentage} className="h-2" />
-                        <div className="flex justify-between text-xs text-slate-500 mt-1">
-                          <span>{percentage.toFixed(1)}% du temps total</span>
-                          <span>{task.status === 'done' ? '✅ Terminée' : '🟡 En cours'}</span>
-                        </div>
+                      </div>
+                      <Progress value={percentage} className="h-2" />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>{task.status === 'done' ? '✅ Terminée' : '🟡 En cours'}</span>
+                        {task.estimatedHours && (
+                          <span>Prévu: {task.estimatedHours}h</span>
+                        )}
                       </div>
                     </div>
                   )
-                })
-              }
+                })}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Historique des temps */}
-      <Card>
+      {/* Time Entries History */}
+      <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Historique du temps</CardTitle>
-            <p className="text-sm text-slate-600 mt-1">
+            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <BarChart3 className="h-5 w-5" />
+              Historique du temps
+            </CardTitle>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {timeEntries.length} entrée(s) de temps enregistrée(s)
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={loadTimeEntries}
-              disabled={isLoading}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Chargement...' : 'Actualiser'}
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadTimeEntries}
+            disabled={isLoading}
+            className="gap-2 border-purple-300 dark:border-purple-700"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Chargement...' : 'Actualiser'}
+          </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date et heure</TableHead>
-                <TableHead>Tâche</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Durée</TableHead>
-                <TableHead>Facturable</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {timeEntries.map(entry => {
-                const task = tasks.find(t => t.id === entry.taskId)
-                const durationHours = (entry.duration || 0) / 3600
-                const startDate = new Date(entry.startTime)
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-purple-200 dark:border-purple-800">
+                  <TableHead>Date</TableHead>
+                  <TableHead>Tâche</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Durée</TableHead>
+                  <TableHead>Facturable</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {timeEntries.map(entry => {
+                  const task = tasks.find(t => t.id === entry.taskId)
+                  const durationHours = (entry.duration || 0) / 3600
+                  const startDate = new Date(entry.startTime)
+                  
+                  return (
+                    <TableRow key={entry.id} className="hover:bg-purple-50/30 dark:hover:bg-purple-950/20">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">
+                            {startDate.toLocaleDateString('fr-FR')}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {task?.title || 'Tâche inconnue'}
+                          {task && (
+                            <Badge variant="outline" className="text-xs">
+                              {task.status}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[250px]">
+                        <div className="truncate" title={entry.description}>
+                          {entry.description}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-mono bg-purple-100 dark:bg-purple-950/30">
+                          {durationHours.toFixed(1)}h
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={entry.billable ? "default" : "secondary"}>
+                          {entry.billable ? '💰 Oui' : '❌ Non'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTimeEntry(entry.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
                 
-                return (
-                  <TableRow key={entry.id} className="hover:bg-slate-50">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {startDate.toLocaleDateString('fr-FR')}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {startDate.toLocaleTimeString('fr-FR', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
+                {timeEntries.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12">
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-purple-100 dark:bg-purple-950/30 rounded-full flex items-center justify-center mb-4">
+                          <Timer className="h-8 w-8 text-purple-500" />
+                        </div>
+                        <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                          Aucun temps enregistré
+                        </p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Commencez par démarrer un timer pour tracker votre temps de travail.
+                        </p>
+                        <Button 
+                          onClick={loadTimeEntries} 
+                          variant="outline"
+                          className="gap-2 border-purple-300 dark:border-purple-700"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Recharger
+                        </Button>
                       </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {task?.title || 'Tâche inconnue'}
-                        {task && (
-                          <Badge variant="outline" className="text-xs">
-                            {task.status}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-[200px]">
-                      <div className="truncate" title={entry.description}>
-                        {entry.description}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-mono">
-                        {durationHours.toFixed(1)}h
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={entry.billable ? "default" : "secondary"}>
-                        {entry.billable ? '💰 Oui' : '❌ Non'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteTimeEntry(entry.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
-                        title="Supprimer cette entrée"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </TableCell>
                   </TableRow>
-                )
-              })}
-              
-              {timeEntries.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-slate-500">
-                    <Clock className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                    <p className="text-lg font-medium mb-2">Aucun temps enregistré</p>
-                    <p className="text-sm mb-4">Commencez par démarrer un timer pour tracker votre temps de travail.</p>
-                    <Button 
-                      onClick={loadTimeEntries} 
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Recharger
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
