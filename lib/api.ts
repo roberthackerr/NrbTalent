@@ -1,6 +1,6 @@
 import { CalendarEvent, CreateEventRequest, UpdateEventRequest } from '@/lib/models/event'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
 
 interface ApiResponse<T> {
   success: boolean
