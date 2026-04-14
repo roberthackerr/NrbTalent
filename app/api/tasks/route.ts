@@ -148,24 +148,24 @@ export async function POST(request: NextRequest) {
     const task = await db.collection('tasks').findOne({ _id: result.insertedId })
 
     const formattedTask = {
-      id: task._id.toString(),
-      _id: task._id.toString(),
-      title: task.title,
-      description: task.description,
-      projectId: task.projectId.toString(),
-      assigneeId: task.assigneeId,
-      createdBy: task.createdBy,
-      position: task.position,
-      status: task.status,
-      priority: task.priority,
-      estimatedHours: task.estimatedHours,
-      actualHours: task.actualHours,
-      labels: task.labels,
-      attachments: task.attachments,
-      comments: task.comments,
-      dueDate: task.dueDate ? task.dueDate.toISOString() : null,
-      createdAt: task.createdAt.toISOString(),
-      updatedAt: task.updatedAt.toISOString()
+      id: task?._id.toString(),
+      _id: task?._id.toString(),
+      title: task?.title,
+      description: task?.description,
+      projectId: task?.projectId.toString(),
+      assigneeId: task?.assigneeId,
+      createdBy: task?.createdBy,
+      position: task?.position,
+      status: task?.status,
+      priority: task?.priority,
+      estimatedHours: task?.estimatedHours,
+      actualHours: task?.actualHours,
+      labels: task?.labels,
+      attachments: task?.attachments,
+      comments: task?.comments,
+      dueDate: task?.dueDate ? task?.dueDate.toISOString() : null,
+      createdAt: task?.createdAt.toISOString(),
+      updatedAt: task?.updatedAt.toISOString()
     }
 
     return NextResponse.json({ data: formattedTask, success: true }, { status: 201 })
@@ -238,24 +238,24 @@ export async function PUT(request: NextRequest) {
     const updatedTask = await db.collection('tasks').findOne({ _id: taskObjectId })
 
     const formattedTask = {
-      id: updatedTask._id.toString(),
-      _id: updatedTask._id.toString(),
-      title: updatedTask.title,
-      description: updatedTask.description,
-      projectId: updatedTask.projectId.toString(),
-      assigneeId: updatedTask.assigneeId,
-      createdBy: updatedTask.createdBy,
-      position: updatedTask.position,
-      status: updatedTask.status,
-      priority: updatedTask.priority,
-      estimatedHours: updatedTask.estimatedHours,
-      actualHours: updatedTask.actualHours,
-      labels: updatedTask.labels,
-      attachments: updatedTask.attachments,
-      comments: updatedTask.comments,
-      dueDate: updatedTask.dueDate ? updatedTask.dueDate.toISOString() : null,
-      createdAt: updatedTask.createdAt.toISOString(),
-      updatedAt: updatedTask.updatedAt.toISOString()
+      id: updatedTask?._id.toString(),
+      _id: updatedTask?._id.toString(),
+      title: updatedTask?.title,
+      description: updatedTask?.description,
+      projectId: updatedTask?.projectId.toString(),
+      assigneeId: updatedTask?.assigneeId,
+      createdBy: updatedTask?.createdBy,
+      position: updatedTask?.position,
+      status: updatedTask?.status,
+      priority: updatedTask?.priority,
+      estimatedHours: updatedTask?.estimatedHours,
+      actualHours: updatedTask?.actualHours,
+      labels: updatedTask?.labels,
+      attachments: updatedTask?.attachments,
+      comments: updatedTask?.comments,
+      dueDate: updatedTask?.dueDate ? updatedTask?.dueDate.toISOString() : null,
+      createdAt: updatedTask?.createdAt.toISOString(),
+      updatedAt: updatedTask?.updatedAt.toISOString()
     }
 
     return NextResponse.json({ data: formattedTask, success: true })
