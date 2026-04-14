@@ -93,7 +93,8 @@ const tasksApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(taskData),
     })
-    if (!response.ok) throw new Error('Erreur lors de la création de la tâche')
+
+    if (!response.ok) throw new Error('Erreur lors de la création de la tâche', taskData.projectId)
     const result = await response.json()
     return result.data
   }
