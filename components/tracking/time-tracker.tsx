@@ -1,14 +1,13 @@
 // components/tracking/time-tracker.tsx
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Table,
   TableBody,
@@ -25,31 +24,29 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Project, Task, TimeEntry } from '@/lib/tracking/types'
+import { usePersistentTimer } from '@/hooks/usePersistentTimer'
 import { 
   Play, 
-  Pause, 
   StopCircle, 
   Clock, 
   Calendar, 
   Trash2, 
-  AlertTriangle, 
   RefreshCw,
   TrendingUp,
   Award,
   Target,
   Zap,
-  ChevronRight,
   BarChart3,
   PieChart,
   Timer,
-  User,
-  Briefcase,
-  CheckCircle2,
-  Circle,
   Loader2,
-  Sparkles
+  Sparkles,
+  CloudOff,
+  CheckCircle2,
+  Circle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface TimeTrackerProps {
   project: Project
@@ -57,20 +54,14 @@ interface TimeTrackerProps {
 }
 
 export function TimeTracker({ project, tasks }: TimeTrackerProps) {
-  const [activeTimer, setActiveTimer] = useState<{ 
-    taskId: string; 
-    startTime: Date;
-    description: string;
-    entryId?: string;
-  } | null>(null)
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
   const [selectedTask, setSelectedTask] = useState<string>('')
   const [description, setDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [elapsedTime, setElapsedTime] = useState(0)
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [isOffline, setIsOffline] = useState(false)
   
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { activeTimer, elapsedTime, startTimer, stopTimer } = usePersistentTimer()
 
   const getProjectId = (): string | null => {
     return project?.id || (project as any)?._id || null
@@ -78,135 +69,260 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
 
   const projectId = getProjectId()
 
+  // Vérifier l'état de la connexion
   useEffect(() => {
-    if (projectId) loadTimeEntries()
-  }, [projectId])
-
-  useEffect(() => {
-    if (activeTimer) {
-      intervalRef.current = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - activeTimer.startTime.getTime()) / 1000))
-      }, 1000)
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      setElapsedTime(0)
+    const handleOnline = () => {
+      setIsOffline(false)
+      toast.success('Connexion rétablie', { description: 'Synchronisation des données...' })
+      syncTimerWithServer()
+      loadTimeEntries()
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [activeTimer])
+    const handleOffline = () => {
+      setIsOffline(true)
+      toast.warning('Connexion perdue', { description: 'Les données seront synchronisées automatiquement' })
+    }
+    
+    setIsOffline(!navigator.onLine)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
-  const loadTimeEntries = async () => {
+  // Synchroniser le timer avec le serveur au chargement
+  const syncTimerWithServer = useCallback(async () => {
+    if (isOffline) return
+    
+    try {
+      setIsSyncing(true)
+      const response = await fetch('/api/time-entries/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync' })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.hasActiveTimer && !activeTimer) {
+          startTimer(
+            data.timer.taskId,
+            data.timer.description,
+            data.timer.entryId
+          )
+          toast.info('Timer restauré', { description: 'Votre session de travail a été rechargée' })
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing timer:', error)
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [activeTimer, startTimer, isOffline])
+
+  // Charger les time entries
+  const loadTimeEntries = useCallback(async () => {
     if (!projectId) return
+    if (isOffline) {
+      const cached = localStorage.getItem(`timeEntries_${projectId}`)
+      if (cached) {
+        setTimeEntries(JSON.parse(cached))
+      }
+      return
+    }
+
     try {
       setIsLoading(true)
       const response = await fetch(`/api/projects/${projectId}/time-entries`)
       if (response.ok) {
         const entries = await response.json()
         setTimeEntries(entries)
-      } else {
-        await loadAllUserTimeEntries()
+        localStorage.setItem(`timeEntries_${projectId}`, JSON.stringify(entries))
       }
     } catch (error) {
       console.error('Error loading time entries:', error)
-      await loadAllUserTimeEntries()
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [projectId, isOffline])
 
-  const loadAllUserTimeEntries = async () => {
-    try {
-      const response = await fetch('/api/time-entries')
-      if (response.ok) {
-        const allEntries = await response.json()
-        const projectTaskIds = tasks.map(task => task.id)
-        const projectEntries = allEntries.filter((entry: TimeEntry) => 
-          projectTaskIds.includes(entry.taskId)
-        )
-        setTimeEntries(projectEntries)
-      }
-    } catch (error) {
-      console.error('Error loading all user time entries:', error)
-    }
-  }
+  useEffect(() => {
+    syncTimerWithServer()
+    loadTimeEntries()
+  }, [syncTimerWithServer, loadTimeEntries])
 
-  const startTimer = async () => {
+  // Démarrer le timer
+  const handleStartTimer = async () => {
     if (!selectedTask) {
-      alert('Veuillez sélectionner une tâche')
+      toast.error('Erreur', { description: 'Veuillez sélectionner une tâche' })
       return
     }
 
-    const startTime = new Date()
-    
+    if (isOffline) {
+      startTimer(selectedTask, description || 'Travail en cours')
+      toast.success('Timer démarré (mode hors ligne)', { 
+        description: 'Le temps sera synchronisé à la reconnexion' 
+      })
+      return
+    }
+
     try {
-      const response = await fetch('/api/time-entries', {
+      const response = await fetch('/api/time-entries/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'start',
           taskId: selectedTask,
-          startTime: startTime.toISOString(),
-          description: description || 'Travail en cours',
-          billable: true
+          startTime: new Date().toISOString(),
+          description: description || 'Travail en cours'
         })
       })
 
       if (response.ok) {
-        const newEntry = await response.json()
-        setActiveTimer({
-          taskId: selectedTask,
-          startTime,
-          description: description || 'Travail en cours',
-          entryId: newEntry.id
+        const data = await response.json()
+        startTimer(selectedTask, description || 'Travail en cours', data.entryId)
+        toast.success('Timer démarré', { description: 'Bon travail !' })
+      } else if (response.status === 409) {
+        const data = await response.json()
+        toast.warning('Timer déjà actif', { 
+          description: 'Un timer est déjà en cours sur une autre tâche' 
         })
+        if (data.activeTimer) {
+          startTimer(
+            data.activeTimer.taskId.toString(),
+            data.activeTimer.description,
+            data.activeTimer._id.toString()
+          )
+        }
       } else {
         throw new Error('Failed to start timer')
       }
     } catch (error) {
       console.error('Error starting timer:', error)
-      alert('Erreur lors du démarrage du timer')
+      startTimer(selectedTask, description || 'Travail en cours')
+      toast.warning('Mode dégradé', { 
+        description: 'Timer démarré localement, synchronisation à la reconnexion' 
+      })
     }
   }
 
-  const stopTimer = async () => {
+  // Arrêter le timer
+  const handleStopTimer = async () => {
     if (!activeTimer) return
 
     const endTime = new Date()
-    const duration = Math.round((endTime.getTime() - activeTimer.startTime.getTime()) / 1000)
+    const duration = Math.floor((endTime.getTime() - activeTimer.startTime.getTime()) / 1000)
+
+    if (isOffline) {
+      const offlineEntry = {
+        id: `offline_${Date.now()}`,
+        taskId: activeTimer.taskId,
+        startTime: activeTimer.startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        duration,
+        description: activeTimer.description,
+        billable: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+      
+      const cached = localStorage.getItem(`offlineEntries_${projectId}`)
+      const offlineEntries = cached ? JSON.parse(cached) : []
+      offlineEntries.push(offlineEntry)
+      localStorage.setItem(`offlineEntries_${projectId}`, JSON.stringify(offlineEntries))
+      
+      stopTimer()
+      toast.success('Timer arrêté (mode hors ligne)', { 
+        description: 'Les données seront synchronisées à la reconnexion' 
+      })
+      return
+    }
 
     try {
-      if (activeTimer.entryId) {
-        await fetch(`/api/time-entries/${activeTimer.entryId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endTime: endTime.toISOString(),
-            duration: duration,
-            description: activeTimer.description
-          })
+      const response = await fetch('/api/time-entries/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'stop',
+          entryId: activeTimer.entryId,
+          endTime: endTime.toISOString(),
+          duration,
+          description: activeTimer.description
         })
-      }
+      })
 
-      setActiveTimer(null)
-      setDescription('')
-      setSelectedTask('')
-      if (projectId) loadTimeEntries()
-      else loadAllUserTimeEntries()
+      if (response.ok) {
+        stopTimer()
+        toast.success('Timer arrêté', { 
+          description: `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m enregistrés` 
+        })
+        loadTimeEntries()
+      } else {
+        throw new Error('Failed to stop timer')
+      }
     } catch (error) {
       console.error('Error stopping timer:', error)
-      alert('Erreur lors de l\'arrêt du timer')
+      stopTimer()
+      toast.warning('Mode dégradé', { 
+        description: 'Timer arrêté localement, synchronisation à la reconnexion' 
+      })
     }
   }
 
+  // Synchroniser les entrées hors ligne
+  const syncOfflineEntries = useCallback(async () => {
+    if (isOffline) return
+    
+    const offlineEntriesKey = `offlineEntries_${projectId}`
+    const offlineEntries = localStorage.getItem(offlineEntriesKey)
+    
+    if (offlineEntries) {
+      const entries = JSON.parse(offlineEntries)
+      for (const entry of entries) {
+        try {
+          await fetch('/api/time-entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              taskId: entry.taskId,
+              startTime: entry.startTime,
+              endTime: entry.endTime,
+              duration: entry.duration,
+              description: entry.description
+            })
+          })
+        } catch (error) {
+          console.error('Error syncing offline entry:', error)
+        }
+      }
+      localStorage.removeItem(offlineEntriesKey)
+      toast.success('Synchronisation terminée', { 
+        description: 'Les données hors ligne ont été synchronisées' 
+      })
+      loadTimeEntries()
+    }
+  }, [projectId, isOffline, loadTimeEntries])
+
+  useEffect(() => {
+    if (!isOffline) {
+      syncOfflineEntries()
+    }
+  }, [isOffline, syncOfflineEntries])
+
   const deleteTimeEntry = async (entryId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette entrée de temps ?')) return
+    
     try {
       const response = await fetch(`/api/time-entries/${entryId}`, { method: 'DELETE' })
       if (response.ok) {
-        if (projectId) loadTimeEntries()
-        else loadAllUserTimeEntries()
+        loadTimeEntries()
+        toast.success('Entrée supprimée')
       }
     } catch (error) {
       console.error('Error deleting time entry:', error)
-      alert('Erreur lors de la suppression')
+      toast.error('Erreur', { description: 'Impossible de supprimer l\'entrée' })
     }
   }
 
@@ -226,11 +342,6 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
     return timeEntries.filter(e => new Date(e.startTime) > oneWeekAgo).reduce((t, e) => t + (e.duration || 0), 0) / 3600
   }
-  const getMonthlyHours = () => {
-    const oneMonthAgo = new Date()
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-    return timeEntries.filter(e => new Date(e.startTime) > oneMonthAgo).reduce((t, e) => t + (e.duration || 0), 0) / 3600
-  }
 
   const activeTask = activeTimer ? tasks.find(t => t.id === activeTimer.taskId) : null
   const availableTasks = tasks.filter(task => task.status !== 'done')
@@ -238,62 +349,39 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header avec stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Total projet</p>
-                <p className="text-2xl font-bold">{getTotalHours().toFixed(1)}h</p>
-              </div>
-              <TrendingUp className="h-8 w-8 opacity-80" />
+      {/* Offline Banner */}
+      <AnimatePresence>
+        {isOffline && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4"
+          >
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400">
+              <CloudOff className="h-5 w-5" />
+              <span className="font-medium">Mode hors ligne</span>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Cette semaine</p>
-                <p className="text-2xl font-bold">{getWeeklyHours().toFixed(1)}h</p>
-              </div>
-              <Calendar className="h-8 w-8 opacity-80" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Sessions</p>
-                <p className="text-2xl font-bold">{timeEntries.filter(e => e.billable).length}</p>
-              </div>
-              <Timer className="h-8 w-8 opacity-80" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Jours travaillés</p>
-                <p className="text-2xl font-bold">{new Set(timeEntries.map(e => new Date(e.startTime).toDateString())).size}</p>
-              </div>
-              <Award className="h-8 w-8 opacity-80" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="text-amber-700 dark:text-amber-500 text-sm mt-1">
+              Les modifications seront synchronisées automatiquement à la reconnexion.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Timer Section */}
       <Card className="border-purple-200 dark:border-purple-800 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
         
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-            <Timer className="h-5 w-5" />
-            Timer de travail
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+              <Timer className="h-5 w-5" />
+              Timer de travail
+            </div>
+            {isSyncing && (
+              <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -330,6 +418,11 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                         </div>
                       </SelectItem>
                     ))}
+                    {availableTasks.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-500">
+                        Aucune tâche disponible
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -344,7 +437,7 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                   placeholder="Décrivez le travail effectué..."
                   rows={2}
                   disabled={!!activeTimer}
-                  className="border-purple-200 dark:border-purple-800 focus:border-purple-500"
+                  className="border-purple-200 dark:border-purple-800"
                 />
               </div>
             </div>
@@ -352,7 +445,7 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
             <div className="flex flex-col gap-3 justify-center">
               {!activeTimer ? (
                 <Button
-                  onClick={startTimer}
+                  onClick={handleStartTimer}
                   disabled={!selectedTask}
                   className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 min-w-[140px]"
                 >
@@ -360,23 +453,13 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                   Démarrer
                 </Button>
               ) : (
-                <>
-                  <Button
-                    onClick={stopTimer}
-                    className="gap-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 min-w-[140px]"
-                  >
-                    <StopCircle className="h-4 w-4" />
-                    Arrêter
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={stopTimer}
-                    className="gap-2 min-w-[140px] border-purple-300 dark:border-purple-700"
-                  >
-                    <Pause className="h-4 w-4" />
-                    Pause
-                  </Button>
-                </>
+                <Button
+                  onClick={handleStopTimer}
+                  className="gap-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 min-w-[140px]"
+                >
+                  <StopCircle className="h-4 w-4" />
+                  Arrêter
+                </Button>
               )}
             </div>
           </div>
@@ -400,6 +483,11 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                       <p className="font-semibold text-purple-900 dark:text-purple-300 text-lg">
                         ⏱️ Timer en cours
                       </p>
+                      {isOffline && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          Hors ligne
+                        </Badge>
+                      )}
                     </div>
                     <div className="space-y-2 text-sm text-purple-800 dark:text-purple-400">
                       <div className="flex items-center gap-2">
@@ -409,6 +497,10 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
                         <strong>Débuté à:</strong> {activeTimer.startTime.toLocaleTimeString('fr-FR')}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <strong>Date:</strong> {activeTimer.startTime.toLocaleDateString('fr-FR')}
                       </div>
                       {activeTimer.description && activeTimer.description !== 'Travail en cours' && (
                         <div className="flex items-start gap-2">
@@ -432,6 +524,54 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
           </AnimatePresence>
         </CardContent>
       </Card>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total projet</p>
+                <p className="text-2xl font-bold">{getTotalHours().toFixed(1)}h</p>
+              </div>
+              <TrendingUp className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Cette semaine</p>
+                <p className="text-2xl font-bold">{getWeeklyHours().toFixed(1)}h</p>
+              </div>
+              <Calendar className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Sessions</p>
+                <p className="text-2xl font-bold">{timeEntries.filter(e => e.billable).length}</p>
+              </div>
+              <Sparkles className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-lg">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Jours travaillés</p>
+                <p className="text-2xl font-bold">{new Set(timeEntries.map(e => new Date(e.startTime).toDateString())).size}</p>
+              </div>
+              <Award className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Ongoing Tasks Section */}
       {ongoingTasks.length > 0 && (
@@ -665,7 +805,7 @@ export function TimeTracker({ project, tasks }: TimeTrackerProps) {
                           Recharger
                         </Button>
                       </div>
-                    </TableCell> 
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
