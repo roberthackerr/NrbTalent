@@ -55,6 +55,7 @@ interface Task {
 }
 
 interface Project {
+  _id: any
   id: string
   name: string
   description?: string
@@ -245,7 +246,7 @@ export function ProjectTimeline({ project, tasks, onRefresh }: ProjectTimelinePr
       const taskData = {
         title: event.title.replace('📋 ', ''),
         description: event.description || `Créé depuis l'événement: ${event.title}`,
-        projectId: project.id,
+        projectId: project._id,
         dueDate: event.start.toISOString(),
         estimatedHours: Math.ceil((event.end.getTime() - event.start.getTime()) / (1000 * 60 * 60)),
         priority: 'medium' as const,
