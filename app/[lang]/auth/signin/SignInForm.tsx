@@ -38,11 +38,12 @@ export default function SignInForm({ dict, lang }: Props) {
     if (pendingEmail) {
       setResendEmail(pendingEmail)
       setShowResendButton(true)
-      toast.info(dict.auth.errors.emailNotVerified, {
+      toast.info(dict.auth?.emailNotVerified || 'Email non vérifié', {
+        description: dict.auth?.checkYourEmailToActivate || 'Veuillez vérifier votre boîte mail',
         duration: 5000,
       })
     }
-  }, [])
+  }, [dict.auth])
 
   const handleResendVerification = async () => {
     if (!resendEmail) return
@@ -58,15 +59,15 @@ export default function SignInForm({ dict, lang }: Props) {
       const data = await response.json()
 
       if (response.ok) {
-        toast.success(dict.auth.verificationEmailSent, {
-          description: dict.auth.checkYourEmail
+        toast.success(dict.auth?.verificationEmailSent || 'Email de vérification envoyé !', {
+          description: dict.auth?.checkYourEmail || 'Vérifiez votre boîte de réception'
         })
       } else {
-        toast.error(data.error || dict.common.error)
+        toast.error(data.error || dict.common?.error || 'Une erreur est survenue')
       }
     } catch (error) {
       console.error('Error resending verification:', error)
-      toast.error(dict.common.error)
+      toast.error(dict.common?.error || 'Erreur réseau')
     } finally {
       setResending(false)
     }
@@ -107,38 +108,45 @@ export default function SignInForm({ dict, lang }: Props) {
           return
         }
         
-        // 🔥 ACCOUNT DEACTIVATED
+        // 🔥 ACCOUNT DEACTIVATED - Rediriger vers la page d'activation
         if (result.error === 'ACCOUNT_DEACTIVATED') {
-          toast.error(dict.auth.errors.accountDeactivated, {
-            description: dict.auth.errors.contactSupport
-          })
+          sessionStorage.setItem('deactivatedAccountEmail', email)
+          router.push(`/${lang}/auth/account-deactivated`)
           return
         }
         
         // 🔥 ACCOUNT INACTIVE
         if (result.error === 'ACCOUNT_INACTIVE') {
-          toast.error(dict.auth.errors.accountInactive, {
-            description: dict.auth.errors.contactSupport
-          })
+          sessionStorage.setItem('inactiveAccountEmail', email)
+          router.push(`/${lang}/auth/account-inactive`)
           return
         }
         
         // Autres erreurs
         const errorMessages: Record<string, string> = {
-          'No user found with this email': dict.auth.errors.invalidCredentials,
-          'Invalid password': dict.auth.errors.invalidCredentials,
-          'Email and password required': dict.auth.errors.emailRequired,
-          'Ce compte utilise Google. Connectez-vous avec Google.': dict.auth.errors.googleAccount,
+          'No user found with this email': dict.auth?.errors?.invalidCredentials || 'Email ou mot de passe incorrect',
+          'Invalid password': dict.auth?.errors?.invalidCredentials || 'Email ou mot de passe incorrect',
+          'Email and password required': dict.auth?.errors?.emailRequired || 'Email requis',
+          'Ce compte utilise Google. Connectez-vous avec Google.': dict.auth?.errors?.googleAccount || 'Ce compte utilise Google',
         }
         toast.error(errorMessages[result.error] || result.error)
       } else {
-        toast.success(dict.auth.success.login)
+        toast.success(dict.auth?.success?.login || 'Connexion réussie !')
+        
+        // Nettoyer les sessions storage
+        sessionStorage.removeItem('pendingVerificationEmail')
+        sessionStorage.removeItem('2fa_email')
+        sessionStorage.removeItem('2fa_password')
+        sessionStorage.removeItem('2fa_lang')
+        sessionStorage.removeItem('deactivatedAccountEmail')
+        sessionStorage.removeItem('inactiveAccountEmail')
+        
         router.push(`/${lang}`)
         router.refresh()
       }
     } catch (error) {
       console.error('Login error:', error)
-      toast.error(dict.common.error)
+      toast.error(dict.common?.error || 'Une erreur est survenue')
     } finally {
       setLoading(false)
     }
@@ -152,7 +160,7 @@ export default function SignInForm({ dict, lang }: Props) {
       })
     } catch (error) {
       console.error('Google sign in error:', error)
-      toast.error(dict.auth.errors.googleAccount)
+      toast.error(dict.auth?.errors?.googleAccount || 'Erreur avec Google')
       setGoogleLoading(false)
     }
   }
@@ -194,10 +202,10 @@ export default function SignInForm({ dict, lang }: Props) {
                 </span>
               </Link>
               <h1 className="text-3xl font-bold tracking-tight dark:text-white">
-                {dict.auth.welcome}
+                {dict.auth?.welcome || 'Bienvenue sur NRBTalents'}
               </h1>
               <p className="text-lg text-muted-foreground dark:text-slate-400">
-                {dict.auth.subtitle}
+                {dict.auth?.subtitle || 'La plateforme qui connecte talents et opportunités'}
               </p>
             </div>
 
@@ -208,10 +216,10 @@ export default function SignInForm({ dict, lang }: Props) {
                   <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                      {dict.auth.emailNotVerified}
+                      {dict.auth?.emailNotVerified || 'Email non vérifié'}
                     </p>
                     <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                      {dict.auth.checkYourEmailToActivate}
+                      {dict.auth?.checkYourEmailToActivate || 'Veuillez vérifier votre boîte mail et cliquer sur le lien d\'activation.'}
                     </p>
                     <Button
                       variant="link"
@@ -220,7 +228,11 @@ export default function SignInForm({ dict, lang }: Props) {
                       onClick={handleResendVerification}
                       disabled={resending}
                     >
-                      {resending ? dict.common.loading : dict.auth.resendVerificationEmail}
+                      {resending ? (
+                        <>{dict.common?.loading || 'Chargement...'}</>
+                      ) : (
+                        <>{dict.auth?.resendVerificationEmail || 'Renvoyer l\'email de vérification'}</>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -240,7 +252,7 @@ export default function SignInForm({ dict, lang }: Props) {
                   {googleLoading ? (
                     <div className="flex items-center">
                       <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      {dict.common.loading}
+                      {dict.common?.loading || 'Chargement...'}
                     </div>
                   ) : (
                     <>
@@ -262,7 +274,7 @@ export default function SignInForm({ dict, lang }: Props) {
                           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                         />
                       </svg>
-                      {dict.auth.google}
+                      {dict.auth?.google || 'Continuer avec Google'}
                     </>
                   )}
                 </Button>
@@ -274,7 +286,7 @@ export default function SignInForm({ dict, lang }: Props) {
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-background px-2 text-muted-foreground dark:bg-slate-950 dark:text-slate-400">
-                      {dict.auth.or}
+                      {dict.auth?.or || 'Ou'}
                     </span>
                   </div>
                 </div>
@@ -282,7 +294,9 @@ export default function SignInForm({ dict, lang }: Props) {
                 {/* Email Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="dark:text-slate-200">{dict.auth.email}</Label>
+                    <Label htmlFor="email" className="dark:text-slate-200">
+                      {dict.auth?.email || 'Email'}
+                    </Label>
                     <Input 
                       id="email" 
                       name="email" 
@@ -296,12 +310,14 @@ export default function SignInForm({ dict, lang }: Props) {
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="dark:text-slate-200">{dict.auth.password}</Label>
+                      <Label htmlFor="password" className="dark:text-slate-200">
+                        {dict.auth?.password || 'Mot de passe'}
+                      </Label>
                       <Link 
                         href={`/${lang}/auth/forgot-password`} 
                         className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
                       >
-                        {dict.auth.forgotPassword}
+                        {dict.auth?.forgotPassword || 'Mot de passe oublié ?'}
                       </Link>
                     </div>
                     <Input 
@@ -320,18 +336,18 @@ export default function SignInForm({ dict, lang }: Props) {
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 dark:from-blue-500 dark:to-purple-500 dark:hover:from-blue-600 dark:hover:to-purple-600"
                     disabled={loading || googleLoading}
                   >
-                    {loading ? dict.common.loading : dict.auth.login}
+                    {loading ? (dict.common?.loading || 'Chargement...') : (dict.auth?.login || 'Se connecter')}
                   </Button>
                 </form>
 
                 {/* Sign Up Link */}
                 <p className="mt-6 text-center text-sm text-muted-foreground dark:text-slate-400">
-                  {dict.auth.noAccount}{' '}
+                  {dict.auth?.noAccount || 'Pas encore de compte ?'}{' '}
                   <Link 
                     href={`/${lang}/auth/signup`} 
                     className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
                   >
-                    {dict.auth.register}
+                    {dict.auth?.register || 'Créer un compte'}
                   </Link>
                 </p>
               </div>
@@ -345,7 +361,7 @@ export default function SignInForm({ dict, lang }: Props) {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                 <Sparkles className="h-4 w-4" />
-                {dict.navigation.signin}
+                {dict.navigation?.signin || 'Connexion'}
               </div>
               
               <h2 className="text-4xl font-bold tracking-tight dark:text-white">

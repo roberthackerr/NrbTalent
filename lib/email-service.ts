@@ -29,40 +29,39 @@ interface TemplateEmailOptions {
  */
 const subjectTranslations: Record<string, Record<string, string>> = {
   'welcome': {
-    'fr': 'Bienvenue sur NrbTalents !',
-    'en': 'Welcome to NrbTalents!',
-    'es': '¡Bienvenido a NrbTalents!',
-    'mg': "Tongasoa eto NrbTalents !"
+    'fr': 'Bienvenue sur NRBTalents !',
+    'en': 'Welcome to NRBTalents!',
+    'mg': 'Tongasoa eto NRBTalents !'
   },
   'password-reset': {
     'fr': 'Réinitialisation de votre mot de passe',
     'en': 'Reset your password',
-    'es': 'Restablecer tu contraseña',
-    'mg': "Hanova ny tenimiafinao"
+    'mg': 'Hanova ny tenimiafinao'
   },
   'email-verification': {
-    'fr': 'Vérifiez votre email - NrbTalents',
-    'en': 'Verify your email - NrbTalents',
-    'es': 'Verifica tu email - NrbTalents',
-    'mg': "Hamarinina ny mailakao - NrbTalents"
+    'fr': 'Vérifiez votre email - NRBTalents',
+    'en': 'Verify your email - NRBTalents',
+    'mg': 'Hamarinina ny mailakao - NRBTalents'
+  },
+  'account-reactivation': {
+    'fr': 'Réactivation de votre compte - NRBTalents',
+    'en': 'Account Reactivation - NRBTalents',
+    'mg': 'Famerenana ny kaontinao - NRBTalents'
   },
   'project-match': {
     'fr': '✨ Un nouveau projet correspond à votre profil!',
     'en': '✨ A new project matches your profile!',
-    'es': '✨ ¡Un nuevo proyecto coincide con tu perfil!',
-    'mg': "✨ Tetikasa vaovao mifanaraka aminao!"
+    'mg': '✨ Tetikasa vaovao mifanaraka aminao!'
   },
   'proposal-received': {
     'fr': 'Vous avez reçu une nouvelle proposition!',
     'en': 'You received a new proposal!',
-    'es': '¡Recibiste una nueva propuesta!',
-    'mg': "Nahazo tolo-kevitra vaovao ianao!"
+    'mg': 'Nahazo tolo-kevitra vaovao ianao!'
   },
   'payment-confirmation': {
     'fr': '✅ Paiement confirmé',
     'en': '✅ Payment confirmed',
-    'es': '✅ Pago confirmado',
-    'mg': "✅ Voamarina ny fandoavana"
+    'mg': '✅ Voamarina ny fandoavana'
   }
 }
 
@@ -73,94 +72,72 @@ const verificationContent: Record<string, any> = {
   'fr': {
     title: "Vérifiez votre email",
     subtitle: "Presque terminé!",
-    message: "Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :",
+    message: "Veuillez vérifier votre adresse email en utilisant l'une des options ci-dessous :",
     button: "Vérifier mon email",
     linkText: "Ou copiez et collez ce lien dans votre navigateur :",
     expire: "Ce lien expirera dans 24 heures.",
     ignore: "Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.",
-       linkOption: "Option 1: Cliquez sur le lien",
+    linkOption: "Option 1: Cliquez sur le lien",
     codeOption: "Option 2: Utilisez ce code",
     codeExpires: "Ce code expire dans 10 minutes"
-
   },
   'en': {
     title: "Verify your email",
     subtitle: "Almost there!",
-    message: "Please verify your email address by clicking the button below:",
+    message: "Please verify your email address using one of the options below:",
     button: "Verify Email",
     linkText: "Or copy and paste this link in your browser:",
     expire: "This link will expire in 24 hours.",
     ignore: "If you didn't create an account, you can ignore this email.",
-     linkOption: "Option 1: Click the link",
+    linkOption: "Option 1: Click the link",
     codeOption: "Option 2: Use this code",
     codeExpires: "This code expires in 10 minutes"
-  },
-  'es': {
-    title: "Verifica tu email",
-    subtitle: "¡Casi listo!",
-    message: "Por favor verifica tu email haciendo clic en el botón:",
-    button: "Verificar Email",
-    linkText: "O copia y pega este enlace en tu navegador:",
-    expire: "Este enlace expirará en 24 horas.",
-    ignore: "Si no creaste una cuenta, puedes ignorar este email.",
-        linkOption: "Opción 1: Haz clic en el enlace",
-    codeOption: "Opción 2: Usa este código",
-    codeExpires: "Este código expira en 10 minutos"
   },
   'mg': {
     title: "Hamarinina ny mailakao",
     subtitle: "Efa saika vita!",
-    message: "Hamarinino ny adiresy mailakao amin'ny fipihana ity bokotra ity:",
+    message: "Hamarinino ny adiresy mailakao amin'ny fampiasana ny safidy eto ambany:",
     button: "Hamarinina ny mailaka",
     linkText: "Na dikao ity rohy ity ary apetaho amin'ny navigateur anao:",
     expire: "Hifoka ao anatin'ny 24 ora ity rohy ity.",
     ignore: "Raha tsy namorona kaonty ianao dia tsy miraharaha ity mailaka ity.",
-       linkOption: "Safidy 1: Kitiho ny rohy",
+    linkOption: "Safidy 1: Kitiho ny rohy",
     codeOption: "Safidy 2: Ampiasao ity code ity",
     codeExpires: "Hifoka ao anatin'ny 10 minitra ity code ity"
   }
 }
 
 /**
- * Dictionnaire des versions texte pour l'email de vérification
+ * Dictionnaire des contenus pour l'email de réactivation
  */
-const verificationTextContent: Record<string, string> = {
-  'fr': `Vérifiez votre email
-
-Presque terminé!
-
-Veuillez vérifier votre adresse email en visitant ce lien :
-{url}
-
-Ce lien expirera dans 24 heures.
-Si vous n'avez pas créé de compte, ignorez cet email.`,
-  'en': `Verify your email
-
-Almost there!
-
-Please verify your email by visiting:
-{url}
-
-This link expires in 24 hours.
-If you didn't create an account, ignore this email.`,
-  'es': `Verifica tu email
-
-¡Casi listo!
-
-Por favor verifica tu email visitando:
-{url}
-
-Este enlace expira en 24 horas.
-Si no creaste una cuenta, ignora este email.`,
-  'mg': `Hamarinina ny mailakao
-
-Efa saika vita!
-
-Hamarinino ny mailakao amin'ny fitsidihana ity rohy ity:
-{url}
-
-Hifoka ao anatin'ny 24 ora ity rohy ity.
-Raha tsy namorona kaonty ianao dia tsy miraharaha ity mailaka ity.`
+const reactivationContent: Record<string, any> = {
+  'fr': {
+    title: "Réactivation de votre compte",
+    subtitle: "Votre compte a été désactivé",
+    message: "Pour réactiver votre compte, veuillez cliquer sur le bouton ci-dessous :",
+    button: "Réactiver mon compte",
+    linkText: "Ou copiez et collez ce lien dans votre navigateur :",
+    expire: "Ce lien expirera dans 24 heures.",
+    ignore: "Si vous n'avez pas demandé cette réactivation, vous pouvez ignorer cet email."
+  },
+  'en': {
+    title: "Account Reactivation",
+    subtitle: "Your account has been deactivated",
+    message: "To reactivate your account, please click the button below:",
+    button: "Reactivate my account",
+    linkText: "Or copy and paste this link in your browser:",
+    expire: "This link will expire in 24 hours.",
+    ignore: "If you didn't request this reactivation, you can ignore this email."
+  },
+  'mg': {
+    title: "Famerenana ny kaontinao",
+    subtitle: "Nesorina ny kaontinao",
+    message: "Raha hampody ny kaontinao, tsindrio ny bokotra eto ambany:",
+    button: "Ampodio ny kaontiko",
+    linkText: "Na dikao ity rohy ity ary apetaho amin'ny navigateur anao:",
+    expire: "Hifoka ao anatin'ny 24 ora ity rohy ity.",
+    ignore: "Raha tsy nangataka izany ianao dia tsy miraharaha ity mailaka ity."
+  }
 }
 
 /**
@@ -215,7 +192,6 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResponse> {
  */
 export async function sendTemplateEmail(options: TemplateEmailOptions): Promise<EmailResponse> {
   try {
-    // Ajouter automatiquement le sujet traduit si non fourni
     const dataWithSubject = {
       ...options.data,
       _subject: getTranslatedSubject(options.templateName, options.lang)
@@ -237,7 +213,7 @@ export async function sendTemplateEmail(options: TemplateEmailOptions): Promise<
     const data: EmailResponse = await response.json()
     
     if (!data.success) {
-      console.error(`❌ Failed to send ${options.templateName} ${API_BASE_URL} email (${options.lang || 'fr'}):`, data.error)
+      console.error(`❌ Failed to send ${options.templateName} email (${options.lang || 'fr'}):`, data.error)
     } else {
       console.log(`✅ ${options.templateName} email sent (${options.lang || 'fr'}):`, data.messageId)
     }
@@ -254,7 +230,7 @@ export async function sendTemplateEmail(options: TemplateEmailOptions): Promise<
 }
 
 /**
- * Envoie un email de bienvenue (multilingue)
+ * Envoie un email de bienvenue
  */
 export async function sendWelcomeEmail(
   email: string, 
@@ -275,7 +251,7 @@ export async function sendWelcomeEmail(
 }
 
 /**
- * Envoie un email de réinitialisation de mot de passe (multilingue)
+ * Envoie un email de réinitialisation de mot de passe
  */
 export async function sendPasswordResetEmail(
   email: string, 
@@ -295,9 +271,7 @@ export async function sendPasswordResetEmail(
 }
 
 /**
- * Envoie un email de vérification (multilingue)
-/**
- * Envoie un email de vérification (multilingue) avec lien ET code
+ * Envoie un email de vérification avec lien ET code
  */
 export async function sendVerificationEmail(
   email: string, 
@@ -310,10 +284,9 @@ export async function sendVerificationEmail(
   
   const c = verificationContent[lang] || verificationContent['fr']
   
-  // Design avec code en grand et bien visible
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <!-- Header avec dégradé -->
+      <!-- Header -->
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
         <h1 style="margin: 0; font-size: 28px;">${c.title}</h1>
       </div>
@@ -323,10 +296,10 @@ export async function sendVerificationEmail(
         <p style="color: #666; line-height: 1.6; text-align: center;">${c.message}</p>
         
         ${code ? `
-        <!-- CODE DE VÉRIFICATION - Mise en avant -->
+        <!-- CODE DE VÉRIFICATION -->
         <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e6f0fa 100%); padding: 30px; border-radius: 16px; margin: 30px 0; border: 2px solid #667eea; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);">
           <h2 style="color: #0369a1; margin: 0 0 10px 0; font-size: 20px; text-align: center; text-transform: uppercase; letter-spacing: 2px;">
-            ⚡ CODE DE VÉRIFICATION ⚡
+            ⚡ ${c.codeOption} ⚡
           </h2>
           <div style="text-align: center; margin: 25px 0;">
             <div style="background: white; padding: 20px 30px; border-radius: 16px; display: inline-block; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 3px solid #667eea;">
@@ -336,11 +309,11 @@ export async function sendVerificationEmail(
             </div>
           </div>
           <p style="color: #0369a1; font-size: 16px; text-align: center; font-weight: bold; margin: 15px 0 0 0;">
-            ⏱️ Expire dans 10 minutes
+            ⏱️ ${c.codeExpires}
           </p>
         </div>
         
-        <!-- Séparateur "OU" -->
+        <!-- Séparateur -->
         <div style="text-align: center; margin: 20px 0; position: relative;">
           <span style="background: #e5e7eb; padding: 8px 20px; border-radius: 30px; color: #4b5563; font-weight: bold; font-size: 14px;">
             OU
@@ -348,21 +321,20 @@ export async function sendVerificationEmail(
         </div>
         ` : ''}
         
-        <!-- OPTION LIEN (toujours disponible) -->
+        <!-- OPTION LIEN -->
         <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
-          <h3 style="color: #4a5568; margin: 0 0 15px 0;">🔗 Cliquez sur le lien ci-dessous</h3>
+          <h3 style="color: #4a5568; margin: 0 0 15px 0;">🔗 ${c.linkOption}</h3>
           <a href="${verificationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 14px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 10px 0;">
             ${c.button}
           </a>
           <p style="color: #666; font-size: 13px; margin: 15px 0 0 0;">
-            <small>Ce lien expirera dans 24 heures</small>
+            <small>${c.expire}</small>
           </p>
         </div>
         
-        <!-- Footer identique -->
+        <!-- Footer -->
         <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
           <p style="color: #999; font-size: 12px;">
-            ${c.expire}<br>
             ${c.ignore}
           </p>
         </div>
@@ -370,12 +342,7 @@ export async function sendVerificationEmail(
     </div>
   `
 
-  // Version texte améliorée
-  let text = (verificationTextContent[lang] || verificationTextContent['fr']).replace('{url}', verificationUrl)
-  
-  if (code) {
-    text = `🔐 CODE DE VÉRIFICATION : ${code}\n\nCe code expire dans 10 minutes.\n\n---\n\n${text}`
-  }
+  const text = `${c.title}\n\n${c.subtitle}\n\n${c.message}\n\n${code ? `${c.codeOption}: ${code}\n${c.codeExpires}\n\n---\n\n` : ''}${c.linkOption}: ${verificationUrl}\n\n${c.expire}\n\n${c.ignore}`
 
   return await sendEmail({
     to: email,
@@ -387,7 +354,70 @@ export async function sendVerificationEmail(
 }
 
 /**
- * Envoie un email de notification de projet (multilingue)
+ * Envoie un email de réactivation de compte
+ */
+export async function sendAccountReactivationEmail(
+  email: string,
+  reactivationToken: string,
+  lang: string = 'fr'
+): Promise<EmailResponse> {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const reactivationUrl = `${baseUrl}/${lang}/auth/reactivate/${reactivationToken}`
+  
+  const c = reactivationContent[lang] || reactivationContent['fr']
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 40px; color: white; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">${c.title}</h1>
+      </div>
+      
+      <div style="padding: 40px;">
+        <h2 style="color: #333; text-align: center;">${c.subtitle}</h2>
+        <p style="color: #666; line-height: 1.6; text-align: center;">${c.message}</p>
+        
+        <!-- Bouton de réactivation -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${reactivationUrl}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            ${c.button}
+          </a>
+        </div>
+        
+        <!-- Lien alternatif -->
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
+          <p style="color: #666; font-size: 13px; margin: 0;">
+            ${c.linkText}<br>
+            <a href="${reactivationUrl}" style="color: #f59e0b; word-break: break-all;">${reactivationUrl}</a>
+          </p>
+          <p style="color: #999; font-size: 12px; margin: 15px 0 0 0;">
+            <small>${c.expire}</small>
+          </p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+          <p style="color: #999; font-size: 12px;">
+            ${c.ignore}
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+
+  const text = `${c.title}\n\n${c.subtitle}\n\n${c.message}\n\n${c.button}: ${reactivationUrl}\n\n${c.expire}\n\n${c.ignore}`
+
+  return await sendEmail({
+    to: email,
+    subject: getTranslatedSubject('account-reactivation', lang),
+    html,
+    text,
+    lang
+  })
+}
+
+/**
+ * Envoie un email de notification de projet
  */
 export async function sendProjectMatchEmail(
   email: string,
@@ -426,7 +456,7 @@ export async function sendProjectMatchEmail(
 }
 
 /**
- * Envoie un email de proposition reçue (multilingue)
+ * Envoie un email de proposition reçue
  */
 export async function sendProposalReceivedEmail(
   email: string,
@@ -463,7 +493,7 @@ export async function sendProposalReceivedEmail(
 }
 
 /**
- * Envoie un email de confirmation de paiement (multilingue)
+ * Envoie un email de confirmation de paiement
  */
 export async function sendPaymentConfirmationEmail(
   email: string,
@@ -516,7 +546,6 @@ export function getSupportedLanguages(): Array<{ code: string; name: string }> {
   return [
     { code: 'fr', name: 'Français' },
     { code: 'en', name: 'English' },
-    { code: 'es', name: 'Español' },
     { code: 'mg', name: 'Malagasy' }
   ]
 }
