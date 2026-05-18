@@ -3052,7 +3052,7 @@
     "signout": "Déconnexion"
   },
 
-  "auth": {
+ "auth": {
     "codeExpiresIn": "Le code expire dans 10 minutes",
     "enterValidCode": "Veuillez entrer un code valide à 6 chiffres",
     "invalidCode": "Code invalide",
@@ -3061,12 +3061,12 @@
     "openEmailPrompt": "Ouvrez votre boîte de réception",
     "clickLinkPrompt": "Cliquez sur le lien de vérification dans l'email",
     "startJourney": "Commencez votre aventure sur NRBTalents!",
-    "didntReceive": "Vous n'avez pas reçu l'email?",
+    "didntReceive": "Vous n'avez pas reçu l'email ?",
     "emailVerification": "Vérification d'Email",
     "enterEmailForVerification": "Entrez votre email pour recevoir un nouveau lien de vérification",
     "verifyingEmail": "Vérification de votre adresse email en cours...",
     "verifying": "Vérification en cours...",
-    "emailVerified": "Email vérifié avec succès!",
+    "emailVerified": "Email vérifié avec succès !",
     "yourEmail": "Votre email",
     "hasBeenVerified": "a été vérifié.",
     "redirecting": "Redirection vers le tableau de bord...",
@@ -3075,7 +3075,7 @@
     "linkExpired": "Le lien de vérification a expiré ou est invalide.",
     "resendVerification": "Renvoyer l'email de vérification",
     "linkExpiresIn": "Le lien de vérification expire après 24 heures.",
-    "verificationEmailSent": "Email de vérification envoyé!",
+    "verificationEmailSent": "Email de vérification envoyé !",
     "alreadyVerified": "Votre email est déjà vérifié. Vous pouvez vous connecter.",
     "emailRequired": "Veuillez entrer votre email",
     "verificationError": "Erreur de vérification",
@@ -3092,6 +3092,7 @@
     "resetPassword": "Réinitialiser votre mot de passe",
     "resetPasswordInstructions": "Saisissez votre nouveau mot de passe ci-dessous. Assurez-vous qu'il contient au moins 8 caractères.",
     "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
     "passwordRequirements": "Le mot de passe doit contenir au moins 8 caractères et inclure un mélange de lettres et de chiffres.",
     "resetPasswordButton": "Réinitialiser le mot de passe",
     "invalidToken": "Lien invalide ou expiré",
@@ -3103,7 +3104,6 @@
     "subtitle": "La plateforme qui connecte talents et opportunités",
     "email": "Email",
     "password": "Mot de passe",
-    "confirmPassword": "Confirmer le mot de passe",
     "name": "Nom d'utilisateur",
     "login": "Se connecter",
     "register": "Créer un compte",
@@ -3112,6 +3112,12 @@
     "hasAccount": "Déjà un compte ?",
     "forgotPassword": "Mot de passe oublié ?",
     "or": "Ou",
+    "emailNotVerified": "Email non vérifié",
+    "checkYourEmailToActivate": "Veuillez vérifier votre boîte mail et cliquer sur le lien d'activation.",
+    "resendVerificationEmail": "Renvoyer l'email de vérification",
+    "accountDeactivated": "Compte désactivé",
+    "accountInactive": "Compte inactif",
+    "contactSupport": "Veuillez contacter le support pour plus d'informations.",
     "errors": {
       "emailRequired": "L'email est requis",
       "emailInvalid": "Email invalide",
@@ -3121,13 +3127,26 @@
       "nameRequired": "Le nom est requis",
       "userExists": "Un utilisateur avec cet email existe déjà",
       "invalidCredentials": "Email ou mot de passe incorrect",
-      "googleAccount": "Ce compte utilise Google. Connectez-vous avec Google."
+      "googleAccount": "Ce compte utilise Google. Connectez-vous avec Google.",
+      "emailNotVerified": "Veuillez vérifier votre email avant de vous connecter",
+      "accountDeactivated": "Votre compte a été désactivé",
+      "accountInactive": "Votre compte est inactif",
+      "contactSupport": "Veuillez contacter le support"
     },
     "success": {
       "signup": "Compte créé avec succès !",
       "login": "Connexion réussie !",
       "emailSent": "Lien de réinitialisation envoyé avec succès !",
-      "resetSuccess": "Mot de passe réinitialisé avec succès !"
+      "resetSuccess": "Mot de passe réinitialisé avec succès !",
+      "accountActivated": "Compte activé avec succès !"
+    },
+    "activation": {
+      "title": "Activation du compte",
+      "success": "Votre compte a été activé avec succès !",
+      "error": "Erreur lors de l'activation",
+      "invalidLink": "Lien d'activation invalide ou expiré",
+      "alreadyActivated": "Votre compte est déjà activé",
+      "redirecting": "Redirection vers la page de connexion..."
     }
   },
 

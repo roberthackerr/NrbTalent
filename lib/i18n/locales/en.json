@@ -3014,7 +3014,7 @@
     "signout": "Sign Out"
   },
 
-  "auth": { 
+ "auth": {
     "codeExpiresIn": "The code expires in 10 minutes",
     "enterValidCode": "Please enter a valid 6-digit code",
     "invalidCode": "Invalid code",
@@ -3042,16 +3042,6 @@
     "emailRequired": "Please enter your email",
     "verificationError": "Verification error",
     "expiredLink": "Expired link",
-    "resetPassword": "Reset your password",
-    "resetPasswordInstructions": "Enter your new password below. Make sure it's at least 8 characters long.",
-    "newPassword": "New Password",
-    "passwordRequirements": "Password must be at least 8 characters long and include a mix of letters and numbers.",
-    "resetPasswordButton": "Reset Password",
-    "invalidToken": "Invalid or expired link",
-    "invalidTokenMessage": "This password reset link is invalid or has expired. Please request a new one.",
-    "requestNewLink": "Request New Link",
-    "passwordReset": "Password reset successful!",
-    "resetSuccessMessage": "Your password has been reset successfully. You will be redirected to login...",
     "checkEmail": "Check your email",
     "emailSent": "We've sent a password reset link to",
     "checkSpam": "Please check your spam folder if you don't see it in your inbox.",
@@ -3061,12 +3051,21 @@
     "sendResetLink": "Send Reset Link",
     "emailPrivacy": "We'll never share your email with anyone else.",
     "needHelp": "Need help?",
-    
+    "resetPassword": "Reset your password",
+    "resetPasswordInstructions": "Enter your new password below. Make sure it's at least 8 characters long.",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "passwordRequirements": "Password must be at least 8 characters long and include a mix of letters and numbers.",
+    "resetPasswordButton": "Reset Password",
+    "invalidToken": "Invalid or expired link",
+    "invalidTokenMessage": "This password reset link is invalid or has expired. Please request a new one.",
+    "requestNewLink": "Request New Link",
+    "passwordReset": "Password reset successful!",
+    "resetSuccessMessage": "Your password has been reset successfully. You will be redirected to login...",
     "welcome": "Welcome to NRBTalents",
     "subtitle": "The platform connecting talents and opportunities",
     "email": "Email",
     "password": "Password",
-    "confirmPassword": "Confirm Password",
     "name": "Username",
     "login": "Log in",
     "register": "Create account",
@@ -3075,6 +3074,12 @@
     "hasAccount": "Already have an account?",
     "forgotPassword": "Forgot password?",
     "or": "Or",
+    "emailNotVerified": "Email not verified",
+    "checkYourEmailToActivate": "Please check your inbox and click the activation link.",
+    "resendVerificationEmail": "Resend verification email",
+    "accountDeactivated": "Account deactivated",
+    "accountInactive": "Account inactive",
+    "contactSupport": "Please contact support for more information.",
     "errors": {
       "emailRequired": "Email is required",
       "emailInvalid": "Invalid email",
@@ -3084,13 +3089,26 @@
       "nameRequired": "Name is required",
       "userExists": "User with this email already exists",
       "invalidCredentials": "Invalid email or password",
-      "googleAccount": "This account uses Google. Sign in with Google."
+      "googleAccount": "This account uses Google. Sign in with Google.",
+      "emailNotVerified": "Please verify your email before logging in",
+      "accountDeactivated": "Your account has been deactivated",
+      "accountInactive": "Your account is inactive",
+      "contactSupport": "Please contact support"
     },
     "success": {
-      "resetSuccess": "Password reset successfully!",
       "signup": "Account created successfully!",
       "login": "Login successful!",
-      "emailSent": "Reset link sent successfully!"
+      "emailSent": "Reset link sent successfully!",
+      "resetSuccess": "Password reset successfully!",
+      "accountActivated": "Account activated successfully!"
+    },
+    "activation": {
+      "title": "Account Activation",
+      "success": "Your account has been activated successfully!",
+      "error": "Activation error",
+      "invalidLink": "Invalid or expired activation link",
+      "alreadyActivated": "Your account is already activated",
+      "redirecting": "Redirecting to login page..."
     }
   },
 

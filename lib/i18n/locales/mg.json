@@ -2681,17 +2681,17 @@
     "signout": "Hiala"
   },
 
-  "auth": {
-      "codeExpiresIn": "Hifoka ao anatin'ny 10 minitra ity code ity",
+"auth": {
+    "codeExpiresIn": "Hifoka ao anatin'ny 10 minitra ity code ity",
     "enterValidCode": "Ampidiro code 6 isa mety azafady",
     "invalidCode": "Code tsy mety",
-        "verifyYourEmail": "Hamarinina ny mailakao",
+    "verifyYourEmail": "Hamarinina ny mailakao",
     "verificationEmailSentto": "Nisy mailaka fanamarinana nalefa tany amin'ny",
     "openEmailPrompt": "Sokafy ny boaty mailakao",
     "clickLinkPrompt": "Kitiho ny rohy fanamarinana ao amin'ny mailaka",
     "startJourney": "Manomboha ny dianao ao amin'ny NRBTalents!",
     "didntReceive": "Tsy nahazo ny mailaka?",
-     "emailVerification": "Fanamarinana ny Mailaka",
+    "emailVerification": "Fanamarinana ny Mailaka",
     "enterEmailForVerification": "Ampidiro ny mailakao hahazoana rohy fanamarinana vaovao",
     "verifyingEmail": "Fanamarinana ny adiresy mailakao...",
     "verifying": "Fanamarinana...",
@@ -2718,7 +2718,7 @@
     "sendResetLink": "Mandefa rohy",
     "emailPrivacy": "Tsy hozarainay amin'olon-kafa ny mailakao.",
     "needHelp": "Mila fanampiana?",
-     "resetPassword": "Hanova ny tenimiafinao",
+    "resetPassword": "Hanova ny tenimiafinao",
     "resetPasswordInstructions": "Ampidiro ny tenimiafina vaovao eto ambany. Ataovy azo antoka fa farafahakeliny 8 ny isan'ny litera.",
     "newPassword": "Tenimiafina vaovao",
     "confirmPassword": "Hamafiso ny tenimiafina",
@@ -2733,7 +2733,7 @@
     "subtitle": "Ny sehatra mampifandray ny talenta sy ny fahafahana",
     "email": "Mailaka",
     "password": "Tenimiafina",
-      "name": "Anarana",
+    "name": "Anarana",
     "login": "Hiditra",
     "register": "Hamorona kaonty",
     "google": "Hanohy amin'ny Google",
@@ -2741,6 +2741,12 @@
     "hasAccount": "Efa manana kaonty?",
     "forgotPassword": "Hadino ny tenimiafina?",
     "or": "Sady",
+    "emailNotVerified": "Mailaka tsy voamarina",
+    "checkYourEmailToActivate": "Jereo ny boaty mailakao ary kitiho ny rohy fanamarinana azafady.",
+    "resendVerificationEmail": "Mandefa mailaka fanamarinana indray",
+    "accountDeactivated": "Kaonty nesorina",
+    "accountInactive": "Kaonty tsy mavitrika",
+    "contactSupport": "Mifandraisa amin'ny fanohanana raha mila fanazavana fanampiny.",
     "errors": {
       "emailRequired": "Ilaina ny mailaka",
       "emailInvalid": "Mailaka tsy mety",
@@ -2750,13 +2756,26 @@
       "nameRequired": "Ilaina ny anarana",
       "userExists": "Efa misy ny kaonty miaraka amin'ity mailaka ity",
       "invalidCredentials": "Mailaka na tenimiafina diso",
-      "googleAccount": "Ity kaonty ity dia mampiasa Google. Midira amin'ny Google."
+      "googleAccount": "Ity kaonty ity dia mampiasa Google. Midira amin'ny Google.",
+      "emailNotVerified": "Hamafiso ny mailakao aloha vao miditra",
+      "accountDeactivated": "Nesorina ny kaontinao",
+      "accountInactive": "Tsy mavitrika ny kaontinao",
+      "contactSupport": "Mifandraisa amin'ny fanohanana"
     },
     "success": {
       "signup": "Voaforona soa aman-tsara ny kaonty!",
       "login": "Tafiditra soa aman-tsara!",
       "emailSent": "Vita soa aman-tsara ny fandefasana rohy!",
-       "resetSuccess": "Soa! Novana soamantsara ny tenimiafinao!"
+      "resetSuccess": "Soa! Novana soamantsara ny tenimiafinao!",
+      "accountActivated": "Navitrika soa aman-tsara ny kaontinao!"
+    },
+    "activation": {
+      "title": "Fanamarinana ny kaonty",
+      "success": "Navitrika soa aman-tsara ny kaontinao!",
+      "error": "Tsy nahomby ny fanamarinana",
+      "invalidLink": "Rohy fanamarinana tsy mety na efa lany daty",
+      "alreadyActivated": "Efa navitrika ny kaontinao",
+      "redirecting": "Hampodiana any amin'ny pejy fidirana..."
     }
   },
 
