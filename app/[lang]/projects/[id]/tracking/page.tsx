@@ -83,6 +83,7 @@ import { FileCollaborator } from '@/components/workspace/file-collaborator'
 import { Whiteboard } from '@/components/workspace/whiteboard'
 import { ProfessionalVSCode } from "@/components/ide/professional-vscode"
 import { useWorkspace } from '@/hooks/useWorkspace'
+import { Navigation } from '@/components/navigation'
 
 type WorkspaceTool = 'kanban' | 'timeline' | 'time' | 'analytics' | 'team' | 'chat' | 'files' | 'whiteboard' | 'code' | 'video'
 
@@ -255,6 +256,8 @@ export default function ProjectTrackingPage() {
   const currentTool = tools.find(t => t.id === activeTab) || tools[0]
 
   return (
+       <div>
+      <Navigation/>
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950/20">
       {/* Header Hero */}
       <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 dark:from-purple-900 dark:via-pink-900 dark:to-blue-900">
@@ -532,5 +535,6 @@ export default function ProjectTrackingPage() {
         </TooltipProvider>
       </div>
     </div>
+       </div>
   )
 }
