@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { User, CreateUserDTO, toUserResponseDTO, createNewUser } from "./models/user"
 import { ObjectId } from "mongodb"
-import { sendVerificationEmail } from "./email-service"
+import { sendVerificationEmail, sendWelcomeEmail } from "./email-service"
 import { authenticator } from "otplib"
 
 // ==================== TYPE EXTENSIONS ====================
@@ -26,6 +26,8 @@ declare module "next-auth" {
       avatar?: string | null
       emailVerified?: boolean | null
       language?: 'fr' | 'en' | 'mg'
+      isActive?: boolean
+      isDeactivated?: boolean
       preferences?: {
         language?: 'fr' | 'en' | 'mg'
         theme?: 'light' | 'dark' | 'system'
@@ -42,6 +44,7 @@ declare module "next-auth" {
     avatar?: string | null
     emailVerified?: boolean | null
     language?: 'fr' | 'en' | 'mg'
+    isActive?: boolean
   }
 }
 
@@ -57,6 +60,7 @@ declare module "next-auth/jwt" {
     emailVerified?: boolean | null
     language?: 'fr' | 'en' | 'mg'
     twoFactorVerified?: boolean
+    isActive?: boolean
   }
 }
 
@@ -90,7 +94,7 @@ export const authOptions: NextAuthOptions = {
               avatar: profile.picture,
             }
 
-            const newUser :any = {
+            const newUser: any = {
               ...createNewUser(newUserData),
               _id: new ObjectId(),
               avatar: profile.picture || "",
@@ -99,11 +103,16 @@ export const authOptions: NextAuthOptions = {
               lastLogin: new Date(),
               onboardingRoleCompleted: false,
               onboardingCompleted: false,
-              language: 'fr', // Langue par défaut
+              language: 'fr',
+              isActive: true,
+              isDeactivated: false,
             }
 
             await usersCollection.insertOne(newUser)
             existingUser = newUser
+            
+            // Envoyer email de bienvenue
+            await sendWelcomeEmail(profile.email, profile.name, 'fr')
           } else {
             await usersCollection.updateOne(
               { _id: existingUser._id },
@@ -113,6 +122,7 @@ export const authOptions: NextAuthOptions = {
                   avatar: existingUser.avatar,
                   lastLogin: new Date(),
                   updatedAt: new Date(),
+                  isActive: true,
                 },
               }
             )
@@ -129,6 +139,7 @@ export const authOptions: NextAuthOptions = {
             avatar: existingUser?.avatar,
             emailVerified: !!existingUser?.emailVerified,
             language: existingUser?.language || 'fr',
+            isActive: existingUser?.isActive !== false,
           }
         } catch (error) {
           console.error("Google profile error:", error)
@@ -160,9 +171,18 @@ export const authOptions: NextAuthOptions = {
             email: credentials.email,
           })
 
-          // ===== CONNEXION UNIQUEMENT =====
           if (!existingUser) {
             throw new Error("Aucun utilisateur trouvé avec cet email")
+          }
+
+          // ✅ Vérifier si le compte est désactivé
+          if (existingUser.isDeactivated === true) {
+            throw new Error("ACCOUNT_DEACTIVATED")
+          }
+
+          // ✅ Vérifier si le compte est actif
+          if (existingUser.isActive === false) {
+            throw new Error("ACCOUNT_INACTIVE")
           }
 
           // ✅ CAS SPÉCIAL: Vérification d'email (après clic sur lien)
@@ -181,6 +201,7 @@ export const authOptions: NextAuthOptions = {
               avatar: existingUser.avatar,
               emailVerified: true,
               language: existingUser.language || credentials.lang || 'fr',
+              isActive: true,
             }
           }
 
@@ -264,7 +285,13 @@ export const authOptions: NextAuthOptions = {
           // Mettre à jour la date de dernière connexion
           await usersCollection.updateOne(
             { _id: existingUser._id },
-            { $set: { lastLogin: new Date(), updatedAt: new Date() } }
+            { 
+              $set: { 
+                lastLogin: new Date(), 
+                updatedAt: new Date(),
+                isActive: true 
+              } 
+            }
           )
 
           // Récupérer la langue de l'utilisateur
@@ -281,6 +308,7 @@ export const authOptions: NextAuthOptions = {
             emailVerified: true,
             language: userLanguage,
             twoFactorVerified: existingUser.twoFactorEnabled ? true : false,
+            isActive: true,
           }
         } catch (error) {
           console.error("Authorize error:", error)
@@ -294,17 +322,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       try {
         if (user) {
-      token.id = user.id
-      token.role = user.role as "freelance" | "client" | "admin"
-      token.onboardingRoleCompleted = user.onboardingRoleCompleted ?? false
-      token.onboardingCompleted = user.onboardingCompleted ?? false
-      token.email = user.email!
-      token.name = user.name
-      token.avatar = user.avatar
-      token.emailVerified = user.emailVerified ?? false
-      // 👈 CRUCIAL: Récupérer la langue depuis user
-      token.language = (user as any).language || (user as any).preferences?.language || 'fr'
-          }
+          token.id = user.id
+          token.role = user.role as "freelance" | "client" | "admin"
+          token.onboardingRoleCompleted = user.onboardingRoleCompleted ?? false
+          token.onboardingCompleted = user.onboardingCompleted ?? false
+          token.email = user.email!
+          token.name = user.name
+          token.avatar = user.avatar
+          token.emailVerified = user.emailVerified ?? false
+          token.language = (user as any).language || (user as any).preferences?.language || 'fr'
+          token.isActive = (user as any).isActive !== false
+        }
 
         if (trigger === "update" && session) {
           const db = await getDatabase()
@@ -321,6 +349,7 @@ export const authOptions: NextAuthOptions = {
             token.avatar = dbUser.avatar
             token.emailVerified = !!dbUser.emailVerified
             token.language = dbUser.language || dbUser.preferences?.language || token.language || 'fr'
+            token.isActive = dbUser.isActive !== false
 
             if (session.role) token.role = session.role as typeof token.role
             if (session.onboardingCompleted !== undefined) {
@@ -351,7 +380,8 @@ export const authOptions: NextAuthOptions = {
           session.user.avatar = token.avatar || null
           session.user.emailVerified = token.emailVerified || false
           session.user.language = token.language || 'fr'
-      // Ajouter les préférences si disponibles
+          session.user.isActive = token.isActive !== false
+          
           if (token.preferences) {
             session.user.preferences = token.preferences
           }
@@ -492,6 +522,7 @@ export async function markEmailAsVerified(email: string) {
         $set: {
           emailVerified: new Date(),
           updatedAt: new Date(),
+          isActive: true,
         },
         $unset: {
           verificationToken: "",
@@ -522,7 +553,6 @@ export async function updateUserLanguage(userId: string | ObjectId, language: 'f
       }
     )
     
-    // Mettre à jour la session
     await updateSession({ language })
     
     return true
@@ -546,5 +576,44 @@ export async function getUserLanguage(userId: string | ObjectId): Promise<string
   } catch (error) {
     console.error("Error getting user language:", error)
     return 'fr'
+  }
+}
+
+export async function activateAccount(token: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const db = await getDatabase()
+    
+    const user = await db.collection<User>("users").findOne({
+      verificationToken: token,
+      verificationTokenExpiry: { $gt: new Date() }
+    })
+
+    if (!user) {
+      return { success: false, message: "Lien invalide ou expiré" }
+    }
+
+    if (user.emailVerified) {
+      return { success: false, message: "Compte déjà activé" }
+    }
+
+    await db.collection<User>("users").updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          emailVerified: new Date(),
+          isActive: true,
+          updatedAt: new Date()
+        },
+        $unset: {
+          verificationToken: "",
+          verificationTokenExpiry: ""
+        }
+      }
+    )
+
+    return { success: true, message: "Compte activé avec succès" }
+  } catch (error) {
+    console.error("Error activating account:", error)
+    return { success: false, message: "Erreur lors de l'activation" }
   }
 }
