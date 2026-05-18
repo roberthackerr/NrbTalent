@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Sparkles, CheckCircle2 } from 'lucide-react'
+import { Sparkles, CheckCircle2, AlertCircle } from 'lucide-react'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher'
 import type { Dictionary } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
@@ -26,10 +26,51 @@ export default function SignInForm({ dict, lang }: Props) {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [showResendButton, setShowResendButton] = useState(false)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resending, setResending] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
+    
+    // Vérifier s'il y a un email en attente de vérification
+    const pendingEmail = sessionStorage.getItem('pendingVerificationEmail')
+    if (pendingEmail) {
+      setResendEmail(pendingEmail)
+      setShowResendButton(true)
+      toast.info(dict.auth.errors.emailNotVerified, {
+        duration: 5000,
+      })
+    }
   }, [])
+
+  const handleResendVerification = async () => {
+    if (!resendEmail) return
+    
+    setResending(true)
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendEmail, lang })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(dict.auth.verificationEmailSent, {
+          description: dict.auth.checkYourEmail
+        })
+      } else {
+        toast.error(data.error || dict.common.error)
+      }
+    } catch (error) {
+      console.error('Error resending verification:', error)
+      toast.error(dict.common.error)
+    } finally {
+      setResending(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -44,27 +85,45 @@ export default function SignInForm({ dict, lang }: Props) {
         email,
         password,
         redirect: false,
-         lang
+        lang
       })
 
       if (result?.error) {
-             if (result.error === '2FA_REQUIRED') {
-                sessionStorage.setItem('2fa_email', email);
-  sessionStorage.setItem('2fa_password', password); // Optionnel, mais à manipuler avec précaution
-  sessionStorage.setItem('2fa_lang', lang);
-  
-  // Rediriger vers la page 2FA sans les paramètres URL
-  router.push(`/${lang}/auth/2fa`);
-        // Rediriger vers la page 2FA avec les credentials
-      
-      } 
-        else if (result.error === 'EMAIL_NOT_VERIFIED') {
-    // Rediriger vers la page de vérification
-    sessionStorage.setItem('pendingVerificationEmail', email)
-    router.push(`/${lang}/auth/verify-email-prompt`)
-  } else {
-    toast.error(dict.auth.errors.invalidCredentials)
-  }
+        // 🔥 2FA REQUIRED
+        if (result.error === '2FA_REQUIRED') {
+          sessionStorage.setItem('2fa_email', email)
+          sessionStorage.setItem('2fa_password', password)
+          sessionStorage.setItem('2fa_lang', lang)
+          router.push(`/${lang}/auth/2fa`)
+          return
+        }
+        
+        // 🔥 EMAIL NOT VERIFIED
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          sessionStorage.setItem('pendingVerificationEmail', email)
+          setResendEmail(email)
+          setShowResendButton(true)
+          router.push(`/${lang}/auth/verify-email-prompt`)
+          return
+        }
+        
+        // 🔥 ACCOUNT DEACTIVATED
+        if (result.error === 'ACCOUNT_DEACTIVATED') {
+          toast.error(dict.auth.errors.accountDeactivated, {
+            description: dict.auth.errors.contactSupport
+          })
+          return
+        }
+        
+        // 🔥 ACCOUNT INACTIVE
+        if (result.error === 'ACCOUNT_INACTIVE') {
+          toast.error(dict.auth.errors.accountInactive, {
+            description: dict.auth.errors.contactSupport
+          })
+          return
+        }
+        
+        // Autres erreurs
         const errorMessages: Record<string, string> = {
           'No user found with this email': dict.auth.errors.invalidCredentials,
           'Invalid password': dict.auth.errors.invalidCredentials,
@@ -78,6 +137,7 @@ export default function SignInForm({ dict, lang }: Props) {
         router.refresh()
       }
     } catch (error) {
+      console.error('Login error:', error)
       toast.error(dict.common.error)
     } finally {
       setLoading(false)
@@ -91,6 +151,7 @@ export default function SignInForm({ dict, lang }: Props) {
         callbackUrl: `/${lang}/onboarding/role` 
       })
     } catch (error) {
+      console.error('Google sign in error:', error)
       toast.error(dict.auth.errors.googleAccount)
       setGoogleLoading(false)
     }
@@ -139,6 +200,32 @@ export default function SignInForm({ dict, lang }: Props) {
                 {dict.auth.subtitle}
               </p>
             </div>
+
+            {/* Alert for pending verification */}
+            {showResendButton && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                      {dict.auth.emailNotVerified}
+                    </p>
+                    <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                      {dict.auth.checkYourEmailToActivate}
+                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="mt-2 h-auto p-0 text-amber-700 dark:text-amber-400"
+                      onClick={handleResendVerification}
+                      disabled={resending}
+                    >
+                      {resending ? dict.common.loading : dict.auth.resendVerificationEmail}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-lg dark:bg-slate-950/90 dark:backdrop-blur-sm">
               <div className="p-6">
@@ -201,7 +288,7 @@ export default function SignInForm({ dict, lang }: Props) {
                       name="email" 
                       type="email" 
                       required 
-                      placeholder={dict.auth.email}
+                      placeholder="exemple@email.com"
                       disabled={loading || googleLoading}
                       className="border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500"
                     />
@@ -261,7 +348,6 @@ export default function SignInForm({ dict, lang }: Props) {
                 {dict.navigation.signin}
               </div>
               
-              {/* Titre et sous-titre traduits */}
               <h2 className="text-4xl font-bold tracking-tight dark:text-white">
                 {dict.signin?.benefits?.title || "Bienvenue sur votre espace"}
               </h2>
@@ -270,7 +356,6 @@ export default function SignInForm({ dict, lang }: Props) {
               </p>
             </div>
 
-            {/* Liste des avantages traduits */}
             <div className="space-y-4">
               {(dict.signin?.benefits?.items || [
                 "Accédez à votre espace personnel",
@@ -285,7 +370,6 @@ export default function SignInForm({ dict, lang }: Props) {
               ))}
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-8">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">50K+</div>
