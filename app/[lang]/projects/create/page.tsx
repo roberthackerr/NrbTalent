@@ -500,7 +500,6 @@ const formatBudgetPreview = () => {
           </Label>
           <div className="flex items-center gap-4 mt-2">
             <div className="relative flex-1">
-
               <Input
                 id="hourlyRate"
                 type="number"
@@ -531,20 +530,21 @@ const formatBudgetPreview = () => {
               <Label className="text-xs text-slate-600 dark:text-slate-400 mb-1 block">
                 {t.budgetMin || "Budget minimum"}
               </Label>
-              <div className="relative">
-                <Input
-                  type="number"
-                  value={formData.budget.min}
-                  onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
-                  className="pl-8 border-purple-200 dark:border-purple-800"
-                  placeholder="0"
-                />
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
-                  {formData.budget.currency === 'EUR' ? '€' : 
-                   formData.budget.currency === 'USD' ? '$' : 
-                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency} : 
-                </span>
-              </div>
+  <div className="relative">
+  <Input
+    type="number"
+    value={formData.budget.min}
+    onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
+    className="pl-10 border-purple-200 dark:border-purple-800" 
+    placeholder="0"
+  />
+  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
+    {formData.budget.currency === 'EUR' ? '€' : 
+     formData.budget.currency === 'USD' ? '$' : 
+     formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
+    <span className="ml-0.5"></span>
+  </span>
+</div>
             </div>
             <div>
               <Label className="text-xs text-slate-600 dark:text-slate-400 mb-1 block">
@@ -555,14 +555,15 @@ const formatBudgetPreview = () => {
                   type="number"
                   value={formData.budget.max}
                   onChange={(e) => handleBudgetChange("max", Number(e.target.value))}
-                  className="pl-8 border-purple-200 dark:border-purple-800"
+                  className="pl-10 border-purple-200 dark:border-purple-800"
                   placeholder="0"
                 />
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
                   {formData.budget.currency === 'EUR' ? '€' : 
                    formData.budget.currency === 'USD' ? '$' : 
-                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency} : 
+                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
                 </span>
+                <span className="ml-0.5"></span>
               </div>
             </div>
           </div>
