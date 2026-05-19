@@ -37,6 +37,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { BackupCodes } from "./backup-codes"
+import { ScrollArea } from "../ui/scroll-area"
 
 interface Session {
   id: string
@@ -631,123 +632,125 @@ export function SecurityTab({ dict, lang }: SecurityTabProps) {
       </Card>
 
       {/* Dialog de configuration 2FA */}
-      <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-green-500" />
-              {dict?.security?.twoFactorSetup || "Configuration 2FA"}
-            </DialogTitle>
-            <DialogDescription>
-              {dict?.security?.twoFactorSetupDesc || "Suivez ces étapes pour activer l'authentification à deux facteurs"}
-            </DialogDescription>
-          </DialogHeader>
+  <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
+  <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
+    <DialogHeader className="p-6 pb-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+      <DialogTitle className="flex items-center gap-2">
+        <Shield className="h-5 w-5 text-green-500" />
+        {dict?.security?.twoFactorSetup || "Configuration 2FA"}
+      </DialogTitle>
+      <DialogDescription>
+        {dict?.security?.twoFactorSetupDesc || "Suivez ces étapes pour activer l'authentification à deux facteurs"}
+      </DialogDescription>
+    </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {qrCode ? (
-              <div className="space-y-3">
-                <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                  {dict?.security?.step1 || "Étape 1: Scannez le QR Code"}
-                </h4>
-                <div className="flex flex-col items-center">
-                  <img 
-                    src={qrCode} 
-                    alt="QR Code 2FA" 
-                    className="w-48 h-48 border-2 border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-white"
-                  />
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 text-center">
-                    {dict?.security?.qrCodeDesc || "Utilisez Google Authenticator, Authy ou une application similaire"}
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    {dict?.security?.enterManually || "Ou entrez manuellement ce code:"}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={twoFactorSecret}
-                      readOnly
-                      className="font-mono text-sm bg-slate-50 dark:bg-slate-800"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(twoFactorSecret)}
-                      className="flex-shrink-0"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {dict?.security?.copySecret || "Copiez ce code dans votre application d'authentification"}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
-                <p className="text-slate-600 dark:text-slate-400">
-                  {dict?.common?.generating || "Génération du secret 2FA..."}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                {dict?.security?.step2 || "Étape 2: Vérifiez le code"}
-              </h4>
-              <div className="space-y-2">
-                <Label htmlFor="verification-token" className="text-sm font-medium">
-                  {dict?.security?.sixDigitCode || "Code à 6 chiffres"}
-                </Label>
+    <ScrollArea className="flex-1 px-6">
+      <div className="py-4 space-y-4">
+        {qrCode ? (
+          <div className="space-y-3">
+            <h4 className="font-medium text-slate-900 dark:text-slate-100">
+              {dict?.security?.step1 || "Étape 1: Scannez le QR Code"}
+            </h4>
+            <div className="flex flex-col items-center">
+              <img 
+                src={qrCode} 
+                alt="QR Code 2FA" 
+                className="w-48 h-48 border-2 border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-white"
+              />
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 text-center">
+                {dict?.security?.qrCodeDesc || "Utilisez Google Authenticator, Authy ou une application similaire"}
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                {dict?.security?.enterManually || "Ou entrez manuellement ce code:"}
+              </Label>
+              <div className="flex items-center gap-2">
                 <Input
-                  id="verification-token"
-                  value={verificationToken}
-                  onChange={(e) => setVerificationToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="123456"
-                  maxLength={6}
-                  className="text-center text-lg font-mono tracking-widest"
+                  value={twoFactorSecret}
+                  readOnly
+                  className="font-mono text-sm bg-slate-50 dark:bg-slate-800"
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {dict?.security?.enterSixDigitCode || "Entrez le code à 6 chiffres affiché dans votre application d'authentification"}
-                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(twoFactorSecret)}
+                  className="flex-shrink-0"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {dict?.security?.copySecret || "Copiez ce code dans votre application d'authentification"}
+              </p>
             </div>
           </div>
+        ) : (
+          <div className="text-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+            <p className="text-slate-600 dark:text-slate-400">
+              {dict?.common?.generating || "Génération du secret 2FA..."}
+            </p>
+          </div>
+        )}
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShow2FASetup(false)
-                setVerificationToken("")
-              }}
-              disabled={twoFactorLoading}
-              className="flex-1"
-            >
-              {dict?.common?.cancel || "Annuler"}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleVerify2FA}
-              disabled={twoFactorLoading || verificationToken.length !== 6}
-              className="flex-1 bg-green-600 hover:bg-green-700"
-            >
-              {twoFactorLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {dict?.common?.verifying || "Vérification..."}
-                </>
-              ) : (
-                dict?.security?.verifyAndEnable || "Vérifier et activer"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="space-y-3">
+          <h4 className="font-medium text-slate-900 dark:text-slate-100">
+            {dict?.security?.step2 || "Étape 2: Vérifiez le code"}
+          </h4>
+          <div className="space-y-2">
+            <Label htmlFor="verification-token" className="text-sm font-medium">
+              {dict?.security?.sixDigitCode || "Code à 6 chiffres"}
+            </Label>
+            <Input
+              id="verification-token"
+              value={verificationToken}
+              onChange={(e) => setVerificationToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              maxLength={6}
+              className="text-center text-lg font-mono tracking-widest"
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {dict?.security?.enterSixDigitCode || "Entrez le code à 6 chiffres affiché dans votre application d'authentification"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+
+    <DialogFooter className="flex flex-col sm:flex-row gap-2 p-6 pt-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 flex-shrink-0">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          setShow2FASetup(false)
+          setVerificationToken("")
+        }}
+        disabled={twoFactorLoading}
+        className="flex-1"
+      >
+        {dict?.common?.cancel || "Annuler"}
+      </Button>
+      <Button
+        type="button"
+        onClick={handleVerify2FA}
+        disabled={twoFactorLoading || verificationToken.length !== 6}
+        className="flex-1 bg-green-600 hover:bg-green-700"
+      >
+        {twoFactorLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            {dict?.common?.verifying || "Vérification..."}
+          </>
+        ) : (
+          dict?.security?.verifyAndEnable || "Vérifier et activer"
+        )}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
       {/* Backup Codes (si 2FA activé) */}
       {twoFactorEnabled && <BackupCodes dict={dict} lang={lang} />}
