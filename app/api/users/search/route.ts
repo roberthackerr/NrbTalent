@@ -23,7 +23,20 @@ export async function GET(request: Request) {
 
     // Construction de la requête
     const searchQuery: any = {}
-
+    searchQuery.$and = [
+  {
+    $or: [
+      { isDeactivated: { $ne: true } },      // Pas désactivé
+      { isDeactivated: { $exists: false } }   // Champ n'existe pas
+    ]
+  },
+  {
+    $or: [
+      { isActive: { $ne: false } },           // Pas inactif
+      { isActive: { $exists: false } }        // Champ n'existe pas
+    ]
+  }
+]
     // Gestion du rôle - si non spécifié, inclure freelances ET clients
     if (role && ['freelance', 'client', 'freelancer'].includes(role)) {
       // Normaliser le rôle (freelance et freelancer sont équivalents)
