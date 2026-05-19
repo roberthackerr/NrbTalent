@@ -93,6 +93,7 @@ const ALLOWED_FILE_TYPES = [
 ]
 
 export default function CreateProjectPage() {
+
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
@@ -142,7 +143,22 @@ export default function CreateProjectPage() {
       remote: true
     }
   })
-
+ const formatBudgetDisplay = (amount: number, currency: string) => {
+    const symbols: Record<string, string> = {
+      'EUR': '€',
+      'USD': '$',
+      'GBP': '£',
+      'MGA': 'Ar',
+      'XOF': 'CFA',
+      'CAD': 'C$',
+      'CHF': 'CHF',
+      'JPY': '¥',
+      'CNY': '¥',
+      'AUD': 'A$'
+    }
+    const symbol = symbols[currency] || currency
+    return `${amount.toLocaleString()} ${symbol}`
+  }
   // Charger le dictionnaire
   useEffect(() => {
     getDictionarySafe(lang).then(setDict)
@@ -389,7 +405,16 @@ const fileToBase64 = (file: File): Promise<string> => {
       setLoading(false)
     }
   }
-
+const formatBudgetPreview = () => {
+    const { min, max, type, currency } = formData.budget
+    const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency === 'MGA' ? 'Ar' : currency
+    
+    if (type === 'fixed') {
+      return `${min.toLocaleString()} - ${max.toLocaleString()} ${symbol} (${t.fixed || "Fixe"})`
+    } else {
+      return `${min.toLocaleString()} ${symbol}/h (${t.hourly || "Horaire"})`
+    }
+  }
   const handlePublish = async () => {
     setLoading(true)
     try {
@@ -417,6 +442,235 @@ const fileToBase64 = (file: File): Promise<string> => {
       </div>
     )
   }
+
+
+  const renderBudgetStep = () => (
+    <div className="space-y-6">
+      <div>
+        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+          {t.currencyLabel || "Devise"}
+        </Label>
+        <CurrencySelector
+          value={formData.budget.currency}
+          onChange={(currency) => handleBudgetChange("currency", currency)}
+          className="mt-2"
+        />
+      </div>
+
+      <div>
+        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300 mb-4 block">
+          {t.budgetType || "Type de budget"} *
+        </Label>
+        <div className="grid grid-cols-2 gap-4">
+          <Button
+            type="button"
+            variant={formData.budget.type === "fixed" ? "default" : "outline"}
+            onClick={() => handleBudgetChange("type", "fixed")}
+            className={`h-auto py-4 flex flex-col items-center gap-2 ${
+              formData.budget.type === "fixed" 
+                ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" 
+                : "border-purple-200 dark:border-purple-800"
+            }`}
+          >
+            <DollarSign className="h-5 w-5" />
+            <span>{t.fixed || "Prix fixe"}</span>
+            <span className="text-xs opacity-80">{t.fixedDesc || "Budget défini à l'avance"}</span>
+          </Button>
+          <Button
+            type="button"
+            variant={formData.budget.type === "hourly" ? "default" : "outline"}
+            onClick={() => handleBudgetChange("type", "hourly")}
+            className={`h-auto py-4 flex flex-col items-center gap-2 ${
+              formData.budget.type === "hourly" 
+                ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" 
+                : "border-purple-200 dark:border-purple-800"
+            }`}
+          >
+            <Clock className="h-5 w-5" />
+            <span>{t.hourly || "Taux horaire"}</span>
+            <span className="text-xs opacity-80">{t.hourlyDesc || "Paiement à l'heure travaillée"}</span>
+          </Button>
+        </div>
+      </div>
+
+      {formData.budget.type === "hourly" ? (
+        <div>
+          <Label htmlFor="hourlyRate" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+            {t.hourlyRate || "Taux horaire"} *
+          </Label>
+          <div className="flex items-center gap-4 mt-2">
+            <div className="relative flex-1">
+              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+              <Input
+                id="hourlyRate"
+                type="number"
+                value={formData.budget.min || ""}
+                onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
+                placeholder="0"
+                className="pl-10 pr-20 border-purple-200 dark:border-purple-800"
+              />
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
+                {formData.budget.currency === 'EUR' ? '€' : 
+                 formData.budget.currency === 'USD' ? '$' : 
+                 formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
+                / heure
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            {t.hourlyHelp || "Indiquez votre taux horaire, le freelancer vous facturera le temps travaillé"}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <Label className="text-base font-semibold text-purple-700 dark:text-purple-300 mb-2 block">
+            {t.budgetRange || "Fourchette de budget"} *
+          </Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-slate-600 dark:text-slate-400 mb-1 block">
+                {t.budgetMin || "Budget minimum"}
+              </Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={formData.budget.min}
+                  onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
+                  className="pl-8 border-purple-200 dark:border-purple-800"
+                  placeholder="0"
+                />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
+                  {formData.budget.currency === 'EUR' ? '€' : 
+                   formData.budget.currency === 'USD' ? '$' : 
+                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
+                </span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-600 dark:text-slate-400 mb-1 block">
+                {t.budgetMax || "Budget maximum"}
+              </Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={formData.budget.max}
+                  onChange={(e) => handleBudgetChange("max", Number(e.target.value))}
+                  className="pl-8 border-purple-200 dark:border-purple-800"
+                  placeholder="0"
+                />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
+                  {formData.budget.currency === 'EUR' ? '€' : 
+                   formData.budget.currency === 'USD' ? '$' : 
+                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
+                </span>
+              </div>
+            </div>
+          </div>
+          {formData.budget.min > formData.budget.max && formData.budget.max > 0 && (
+            <p className="text-xs text-red-500 mt-2">{t.budgetMinMax || "Le budget minimum doit être inférieur au budget maximum"}</p>
+          )}
+        </div>
+      )}
+
+      {/* Le reste du contenu (deadline, milestones) reste identique */}
+      <div>
+        <Label htmlFor="deadline" className="text-base font-semibold text-purple-700 dark:text-purple-300">
+          {t.deadline || "Date limite"} *
+        </Label>
+        <div className="relative mt-2">
+          <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+          <Input
+            id="deadline"
+            type="date"
+            value={formData.deadline}
+            onChange={(e) => handleInputChange("deadline", e.target.value)}
+            className="pl-10 border-purple-200 dark:border-purple-800"
+            min={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+      </div>
+
+      {/* Milestones */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
+            {t.milestones || "Jalons de paiement"}
+          </Label>
+          <Button type="button" variant="outline" size="sm" onClick={addMilestone} className="border-purple-200 hover:bg-purple-50">
+            <Plus className="h-4 w-4 mr-2" />
+            {t.addMilestone || "Ajouter un jalon"}
+          </Button>
+        </div>
+
+        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+          {formData.milestones.map((milestone, index) => (
+            <div key={index} className="flex gap-4 items-start p-4 border border-purple-200 dark:border-purple-800 rounded-xl">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>{t.milestoneTitle || "Titre"}</Label>
+                  <Input
+                    value={milestone.title}
+                    onChange={(e) => updateMilestone(index, "title", e.target.value)}
+                    placeholder={t.milestoneTitlePlaceholder || "Ex: Maquettes finalisées"}
+                    className="border-purple-200 dark:border-purple-800"
+                  />
+                </div>
+                <div>
+                  <Label>{t.milestoneAmount || "Montant"}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={milestone.amount}
+                      onChange={(e) => updateMilestone(index, "amount", Number(e.target.value))}
+                      placeholder="0"
+                      className="flex-1 border-purple-200 dark:border-purple-800"
+                    />
+                    <div className="text-sm text-slate-600 flex items-center px-3 border rounded bg-slate-50 dark:bg-slate-800">
+                      {milestone.currency === 'EUR' ? '€' : 
+                       milestone.currency === 'USD' ? '$' : 
+                       milestone.currency === 'MGA' ? 'Ar' : milestone.currency}
+                    </div>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <Label>{t.milestoneDueDate || "Date d'échéance"}</Label>
+                  <Input
+                    type="date"
+                    value={milestone.dueDate}
+                    onChange={(e) => updateMilestone(index, "dueDate", e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="border-purple-200 dark:border-purple-800"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>{t.milestoneDescription || "Description"}</Label>
+                  <Textarea
+                    value={milestone.description}
+                    onChange={(e) => updateMilestone(index, "description", e.target.value)}
+                    placeholder={t.milestoneDescPlaceholder || "Description des livrables attendus..."}
+                    rows={2}
+                    className="border-purple-200 dark:border-purple-800"
+                  />
+                </div>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => removeMilestone(index)} className="text-red-500 hover:text-red-700">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-between pt-4">
+        <Button variant="outline" onClick={() => setCurrentStep(1)} className="border-purple-200 hover:bg-purple-50">
+          {t.back || "Retour"}
+        </Button>
+        <Button onClick={() => setCurrentStep(3)} disabled={!validateStep(2)} className="bg-purple-600 hover:bg-purple-700">
+          {t.continue || "Continuer"}
+        </Button>
+      </div>
+    </div>
+  )
 
   // Composant pour la catégorie avec scroll
   const CategorySelector = () => {
@@ -762,206 +1016,7 @@ const fileToBase64 = (file: File): Promise<string> => {
                 )}
 
                 {/* Step 2: Budget & Deadline */}
-                {currentStep === 2 && (
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                        {t.currencyLabel || "Devise"}
-                      </Label>
-                      <CurrencySelector
-                        value={formData.budget.currency}
-                        onChange={(currency) => handleBudgetChange("currency", currency)}
-                        className="mt-2"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-base font-semibold text-purple-700 dark:text-purple-300 mb-4 block">
-                        {t.budgetType || "Type de budget"}
-                      </Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Button
-                          type="button"
-                          variant={formData.budget.type === "fixed" ? "default" : "outline"}
-                          onClick={() => handleBudgetChange("type", "fixed")}
-                          className={`h-auto py-4 flex flex-col items-center gap-2 ${formData.budget.type === "fixed" ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
-                        >
-                          <DollarSign className="h-5 w-5" />
-                          <span>{t.fixed || "Prix fixe"}</span>
-                          <span className="text-xs opacity-80">{t.fixedDesc || "Budget défini à l'avance"}</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={formData.budget.type === "hourly" ? "default" : "outline"}
-                          onClick={() => handleBudgetChange("type", "hourly")}
-                          className={`h-auto py-4 flex flex-col items-center gap-2 ${formData.budget.type === "hourly" ? "bg-gradient-to-r from-purple-600 to-fuchsia-600" : "border-purple-200 dark:border-purple-800"}`}
-                        >
-                          <Clock className="h-5 w-5" />
-                          <span>{t.hourly || "Taux horaire"}</span>
-                          <span className="text-xs opacity-80">{t.hourlyDesc || "Paiement à l'heure travaillée"}</span>
-                        </Button>
-                      </div>
-                    </div>
-
-                    {formData.budget.type === "hourly" ? (
-                      <div>
-                        <Label htmlFor="hourlyRate" className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                          {t.hourlyRate || "Taux horaire"} *
-                        </Label>
-                        <div className="flex items-center gap-4 mt-2">
-                          <div className="relative flex-1">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-                            <Input
-                              id="hourlyRate"
-                              type="number"
-                              value={formData.budget.min || ""}
-                              onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
-                              placeholder="0"
-                              className="pl-10 pr-20 border-purple-200 dark:border-purple-800"
-                            />
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
-                              / heure
-                            </div>
-                          </div>
-                          <div className="text-sm text-slate-600">en {formData.budget.currency}</div>
-                        </div>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {t.hourlyHelp || "Indiquez votre taux horaire, le freelancer vous facturera le temps travaillé"}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="budgetMin" className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                            {t.budgetMin || "Budget minimum"} *
-                          </Label>
-                          <div className="relative mt-2">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-                            <Input
-                              id="budgetMin"
-                              type="number"
-                              value={formData.budget.min || ""}
-                              onChange={(e) => handleBudgetChange("min", Number(e.target.value))}
-                              placeholder="0"
-                              className="pl-10 border-purple-200 dark:border-purple-800"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="budgetMax" className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                            {t.budgetMax || "Budget maximum"} *
-                          </Label>
-                          <div className="relative mt-2">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-                            <Input
-                              id="budgetMax"
-                              type="number"
-                              value={formData.budget.max || ""}
-                              onChange={(e) => handleBudgetChange("max", Number(e.target.value))}
-                              placeholder="0"
-                              className="pl-10 border-purple-200 dark:border-purple-800"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <Label htmlFor="deadline" className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                        {t.deadline || "Date limite"} *
-                      </Label>
-                      <div className="relative mt-2">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-                        <Input
-                          id="deadline"
-                          type="date"
-                          value={formData.deadline}
-                          onChange={(e) => handleInputChange("deadline", e.target.value)}
-                          className="pl-10 border-purple-200 dark:border-purple-800"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Milestones */}
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <Label className="text-base font-semibold text-purple-700 dark:text-purple-300">
-                          {t.milestones || "Jalons de paiement"}
-                        </Label>
-                        <Button type="button" variant="outline" size="sm" onClick={addMilestone} className="border-purple-200 hover:bg-purple-50">
-                          <Plus className="h-4 w-4 mr-2" />
-                          {t.addMilestone || "Ajouter un jalon"}
-                        </Button>
-                      </div>
-
-                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                        {formData.milestones.map((milestone, index) => (
-                          <div key={index} className="flex gap-4 items-start p-4 border border-purple-200 dark:border-purple-800 rounded-xl">
-                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label>{t.milestoneTitle || "Titre"}</Label>
-                                <Input
-                                  value={milestone.title}
-                                  onChange={(e) => updateMilestone(index, "title", e.target.value)}
-                                  placeholder={t.milestoneTitlePlaceholder || "Ex: Maquettes finalisées"}
-                                  className="border-purple-200 dark:border-purple-800"
-                                />
-                              </div>
-                              <div>
-                                <Label>{t.milestoneAmount || "Montant"}</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    type="number"
-                                    value={milestone.amount}
-                                    onChange={(e) => updateMilestone(index, "amount", Number(e.target.value))}
-                                    placeholder="0"
-                                    className="flex-1 border-purple-200 dark:border-purple-800"
-                                  />
-                                  <div className="text-sm text-slate-600 flex items-center px-3 border rounded bg-slate-50 dark:bg-slate-800">
-                                    {milestone.currency}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="md:col-span-2">
-                                <Label>{t.milestoneDueDate || "Date d'échéance"}</Label>
-                                <Input
-                                  type="date"
-                                  value={milestone.dueDate}
-                                  onChange={(e) => updateMilestone(index, "dueDate", e.target.value)}
-                                  min={new Date().toISOString().split('T')[0]}
-                                  className="border-purple-200 dark:border-purple-800"
-                                />
-                              </div>
-                              <div className="md:col-span-2">
-                                <Label>{t.milestoneDescription || "Description"}</Label>
-                                <Textarea
-                                  value={milestone.description}
-                                  onChange={(e) => updateMilestone(index, "description", e.target.value)}
-                                  placeholder={t.milestoneDescPlaceholder || "Description des livrables attendus..."}
-                                  rows={2}
-                                  className="border-purple-200 dark:border-purple-800"
-                                />
-                              </div>
-                            </div>
-                            <Button type="button" variant="ghost" size="sm" onClick={() => removeMilestone(index)} className="text-red-500 hover:text-red-700">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between pt-4">
-                      <Button variant="outline" onClick={() => setCurrentStep(1)} className="border-purple-200 hover:bg-purple-50">
-                        {t.back || "Retour"}
-                      </Button>
-                      <Button onClick={() => setCurrentStep(3)} disabled={!validateStep(2)} className="bg-purple-600 hover:bg-purple-700">
-                        {t.continue || "Continuer"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                {currentStep === 2 && renderBudgetStep()}
 
                 {/* Step 3: Skills */}
                 {currentStep === 3 && (
@@ -1227,53 +1282,53 @@ const fileToBase64 = (file: File): Promise<string> => {
                       {showPreview ? t.hidePreview || "Masquer l'aperçu" : t.showPreview || "Afficher l'aperçu"}
                     </Button>
 
-                    {showPreview && (
-                      <Card className="border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/20">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg text-purple-700 dark:text-purple-300">
-                            {t.preview || "Aperçu du projet"}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.title || "Titre"}</div>
-                              <div>{formData.title || "-"}</div>
-                            </div>
-                            <div>
-                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.category || "Catégorie"}</div>
-                              <div>{formData.category || "-"}</div>
-                            </div>
-                            <div>
-                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.budget || "Budget"}</div>
-                              <div>{formData.budget.min > 0 ? `${formData.budget.min} - ${formData.budget.max} ${formData.budget.currency} (${formData.budget.type === "fixed" ? "Fixe" : "Horaire"})` : "-"}</div>
-                            </div>
-                            <div>
-                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.deadline || "Date limite"}</div>
-                              <div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "-"}</div>
-                            </div>
-                            <div className="col-span-2">
-                              <div className="font-medium text-purple-600 dark:text-purple-400">{t.skills || "Compétences"}</div>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {formData.skills.map(s => <Badge key={s} variant="secondary" className="bg-purple-100">{s}</Badge>)}
-                              </div>
-                            </div>
-                            {uploadedFiles.length > 0 && (
-                              <div className="col-span-2">
-                                <div className="font-medium text-purple-600 dark:text-purple-400">{t.attachments || "Fichiers joints"}</div>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  {uploadedFiles.map((f, i) => (
-                                    <Badge key={i} variant="outline" className="text-xs">
-                                      {f.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                   {showPreview && (
+    <Card className="border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg text-purple-700 dark:text-purple-300">
+          {t.preview || "Aperçu du projet"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="font-medium text-purple-600 dark:text-purple-400">{t.title || "Titre"}</div>
+            <div>{formData.title || "-"}</div>
+          </div>
+          <div>
+            <div className="font-medium text-purple-600 dark:text-purple-400">{t.category || "Catégorie"}</div>
+            <div>{formData.category || "-"}</div>
+          </div>
+          <div>
+            <div className="font-medium text-purple-600 dark:text-purple-400">{t.budget || "Budget"}</div>
+            <div>{formatBudgetPreview()}</div>
+          </div>
+          <div>
+            <div className="font-medium text-purple-600 dark:text-purple-400">{t.deadline || "Date limite"}</div>
+            <div>{formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "-"}</div>
+          </div>
+          <div className="col-span-2">
+            <div className="font-medium text-purple-600 dark:text-purple-400">{t.skills || "Compétences"}</div>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {formData.skills.map(s => <Badge key={s} variant="secondary" className="bg-purple-100">{s}</Badge>)}
+            </div>
+          </div>
+          {uploadedFiles.length > 0 && (
+            <div className="col-span-2">
+              <div className="font-medium text-purple-600 dark:text-purple-400">{t.attachments || "Fichiers joints"}</div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {uploadedFiles.map((f, i) => (
+                  <Badge key={i} variant="outline" className="text-xs">
+                    {f.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )}
 
                     <div className="flex justify-between pt-4">
                       <Button variant="outline" onClick={() => setCurrentStep(3)} className="border-purple-200 hover:bg-purple-50">
