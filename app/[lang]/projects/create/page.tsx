@@ -500,7 +500,7 @@ const formatBudgetPreview = () => {
           </Label>
           <div className="flex items-center gap-4 mt-2">
             <div className="relative flex-1">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+
               <Input
                 id="hourlyRate"
                 type="number"
@@ -542,7 +542,7 @@ const formatBudgetPreview = () => {
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
                   {formData.budget.currency === 'EUR' ? '€' : 
                    formData.budget.currency === 'USD' ? '$' : 
-                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
+                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency} : 
                 </span>
               </div>
             </div>
@@ -561,7 +561,7 @@ const formatBudgetPreview = () => {
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">
                   {formData.budget.currency === 'EUR' ? '€' : 
                    formData.budget.currency === 'USD' ? '$' : 
-                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency}
+                   formData.budget.currency === 'MGA' ? 'Ar' : formData.budget.currency} : 
                 </span>
               </div>
             </div>
