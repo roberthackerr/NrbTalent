@@ -1,7 +1,7 @@
 // app/[lang]/projects/create/page.tsx
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -419,7 +419,18 @@ const fileToBase64 = (file: File): Promise<string> => {
   }
 
   // Composant pour la catégorie avec scroll
-  const CategorySelector = () => (
+  const CategorySelector = () => {
+  const [localSearch, setLocalSearch] = useState("")
+  
+  const filteredCategories = useMemo(() => {
+    if (!localSearch.trim()) return categories
+    const searchLower = localSearch.toLowerCase()
+    return categories.filter(cat => 
+      cat.name.toLowerCase().includes(searchLower)
+    )
+  }, [categories, localSearch])
+
+  return (
     <div className="relative">
       <Button
         type="button"
@@ -431,64 +442,87 @@ const fileToBase64 = (file: File): Promise<string> => {
         <ChevronDown className="h-4 w-4 opacity-50" />
       </Button>
 
-     <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-  <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0">
-    <DialogHeader className="p-6 pb-4 border-b border-purple-200 dark:border-purple-800">
-      <DialogTitle className="text-purple-700 dark:text-purple-300">
-        {t.selectCategory || "Sélectionnez une catégorie"}
-      </DialogTitle>
-    </DialogHeader>
+      <Dialog open={showCategoryDialog} onOpenChange={(open) => {
+        setShowCategoryDialog(open)
+        if (!open) setLocalSearch("")
+      }}>
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-0">
+          <DialogHeader className="p-5 pb-3 border-b border-purple-200 dark:border-purple-800">
+            <DialogTitle className="text-purple-700 dark:text-purple-300">
+              {t.selectCategory || "Sélectionnez une catégorie"}
+            </DialogTitle>
+          </DialogHeader>
 
-    <div className="p-6 pt-4 pb-2">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-        <Input
-          placeholder={t.searchCategory || "Rechercher une catégorie..."}
-          value={categorySearch}
-          onChange={(e) => {
-            const value = e.target.value
-            setCategorySearch(value)
-            // Pas besoin de setTimeout, le filtering se fait via useEffect ou useMemo
-          }}
-          className="pl-10 border-purple-200 dark:border-purple-800"
-        />
-      </div>
-    </div>
-
-    <ScrollArea className="flex-1 px-6 pb-6">
-      <div className="space-y-2">
-        {filteredCategories.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">
-            {t.noCategories || "Aucune catégorie trouvée"}
+          <div className="p-5 pt-3 pb-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+              <Input
+                placeholder={t.searchCategory || "Rechercher une catégorie..."}
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="pl-10 border-purple-200 dark:border-purple-800 focus:border-purple-500 focus:ring-purple-500"
+                autoFocus
+              />
+            </div>
+            {localSearch && (
+              <p className="text-xs text-purple-500 mt-2">
+                {filteredCategories.length} résultat(s) trouvé(s)
+              </p>
+            )}
           </div>
-        ) : (
-          filteredCategories.map((category, index) => (
-            <Button
-              key={category.name}
-              type="button"
-              variant="ghost"
-              className="w-full justify-between hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all duration-200 group"
-              onClick={() => {
-                handleInputChange("category", category.name)
-                setShowCategoryDialog(false)
-                setCategorySearch("")
-              }}
-            >
-              <span className="flex items-center gap-2">
-                <span>{category.name}</span>
-              </span>
-              <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                {category.count}
-              </Badge>
-            </Button>
-          ))
-        )}
-      </div>
-    </ScrollArea>
-  </DialogContent>
-</Dialog>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-5">
+            <div className="space-y-2">
+              {filteredCategories.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-3">
+                    <Search className="h-8 w-8 text-purple-500" />
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">
+                    {t.noCategories || "Aucune catégorie trouvée"}
+                  </p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+                    {t.tryDifferentSearch || "Essayez avec d'autres mots-clés"}
+                  </p>
+                </div>
+              ) : (
+                filteredCategories.map((category) => (
+                  <Button
+                    key={category.name}
+                    type="button"
+                    variant="ghost"
+                    className="w-full justify-between hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all duration-200 group"
+                    onClick={() => {
+                      handleInputChange("category", category.name)
+                      setShowCategoryDialog(false)
+                      setLocalSearch("")
+                    }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg group-hover:scale-110 transition-transform">
+   
+                      </span>
+                      <span>{category.name}</span>
+                    </span>
+                    <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                      {category.count}
+                    </Badge>
+                  </Button>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="p-3 pt-2 border-t border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/10 rounded-b-lg">
+            <p className="text-xs text-center text-purple-600 dark:text-purple-400">
+              💡 {t.clickToSelect || "Cliquez sur une catégorie pour la sélectionner"}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950 py-8">
