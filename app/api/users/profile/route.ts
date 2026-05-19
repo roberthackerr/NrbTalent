@@ -1,4 +1,4 @@
-// app/api/users/profile/route.ts (version corrigée sans groupsAdded)
+// app/api/users/profile/route.ts
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -9,8 +9,7 @@ import { toUserResponseDTO } from "@/lib/models/user"
 
 // Configuration des groupes par défaut
 const DEFAULT_GROUP_SLUGS = [
-  "nrbtalents",  // Votre groupe existant
-  // Ajoutez d'autres slugs ici
+  "nrbtalents",
 ]
 
 // Slugs des groupes basés sur le rôle
@@ -33,7 +32,6 @@ async function addUserToDefaultGroups(
     // Vérifier si l'utilisateur est déjà membre d'au moins un groupe
     const existingMembership = await groupMembersCollection.findOne({ userId })
     
-    // Si l'utilisateur est déjà membre, ne pas ajouter
     if (existingMembership) {
       console.log(`ℹ️ Utilisateur ${userId} déjà membre d'un groupe, skip`)
       return
@@ -71,7 +69,6 @@ async function addUserToDefaultGroups(
           updatedAt: new Date()
         })
         
-        // Mettre à jour les statistiques du groupe
         await groupsCollection.updateOne(
           { _id: group._id },
           { 
@@ -138,8 +135,7 @@ async function addUserToDefaultGroups(
     }
     
     // 3. Envoyer une notification de bienvenue
-    const addedGroups = [] // Pour la notification uniquement
-    // Récupérer les groupes ajoutés pour la notification
+    const addedGroups = []
     for (const slug of DEFAULT_GROUP_SLUGS) {
       const group = await groupsCollection.findOne({ slug })
       if (group) addedGroups.push(group.name)
@@ -220,14 +216,25 @@ export async function GET() {
     const db = await getDatabase()
     const userId = new ObjectId((session.user as any).id)
     
+    // ✅ Vérifier que l'utilisateur n'est pas désactivé
     const user = await db.collection<User>("users").findOne(
-      { _id: userId },
+      { 
+        _id: userId,
+        $or: [
+          { isDeactivated: { $ne: true } },
+          { isDeactivated: { $exists: false } }
+        ],
+        $or: [
+          { isActive: { $ne: false } },
+          { isActive: { $exists: false } }
+        ]
+      },
       { projection: { password: 0 } }
     )
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" }, 
+        { error: "User not found or account deactivated" }, 
         { status: 404 }
       )
     }
@@ -264,6 +271,26 @@ export async function PATCH(request: Request) {
       return NextResponse.json(
         { error: "Section is required" }, 
         { status: 400 }
+      )
+    }
+
+    // ✅ Vérifier que l'utilisateur n'est pas désactivé avant la mise à jour
+    const existingUser = await db.collection<User>("users").findOne({
+      _id: userId,
+      $or: [
+        { isDeactivated: { $ne: true } },
+        { isDeactivated: { $exists: false } }
+      ],
+      $or: [
+        { isActive: { $ne: false } },
+        { isActive: { $exists: false } }
+      ]
+    })
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { error: "Account deactivated. Cannot update profile." }, 
+        { status: 403 }
       )
     }
 
@@ -518,11 +545,9 @@ export async function PATCH(request: Request) {
     // 📌 AJOUTER L'UTILISATEUR AUX GROUPES (si pas encore membre)
     // ============================================
     try {
-      // Vérifier si l'utilisateur est déjà membre d'un groupe
       const groupMembersCollection = db.collection("group_members")
       const existingMembership = await groupMembersCollection.findOne({ userId })
       
-      // Si l'utilisateur n'est membre d'aucun groupe, l'ajouter
       if (!existingMembership) {
         const userLang = await getUserLanguage(db, userId)
         const userRole = (await db.collection("users").findOne({ _id: userId }))?.role || "freelance"
