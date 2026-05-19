@@ -58,6 +58,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
 import Image from "next/image"
+import { ProjectCreationHelp } from "@/components/projects/ProjectCreationHelp"
 
 interface UploadedFile {
   url: string
@@ -500,7 +501,6 @@ const formatBudgetPreview = () => {
           </Label>
           <div className="flex items-center gap-4 mt-2">
             <div className="relative flex-1">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
               <Input
                 id="hourlyRate"
                 type="number"
@@ -1354,6 +1354,17 @@ const formatBudgetPreview = () => {
           </div>
         </div>
       </div>
+      <ProjectCreationHelp 
+  dict={dict} 
+  lang={lang} 
+  currentStep={currentStep}
+  onTipClick={(tip) => {
+    toast.info(tip, {
+      description: "Conseil pour améliorer votre projet",
+      duration: 4000
+    })
+  }}
+/>
     </div>
   )
 }
