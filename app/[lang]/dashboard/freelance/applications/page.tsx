@@ -117,13 +117,11 @@ export default function MyApplicationsPage() {
 
   // Charger le dictionnaire
   useEffect(() => {
-    console.log('🔤 Loading dictionary for language:', lang)
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
   // Fonctions avec useCallback pour éviter les re-créations
   const fetchApplications = useCallback(async () => {
-    console.log('🔄 Fetching applications with params:', { currentPage, searchTerm, statusFilter, sortBy, sortOrder })
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -135,24 +133,18 @@ export default function MyApplicationsPage() {
         sortOrder,
       })
 
-      const url = `/api/applications/my?${params}`
-      console.log('📡 API URL:', url)
-      
-      const response = await fetch(url)
-      console.log('📡 Response status:', response.status)
+      const response = await fetch(`/api/applications/my?${params}`)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Applications received:', data.applications?.length)
         setApplications(data.applications || [])
         setTotalPages(data.pagination?.totalPages || 1)
       } else {
         const error = await response.json()
-        console.error('❌ API error:', error)
         throw new Error(error.error || "Failed to fetch applications")
       }
     } catch (error) {
-      console.error("❌ Error fetching applications:", error)
+      console.error("Error fetching applications:", error)
       toast.error(dict?.applications?.errors?.fetchFailed || "Erreur lors du chargement de vos candidatures")
     } finally {
       setLoading(false)
@@ -160,12 +152,10 @@ export default function MyApplicationsPage() {
   }, [currentPage, searchTerm, statusFilter, sortBy, sortOrder, itemsPerPage, dict])
 
   const fetchStats = useCallback(async () => {
-    console.log('📊 Fetching stats...')
     try {
       const response = await fetch("/api/applications/my/stats")
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Stats received:', data.stats)
         setStats(data.stats)
       }
     } catch (error) {
@@ -175,14 +165,10 @@ export default function MyApplicationsPage() {
 
   // Effet principal - attend que le dictionnaire ET la session soient prêts
   useEffect(() => {
-    console.log('📢 Effect triggered - dict:', !!dict, 'session status:', status, 'session user:', !!session?.user)
-    
     if (dict && session?.user) {
-      console.log('✅ Both dict and session ready, fetching data...')
       fetchApplications()
       fetchStats()
     } else if (status === 'unauthenticated') {
-      console.log('🔐 User not authenticated')
       setLoading(false)
     }
   }, [dict, session, status, fetchApplications, fetchStats])
@@ -190,7 +176,6 @@ export default function MyApplicationsPage() {
   // Effet pour les changements de filtres
   useEffect(() => {
     if (dict && session?.user) {
-      console.log('🔄 Filters changed, refetching...')
       fetchApplications()
     }
   }, [searchTerm, statusFilter, sortBy, sortOrder, currentPage, dict, session, fetchApplications])
@@ -282,7 +267,7 @@ export default function MyApplicationsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
+    <div className="relative min-h-screen bg-gradient-to-br from-purple-50 via-fuchsia-50 to-pink-50 dark:from-purple-950 dark:via-fuchsia-950 dark:to-pink-950">
       {/* Sidebar */}
       <DashboardSidebar 
         role="freelance" 
@@ -290,8 +275,8 @@ export default function MyApplicationsPage() {
         onMobileClose={() => setIsSidebarOpen(false)}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Main Content - avec marge gauche sur desktop */}
+      <div className="md:ml-72 min-h-screen transition-all duration-300">
         {/* Mobile menu button */}
         <div className="md:hidden fixed top-4 left-4 z-50">
           <Button
@@ -305,7 +290,7 @@ export default function MyApplicationsPage() {
         </div>
 
         <div className="p-4 md:p-6 lg:p-8">
-          {/* Header - reste identique */}
+          {/* Header */}
           <div className="mb-6 md:mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -332,10 +317,9 @@ export default function MyApplicationsPage() {
             </div>
           </div>
 
-          {/* Statistics Cards - reste identique */}
+          {/* Statistics Cards */}
           {stats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-              {/* ... contenu identique ... */}
               <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-lg shadow-purple-500/10">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between">
@@ -616,7 +600,7 @@ export default function MyApplicationsPage() {
         </div>
       </div>
 
-      {/* Application Details Dialog - reste identique */}
+      {/* Application Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-purple-200 dark:border-purple-800">
           {selectedApplication && (
