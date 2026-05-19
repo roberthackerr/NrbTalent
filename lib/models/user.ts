@@ -185,7 +185,7 @@ export interface UserPreferences {
   /** Newsletter subscription */
   newsletter: boolean
   /** Language preference */
-  language: 'fr' | 'en' | 'es' | 'mg' // 👈 AJOUTÉ 'es'
+  language: 'fr' | 'en' | 'mg'
   /** Theme preference */
   theme: 'light' | 'dark' | 'system'
   /** Project alerts */
@@ -203,19 +203,13 @@ export interface UserPreferences {
  * This represents the complete user profile
  */
 export interface User {
-  onboardingRoleCompleted?: boolean
-      language?: 'fr' | 'en' | 'mg'
-      preferences?: {
-        language?: 'fr' | 'en' | 'mg'
-        theme?: 'light' | 'dark' | 'system'
-        notifications?: any
-      }
   // ========== SYSTEM FIELDS ==========
   /** MongoDB ObjectId (automatically generated) */
   _id: ObjectId
   /** Creation timestamp (automatically set) */
   createdAt: Date
-  coverImage:any
+  /** Cover image URL */
+  coverImage?: any
   /** Last update timestamp (automatically updated) */
   updatedAt: Date
 
@@ -229,9 +223,9 @@ export interface User {
   /** Email verification status */
   emailVerified?: Date | null
   /** Email verification token (for unverified users) */
-  verificationToken?: string // 👈 AJOUTÉ
+  verificationToken?: string
   /** Email verification token expiry */
-  verificationTokenExpiry?: Date // 👈 AJOUTÉ
+  verificationTokenExpiry?: Date
   /** User role - determines platform permissions */
   role: UserRole
   /** Profile picture URL */
@@ -247,6 +241,8 @@ export interface User {
 
   // ========== PROFESSIONAL INFORMATION ==========
   /** Current job title */
+  title?: string
+  /** Job title (alias) */
   jobTitle?: string
   /** Hourly rate in the default currency */
   hourlyRate?: number
@@ -288,6 +284,16 @@ export interface User {
   // ========== STATISTICS & METRICS ==========
   /** Average rating from clients */
   rating?: number
+  /** Statistics object */
+  statistics?: {
+    rating: number
+    completedProjects: number
+    responseRate: number
+    successRate?: number
+    clientSatisfaction?: number
+    totalSpent?: number
+    totalProjects?: number
+  }
   /** Number of completed projects */
   completedProjects: number
   /** Total earnings across all projects */
@@ -317,15 +323,36 @@ export interface User {
   phoneVerified?: boolean
   /** Whether profile is complete */
   onboardingCompleted: boolean
+  /** Whether onboarding role is completed */
+  onboardingRoleCompleted?: boolean
   /** Account status (active, suspended, banned) */
   status?: 'active' | 'suspended' | 'banned'
+  /** Whether account is active */
+  isActive?: boolean
+  /** Whether account is deactivated (temporary) */
+  isDeactivated?: boolean
+  /** Date when account was deactivated */
+  deactivatedAt?: Date
+  /** Reason for deactivation */
+  deactivationReason?: string
+  /** Reactivation token */
+  reactivationToken?: string
+  /** Reactivation token expiry */
+  reactivationTokenExpiry?: Date
+  /** Date when account was reactivated */
+  reactivatedAt?: Date
   /** Last login timestamp */
   lastLogin?: Date
-    verificationCode?:any
-verificationCodeExpiry?: any
+  /** Verification code for 2FA */
+  verificationCode?: any
+  /** Verification code expiry */
+  verificationCodeExpiry?: any
+
   // ========== PREFERENCES ==========
   /** User preferences */
- // preferences?: UserPreferences
+  preferences?: UserPreferences
+  /** User language */
+  language?: 'fr' | 'en' | 'mg'
 
   // ========== PAYMENT INFORMATION ==========
   /** Stripe customer ID (for payments) */
@@ -334,6 +361,14 @@ verificationCodeExpiry?: any
   stripeAccountId?: string
   /** Default payment method */
   defaultPaymentMethod?: string
+  /** Subscription plan */
+  subscriptionPlan?: string
+  /** Subscription status */
+  subscriptionStatus?: string
+  /** Subscription end date */
+  subscriptionEndDate?: Date
+  /** Platform fee percentage */
+  platformFee?: number
 
   // ========== NOTIFICATIONS ==========
   /** List of notifications */
@@ -375,8 +410,7 @@ export interface CreateUserDTO {
   password?: string
   role?: UserRole
   avatar?: string
-  lang?: string // 👈 AJOUTÉ pour la langue
-
+  lang?: string
 }
 
 // ============================================
@@ -413,7 +447,7 @@ export interface UpdateUserDTO {
  */
 export interface UserResponseDTO {
   id: string
-  coverImage:any
+  coverImage?: any
   name: string
   email: string
   role: UserRole
@@ -421,6 +455,7 @@ export interface UserResponseDTO {
   bio?: string
   location?: string
   jobTitle?: string
+  title?: string
   hourlyRate?: number
   currency?: string
   skills: Skill[]
@@ -431,17 +466,31 @@ export interface UserResponseDTO {
   education?: Education[]
   socialLinks?: SocialLinks
   rating?: number
+  statistics?: {
+    rating: number
+    completedProjects: number
+    responseRate: number
+    successRate?: number
+  }
   completedProjects: number
   totalEarnings: number
   responseTime?: number
   badges?: User['badges']
   verified: boolean
-  emailVerified?: boolean // 👈 AJOUTÉ
+  emailVerified?: boolean
   identityVerified?: boolean
   onboardingCompleted: boolean
+  onboardingRoleCompleted?: boolean
+  isActive?: boolean
+  isDeactivated?: boolean
   preferences?: UserPreferences
+  language?: 'fr' | 'en' | 'mg'
   createdAt: Date
   updatedAt: Date
+  subscriptionPlan?: string
+  subscriptionStatus?: string
+  subscriptionEndDate?: Date
+  platformFee?: number
 }
 
 // ============================================
@@ -453,12 +502,6 @@ export interface UserResponseDTO {
  * Stored in separate collection or embedded
  */
 export interface VerificationToken {
-    language?: 'fr' | 'en' | 'mg'  // 👈 AJOUTER CETTE PROPRIÉTÉ
-  preferences?: {
-    language?: 'fr' | 'en' | 'mg'  // 👈 AUSSI DANS LES PRÉFÉRENCES
-    theme?: 'light' | 'dark' | 'system'
-    notifications?: any
-  }
   /** Unique token identifier */
   _id: ObjectId
   /** User ID */
@@ -468,13 +511,13 @@ export interface VerificationToken {
   /** Verification token */
   token: string
   /** Token type (email_verification, password_reset, etc.) */
-  type: 'email_verification' | 'password_reset'
+  type: 'email_verification' | 'password_reset' | 'account_reactivation'
   /** Expiry date */
   expiresAt: Date
   /** Creation date */
   createdAt: Date
   /** Language preference for emails */
-  lang?: string // 👈 AJOUTÉ
+  lang?: string
 }
 
 // ============================================
@@ -488,14 +531,15 @@ export interface VerificationToken {
 export function toUserResponseDTO(user: User): UserResponseDTO {
   return {
     id: user._id.toString(),
-    coverImage:user.coverImage,
+    coverImage: user.coverImage,
     name: user.name,
     email: user.email,
     role: user.role,
     avatar: user.avatar,
     bio: user.bio,
     location: user.location,
-    jobTitle: user.jobTitle,
+    jobTitle: user.jobTitle || user.title,
+    title: user.title || user.jobTitle,
     hourlyRate: user.hourlyRate,
     currency: user.currency,
     skills: user.skills || [],
@@ -505,19 +549,32 @@ export function toUserResponseDTO(user: User): UserResponseDTO {
     experience: user.experience || [],
     education: user.education,
     socialLinks: user.socialLinks,
-    rating: user.rating,
+    rating: user.rating || user.statistics?.rating || 0,
+    statistics: user.statistics || {
+      rating: 0,
+      completedProjects: 0,
+      responseRate: 0,
+      successRate: 0
+    },
     completedProjects: user.completedProjects || 0,
     totalEarnings: user.totalEarnings || 0,
     responseTime: user.responseTime,
     badges: user.badges,
     verified: user.verified || false,
-    emailVerified: !!user.emailVerified, // 👈 AJOUTÉ
+    emailVerified: !!user.emailVerified,
     identityVerified: user.identityVerified,
     onboardingCompleted: user.onboardingCompleted || false,
+    onboardingRoleCompleted: user.onboardingRoleCompleted || false,
+    isActive: user.isActive !== false,
+    isDeactivated: user.isDeactivated === true,
     preferences: user.preferences,
+    language: user.language || user.preferences?.language || 'fr',
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
-    language:user.language
+    subscriptionPlan: user.subscriptionPlan,
+    subscriptionStatus: user.subscriptionStatus,
+    subscriptionEndDate: user.subscriptionEndDate,
+    platformFee: user.platformFee
   }
 }
 
@@ -540,11 +597,14 @@ export function createNewUser(data: CreateUserDTO): Omit<User, '_id'> {
     completedProjects: 0,
     totalEarnings: 0,
     verified: false,
-    emailVerified: null, // 👈 AJOUTÉ (pas vérifié)
+    emailVerified: null,
     onboardingCompleted: false,
+    onboardingRoleCompleted: false,
+    isActive: true,
+    isDeactivated: false,
     createdAt: now,
     updatedAt: now,
-    unreadNotifications: 0 // 👈 AJOUTÉ valeur par défaut
+    unreadNotifications: 0
   }
 }
 
@@ -568,8 +628,83 @@ export function generateVerificationToken(userId: ObjectId, email: string, lang:
 }
 
 /**
+ * Generate a reactivation token for deactivated accounts
+ */
+export function generateReactivationToken(userId: ObjectId, email: string, lang: string = 'fr'): Omit<VerificationToken, '_id'> {
+  const crypto = require('crypto')
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + 24 * 3600000) // 24 heures
+  
+  return {
+    userId,
+    email,
+    token,
+    type: 'account_reactivation',
+    expiresAt,
+    createdAt: new Date(),
+    lang
+  }
+}
+
+/**
  * Check if a verification token is valid
  */
 export function isTokenValid(token: VerificationToken): boolean {
   return token.expiresAt > new Date()
+}
+
+/**
+ * Check if a user account is active and not deactivated
+ */
+export function isUserActive(user: User): boolean {
+  return user.isActive !== false && user.isDeactivated !== true
+}
+
+/**
+ * Get user status message
+ */
+export function getUserStatusMessage(user: User, lang: string = 'fr'): string {
+  const messages = {
+    fr: {
+      active: "Compte actif",
+      deactivated: "Compte désactivé",
+      inactive: "Compte inactif",
+      suspended: "Compte suspendu"
+    },
+    en: {
+      active: "Account active",
+      deactivated: "Account deactivated",
+      inactive: "Account inactive",
+      suspended: "Account suspended"
+    },
+    mg: {
+      active: "Kaonty mavitrika",
+      deactivated: "Kaonty nesorina",
+      inactive: "Kaonty tsy mavitrika",
+      suspended: "Kaonty naato"
+    }
+  }
+  
+  const t = messages[lang as keyof typeof messages] || messages.fr
+  
+  if (user.isDeactivated === true) return t.deactivated
+  if (user.isActive === false) return t.inactive
+  if (user.status === 'suspended') return t.suspended
+  return t.active
+}
+
+/**
+ * Check if user can perform actions based on account status
+ */
+export function canUserPerformAction(user: User): { allowed: boolean; reason?: string } {
+  if (user.isDeactivated === true) {
+    return { allowed: false, reason: "Account deactivated. Please reactivate your account." }
+  }
+  if (user.isActive === false) {
+    return { allowed: false, reason: "Account inactive. Please contact support." }
+  }
+  if (user.status === 'suspended') {
+    return { allowed: false, reason: "Account suspended. Please contact support." }
+  }
+  return { allowed: true }
 }
