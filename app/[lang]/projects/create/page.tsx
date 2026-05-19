@@ -431,54 +431,62 @@ const fileToBase64 = (file: File): Promise<string> => {
         <ChevronDown className="h-4 w-4 opacity-50" />
       </Button>
 
-      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="text-purple-700 dark:text-purple-300">
-              {t.selectCategory || "Sélectionnez une catégorie"}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
-            <Input
-              placeholder={t.searchCategory || "Rechercher une catégorie..."}
-              value={categorySearch}
-              onChange={(e) => setCategorySearch(e.target.value)}
-              className="pl-10 border-purple-200 dark:border-purple-800"
-            />
+     <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+  <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0">
+    <DialogHeader className="p-6 pb-4 border-b border-purple-200 dark:border-purple-800">
+      <DialogTitle className="text-purple-700 dark:text-purple-300">
+        {t.selectCategory || "Sélectionnez une catégorie"}
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="p-6 pt-4 pb-2">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
+        <Input
+          placeholder={t.searchCategory || "Rechercher une catégorie..."}
+          value={categorySearch}
+          onChange={(e) => {
+            const value = e.target.value
+            setCategorySearch(value)
+            // Pas besoin de setTimeout, le filtering se fait via useEffect ou useMemo
+          }}
+          className="pl-10 border-purple-200 dark:border-purple-800"
+        />
+      </div>
+    </div>
+
+    <ScrollArea className="flex-1 px-6 pb-6">
+      <div className="space-y-2">
+        {filteredCategories.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">
+            {t.noCategories || "Aucune catégorie trouvée"}
           </div>
-          
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
-              {filteredCategories.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  {t.noCategories || "Aucune catégorie trouvée"}
-                </div>
-              ) : (
-                filteredCategories.map((category) => (
-                  <Button
-                    key={category.name}
-                    type="button"
-                    variant="ghost"
-                    className="w-full justify-between hover:bg-purple-50 dark:hover:bg-purple-950/30"
-                    onClick={() => {
-                      handleInputChange("category", category.name)
-                      setShowCategoryDialog(false)
-                      setCategorySearch("")
-                    }}
-                  >
-                    <span>{category.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {category.count}
-                    </Badge>
-                  </Button>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+        ) : (
+          filteredCategories.map((category, index) => (
+            <Button
+              key={category.name}
+              type="button"
+              variant="ghost"
+              className="w-full justify-between hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all duration-200 group"
+              onClick={() => {
+                handleInputChange("category", category.name)
+                setShowCategoryDialog(false)
+                setCategorySearch("")
+              }}
+            >
+              <span className="flex items-center gap-2">
+                <span>{category.name}</span>
+              </span>
+              <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                {category.count}
+              </Badge>
+            </Button>
+          ))
+        )}
+      </div>
+    </ScrollArea>
+  </DialogContent>
+</Dialog>
     </div>
   )
 
