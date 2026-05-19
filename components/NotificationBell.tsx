@@ -1,4 +1,4 @@
-// components/NotificationBell.tsx - VERSION AVEC SCROLL OPTIMISÉ
+// components/NotificationBell.tsx
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -55,7 +55,7 @@ const getMessages = (lang: Locale) => {
       unreadPlural: "non lus",
       refresh: "Actualiser",
       settings: "Paramètres",
-      search: "Rechercher des notifications...",
+      search: "Rechercher...",
       all: "Toutes",
       unreadOnly: "Non lues",
       markAllRead: "Tout lire",
@@ -68,15 +68,15 @@ const getMessages = (lang: Locale) => {
       noNotifications: "Aucune notification",
       noResultsDesc: "Aucune notification ne correspond à votre recherche.",
       allCaughtUp: "Toutes vos notifications sont à jour.",
-      clearSearch: "Effacer la recherche",
+      clearSearch: "Effacer",
       urgent: "URGENT",
-      markAsRead: "Marquer comme lu",
-      markAsUnread: "Marquer comme non lu",
+      markAsRead: "Lire",
+      markAsUnread: "Non lu",
       view: "Voir",
       shortcuts: "Raccourcis:",
       allRead: "Tout lire",
       open: "Ouvrir",
-      notificationCenter: "Centre de notifications",
+      notificationCenter: "Centre",
       others: "autres",
       justNow: "À l'instant",
       minAgo: "min",
@@ -89,10 +89,10 @@ const getMessages = (lang: Locale) => {
       unreadPlural: "unread",
       refresh: "Refresh",
       settings: "Settings",
-      search: "Search notifications...",
+      search: "Search...",
       all: "All",
       unreadOnly: "Unread",
-      markAllRead: "Mark all as read",
+      markAllRead: "Mark all read",
       quickAccess: "Quick access",
       messages: "Messages",
       orders: "Orders",
@@ -102,15 +102,15 @@ const getMessages = (lang: Locale) => {
       noNotifications: "No notifications",
       noResultsDesc: "No notifications match your search.",
       allCaughtUp: "All caught up!",
-      clearSearch: "Clear search",
+      clearSearch: "Clear",
       urgent: "URGENT",
-      markAsRead: "Mark as read",
-      markAsUnread: "Mark as unread",
+      markAsRead: "Read",
+      markAsUnread: "Unread",
       view: "View",
       shortcuts: "Shortcuts:",
       allRead: "Mark all read",
       open: "Open",
-      notificationCenter: "Notification center",
+      notificationCenter: "Center",
       others: "more",
       justNow: "Just now",
       minAgo: "min ago",
@@ -118,33 +118,33 @@ const getMessages = (lang: Locale) => {
       dayAgo: "d ago"
     },
     mg: {
-      notifications: "Fampandrenesana",
+      notifications: "Fampandre",
       unread: "tsy novakiana",
       unreadPlural: "tsy novakiana",
       refresh: "Havaozina",
       settings: "Fandrindrana",
-      search: "Mitady fampandrenesana...",
+      search: "Hikaroka...",
       all: "Rehetra",
       unreadOnly: "Tsy novakiana",
       markAllRead: "Vakio daholo",
-      quickAccess: "Fidirana haingana",
+      quickAccess: "Fidirana",
       messages: "Hafatra",
       orders: "Baiko",
       projects: "Tetikasa",
       reviews: "Hevitra",
-      noResults: "Tsy misy valiny",
-      noNotifications: "Tsy misy fampandrenesana",
-      noResultsDesc: "Tsy misy fampandrenesana mifanentana amin'ny fikarohanao.",
-      allCaughtUp: "Voavakiana daholo ny fampandrenesanao!",
-      clearSearch: "Esory ny fikarohana",
+      noResults: "Tsy misy",
+      noNotifications: "Tsy misy",
+      noResultsDesc: "Tsy misy fampandrenesana.",
+      allCaughtUp: "Voavakiana daholo!",
+      clearSearch: "Esory",
       urgent: "MAIKA",
-      markAsRead: "Asio ho voavakiana",
-      markAsUnread: "Asio ho tsy voavakiana",
+      markAsRead: "Vakio",
+      markAsUnread: "Tsy vakiana",
       view: "Jereo",
       shortcuts: "Fanafohezana:",
       allRead: "Vakio daholo",
       open: "Sokafy",
-      notificationCenter: "Foibe fampandrenesana",
+      notificationCenter: "Foibe",
       others: "hafa",
       justNow: "Vao izao",
       minAgo: "mn lasa",
@@ -185,6 +185,7 @@ export function NotificationBell() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [dict, setDict] = useState<any>(null);
   const [lang, setLang] = useState<Locale>('fr');
+  const [isMobile, setIsMobile] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { state, actions } = useNotifications();
@@ -193,6 +194,16 @@ export function NotificationBell() {
   const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
+
+  // Détection mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Charger le dictionnaire
   useEffect(() => {
@@ -217,26 +228,11 @@ export function NotificationBell() {
       if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }
-      if (isOpen && e.key >= '1' && e.key <= '9') {
-        const index = parseInt(e.key) - 1;
-        if (state.notifications?.[index]) {
-          e.preventDefault();
-          handleNotificationClick(state.notifications[index]);
-        }
-      }
-      if (isOpen && e.key === 'a') {
-        e.preventDefault();
-        markAllAsRead();
-      }
-      if (isOpen && e.key === 'r') {
-        e.preventDefault();
-        refreshNotifications();
-      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, state.notifications, markAllAsRead, refreshNotifications]);
+  }, [isOpen]);
 
   // Filter notifications
   const filteredNotifications = state.notifications?.filter(notification => {
@@ -245,8 +241,7 @@ export function NotificationBell() {
       const query = searchQuery.toLowerCase();
       return (
         notification.title.toLowerCase().includes(query) ||
-        notification.message.toLowerCase().includes(query) ||
-        notification.category.toLowerCase().includes(query)
+        notification.message.toLowerCase().includes(query)
       );
     }
     return true;
@@ -271,7 +266,7 @@ export function NotificationBell() {
     if (minutes < 60) return `${minutes} ${t('minAgo', 'min')}`;
     if (hours < 24) return `${hours} ${t('hourAgo', 'h')}`;
     if (days < 7) return `${days} ${t('dayAgo', 'j')}`;
-    return new Date(date).toLocaleDateString(lang === 'fr' ? 'fr-FR' : lang === 'mg' ? 'fr-FR' : 'en-US');
+    return new Date(date).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US');
   }, [t, lang]);
 
   const handleNotificationClick = useCallback((notification: any) => {
@@ -284,13 +279,11 @@ export function NotificationBell() {
     setIsOpen(false);
   }, [router, markAsRead]);
 
-  // Quick actions
+  // Quick actions simplifiées pour mobile
   const quickActions = [
-    { label: t('messages', 'Messages'), icon: MessageSquare, href: `/${lang}/messages`, shortcut: 'M' },
-    { label: t('orders', 'Commandes'), icon: DollarSign, href: `/${lang}/orders`, shortcut: 'O' },
-    { label: t('projects', 'Projets'), icon: Inbox, href: `/${lang}/projects`, shortcut: 'P' },
-    { label: t('reviews', 'Évaluations'), icon: Star, href: `/${lang}/reviews`, shortcut: 'R' },
-    { label: t('settings', 'Paramètres'), icon: Settings, href: `/${lang}/notifications/settings`, shortcut: 'S' },
+    { label: t('messages', 'Messages'), icon: MessageSquare, href: `/${lang}/messages` },
+    { label: t('orders', 'Commandes'), icon: DollarSign, href: `/${lang}/orders` },
+    { label: t('settings', 'Paramètres'), icon: Settings, href: `/${lang}/notifications/settings` },
   ];
 
   if (!session) {
@@ -308,7 +301,7 @@ export function NotificationBell() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative h-8 w-8 rounded-lg hover:bg-accent/50 transition-colors"
+                className="relative h-9 w-9 rounded-lg hover:bg-accent/50 transition-colors"
                 disabled={state.isLoading}
                 aria-label={t('notifications', 'Notifications')}
               >
@@ -316,7 +309,7 @@ export function NotificationBell() {
                 {state.unreadCount > 0 && (
                   <Badge 
                     variant="destructive" 
-                    className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center p-0 text-[10px] font-bold"
+                    className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] font-bold rounded-full"
                   >
                     {state.unreadCount > 9 ? '9+' : state.unreadCount}
                   </Badge>
@@ -324,7 +317,7 @@ export function NotificationBell() {
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
+          <TooltipContent side="bottom" className="text-xs hidden sm:block">
             <div className="flex items-center gap-2">
               <Command className="h-3 w-3" />
               <span>Shift + N</span>
@@ -334,185 +327,165 @@ export function NotificationBell() {
         
         <DropdownMenuContent 
           align="end" 
-          className="w-[calc(100vw-2rem)] sm:w-96 md:w-[28rem] max-h-[90vh] p-0 overflow-hidden rounded-xl border-0 shadow-2xl" 
+          className={cn(
+            "p-0 overflow-hidden rounded-xl border-0 shadow-2xl",
+            isMobile ? "w-[calc(100vw-2rem)] max-w-[95vw]" : "w-96 md:w-[28rem]",
+            "max-h-[85vh]"
+          )} 
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
           {/* Header - Sticky */}
-          <div className="sticky top-0 z-20 p-4 border-b bg-gradient-to-r from-background/98 to-background/98 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-3">
+          <div className="sticky top-0 z-20 p-3 sm:p-4 border-b bg-white dark:bg-gray-900">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                <h3 className="font-bold text-base">{t('notifications', 'Notifications')}</h3>
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                <h3 className="font-bold text-sm sm:text-base">{t('notifications', 'Notifications')}</h3>
                 {state.unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {state.unreadCount} {unreadText}
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5">
+                    {state.unreadCount} {!isMobile && unreadText}
                   </Badge>
                 )}
               </div>
               
-              <div className="flex items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={refreshNotifications}
-                      disabled={state.isLoading}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('refresh', 'Actualiser')} (R)</TooltipContent>
-                </Tooltip>
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8"
-                  asChild
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
+                  onClick={refreshNotifications}
+                  disabled={state.isLoading}
                 >
-                  <Link href={`/${lang}/notifications/settings`}>
-                    <Settings className="h-4 w-4" />
-                  </Link>
+                  <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
             </div>
             
-            {/* Search and Filter */}
-            <div className="space-y-3">
+            {/* Search and Filter - Simplifié sur mobile */}
+            <div className="space-y-2 sm:space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t('search', 'Rechercher des notifications...')}
+                  placeholder={t('search', 'Rechercher...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-9 text-sm"
+                  className="pl-8 h-8 sm:h-9 text-xs sm:text-sm"
                 />
               </div>
               
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="flex-1">
-                  <TabsList className="grid w-full grid-cols-2 h-9">
-                    <TabsTrigger value="all" className="text-sm">{t('all', 'Toutes')}</TabsTrigger>
-                    <TabsTrigger value="unread" className="text-sm">{t('unreadOnly', 'Non lues')}</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 h-8 sm:h-9">
+                    <TabsTrigger value="all" className="text-xs sm:text-sm">{t('all', 'Toutes')}</TabsTrigger>
+                    <TabsTrigger value="unread" className="text-xs sm:text-sm">{t('unreadOnly', 'Non lues')}</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 
-                {state.unreadCount > 0 && (
+                {state.unreadCount > 0 && !isMobile && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={markAllAsRead}
-                    className="h-9 text-sm px-3 whitespace-nowrap"
+                    className="h-8 sm:h-9 text-xs px-2 sm:px-3 whitespace-nowrap"
                     disabled={state.isLoading}
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">{t('markAllRead', 'Tout lire')}</span>
-                    <span className="sm:hidden">(A)</span>
+                    <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                    {t('markAllRead', 'Tout lire')}
                   </Button>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Quick Actions Bar */}
-          <div className="px-4 py-2 border-b bg-muted/30">
+          {/* Quick Actions Bar - Simplifié sur mobile */}
+          <div className="px-3 sm:px-4 py-1.5 sm:py-2 border-b bg-gray-50 dark:bg-gray-800/30">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">{t('quickAccess', 'Accès rapide')}</span>
-              <div className="flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+                {!isMobile && t('quickAccess', 'Accès rapide')}
+              </span>
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 {quickActions.map((action) => (
-                  <Tooltip key={action.label}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        asChild
-                      >
-                        <Link href={action.href}>
-                          <action.icon className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {action.label} ({action.shortcut})
-                    </TooltipContent>
-                  </Tooltip>
+                  <Button
+                    key={action.label}
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
+                    asChild
+                  >
+                    <Link href={action.href}>
+                      <action.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Link>
+                  </Button>
                 ))}
               </div>
             </div>
           </div>
 
           {/* Notifications List - Scrollable Area */}
-          <ScrollArea className="max-h-[400px] md:max-h-[500px] overflow-y-auto">
-            <div ref={scrollRef} className="p-2">
+          <ScrollArea className="max-h-[350px] sm:max-h-[400px] md:max-h-[500px] overflow-y-auto">
+            <div ref={scrollRef} className="p-1 sm:p-2">
               {filteredNotifications.length === 0 ? (
-                <div className="py-12 text-center">
-                  <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-muted/30 to-muted/50 flex items-center justify-center">
-                    <Bell className="h-8 w-8 text-muted-foreground/50" />
+                <div className="py-8 sm:py-12 text-center">
+                  <div className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                    <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                   </div>
-                  <h4 className="font-medium text-base mb-2">
+                  <h4 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">
                     {searchQuery ? t('noResults', 'Aucun résultat') : t('noNotifications', 'Aucune notification')}
                   </h4>
-                  <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
+                  <p className="text-xs sm:text-sm text-muted-foreground px-4">
                     {searchQuery 
                       ? t('noResultsDesc', 'Aucune notification ne correspond à votre recherche.') 
                       : t('allCaughtUp', 'Toutes vos notifications sont à jour.')}
                   </p>
                   {searchQuery && (
-                    <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => setSearchQuery('')}>
-                      {t('clearSearch', 'Effacer la recherche')}
+                    <Button variant="ghost" size="sm" className="mt-3 h-7 text-xs" onClick={() => setSearchQuery('')}>
+                      {t('clearSearch', 'Effacer')}
                     </Button>
                   )}
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  {filteredNotifications.map((notification, index) => (
+                <div className="space-y-1">
+                  {filteredNotifications.map((notification) => (
                     <div
                       key={notification._id}
                       className={cn(
-                        "p-3 rounded-lg cursor-pointer transition-all duration-200 group relative",
+                        "p-2 sm:p-3 rounded-lg cursor-pointer transition-all duration-200",
                         notification.status === 'UNREAD' 
                           ? 'bg-blue-50/50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' 
-                          : 'hover:bg-accent/50'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'
                       )}
                       onClick={() => handleNotificationClick(notification)}
                     >
-                      <div className="flex items-start gap-3 w-full">
-                        <div className={cn("p-2 rounded-full flex-shrink-0", getCategoryColor(notification.category))}>
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <div className={cn("p-1.5 sm:p-2 rounded-full flex-shrink-0", getCategoryColor(notification.category))}>
                           {getNotificationIcon(notification.category)}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-1 sm:gap-2">
                             <div className="flex-1">
-                              <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                                <p className="font-semibold text-sm">
+                              <div className="flex flex-wrap items-center gap-1 mb-0.5">
+                                <p className="font-semibold text-xs sm:text-sm line-clamp-2">
                                   {notification.title}
                                 </p>
                                 {notification.priority === 'URGENT' && (
-                                  <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                                  <Badge variant="destructive" className="text-[8px] sm:text-[10px] px-1 py-0">
                                     {t('urgent', 'URGENT')}
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground line-clamp-2">
+                              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                                 {notification.message}
                               </p>
-                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                <span className="text-xs text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">
                                   {formatTime(notification.createdAt)}
-                                </span>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted">
-                                  {notification.category?.toLowerCase()}
                                 </span>
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5 sm:gap-1">
                               {notification.status === 'UNREAD' && (
-                                <span className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-blue-500 flex-shrink-0"></span>
                               )}
                               <Button
                                 variant="ghost"
@@ -528,33 +501,20 @@ export function NotificationBell() {
                             </div>
                           </div>
                           
-                          {/* Action buttons */}
-                          <div className="flex items-center gap-2 mt-2">
-                            {notification.status === 'UNREAD' ? (
+                          {/* Action buttons - Simplifiés sur mobile */}
+                          <div className="flex items-center gap-1 sm:gap-2 mt-1.5 sm:mt-2">
+                            {notification.status === 'UNREAD' && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 text-xs px-2"
+                                className="h-6 text-[10px] sm:text-xs px-1.5 sm:px-2"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   markAsRead(notification._id);
                                 }}
                               >
-                                <Eye className="h-3 w-3 mr-1" />
-                                <span className="hidden xs:inline">{t('markAsRead', 'Marquer comme lu')}</span>
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 text-xs px-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Mark as unread functionality
-                                }}
-                              >
-                                <EyeOff className="h-3 w-3 mr-1" />
-                                <span className="hidden xs:inline">{t('markAsUnread', 'Marquer comme non lu')}</span>
+                                <Eye className="h-3 w-3 mr-0.5 sm:mr-1" />
+                                {!isMobile && t('markAsRead', 'Lire')}
                               </Button>
                             )}
                             
@@ -562,28 +522,19 @@ export function NotificationBell() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 text-xs px-2"
+                                className="h-6 text-[10px] sm:text-xs px-1.5 sm:px-2"
                                 asChild
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Link href={notification.actionUrl}>
-                                  <ChevronRight className="h-3 w-3 mr-1" />
-                                  <span className="hidden xs:inline">{t('view', 'Voir')}</span>
+                                  <ChevronRight className="h-3 w-3 mr-0.5 sm:mr-1" />
+                                  {!isMobile && t('view', 'Voir')}
                                 </Link>
                               </Button>
                             )}
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Keyboard shortcut hint */}
-                      {index < 9 && (
-                        <div className="absolute right-2 top-2">
-                          <kbd className="px-1.5 py-0.5 text-[10px] border rounded bg-muted/80 font-mono">
-                            {index + 1}
-                          </kbd>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -591,33 +542,31 @@ export function NotificationBell() {
             </div>
           </ScrollArea>
 
-          {/* Footer - Sticky Bottom */}
-          <div className="sticky bottom-0 z-20 p-3 border-t bg-muted/30 rounded-b-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Keyboard className="h-3 w-3" />
-                  <span>{t('shortcuts', 'Raccourcis:')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <kbd className="px-1.5 py-0.5 border rounded text-xs bg-muted/50 font-mono">A</kbd>
-                  <span className="hidden sm:inline">{t('allRead', 'Tout lire')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <kbd className="px-1.5 py-0.5 border rounded text-xs bg-muted/50 font-mono">1-9</kbd>
-                  <span className="hidden sm:inline">{t('open', 'Ouvrir')}</span>
-                </div>
-              </div>
+          {/* Footer - Sticky Bottom, simplifié sur mobile */}
+          <div className="sticky bottom-0 z-20 p-2 sm:p-3 border-t bg-gray-50 dark:bg-gray-800/30 rounded-b-xl">
+            <div className="flex items-center justify-between gap-2">
+              {!isMobile && state.unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={markAllAsRead}
+                  className="h-7 text-xs"
+                  disabled={state.isLoading}
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  {t('allRead', 'Tout lire')}
+                </Button>
+              )}
               
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 text-sm px-3"
+                className="h-7 text-xs ml-auto"
                 asChild
               >
                 <Link href={`/${lang}/notifications`}>
-                  <Inbox className="h-4 w-4 mr-1.5" />
-                  {t('notificationCenter', 'Centre de notifications')}
+                  <Inbox className="h-3 w-3 mr-1" />
+                  {isMobile ? t('notificationCenter', 'Centre') : t('notificationCenter', 'Centre de notifications')}
                 </Link>
               </Button>
             </div>
