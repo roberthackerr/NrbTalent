@@ -760,7 +760,7 @@ export default function ProfilePage() {
             </Card>
 
             {/* Statistiques rapides améliorées */}
-            {profile.role === 'freelance' && profile.statistics && (
+            {/* {profile.role === 'freelance' && profile.statistics && (
               <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
                 <CardHeader className="pb-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                   <CardTitle className="text-sm font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
@@ -805,7 +805,7 @@ export default function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            )} */}
 
             {/* Informations de contact améliorées */}
             <Card className="border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow">
@@ -1164,7 +1164,7 @@ export default function ProfilePage() {
                       </CardDescription>
                     </div>
                     <Button size="sm" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
-                      <Link href={`/${lang}/dashboard/portfolio`}>
+                      <Link href={`/${lang}/dashboard/settings`}>
                         <Plus className="h-4 w-4 mr-2" />
                         {dict?.profile?.addProject || "Ajouter un projet"}
                       </Link>
