@@ -773,7 +773,7 @@ export default function ProfilePage() {
                     <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                       <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                         {profile.statistics.completedProjects}
-                      </div>
+                      </div> 
                       <div className="text-xs text-slate-500 dark:text-slate-500">
                         {dict?.profile?.projects || "Projets"}
                       </div>
