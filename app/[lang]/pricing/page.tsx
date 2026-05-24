@@ -30,7 +30,7 @@ const plans = [
   {
     id: 'pro',
     name: "Pro",
-    price: 29,
+    price: 1,
     currency: "EUR",
     description: "Pour les freelances sérieux",
     icon: Rocket,
