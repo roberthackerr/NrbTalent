@@ -47,13 +47,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/faq`,
+      url: `${baseUrl}/auth/signup`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
-      url: `${baseUrl}/contact`,
+      url: `${baseUrl}/auth/signin`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.6,
