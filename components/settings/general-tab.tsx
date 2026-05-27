@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,8 +23,7 @@ import {
   Download,
   Trash2,
   File,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -60,9 +59,16 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
   const { update } = useSession()
   const params = useParams()
   const [loading, setLoading] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isUploadingCV, setIsUploadingCV] = useState(false)
   const [isDeletingCV, setIsDeletingCV] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
+  
+  // Refs for file inputs
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const cvInputRef = useRef<HTMLInputElement>(null)
+  const replaceCVInputRef = useRef<HTMLInputElement>(null)
+  
   const [formData, setFormData] = useState<UserProfile>({
     name: "",
     email: "",
@@ -136,15 +142,9 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       })
 
       if (response.ok) {
-        const result = await response.json()
-        
-        // Mettre à jour les liens sociaux séparément
         await updateSocialLinks()
-        
-        // Recharger les données pour avoir le score à jour
         await fetchUserProfile()
         
-        // Mettre à jour la session
         await update({
           ...user,
           name: formData.name
@@ -190,7 +190,6 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validation
     if (!file.type.startsWith('image/')) {
       toast.error(dict?.general?.errors?.invalidImage || "Veuillez sélectionner une image valide")
       return
@@ -201,7 +200,7 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       return
     }
 
-    setIsUploading(true)
+    setIsUploadingAvatar(true)
 
     try {
       const formData = new FormData()
@@ -215,13 +214,11 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       if (response.ok) {
         const data = await response.json()
         
-        // Mettre à jour la session avec la nouvelle image
         await update({
           ...user,
           image: data.avatarUrl
         })
         
-        // Recharger le profil pour le score à jour
         await fetchUserProfile()
         
         toast.success(dict?.general?.success?.avatar || "Photo de profil mise à jour avec succès!")
@@ -233,20 +230,17 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       console.error('Error uploading avatar:', error)
       toast.error(error instanceof Error ? error.message : dict?.general?.errors?.upload || "Erreur lors du téléchargement de l'image")
     } finally {
-      setIsUploading(false)
-      // Reset the input
-      if (event.target) {
-        event.target.value = ''
+      setIsUploadingAvatar(false)
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = ''
       }
     }
   }
 
-  // Nouvelle fonction: Gérer l'upload du CV
   const handleCVUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validation du type de fichier
     const allowedTypes = [
       'application/pdf',
       'application/msword',
@@ -258,13 +252,12 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       return
     }
 
-    // Validation de la taille (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error(dict?.general?.errors?.cvTooLarge || "Le CV doit faire moins de 10MB")
       return
     }
 
-    setIsUploading(true)
+    setIsUploadingCV(true)
 
     try {
       const formData = new FormData()
@@ -283,7 +276,6 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
           cv: data.cv
         }))
         
-        // Recharger le profil pour mettre à jour le score
         await fetchUserProfile()
         
         toast.success(dict?.general?.success?.cvUpload || "CV téléchargé avec succès!")
@@ -295,15 +287,16 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       console.error('Error uploading CV:', error)
       toast.error(error instanceof Error ? error.message : dict?.general?.errors?.cvUpload || "Erreur lors du téléchargement du CV")
     } finally {
-      setIsUploading(false)
-      // Reset the input
-      if (event.target) {
-        event.target.value = ''
+      setIsUploadingCV(false)
+      if (cvInputRef.current) {
+        cvInputRef.current.value = ''
+      }
+      if (replaceCVInputRef.current) {
+        replaceCVInputRef.current.value = ''
       }
     }
   }
 
-  // Nouvelle fonction: Supprimer le CV
   const handleDeleteCV = async () => {
     setIsDeletingCV(true)
 
@@ -318,7 +311,6 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
           cv: null
         }))
         
-        // Recharger le profil pour mettre à jour le score
         await fetchUserProfile()
         
         toast.success(dict?.general?.success?.cvDelete || "CV supprimé avec succès!")
@@ -334,14 +326,12 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
     }
   }
 
-  // Nouvelle fonction: Télécharger le CV
   const handleDownloadCV = () => {
     if (formData.cv?.url) {
       window.open(formData.cv.url, '_blank')
     }
   }
 
-  // Fonction pour formater la taille du fichier
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -383,7 +373,6 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
     return dict?.general?.completion?.needsImprovement || "À améliorer"
   }
 
-  // Vérifier si l'utilisateur est un freelance
   const isFreelancer = user?.role === 'freelance'
 
   return (
@@ -431,22 +420,26 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
                 </AvatarFallback>
               </Avatar>
               
-              <label 
-                htmlFor="avatar-upload"
-                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm"
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm cursor-pointer"
+                disabled={isUploadingAvatar}
               >
                 <Edit className="h-5 w-5 text-white" />
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                  disabled={isUploading}
-                />
-              </label>
+              </button>
               
-              {isUploading && (
+              <input
+                ref={avatarInputRef}
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={isUploadingAvatar}
+              />
+              
+              {isUploadingAvatar && (
                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
                 </div>
@@ -458,14 +451,18 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                 {dict?.general?.photoRequirements || "PNG, JPG jusqu'à 5MB"}
               </p>
-              <label htmlFor="avatar-upload">
-                <Button variant="outline" size="sm" disabled={isUploading} className="cursor-pointer">
-                  <Upload className="h-4 w-4 mr-2" />
-                  {isUploading 
-                    ? (dict?.common?.uploading || "Téléchargement...") 
-                    : (dict?.general?.changePhoto || "Changer la photo")}
-                </Button>
-              </label>
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm" 
+                disabled={isUploadingAvatar}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isUploadingAvatar 
+                  ? (dict?.common?.uploading || "Téléchargement...") 
+                  : (dict?.general?.changePhoto || "Changer la photo")}
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -512,15 +509,16 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadCV}
-                      className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       {dict?.general?.download || "Télécharger"}
                     </Button>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleDeleteCV}
@@ -544,20 +542,25 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
 
                 {/* Remplacer le CV */}
                 <div className="text-center">
-                  <label htmlFor="cv-upload-replace">
-                    <Button variant="outline" size="sm" className="cursor-pointer">
-                      <Upload className="h-4 w-4 mr-2" />
-                      {dict?.general?.replaceCV || "Remplacer le CV"}
-                    </Button>
-                    <input
-                      id="cv-upload-replace"
-                      type="file"
-                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      className="hidden"
-                      onChange={handleCVUpload}
-                      disabled={isUploading}
-                    />
-                  </label>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => replaceCVInputRef.current?.click()}
+                    disabled={isUploadingCV}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isUploadingCV ? dict?.common?.uploading || "Téléchargement..." : (dict?.general?.replaceCV || "Remplacer le CV")}
+                  </Button>
+                  <input
+                    ref={replaceCVInputRef}
+                    id="cv-upload-replace"
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={handleCVUpload}
+                    disabled={isUploadingCV}
+                  />
                 </div>
               </div>
             ) : (
@@ -571,29 +574,33 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
                   {dict?.general?.cvBenefits || "Les freelances avec un CV ont 3 fois plus de chances d'être contactés par des clients"}
                 </p>
-                <label htmlFor="cv-upload">
-                  <Button disabled={isUploading} className="bg-blue-600 hover:bg-blue-700">
-                    {isUploading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                        {dict?.common?.uploading || "Téléchargement..."}
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {dict?.general?.uploadCV || "Télécharger mon CV"}
-                      </>
-                    )}
-                  </Button>
-                  <input
-                    id="cv-upload"
-                    type="file"
-                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className="hidden"
-                    onChange={handleCVUpload}
-                    disabled={isUploading}
-                  />
-                </label>
+                <Button 
+                  type="button"
+                  onClick={() => cvInputRef.current?.click()}
+                  disabled={isUploadingCV}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isUploadingCV ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      {dict?.common?.uploading || "Téléchargement..."}
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {dict?.general?.uploadCV || "Télécharger mon CV"}
+                    </>
+                  )}
+                </Button>
+                <input
+                  ref={cvInputRef}
+                  id="cv-upload"
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={handleCVUpload}
+                  disabled={isUploadingCV}
+                />
                 <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-500 dark:text-slate-500">
                   <span>📄 PDF</span>
                   <span>📝 DOC</span>
