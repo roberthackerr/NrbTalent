@@ -10,7 +10,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Edit, Upload, MapPin, Briefcase, Globe, Linkedin, Github, Twitter } from "lucide-react"
+import { 
+  Edit, 
+  Upload, 
+  MapPin, 
+  Briefcase, 
+  Globe, 
+  Linkedin, 
+  Github, 
+  Twitter,
+  FileText,
+  Download,
+  Trash2,
+  File,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Label } from "../ui/label"
@@ -33,6 +48,12 @@ interface UserProfile {
     github?: string
     twitter?: string
   }
+  cv?: {
+    url: string
+    fileName: string
+    uploadedAt: string
+    fileSize: number
+  } | null
 }
 
 export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
@@ -40,6 +61,7 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
   const params = useParams()
   const [loading, setLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isDeletingCV, setIsDeletingCV] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
   const [formData, setFormData] = useState<UserProfile>({
     name: "",
@@ -52,7 +74,8 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       linkedin: "",
       github: "",
       twitter: "",
-    }
+    },
+    cv: null
   })
 
   // Charger les données du profil
@@ -78,7 +101,8 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
             linkedin: userData.socialLinks?.linkedin || "",
             github: userData.socialLinks?.github || "",
             twitter: userData.socialLinks?.twitter || "",
-          }
+          },
+          cv: userData.cv || null
         })
         setCompletionScore(userData.completionScore || 0)
       } else {
@@ -217,6 +241,115 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
     }
   }
 
+  // Nouvelle fonction: Gérer l'upload du CV
+  const handleCVUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validation du type de fichier
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(dict?.general?.errors?.invalidCVType || "Format non supporté. Utilisez PDF, DOC ou DOCX")
+      return
+    }
+
+    // Validation de la taille (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(dict?.general?.errors?.cvTooLarge || "Le CV doit faire moins de 10MB")
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('cv', file)
+
+      const response = await fetch('/api/users/cv', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        setFormData(prev => ({
+          ...prev,
+          cv: data.cv
+        }))
+        
+        // Recharger le profil pour mettre à jour le score
+        await fetchUserProfile()
+        
+        toast.success(dict?.general?.success?.cvUpload || "CV téléchargé avec succès!")
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Error uploading CV:', error)
+      toast.error(error instanceof Error ? error.message : dict?.general?.errors?.cvUpload || "Erreur lors du téléchargement du CV")
+    } finally {
+      setIsUploading(false)
+      // Reset the input
+      if (event.target) {
+        event.target.value = ''
+      }
+    }
+  }
+
+  // Nouvelle fonction: Supprimer le CV
+  const handleDeleteCV = async () => {
+    setIsDeletingCV(true)
+
+    try {
+      const response = await fetch('/api/users/cv', {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setFormData(prev => ({
+          ...prev,
+          cv: null
+        }))
+        
+        // Recharger le profil pour mettre à jour le score
+        await fetchUserProfile()
+        
+        toast.success(dict?.general?.success?.cvDelete || "CV supprimé avec succès!")
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Delete failed')
+      }
+    } catch (error) {
+      console.error('Error deleting CV:', error)
+      toast.error(error instanceof Error ? error.message : dict?.general?.errors?.cvDelete || "Erreur lors de la suppression du CV")
+    } finally {
+      setIsDeletingCV(false)
+    }
+  }
+
+  // Nouvelle fonction: Télécharger le CV
+  const handleDownloadCV = () => {
+    if (formData.cv?.url) {
+      window.open(formData.cv.url, '_blank')
+    }
+  }
+
+  // Fonction pour formater la taille du fichier
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
   const calculateFormChanges = () => {
     const originalData = {
       name: user?.name || "",
@@ -232,7 +365,14 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       }
     }
 
-    return JSON.stringify(originalData) !== JSON.stringify(formData)
+    return JSON.stringify(originalData) !== JSON.stringify({
+      name: formData.name,
+      email: formData.email,
+      title: formData.title,
+      bio: formData.bio,
+      location: formData.location,
+      socialLinks: formData.socialLinks
+    })
   }
 
   const hasChanges = calculateFormChanges()
@@ -242,6 +382,9 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
     if (completionScore >= 60) return dict?.general?.completion?.good || "Bon"
     return dict?.general?.completion?.needsImprovement || "À améliorer"
   }
+
+  // Vérifier si l'utilisateur est un freelance
+  const isFreelancer = user?.role === 'freelance'
 
   return (
     <div className="space-y-6">
@@ -327,6 +470,141 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section CV pour les freelances */}
+      {isFreelancer && (
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-500" />
+              {dict?.general?.cvSection || "Curriculum Vitae (CV)"}
+            </CardTitle>
+            <CardDescription>
+              {dict?.general?.cvDescription || "Téléchargez votre CV pour augmenter vos chances d'être embauché. Les clients pourront voir votre parcours professionnel."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {formData.cv ? (
+              <div className="space-y-4">
+                {/* CV existant */}
+                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <File className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-slate-100">
+                        {formData.cv.fileName}
+                      </h4>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {formatFileSize(formData.cv.fileSize)}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(formData.cv.uploadedAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                        </span>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-300">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          {dict?.general?.uploaded || "Téléchargé"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadCV}
+                      className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {dict?.general?.download || "Télécharger"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteCV}
+                      disabled={isDeletingCV}
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50 border-red-200 dark:border-red-800"
+                    >
+                      {isDeletingCV ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent mr-2" />
+                          {dict?.common?.deleting || "Suppression..."}
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {dict?.general?.delete || "Supprimer"}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Remplacer le CV */}
+                <div className="text-center">
+                  <label htmlFor="cv-upload-replace">
+                    <Button variant="outline" size="sm" className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" />
+                      {dict?.general?.replaceCV || "Remplacer le CV"}
+                    </Button>
+                    <input
+                      id="cv-upload-replace"
+                      type="file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="hidden"
+                      onChange={handleCVUpload}
+                      disabled={isUploading}
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-10 w-10 text-slate-400" />
+                </div>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  {dict?.general?.noCV || "Aucun CV téléchargé"}
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                  {dict?.general?.cvBenefits || "Les freelances avec un CV ont 3 fois plus de chances d'être contactés par des clients"}
+                </p>
+                <label htmlFor="cv-upload">
+                  <Button disabled={isUploading} className="bg-blue-600 hover:bg-blue-700">
+                    {isUploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                        {dict?.common?.uploading || "Téléchargement..."}
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {dict?.general?.uploadCV || "Télécharger mon CV"}
+                      </>
+                    )}
+                  </Button>
+                  <input
+                    id="cv-upload"
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={handleCVUpload}
+                    disabled={isUploading}
+                  />
+                </label>
+                <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-500 dark:text-slate-500">
+                  <span>📄 PDF</span>
+                  <span>📝 DOC</span>
+                  <span>📋 DOCX</span>
+                  <span>⬆️ Max 10MB</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Formulaire d'information */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
