@@ -46,27 +46,6 @@ export function HeroSection({
                 : "Trouvez les meilleurs talents"}
             </p>
 
-            {/* Barre de recherche */}
-            <form onSubmit={handleSearch} className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder={hero.searchPlaceholder || "Rechercher un projet, un freelance..."}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-24 py-5 text-base border-0 shadow-lg rounded-xl bg-white/95"
-                />
-                <Button 
-                  type="submit"
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Search className="h-4 w-4 mr-1" />
-                  Go
-                </Button>
-              </div>
-            </form>
 
             {/* Actions rapides - 2 boutons seulement */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
