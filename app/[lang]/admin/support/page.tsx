@@ -396,7 +396,8 @@ export default function AdminSupportPage() {
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
     if (session?.user?.role !== 'admin') {
-      router.push(`/${lang}`)
+        alert(session?.user?.role)
+     // router.push(`/${lang}`)
     }
   }, [session, router, lang])
 
