@@ -393,16 +393,10 @@ export default function AdminSupportPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterSeverity, setFilterSeverity] = useState('all')
 
-  // Vérifier si l'utilisateur est admin
-  useEffect(() => {
-    if (session?.user?.role !== 'admin') {
-        alert(session?.user?.role)
-     // router.push(`/${lang}`)
-    }
-  }, [session, router, lang])
 
   // Charger les données
   const loadData = useCallback(async () => {
+    
     setLoading(true)
     try {
       // Charger les signalements
@@ -436,6 +430,15 @@ export default function AdminSupportPage() {
   useEffect(() => {
     loadData()
   }, [loadData])
+  // Vérifier si l'utilisateur est admin
+  useEffect(() => {
+    if (status === "loading") return
+    
+    if (!session || (session.user as any)?.role !== "admin") {
+      router.push(`/${lang}/dashboard`)
+      toast.error( "Accès non autorisé")
+    }
+  }, [session, status, router, lang])
 
   // Filtrer les signalements
   const filteredReports = reports.filter(report => {
