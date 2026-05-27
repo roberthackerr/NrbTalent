@@ -42,7 +42,8 @@ import {
   Video,
   MessageCircle,
   Target,
-  Sparkles
+  Sparkles,
+  Headphones
 } from 'lucide-react'
 
 // Types
