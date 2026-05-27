@@ -376,7 +376,7 @@ function ReportDetail({ report, onUpdateStatus, onClose }: {
 
 // Composant principal
 export default function AdminSupportPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const params = useParams()
   const lang = params.lang as Locale
   const router = useRouter()
@@ -432,12 +432,13 @@ export default function AdminSupportPage() {
   }, [loadData])
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
+    if (status === "loading") return
     
     if (!session || (session.user as any)?.role !== "admin") {
-      router.push(`/${lang}/dashboard`) 
+      router.push(`/${lang}/dashboard`)
       toast.error( "Accès non autorisé")
     }
-  }, [session,  router, lang])
+  }, [session, status, router, lang])
 
   // Filtrer les signalements
   const filteredReports = reports.filter(report => {
