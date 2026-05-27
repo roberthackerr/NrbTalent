@@ -309,7 +309,8 @@ export default function HomePage() {
          {session?.user && (<MeetButtonHero dict={dict} lang={lang} />)} 
           {/* Autres boutons... */}
         </div>
-        <StatsOverview dict={dict} />
+        { !session?.user &&   (<StatsOverview dict={dict} />)}
+    
         <QuickActions user={session?.user} onIDEClick={() => setShowIDE(true)} dict={dict} />
 
         {/* ══ FEED SECTION ══ */}
