@@ -276,7 +276,7 @@ export interface User {
   }>
   /** Uploaded CV/resume URL */
   resume?: string
-
+  cv?:any
   // ========== SOCIAL & LINKS ==========
   /** Social media profiles */
   socialLinks?: SocialLinks
@@ -466,7 +466,7 @@ export interface UserResponseDTO {
   education?: Education[]
   socialLinks?: SocialLinks
   rating?: number
-  cv:any
+  cv?:any
   statistics?: {
     rating: number
     completedProjects: number
