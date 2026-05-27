@@ -466,6 +466,7 @@ export interface UserResponseDTO {
   education?: Education[]
   socialLinks?: SocialLinks
   rating?: number
+  cv:any
   statistics?: {
     rating: number
     completedProjects: number
@@ -556,6 +557,14 @@ export function toUserResponseDTO(user: User): UserResponseDTO {
       responseRate: 0,
       successRate: 0
     },
+     cv: user.cv ? {
+      url: user.cv.url,
+      fileName: user.cv.fileName,
+      uploadedAt: user.cv.uploadedAt,
+      fileSize: user.cv.fileSize,
+      publicId: user.cv.publicId,
+      fileType: user.cv.fileType
+    } : null,
     completedProjects: user.completedProjects || 0,
     totalEarnings: user.totalEarnings || 0,
     responseTime: user.responseTime,
