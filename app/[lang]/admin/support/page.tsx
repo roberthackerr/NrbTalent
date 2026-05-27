@@ -435,7 +435,7 @@ export default function AdminSupportPage() {
     if (status === "loading") return
     
     if (!session || (session.user as any)?.role !== "admin") {
-      router.push(`/${lang}/dashboard`)
+      router.push(`/${lang}/dashboard`) 
       toast.error( "Accès non autorisé")
     }
   }, [session, status, router, lang])
