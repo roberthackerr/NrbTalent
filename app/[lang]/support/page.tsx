@@ -1,7 +1,7 @@
 // app/[lang]/support/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState,  useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -601,7 +601,7 @@ export default function SupportPage() {
   })
 
   // Charger le dictionnaire
-  React.useEffect(() => {
+  useEffect(() => {
     getDictionarySafe(lang).then(setDict)
   }, [lang])
 
