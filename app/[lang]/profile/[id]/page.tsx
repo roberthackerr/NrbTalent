@@ -81,6 +81,7 @@ import { SkillBadge } from "@/components/SkillBadge"
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
 import type { Locale } from '@/lib/i18n/config'
 import { ReviewSystem } from "@/components/reviews/ReviewSystem"
+import { CVViewerModal } from "@/components/CVViewerModal"
 
 interface UserProfile {
   _id: string
@@ -514,89 +515,63 @@ export default function PublicProfilePage() {
                   </div>
                 </div>
 
-{/* Actions améliorées */}
-<div className="flex items-center gap-3 flex-wrap">
-  <div className={cn(
-    "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg",
-    profile.availability === 'available' 
-      ? "bg-green-500 text-white shadow-green-500/25" 
-      : profile.availability === 'busy'
-      ? "bg-orange-500 text-white"
-      : "bg-slate-400 text-white"
-  )}>
-    {profile.availability === 'available' ? (
-      <>
-        <CheckCircle className="h-4 w-4" />
-        {dict?.publicProfile?.available || "Disponible"}
-      </>
-    ) : profile.availability === 'busy' ? (
-      <>
-        <Clock className="h-4 w-4" />
-        {dict?.publicProfile?.busy || "Occupé"}
-      </>
-    ) : (
-      <>
-        <Clock className="h-4 w-4" />
-        {dict?.publicProfile?.unavailable || "Indisponible"}
-      </>
-    )}
-  </div>
+                {/* Actions améliorées */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg",
+                    profile.availability === 'available' 
+                      ? "bg-green-500 text-white shadow-green-500/25" 
+                      : profile.availability === 'busy'
+                      ? "bg-orange-500 text-white"
+                      : "bg-slate-400 text-white"
+                  )}>
+                    {profile.availability === 'available' ? (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        {dict?.publicProfile?.available || "Disponible"}
+                      </>
+                    ) : profile.availability === 'busy' ? (
+                      <>
+                        <Clock className="h-4 w-4" />
+                        {dict?.publicProfile?.busy || "Occupé"}
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-4 w-4" />
+                        {dict?.publicProfile?.unavailable || "Indisponible"}
+                      </>
+                    )}
+                  </div>
 
-  {/* CV Button - Only show for freelancers */}
-  {profile.role === 'freelance' && (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => setShowCVModal(true)}
-      className="shadow-sm"
-    >
-      <FileText className="h-4 w-4 mr-2" />
-      {dict?.publicProfile?.viewCV || "Voir CV"}
-    </Button>
-  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveProfile}
+                    className={cn(
+                      "shadow-sm",
+                      isSaved && "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                    )}
+                  >
+                    <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
+                    {isSaved 
+                      ? (dict?.publicProfile?.saved || "Sauvegardé")
+                      : (dict?.publicProfile?.save || "Sauvegarder")}
+                  </Button>
 
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={handleSaveProfile}
-    className={cn(
-      "shadow-sm",
-      isSaved && "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-    )}
-  >
-    <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
-    {isSaved 
-      ? (dict?.publicProfile?.saved || "Sauvegardé")
-      : (dict?.publicProfile?.save || "Sauvegarder")}
-  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleContact}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-500/25"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    {dict?.publicProfile?.contact || "Contacter"}
+                  </Button>
 
-  {/* Message Button - Only show if viewing another user's profile and not your own */}
-  {session?.user?.id !== profile._id && (
-    <MessageButton
-      recipientId={profile._id}
-      recipientName={profile.name}
-      recipientAvatar={profile.avatar}
-      dict={dict}
-    />
-  )}
-
-  {/* Contact Button - Fallback for non-logged in users or as alternative */}
-  {!session && (
-    <Button
-      size="sm"
-      onClick={handleContact}
-      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-500/25"
-    >
-      <MessageCircle className="h-4 w-4 mr-2" />
-      {dict?.publicProfile?.contact || "Contacter"}
-    </Button>
-  )}
-
-  <Button size="sm" variant="outline" className="shadow-sm">
-    <Share2 className="h-4 w-4 mr-2" />
-    {dict?.publicProfile?.share || "Partager"}
-  </Button>
-</div>
+                  <Button size="sm" variant="outline" className="shadow-sm">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    {dict?.publicProfile?.share || "Partager"}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -1282,6 +1257,16 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </div>
+      {/* CV Modal */}
+{profile.role === 'freelance' && (
+  <CVViewerModal
+    isOpen={showCVModal}
+    onClose={() => setShowCVModal(false)}
+    userId={profile._id}
+    userName={profile.name}
+    dict={dict}
+  />
+)}
     </div>
   )
 }
