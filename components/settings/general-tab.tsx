@@ -35,6 +35,16 @@ interface GeneralTabProps {
   lang: string
 }
 
+interface CVData {
+  url: string
+  fileName: string
+  uploadedAt: string
+  fileSize: number
+  publicId?: string
+  fileType?: string
+  version?: number
+}
+
 interface UserProfile {
   name: string
   email: string
@@ -47,17 +57,11 @@ interface UserProfile {
     github?: string
     twitter?: string
   }
-  cv?: {
-    url: string
-    fileName: string
-    uploadedAt: string
-    fileSize: number
-  } | null
+  cv?: CVData | null
 }
 
 export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
   const { update } = useSession()
-  const params = useParams()
   const [loading, setLoading] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [isUploadingCV, setIsUploadingCV] = useState(false)
@@ -96,6 +100,21 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       const response = await fetch('/api/users/profile')
       if (response.ok) {
         const userData = await response.json()
+        
+        // Handle CV data properly - check different possible structures
+        let cvData = null
+        if (userData.cv) {
+          cvData = {
+            url: userData.cv.url || userData.cv.secure_url || '',
+            fileName: userData.cv.fileName || userData.cv.original_filename || 'CV.pdf',
+            uploadedAt: userData.cv.uploadedAt || userData.cv.created_at || new Date().toISOString(),
+            fileSize: userData.cv.fileSize || userData.cv.bytes || 0,
+            publicId: userData.cv.publicId || userData.cv.public_id,
+            fileType: userData.cv.fileType || userData.cv.format,
+            version: userData.cv.version
+          }
+        }
+        
         setFormData({
           name: userData.name || "",
           email: userData.email || "",
@@ -108,9 +127,12 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
             github: userData.socialLinks?.github || "",
             twitter: userData.socialLinks?.twitter || "",
           },
-          cv: userData.cv || null
+          cv: cvData
         })
         setCompletionScore(userData.completionScore || 0)
+        
+        // Debug log to see what we got
+        console.log('CV Data loaded:', cvData)
       } else {
         throw new Error('Failed to fetch profile')
       }
@@ -271,14 +293,25 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
       if (response.ok) {
         const data = await response.json()
         
+        // Extract CV data from response
+        const cvData = data.cv ? {
+          url: data.cv.url || '',
+          fileName: data.cv.fileName || file.name,
+          uploadedAt: data.cv.uploadedAt || new Date().toISOString(),
+          fileSize: data.cv.fileSize || file.size,
+          publicId: data.cv.publicId,
+          fileType: data.cv.fileType
+        } : null
+        
         setFormData(prev => ({
           ...prev,
-          cv: data.cv
+          cv: cvData
         }))
         
-        await fetchUserProfile()
-        
         toast.success(dict?.general?.success?.cvUpload || "CV téléchargé avec succès!")
+        
+        // Refresh profile to ensure consistency
+        await fetchUserProfile()
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Upload failed')
@@ -311,9 +344,10 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
           cv: null
         }))
         
-        await fetchUserProfile()
-        
         toast.success(dict?.general?.success?.cvDelete || "CV supprimé avec succès!")
+        
+        // Refresh profile to ensure consistency
+        await fetchUserProfile()
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Delete failed')
@@ -333,7 +367,7 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
   }
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
+    if (!bytes || bytes === 0) return '0 Bytes'
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -374,6 +408,9 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
   }
 
   const isFreelancer = user?.role === 'freelance'
+
+  // Debug log to see current CV state
+  console.log('Current CV in formData:', formData.cv)
 
   return (
     <div className="space-y-6">
@@ -481,7 +518,7 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {formData.cv ? (
+            {formData.cv && formData.cv.url ? (
               <div className="space-y-4">
                 {/* CV existant */}
                 <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -491,14 +528,16 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-                        {formData.cv.fileName}
+                        {formData.cv.fileName || 'CV.pdf'}
                       </h4>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {formatFileSize(formData.cv.fileSize)}
+                          {formatFileSize(formData.cv.fileSize || 0)}
                         </span>
                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(formData.cv.uploadedAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+                          {formData.cv.uploadedAt 
+                            ? new Date(formData.cv.uploadedAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')
+                            : new Date().toLocaleDateString()}
                         </span>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-300">
                           <CheckCircle className="h-3 w-3 mr-1" />
@@ -613,7 +652,7 @@ export function GeneralTab({ user, dict, lang }: GeneralTabProps) {
         </Card>
       )}
 
-      {/* Formulaire d'information */}
+      {/* Rest of the form remains the same */}
       <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
         <CardHeader>
           <CardTitle>{dict?.general?.personalInfo || "Informations Personnelles"}</CardTitle>
