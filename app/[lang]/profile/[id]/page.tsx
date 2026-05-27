@@ -566,7 +566,17 @@ export default function PublicProfilePage() {
                     <MessageCircle className="h-4 w-4 mr-2" />
                     {dict?.publicProfile?.contact || "Contacter"}
                   </Button>
-
+                      {profile.role === 'freelance' && (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => setShowCVModal(true)}
+      className="shadow-sm"
+    >
+      <FileText className="h-4 w-4 mr-2" />
+      {dict?.publicProfile?.viewCV || "Voir CV"}
+    </Button>
+  )}
                   <Button size="sm" variant="outline" className="shadow-sm">
                     <Share2 className="h-4 w-4 mr-2" />
                     {dict?.publicProfile?.share || "Partager"}
