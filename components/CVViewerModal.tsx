@@ -31,7 +31,6 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
     setError(null)
     
     try {
-      // Use the correct endpoint with userId
       const response = await fetch(`/api/users/${userId}/cv`)
       
       if (response.ok) {
@@ -39,14 +38,14 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
         setCvData(data.cv)
       } else if (response.status === 404) {
         const errorData = await response.json()
-        setError(errorData.error || dict?.profile?.noCVAvailable || "Ce freelance n'a pas encore téléchargé de CV")
+        setError(errorData.error || dict?.publicProfile?.noCVAvailable || "Ce freelance n'a pas encore téléchargé de CV")
       } else {
         throw new Error("Failed to fetch CV")
       }
     } catch (error) {
       console.error("Error fetching CV:", error)
-      setError(dict?.profile?.cvFetchError || "Impossible de charger le CV")
-      toast.error(dict?.profile?.cvFetchError || "Erreur lors du chargement du CV")
+      setError(dict?.publicProfile?.cvFetchError || "Impossible de charger le CV")
+      toast.error(dict?.publicProfile?.cvFetchError || "Erreur lors du chargement du CV")
     } finally {
       setIsLoading(false)
     }
@@ -55,7 +54,7 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
   const handleDownload = () => {
     if (cvData?.url) {
       window.open(cvData.url, '_blank')
-      toast.success(dict?.profile?.downloadStarted || "Téléchargement démarré")
+      toast.success(dict?.publicProfile?.downloadStarted || "Téléchargement démarré")
     }
   }
 
@@ -79,7 +78,7 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-500" />
-            {dict?.profile?.cvOf || "CV de"} {userName}
+            {dict?.publicProfile?.cvOf || "CV de"} {userName}
           </DialogTitle>
         </DialogHeader>
 
@@ -88,7 +87,7 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-3" />
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                {dict?.profile?.loadingCV || "Chargement du CV..."}
+                {dict?.publicProfile?.loadingCV || "Chargement du CV..."}
               </p>
             </div>
           ) : error ? (
@@ -127,7 +126,7 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
                     className="flex-1 bg-blue-600 hover:bg-blue-700"
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    {dict?.profile?.viewCV || "Voir le CV"}
+                    {dict?.publicProfile?.viewCVButton || "Voir le CV"}
                   </Button>
                   <Button
                     onClick={handleDownload}
@@ -135,13 +134,13 @@ export function CVViewerModal({ isOpen, onClose, userId, userName, dict }: CVVie
                     className="flex-1"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    {dict?.profile?.downloadCV || "Télécharger"}
+                    {dict?.publicProfile?.downloadCV || "Télécharger"}
                   </Button>
                 </div>
               </div>
 
               <div className="text-xs text-center text-slate-500 dark:text-slate-400">
-                {dict?.profile?.cvPrivacy || "Le CV est confidentiel et ne sera utilisé que pour l'évaluation de votre candidature"}
+                {dict?.publicProfile?.cvPrivacy || "Le CV est confidentiel et ne sera utilisé que pour l'évaluation de votre candidature"}
               </div>
             </>
           ) : null}

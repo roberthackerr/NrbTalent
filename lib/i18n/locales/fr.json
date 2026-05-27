@@ -1,4 +1,5 @@
 {
+  
 "orders_id": {
     "title": "Mes Commandes",
     "subtitle": "Gérez vos commandes en tant qu'acheteur ou vendeur",
@@ -1580,6 +1581,24 @@
     }
   },
    "publicProfile": {
+    "viewCV": "Voir le CV",
+    "cvOf": "CV de",
+    "loadingCV": "Chargement du CV...",
+    "noCVAvailable": "Ce freelance n'a pas encore téléchargé de CV",
+    "cvFetchError": "Impossible de charger le CV",
+    "downloadStarted": "Téléchargement démarré",
+    "viewCVButton": "Voir le CV",
+    "downloadCV": "Télécharger",
+    "cvPrivacy": "Le CV est confidentiel et ne sera utilisé que pour l'évaluation de votre candidature",
+    "cvSection": "Curriculum Vitae (CV)",
+    "cvDescription": "Téléchargez votre CV pour augmenter vos chances d'être embauché. Les clients pourront voir votre parcours professionnel.",
+    "uploadCV": "Télécharger mon CV",
+    "replaceCV": "Remplacer le CV",
+    "cvBenefits": "Les freelances avec un CV ont 3 fois plus de chances d'être contactés par des clients",
+    "noCV": "Aucun CV téléchargé",
+    "uploaded": "Téléchargé",
+    "delete": "Supprimer",
+    "download": "Télécharger",
     "verified": "Vérifié",
     "freelance": "Freelance",
     "client": "Client",
@@ -2044,6 +2063,15 @@
     }
   },
   "general": {
+    "cvSection": "Curriculum Vitae (CV)",
+    "cvDescription": "Téléchargez votre CV pour augmenter vos chances d'être embauché. Les clients pourront voir votre parcours professionnel.",
+    "uploadCV": "Télécharger mon CV",
+    "replaceCV": "Remplacer le CV",
+    "cvBenefits": "Les freelances avec un CV ont 3 fois plus de chances d'être contactés par des clients",
+    "noCV": "Aucun CV téléchargé",
+    "uploaded": "Téléchargé",
+    "delete": "Supprimer",
+    "download": "Télécharger",
     "publicProfile": "Profil Public",
     "publicProfileDesc": "Ces informations seront visibles par les autres utilisateurs",
     "profileCompletion": "Complétion du profil",
@@ -2080,9 +2108,15 @@
       "update": "Erreur lors de la mise à jour du profil",
       "invalidImage": "Veuillez sélectionner une image valide",
       "fileTooLarge": "L'image doit faire moins de 5MB",
-      "upload": "Erreur lors du téléchargement de l'image"
+      "upload": "Erreur lors du téléchargement de l'image",
+            "invalidCVType": "Format non supporté. Utilisez PDF, DOC ou DOCX",
+      "cvTooLarge": "Le CV doit faire moins de 10MB",
+      "cvUpload": "Erreur lors du téléchargement du CV",
+      "cvDelete": "Erreur lors de la suppression du CV"
     },
     "success": {
+            "cvUpload": "CV téléchargé avec succès!",
+      "cvDelete": "CV supprimé avec succès!",
       "update": "Profil mis à jour avec succès!",
       "avatar": "Photo de profil mise à jour avec succès!"
     }
@@ -3004,6 +3038,10 @@
   },
 
   "common": {
+
+    "deleting": "Suppression...",
+    "retry": "Réessayer",
+    "saved": "Sauvegardé",
        "saving": "Enregistrement...",
     "saveChanges": "Enregistrer les modifications",
     "cancel": "Annuler",

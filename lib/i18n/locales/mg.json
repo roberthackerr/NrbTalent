@@ -1676,6 +1676,24 @@
     }
   },
   "publicProfile": {
+    "viewCV": "Hijery CV",
+    "cvOf": "CV an'i",
+    "loadingCV": "Fandefasana CV...",
+    "noCVAvailable": "Mbola tsy nampiditra CV ity freelancer ity",
+    "cvFetchError": "Tsy voaloatra ny CV",
+    "downloadStarted": "Efa manomboka ny téléchargement",
+    "viewCVButton": "Hijery CV",
+    "downloadCV": "Télécharger",
+    "cvPrivacy": "Tsiambaratelo ny CV ary hampiasaina amin'ny fanombanana ny fangatahanao ihany",
+    "cvSection": "Curriculum Vitae (CV)",
+    "cvDescription": "Ampidiro ny CV mba hampitomboana ny vintana hahazoana asa. Ho hitan'ny mpanjifa ny traikefanao.",
+    "uploadCV": "Ampidiro ny CV-ko",
+    "replaceCV": "Soloina CV",
+    "cvBenefits": "Ny freelancers manana CV dia in-3 noho ny hafa no azo antoka kokoa ho voatonona",
+    "noCV": "Mbola tsy nampiditra CV",
+    "uploaded": "Tafiditra",
+    "delete": "Fafana",
+    "download": "Télécharger",
     "verified": "Voamarina",
     "freelance": "Freelance",
     "client": "Mpanjifa",
@@ -2283,6 +2301,15 @@
     }
   },
  "general": {
+  "cvSection": "Curriculum Vitae (CV)",
+    "cvDescription": "Ampidiro ny CV mba hampitomboana ny vintana hahazoana asa. Ho hitan'ny mpanjifa ny traikefanao.",
+    "uploadCV": "Ampidiro ny CV-ko",
+    "replaceCV": "Soloina CV",
+    "cvBenefits": "Ny freelancers manana CV dia in-3 noho ny hafa no azo antoka kokoa ho voatonona",
+    "noCV": "Mbola tsy nampiditra CV",
+    "uploaded": "Tafiditra",
+    "delete": "Fafana",
+    "download": "Télécharger",
     "publicProfile": "Mombamomba ampahibemaso",
     "publicProfileDesc": "Ireo fampahalalana ireo dia ho hita amin'ny mpampiasa hafa",
     "profileCompletion": "Fahavitahan'ny mombamomba",
@@ -2319,11 +2346,17 @@
       "update": "Tsy fahombiazana ny fanavaozana ny mombamomba",
       "invalidImage": "Fidio sary mety azafady",
       "fileTooLarge": "Tsy maintsy latsaky ny 5MB ny sary",
-      "upload": "Tsy fahombiazana ny fampiakarana sary"
+      "upload": "Tsy fahombiazana ny fampiakarana sary",
+      "invalidCVType": "Tsy tohana io endrika io. Ampiasao PDF, DOC na DOCX",
+      "cvTooLarge": "Tsy tokony hihoatra ny 10MB ny CV",
+      "cvUpload": "Nisy hadisoana tamin'ny fampidirana CV",
+      "cvDelete": "Nisy hadisoana tamin'ny famafana CV"
     },
     "success": {
       "update": "Voavao soa aman-tsara ny mombamomba!",
       "avatar": "Voaova soa aman-tsara ny sarin'ny mombamomba!"
+      ,"cvUpload": "Vita soa aman-tsara ny fampidirana CV!",
+      "cvDelete": "Vita soa aman-tsara ny famafana CV!"
     }
   },
    "billing": {
@@ -2649,10 +2682,15 @@
   },
 
   "common": {
+
+    "uploading": "Fandefasana...",
+    "deleting": "Famafana...",
+
+    "retry": "Andramo indray",
+    "saved": "Voatahiry",
         "saving": "Fitehirizana...",
     "saveChanges": "Tehirizo ny fanovana",
     "noChanges": "Tsy misy fanovana",
-    "uploading": "Fampakarana...",
     "characters": "literatiora",
       "verifying": "Fanamarinana...",
     "resendIn": "Handefa indray afaka",

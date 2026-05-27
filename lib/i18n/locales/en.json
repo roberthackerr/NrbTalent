@@ -1585,6 +1585,24 @@
     }
   },
   "publicProfile": {
+    "viewCV": "View CV",
+    "cvOf": "CV of",
+    "loadingCV": "Loading CV...",
+    "noCVAvailable": "This freelancer hasn't uploaded a CV yet",
+    "cvFetchError": "Unable to load CV",
+    "downloadStarted": "Download started",
+    "viewCVButton": "View CV",
+    "downloadCV": "Download",
+    "cvPrivacy": "The CV is confidential and will only be used for evaluating your application",
+    "cvSection": "Curriculum Vitae (CV)",
+    "cvDescription": "Upload your CV to increase your chances of getting hired. Clients will be able to see your professional background.",
+    "uploadCV": "Upload my CV",
+    "replaceCV": "Replace CV",
+    "cvBenefits": "Freelancers with a CV are 3 times more likely to be contacted by clients",
+    "noCV": "No CV uploaded",
+    "uploaded": "Uploaded",
+    "delete": "Delete",
+    "download": "Download",
     "verified": "Verified",
     "freelance": "Freelance",
     "client": "Client",
@@ -2049,6 +2067,15 @@
     }
   },
     "general": {
+      "cvSection": "Curriculum Vitae (CV)",
+    "cvDescription": "Upload your CV to increase your chances of getting hired. Clients will be able to see your professional background.",
+    "uploadCV": "Upload my CV",
+    "replaceCV": "Replace CV",
+    "cvBenefits": "Freelancers with a CV are 3 times more likely to be contacted by clients",
+    "noCV": "No CV uploaded",
+    "uploaded": "Uploaded",
+    "delete": "Delete",
+    "download": "Download",
     "publicProfile": "Public Profile",
     "publicProfileDesc": "This information will be visible to other users",
     "profileCompletion": "Profile Completion",
@@ -2081,6 +2108,10 @@
       "needsImprovement": "Needs Improvement"
     },
     "errors": {
+      "invalidCVType": "Unsupported format. Use PDF, DOC or DOCX",
+      "cvTooLarge": "CV must be less than 10MB",
+      "cvUpload": "Error uploading CV",
+      "cvDelete": "Error deleting CV",
       "fetch": "Error loading profile",
       "update": "Error updating profile",
       "invalidImage": "Please select a valid image",
@@ -2089,7 +2120,9 @@
     },
     "success": {
       "update": "Profile updated successfully!",
-      "avatar": "Profile photo updated successfully!"
+      "avatar": "Profile photo updated successfully!",
+      "cvUpload": "CV uploaded successfully!",
+      "cvDelete": "CV deleted successfully!"
     }
   },
 
@@ -2965,6 +2998,9 @@
   },
 
   "common": {
+        "deleting": "Deleting...",
+    "retry": "Retry",
+    "saved": "Saved",
         "saving": "Saving...",
     "saveChanges": "Save Changes",
     "cancel": "Cancel",
