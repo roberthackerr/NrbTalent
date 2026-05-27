@@ -432,13 +432,12 @@ export default function AdminSupportPage() {
   }, [loadData])
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
-    if (status === "loading") return
     
     if (!session || (session.user as any)?.role !== "admin") {
       router.push(`/${lang}/dashboard`) 
       toast.error( "Accès non autorisé")
     }
-  }, [session, status, router, lang])
+  }, [session,  router, lang])
 
   // Filtrer les signalements
   const filteredReports = reports.filter(report => {
