@@ -1,28 +1,11 @@
-// middleware.ts - Version avec maintenance mode
+// middleware.ts - Version corrigée avec lecture du token.language
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from 'next/server'
 import { locales, defaultLocale } from '@/lib/i18n/config'
 import { getToken } from 'next-auth/jwt'
 
-// 🔥 MODE MAINTENANCE - Activer/Désactiver facilement
-const MAINTENANCE_MODE = true // Mettre à false pour désactiver le mode maintenance
-
-// Routes autorisées pendant la maintenance
-const maintenanceAllowedRoutes = [
-  '/support',
-  '/api/support',
-  '/auth/signin',
-  '/auth/signup',
-  '/auth/forgot-password',
-  '/auth/reset-password',
-  '/auth/verify-email',
-  '/auth/verify-email-prompt',
-  '/api/auth',
-  '/maintenance'
-]
-
-// Routes publiques normales
+// Routes publiques
 const publicRoutes = [
   '/auth/signin',
   '/auth/signup',
@@ -74,7 +57,7 @@ const authRoutes = [
   '/auth/verify-email-prompt'
 ]
 
-// Routes SEO à exclure complètement du middleware
+// 🔥 NOUVEAU: Routes SEO à exclure complètement du middleware
 const seoRoutes = [
   '/sitemap.xml',
   '/robots.txt',
@@ -96,36 +79,7 @@ export const config = {
   ],
 }
 
-// Fonction pour vérifier si une route est autorisée en maintenance
-function isAllowedInMaintenance(pathname: string): boolean {
-  // Vérifier les routes autorisées exactes
-  if (maintenanceAllowedRoutes.some(route => pathname === route)) {
-    return true
-  }
-  
-  // Vérifier les routes autorisées avec préfixe (pour les langues)
-  if (maintenanceAllowedRoutes.some(route => pathname.startsWith(route + '/'))) {
-    return true
-  }
-  
-  // Vérifier les routes avec langue (ex: /fr/support)
-  const pathWithoutLang = pathname.replace(/^\/[^\/]+/, '') || '/'
-  if (maintenanceAllowedRoutes.some(route => pathWithoutLang === route)) {
-    return true
-  }
-  if (maintenanceAllowedRoutes.some(route => pathWithoutLang.startsWith(route + '/'))) {
-    return true
-  }
-  
-  // Vérifier les fichiers statiques et assets
-  if (pathname.includes('.') || pathname.startsWith('/_next')) {
-    return true
-  }
-  
-  return false
-}
-
-// Middleware pour la langue et la maintenance
+// Middleware pour la langue
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
@@ -133,16 +87,15 @@ export async function middleware(request: NextRequest) {
   if (seoRoutes.some(route => pathname === route || pathname.startsWith(route))) {
     return NextResponse.next()
   }
-  
-  // 🔥 FIX: Redirect /auth/singup to /auth/signup (typo fix)
+   // 🔥 FIX: Redirect /auth/singup to /auth/signup (typo fix)
   if (pathname === '/auth/singup') {
     const newUrl = new URL('/auth/signup', request.url)
+    // Preserve query parameters if any
     request.nextUrl.searchParams.forEach((value, key) => {
       newUrl.searchParams.set(key, value)
     }) 
-    return NextResponse.redirect(newUrl, 301)
+    return NextResponse.redirect(newUrl, 301) // Permanent redirect
   }
-  
   // Exclure les fichiers statiques et API WebSocket
   if (
     pathname.startsWith('/_next') ||
@@ -152,46 +105,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 🔥 MODE MAINTENANCE - Redirection sauf routes autorisées
-  if (MAINTENANCE_MODE && !isAllowedInMaintenance(pathname)) {
-    // Extraire la langue si présente
-    const pathnameHasLocale = locales.some(
-      locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-    )
-    
-    let currentLocale = defaultLocale
-    if (pathnameHasLocale) {
-      currentLocale = pathname.split('/')[1] as typeof locales[number]
-    }
-    
-    // Déterminer la langue préférée
-    const token = await getToken({ req: request })
-    let preferredLocale = currentLocale
-    
-    if (token?.language && locales.includes(token.language as any)) {
-      preferredLocale = token.language
-    } else if (request.cookies.get('preferred-language')?.value) {
-      const cookieLang = request.cookies.get('preferred-language')?.value
-      if (cookieLang && locales.includes(cookieLang as any)) {
-        preferredLocale = cookieLang
-      }
-    }
-    
-    // Rediriger vers la page de maintenance
-    const maintenanceUrl = new URL(`/${preferredLocale}/maintenance`, request.url)
-    
-    // Préserver les paramètres de requête si nécessaire
-    request.nextUrl.searchParams.forEach((value, key) => {
-      maintenanceUrl.searchParams.set(key, value)
-    })
-    
-    // Ajouter l'URL d'origine comme paramètre
-    maintenanceUrl.searchParams.set('redirectTo', pathname)
-    
-    return NextResponse.redirect(maintenanceUrl)
-  }
-
-  // Suite normale du middleware (gestion de la langue)
   const pathnameHasLocale = locales.some(
     locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )
@@ -204,7 +117,7 @@ export async function middleware(request: NextRequest) {
   // Récupérer le token pour l'utilisateur connecté
   const token = await getToken({ req: request })
   
-  // Récupérer la langue depuis le token
+  // 👈 CRUCIAL: Récupérer la langue depuis le token
   let preferredLocale = currentLocale
   
   // Priorité 1: Langue dans le token (de l'utilisateur connecté)
@@ -224,7 +137,7 @@ export async function middleware(request: NextRequest) {
     ? pathname.replace(/^\/[^\/]+/, '') || '/'
     : pathname
 
-  // Vérification: Rediriger les utilisateurs connectés depuis les pages d'auth
+  // 🔥 VÉRIFICATION: Rediriger les utilisateurs connectés depuis les pages d'auth
   if (token && authRoutes.some(route => pathWithoutLang === route || pathWithoutLang.startsWith(route + '/'))) {
     const newUrl = new URL(`/${preferredLocale}/`, request.url)
     return NextResponse.redirect(newUrl)
@@ -236,8 +149,7 @@ export async function middleware(request: NextRequest) {
     currentLocale,
     pathnameHasLocale,
     hasToken: !!token,
-    pathWithoutLang,
-    maintenanceMode: MAINTENANCE_MODE
+    pathWithoutLang
   })
 
   // Redirection vers la langue préférée
@@ -283,7 +195,7 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Middleware d'authentification
+// Middleware d'authentification - MODIFIÉ pour ne pas s'exécuter sur les routes SEO
 export default withAuth(
   async function middleware(req) {
     const token = req.nextauth.token
@@ -292,11 +204,6 @@ export default withAuth(
 
     // 🔥 CRUCIAL: Ignorer complètement l'authentification pour les routes SEO
     if (seoRoutes.some(route => path === route || path.startsWith(route))) {
-      return NextResponse.next()
-    }
-    
-    // 🔥 MODE MAINTENANCE - Ignorer l'authentification pour les routes autorisées
-    if (MAINTENANCE_MODE && isAllowedInMaintenance(path)) {
       return NextResponse.next()
     }
 
@@ -318,11 +225,13 @@ export default withAuth(
       pathWithoutLang === route || pathWithoutLang.startsWith(route + '/')
     )
 
-    // Vérification pour les routes d'auth
+    // 🔥 NOUVEAU: Vérification pour les routes d'auth
     if (isAuthRoute) {
       if (token) {
+        // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
         return NextResponse.redirect(new URL(`/${lang}/`, req.url))
       }
+      // Sinon, autoriser l'accès à la page d'auth
       return NextResponse.next()
     }
 
@@ -406,14 +315,11 @@ export default withAuth(
   },
   {
     callbacks: {
+      // 🔥 MODIFIÉ: Autoriser les routes SEO sans authentification
       authorized: ({ req, token }) => {
         const path = req.nextUrl.pathname
         // Les routes SEO sont toujours autorisées
         if (seoRoutes.some(route => path === route || path.startsWith(route))) {
-          return true
-        }
-        // 🔥 MODE MAINTENANCE - Autoriser les routes spécifiques sans authentification
-        if (MAINTENANCE_MODE && isAllowedInMaintenance(path)) {
           return true
         }
         return !!token
