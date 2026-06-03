@@ -6,7 +6,7 @@ import { locales, defaultLocale } from '@/lib/i18n/config'
 import { getToken } from 'next-auth/jwt'
 
 // 🔥 MODE MAINTENANCE - Activer/Désactiver facilement
-const MAINTENANCE_MODE = true // Mettre à false pour désactiver le mode maintenance
+const MAINTENANCE_MODE = false // Mettre à false pour désactiver le mode maintenance
 
 // Routes autorisées pendant la maintenance
 const maintenanceAllowedRoutes = [
