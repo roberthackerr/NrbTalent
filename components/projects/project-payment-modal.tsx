@@ -25,6 +25,8 @@ import {
   AlertCircle
 } from "lucide-react"
 import { AddPaymentMethod } from "@/components/payments/add-payment-method"
+import { PaymentMethodSelector } from '../payments/payment-methods'
+import { useRouter } from 'next/router'
 
 interface ProjectPaymentModalProps {
   project: any
@@ -44,7 +46,7 @@ export function ProjectPaymentModal({
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [paymentAmount, setPaymentAmount] = useState(project.budget?.min || 0)
-
+  const router = useRouter()
   const isControlled = externalOpen !== undefined
   const open = isControlled ? externalOpen : internalOpen
   const setOpen = isControlled ? onOpenChange || (() => {}) : setInternalOpen
@@ -290,15 +292,21 @@ export function ProjectPaymentModal({
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
                       Aucune carte enregistrée
                     </p>
-                    <AddPaymentMethod 
-                      trigger={
-                        <Button>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Ajouter ma première carte
-                        </Button>
-                      }
-                      onSuccess={handleSuccess}
-                    />
+     
+<PaymentMethodSelector
+  amount={fees.total}
+  currency="EUR"
+  projectId={project._id}
+  onSuccess={(payment) => {
+    toast.success("Paiement effectué avec succès!")
+    setOpen(false)
+    router.push(`/dashboard/client/projects/payment/success?payment_id=${payment.paymentId}`)
+  }}
+  onError={(error) => {
+    toast.error(error)
+  }}
+/>
+
                   </div>
                 )}
 
