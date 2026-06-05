@@ -108,39 +108,39 @@ function FAQSection({ faqs, lang, dict, onFeedback }: {
           </button>
           
           {openFaq === faq.id && (
-            <CardContent className="pt-0 pb-4 px-4 sm:px-6">
-              <pre className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">
-                {faq.answer}
-              </pre>
-              
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <span className="text-xs sm:text-sm text-slate-500">
-                  {dict?.support?.wasThisHelpful || "Cet article vous a-t-il été utile ?"}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleFeedback(faq.id, true)}
-                    disabled={feedbackGiven[faq.id]}
-                    className="h-8 gap-1 text-xs"
-                  >
-                    <ThumbsUp className="h-3 w-3" />
-                    {faq.helpful}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleFeedback(faq.id, false)}
-                    disabled={feedbackGiven[faq.id]}
-                    className="h-8 gap-1 text-xs"
-                  >
-                    <ThumbsDown className="h-3 w-3" />
-                    {faq.notHelpful}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
+           <CardContent className="pt-0 pb-4 px-4 sm:px-6">
+  <div className="whitespace-pre-wrap text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">
+    {faq.answer}
+  </div>
+  
+  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 pt-3 border-t border-slate-200 dark:border-slate-800">
+    <span className="text-xs sm:text-sm text-slate-500">
+      {dict?.support?.wasThisHelpful || "Cet article vous a-t-il été utile ?"}
+    </span>
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => handleFeedback(faq.id, true)}
+        disabled={feedbackGiven[faq.id]}
+        className="h-8 gap-1 text-xs"
+      >
+        <ThumbsUp className="h-3 w-3" />
+        {faq.helpful}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => handleFeedback(faq.id, false)}
+        disabled={feedbackGiven[faq.id]}
+        className="h-8 gap-1 text-xs"
+      >
+        <ThumbsDown className="h-3 w-3" />
+        {faq.notHelpful}
+      </Button>
+    </div>
+  </div>
+</CardContent>
           )}
         </Card>
       ))}
