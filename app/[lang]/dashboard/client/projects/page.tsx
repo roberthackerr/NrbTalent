@@ -928,6 +928,7 @@ export default function ClientProjectsPage() {
                                   <DropdownMenuItem asChild><Link href={`/projects/${project._id}/edit`} className="flex items-center gap-2"><Edit2 className="h-3.5 w-3.5" /> Modifier</Link></DropdownMenuItem>
                                   <DropdownMenuItem asChild><Link href={`/projects/${project._id}`} className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Voir détails</Link></DropdownMenuItem>
                                   <DropdownMenuItem asChild><AIArchitectBadge projectId={project._id} clientId={session?.user?.id} /></DropdownMenuItem>
+                                  <DropdownMenuItem asChild><Link href={`/dashboard/client/projects/${project._id}/payment`} className="flex items-center gap-2"><DollarSign className="h-3.5 w-3.5" /> Payement</Link></DropdownMenuItem>
                                   <DropdownMenuItem asChild>
                                     <Link href={`/dashboard/client/projects/${project._id}/proposals`} className="flex items-center gap-2">
                                       <Users className="h-3.5 w-3.5" /> Toutes les propositions
