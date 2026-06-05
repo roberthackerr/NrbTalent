@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -25,20 +23,82 @@ import {
   Wallet,
   CheckCircle2,
   Loader2,
-  ExternalLink,
   Copy,
   QrCode
 } from "lucide-react"
 import Image from "next/image"
-import { loadStripe } from '@stripe/stripe-js'
 
-interface PaymentMethod {
-  id: string
-  type: 'stripe' | 'paypal' | 'crypto' | 'bank_transfer' | 'mobile_money' | 'wave' | 'orange_money'
-  name: string
-  icon: any
-  enabled: boolean
-  config?: any
+// Configuration des méthodes de paiement - AVEC DES COMPOSANTS VALIDES
+const PAYMENT_METHODS = [
+  {
+    id: 'stripe',
+    type: 'stripe',
+    name: 'Carte bancaire',
+    icon: CreditCard, // Composant Lucide
+    iconType: 'component',
+    enabled: true
+  },
+  {
+    id: 'paypal',
+    type: 'paypal',
+    name: 'PayPal',
+    icon: '/paypal-icon.svg', // Chemin d'image
+    iconType: 'image',
+    enabled: true
+  },
+  {
+    id: 'crypto',
+    type: 'crypto',
+    name: 'Cryptomonnaies',
+    icon: Bitcoin, // Composant Lucide
+    iconType: 'component',
+    enabled: true,
+    config: {
+      currencies: ['BTC', 'ETH', 'USDT', 'BNB', 'SOL']
+    }
+  },
+  {
+    id: 'bank_transfer',
+    type: 'bank_transfer',
+    name: 'Virement bancaire',
+    icon: Landmark, // Composant Lucide
+    iconType: 'component',
+    enabled: true
+  },
+  {
+    id: 'mobile_money',
+    type: 'mobile_money',
+    name: 'Mobile Money',
+    icon: Smartphone, // Composant Lucide
+    iconType: 'component',
+    enabled: true,
+    config: {
+      providers: ['MTN Money', 'Orange Money', 'Airtel Money', 'Moov Money']
+    }
+  }
+]
+
+// Composant pour afficher l'icône
+function PaymentMethodIcon({ method }: { method: typeof PAYMENT_METHODS[0] }) {
+  if (method.iconType === 'image' && typeof method.icon === 'string') {
+    return (
+      <Image 
+        src={method.icon} 
+        alt={method.name} 
+        width={24} 
+        height={24} 
+        className="h-6 w-6"
+      />
+    )
+  }
+  
+  if (method.iconType === 'component' && typeof method.icon !== 'string') {
+    const IconComponent = method.icon
+    return <IconComponent className="h-6 w-6" />
+  }
+  
+  // Fallback
+  return <CreditCard className="h-6 w-6" />
 }
 
 interface PaymentMethodSelectorProps {
@@ -49,68 +109,13 @@ interface PaymentMethodSelectorProps {
   onError: (error: string) => void
 }
 
-// Configuration des méthodes de paiement
-const PAYMENT_METHODS: PaymentMethod[] = [
-  {
-    id: 'stripe',
-    type: 'stripe',
-    name: 'Carte bancaire',
-    icon: CreditCard,
-    enabled: true
-  },
-  {
-    id: 'paypal',
-    type: 'paypal',
-    name: 'PayPal',
-    icon: () => (
-      <Image src="/paypal-icon.svg" alt="PayPal" width={24} height={24} />
-    ),
-    enabled: true
-  },
-  {
-    id: 'crypto',
-    type: 'crypto',
-    name: 'Cryptomonnaies',
-    icon: Bitcoin,
-    enabled: true,
-    config: {
-      currencies: ['BTC', 'ETH', 'USDT', 'BNB', 'SOL']
-    }
-  },
-  {
-    id: 'bank_transfer',
-    type: 'bank_transfer',
-    name: 'Virement bancaire',
-    icon: Landmark,
-    enabled: true
-  },
-  {
-    id: 'mobile_money',
-    type: 'mobile_money',
-    name: 'Mobile Money',
-    icon: Smartphone,
-    enabled: true,
-    config: {
-      providers: ['MTN Money', 'Orange Money', 'Airtel Money', 'Moov Money']
-    }
-  },
-  {
-    id: 'wave',
-    type: 'wave',
-    name: 'Wave',
-    icon: Wallet,
-    enabled: true
-  },
-  {
-    id: 'orange_money',
-    type: 'orange_money',
-    name: 'Orange Money',
-    icon: Smartphone,
-    enabled: true
-  }
-]
-
-export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, onError }: PaymentMethodSelectorProps) {
+export function PaymentMethodSelector({ 
+  amount, 
+  currency, 
+  projectId, 
+  onSuccess, 
+  onError 
+}: PaymentMethodSelectorProps) {
   const [selectedMethod, setSelectedMethod] = useState<string>('stripe')
   const [loading, setLoading] = useState(false)
   const [showCryptoModal, setShowCryptoModal] = useState(false)
@@ -133,8 +138,7 @@ export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, 
           projectId,
           metadata: {
             mobileNumber,
-            mobileProvider,
-            cryptoAddress
+            mobileProvider
           }
         })
       })
@@ -145,14 +149,20 @@ export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, 
         throw new Error(data.error || 'Erreur de paiement')
       }
 
-      // Rediriger selon la méthode
       switch (selectedMethod) {
         case 'stripe':
           if (data.clientSecret) {
-            // Gérer Stripe
-            const stripe = await loadStripe()
-            const { error } = await stripe.confirmCardPayment(data.clientSecret)
-            if (error) throw new Error(error.message)
+            const stripeModule = await import('@stripe/stripe-js')
+            const stripe = await stripeModule.loadStripe(
+              process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+            )
+            if (stripe) {
+              const { error, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret)
+              if (error) throw new Error(error.message)
+              if (paymentIntent?.status === 'succeeded') {
+                onSuccess({ paymentId: paymentIntent.id, status: 'succeeded' })
+              }
+            }
           }
           break
         
@@ -169,11 +179,16 @@ export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, 
         
         case 'bank_transfer':
           setBankDetails(data.bankDetails)
+          toast.info("Veuillez effectuer le virement bancaire", { duration: 5000 })
+          break
+        
+        case 'mobile_money':
+          toast.success("Un code de paiement a été envoyé sur votre téléphone")
+          onSuccess(data)
           break
         
         default:
           onSuccess(data)
-          toast.success("Paiement initié avec succès")
       }
       
     } catch (error) {
@@ -193,32 +208,25 @@ export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, 
     <div className="space-y-6">
       {/* Sélection de la méthode */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {PAYMENT_METHODS.filter(m => m.enabled).map((method) => {
-          const Icon = method.icon
-          return (
-            <button
-              key={method.id}
-              onClick={() => setSelectedMethod(method.id)}
-              className={`
-                flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
-                ${selectedMethod === method.id
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
-                }
-              `}
-            >
-              {typeof Icon === 'function' && Icon.name === 'Icon' ? (
-                <Icon className="h-6 w-6" />
-              ) : (
-                Icon
-              )}
-              <span className="text-sm font-medium">{method.name}</span>
-            </button>
-          )
-        })}
+        {PAYMENT_METHODS.filter(m => m.enabled).map((method) => (
+          <button
+            key={method.id}
+            onClick={() => setSelectedMethod(method.id)}
+            className={`
+              flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
+              ${selectedMethod === method.id
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
+              }
+            `}
+          >
+            <PaymentMethodIcon method={method} />
+            <span className="text-sm font-medium">{method.name}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Formulaire spécifique selon méthode */}
+      {/* Formulaire Mobile Money */}
       {selectedMethod === 'mobile_money' && (
         <Card>
           <CardContent className="pt-6">
@@ -282,6 +290,11 @@ export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, 
               <Copy className="h-4 w-4 mr-2" />
               Copier les coordonnées
             </Button>
+            <div className="text-center pt-2">
+              <p className="text-sm text-green-600">
+                Une fois le virement effectué, la transaction sera validée automatiquement
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -289,14 +302,14 @@ export function PaymentMethodSelector({ amount, currency, projectId, onSuccess, 
       {/* Bouton de paiement */}
       <Button
         onClick={handlePayment}
-        disabled={loading}
+        disabled={loading || (selectedMethod === 'mobile_money' && (!mobileNumber || !mobileProvider))}
         className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-purple-600"
         size="lg"
       >
         {loading ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Traitement...
+            Traitement en cours...
           </>
         ) : (
           <>
