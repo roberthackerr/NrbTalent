@@ -109,9 +109,9 @@ function FAQSection({ faqs, lang, dict, onFeedback }: {
           
           {openFaq === faq.id && (
             <CardContent className="pt-0 pb-4 px-4 sm:px-6">
-              <article className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">
+              <pre className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">
                 {faq.answer}
-              </article>
+              </pre>
               
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <span className="text-xs sm:text-sm text-slate-500">
