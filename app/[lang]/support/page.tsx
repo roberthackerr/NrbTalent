@@ -109,7 +109,7 @@ function FAQSection({ faqs, lang, dict, onFeedback }: {
           
           {openFaq === faq.id && (
             <CardContent className="pt-0 pb-4 px-4 sm:px-6">
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">
+              <p className="whitespace-pre-line text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4">
                 {faq.answer}
               </p>
               
@@ -413,7 +413,7 @@ export default function SupportPage() {
     supportAvailable: '24/7',
     responseTime: '< 2h',
     satisfaction: '98%',
-    problemsSolved: '15k+'
+    problemsSolved: '4'
   })
 
   // Charger le dictionnaire
