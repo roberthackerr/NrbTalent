@@ -96,6 +96,11 @@ export const Footer = ({ dict, lang }: FooterProps) => {
                 <Link href={`/${currentLang}/blog`} className="hover:text-foreground transition-colors">
                   {t('blog', 'Blog')}
                 </Link>
+<li>
+            <Link href={`/${currentLang}/support`} className="hover:text-foreground transition-colors">
+                  {t('support', 'Support')}
+                </Link>
+</li>
               </li>
               <li>
                 <Link href={`/${currentLang}/careers`} className="hover:text-foreground transition-colors">
