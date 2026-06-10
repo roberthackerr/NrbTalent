@@ -50,7 +50,7 @@ export default function ClientOnboardingPage() {
     getDictionarySafe(lang).then(setDict)
     
     if (session?.user?.onboardingCompleted) {
-      router.push(`/${lang}/dashboard`)
+      router.push(`/${lang}`)
     }
   }, [session, router, lang])
 
@@ -452,3 +452,12 @@ export default function ClientOnboardingPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
