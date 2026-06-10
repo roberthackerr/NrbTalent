@@ -1,18 +1,18 @@
-// components/onboarding/AvatarStep.tsx
+// components/onboarding/AvatarStep.tsx (Compact Single Column Version)
+
 'use client'
 
 import { useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, User, Camera, CheckCircle, X } from 'lucide-react'
+import { Upload, User, Camera, CheckCircle, X, Sparkles, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface AvatarStepProps {
   onComplete: () => void
   onSkip: () => void
-  dict: any // Dictionnaire pour cette étape
+  dict: any
   lang: string
 }
 
@@ -27,12 +27,12 @@ export function AvatarStep({ onComplete, onSkip, dict, lang }: AvatarStepProps) 
     const file = event.target.files?.[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
-        toast.error(dict.errors?.invalidImage || 'Veuillez sélectionner une image valide')
+        toast.error(dict.errors?.invalidImage || 'Please select a valid image')
         return
       }
       
       if (file.size > 5 * 1024 * 1024) {
-        toast.error(dict.errors?.fileTooLarge || 'L\'image ne doit pas dépasser 5MB')
+        toast.error(dict.errors?.fileTooLarge || 'Image must be less than 5MB')
         return
       }
 
@@ -62,19 +62,18 @@ export function AvatarStep({ onComplete, onSkip, dict, lang }: AvatarStepProps) 
           ...session,
           user: {
             ...session.user,
-             image: data.avatarUrl,
-           avatar: data.avatarUrl
+            image: data.avatarUrl,
+            avatar: data.avatarUrl
           }
         })
-        await new Promise(resolve => setTimeout(resolve, 500))
-        toast.success(dict.success || 'Photo de profil mise à jour avec succès!')
+        
+        toast.success(dict.success || 'Profile photo updated!')
         onComplete()
       } else {
-        throw new Error('Erreur lors du téléchargement')
+        throw new Error('Upload failed')
       }
     } catch (error) {
-      console.error('Erreur upload:', error)
-      toast.error(dict.errors?.upload + error || 'Erreur lors du téléchargement de l\'image')
+      toast.error(dict.errors?.upload || 'Error uploading image')
     } finally {
       setUploading(false)
     }
@@ -89,111 +88,138 @@ export function AvatarStep({ onComplete, onSkip, dict, lang }: AvatarStepProps) 
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Zone de téléchargement */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{dict.title}</CardTitle>
-            <CardDescription>
-              {dict.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div 
-              className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageSelect}
-                accept="image/*"
-                className="hidden"
-              />
-              
-              {previewUrl ? (
-                <div className="relative">
-                  <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-white dark:border-slate-700 shadow-lg">
-                    <Image
-                      src={previewUrl}
-                      alt="Preview"
-                      width={128}
-                      height={128}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      removeImage()
-                    }}
-                    className="absolute top-0 right-1/2 translate-x-12 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto">
-                    <User className="h-10 w-10 text-slate-400" />
-                  </div>
-                  <div>
-                    <p className="text-slate-700 dark:text-slate-300 font-medium mb-1">
-                      {dict.clickToUpload}
-                    </p>
-                    <p className="text-sm text-slate-500 dark:text-slate-500">
-                      {dict.requirements}
-                    </p>
-                  </div>
-                </div>
-              )}
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
+              <Camera className="h-5 w-5 text-white" />
             </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {dict.title || "Profile Photo"}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {dict.description || "Add a photo to personalize your profile"}
+              </p>
+            </div>
+          </div>
+        </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={handleUpload}
-                disabled={!selectedImage || uploading}
-                className="flex-1"
+        {/* Content */}
+        <div className="p-6">
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            {/* Avatar Section */}
+            <div className="flex-shrink-0">
+              <div 
+                className="relative group cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
               >
-                {uploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    {dict.uploading}
-                  </>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/*"
+                  className="hidden"
+                />
+                
+                {previewUrl ? (
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-white dark:ring-gray-700 shadow-lg">
+                      <Image
+                        src={previewUrl}
+                        alt="Preview"
+                        width={128}
+                        height={128}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          fileInputRef.current?.click()
+                        }}
+                        className="p-1.5 bg-white rounded-full hover:bg-gray-100"
+                      >
+                        <Camera className="h-4 w-4 text-gray-700" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeImage()
+                        }}
+                        className="p-1.5 bg-red-500 rounded-full hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4 text-white" />
+                      </button>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    {dict.confirm}
-                  </>
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex flex-col items-center justify-center cursor-pointer hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300">
+                    <Upload className="h-8 w-8 text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-500">Upload</span>
+                  </div>
                 )}
-              </Button>
-              <Button variant="outline" onClick={onSkip}>
-                {dict.skip}
-              </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Conseils */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              {dict.tipsTitle}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
-              {dict.tips?.map((tip: string, index: number) => (
-                <li key={index} className="flex items-start gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+            {/* Tips Section - Compact */}
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1">
+                  <Sparkles className="h-4 w-4 text-blue-500" />
+                  {dict.tipsTitle || "Quick tips"}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(dict.tips || [
+                    "Clear, recent photo",
+                    "Good lighting",
+                    "Face the camera",
+                    "Simple background"
+                  ]).slice(0, 4).map((tip: string, index: number) => (
+                    <div key={index} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="w-1 h-1 bg-blue-500 rounded-full" />
+                      <span>{tip}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleUpload}
+                  disabled={!selectedImage || uploading}
+                  size="sm"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  {uploading ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      {dict.uploading || "Uploading..."}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-3 w-3 mr-2" />
+                      {selectedImage ? (dict.confirm || "Confirm") : (dict.upload || "Upload")}
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  onClick={onSkip}
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400"
+                >
+                  {dict.skip || "Skip"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
