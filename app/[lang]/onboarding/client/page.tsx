@@ -8,20 +8,20 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Building, DollarSign, Calendar, Target, Users, FileText,
-  ArrowRight, ArrowLeft, CheckCircle, Briefcase, Clock, Award,
-  Sparkles, TrendingUp, Shield, Zap, Globe, Star
+  Building, User, MapPin, Globe, Phone, Mail, Briefcase,
+  ArrowRight, ArrowLeft, CheckCircle, Users, Calendar,
+  Sparkles, Shield, TrendingUp, Award, Clock, Star
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Locale } from '@/lib/i18n/config'
 import { getDictionarySafe } from '@/lib/i18n/dictionaries'
+import Image from 'next/image'
 
-type OnboardingStep = 'welcome' | 'company' | 'project' | 'budget' | 'timeline'
+type OnboardingStep = 'welcome' | 'company' | 'contact' | 'verify'
 
 export default function ClientOnboardingPage() {
   const { data: session, update } = useSession()
@@ -33,22 +33,48 @@ export default function ClientOnboardingPage() {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome')
   const [loading, setLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string>('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  
   const [formData, setFormData] = useState({
+    // Company Information
     companyName: '',
+    companyWebsite: '',
     companySize: '',
     industry: '',
-    projectTitle: '',
-    projectDescription: '',
-    projectType: '',
-    budget: '',
-    timeline: '',
-    teamSize: '1',
-    urgency: 'normal'
+    companyDescription: '',
+    yearFounded: '',
+    
+    // Location
+    country: '',
+    city: '',
+    address: '',
+    
+    // Contact Person
+    contactName: '',
+    contactPosition: '',
+    contactPhone: '',
+    contactEmail: '',
+    
+    // Preferences
+    preferredLanguage: 'en',
+    newsletterOptIn: false,
+    termsAccepted: false
   })
 
   useEffect(() => {
     setIsMounted(true)
     getDictionarySafe(lang).then(setDict)
+    
+    // Pre-fill with session data
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        contactName: session.user.name || '',
+        contactEmail: session.user.email || '',
+      }))
+    }
     
     if (session?.user?.onboardingCompleted) {
       router.push(`/${lang}/dashboard`)
@@ -56,10 +82,30 @@ export default function ClientOnboardingPage() {
   }, [session, router, lang])
 
   const steps = [
-    { id: 'company', icon: Building, title: 'Company', color: 'from-blue-500 to-cyan-500', bgColor: 'from-blue-500/10 to-cyan-500/10', borderColor: 'border-blue-200 dark:border-blue-800' },
-    { id: 'project', icon: Target, title: 'Project', color: 'from-purple-500 to-pink-500', bgColor: 'from-purple-500/10 to-pink-500/10', borderColor: 'border-purple-200 dark:border-purple-800' },
-    { id: 'budget', icon: DollarSign, title: 'Budget', color: 'from-green-500 to-emerald-500', bgColor: 'from-green-500/10 to-emerald-500/10', borderColor: 'border-green-200 dark:border-green-800' },
-    { id: 'timeline', icon: Calendar, title: 'Timeline', color: 'from-orange-500 to-red-500', bgColor: 'from-orange-500/10 to-red-500/10', borderColor: 'border-orange-200 dark:border-orange-800' }
+    { 
+      id: 'company', 
+      icon: Building, 
+      title: 'Company', 
+      description: 'Tell us about your business',
+      color: 'from-blue-500 to-cyan-500',
+      bgColor: 'from-blue-500/10 to-cyan-500/10'
+    },
+    { 
+      id: 'contact', 
+      icon: User, 
+      title: 'Contact', 
+      description: 'How to reach you',
+      color: 'from-purple-500 to-pink-500',
+      bgColor: 'from-purple-500/10 to-pink-500/10'
+    },
+    { 
+      id: 'verify', 
+      icon: Shield, 
+      title: 'Verify', 
+      description: 'Confirm your details',
+      color: 'from-green-500 to-emerald-500',
+      bgColor: 'from-green-500/10 to-emerald-500/10'
+    }
   ]
 
   const progress = currentStep === 'welcome' 
@@ -68,6 +114,31 @@ export default function ClientOnboardingPage() {
 
   const updateForm = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return
+    
+    setUploadingAvatar(true)
+    const formData = new FormData()
+    formData.append('avatar', file)
+    
+    try {
+      const response = await fetch('/api/users/avatar', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        await update({ image: data.avatarUrl })
+        toast.success('Company logo uploaded!')
+      }
+    } catch (error) {
+      toast.error('Failed to upload logo')
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   const handleNext = () => {
@@ -106,14 +177,40 @@ export default function ClientOnboardingPage() {
           section: 'clientOnboarding',
           data: {
             onboardingCompleted: true,
-            clientProfile: formData
+            role: 'client',
+            clientProfile: {
+              company: {
+                name: formData.companyName,
+                website: formData.companyWebsite,
+                size: formData.companySize,
+                industry: formData.industry,
+                description: formData.companyDescription,
+                yearFounded: formData.yearFounded,
+                logo: session?.user?.image || null
+              },
+              location: {
+                country: formData.country,
+                city: formData.city,
+                address: formData.address
+              },
+              contact: {
+                name: formData.contactName,
+                position: formData.contactPosition,
+                phone: formData.contactPhone,
+                email: formData.contactEmail
+              },
+              preferences: {
+                language: formData.preferredLanguage,
+                newsletter: formData.newsletterOptIn
+              }
+            }
           }
         })
       })
 
       if (response.ok) {
         await update()
-        toast.success(dict?.success || "Profile setup complete!")
+        toast.success(dict?.success || "Company profile setup complete!")
         setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
       }
     } catch (error) {
@@ -126,13 +223,12 @@ export default function ClientOnboardingPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 'company':
-        return formData.companyName && formData.companySize && formData.industry
-      case 'project':
-        return formData.projectTitle && formData.projectDescription && formData.projectType
-      case 'budget':
-        return formData.budget
-      case 'timeline':
-        return formData.timeline
+        return formData.companyName && formData.companySize && 
+               formData.industry && formData.country && formData.city
+      case 'contact':
+        return formData.contactName && formData.contactPhone && formData.contactEmail
+      case 'verify':
+        return formData.termsAccepted
       default:
         return true
     }
@@ -169,7 +265,6 @@ export default function ClientOnboardingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-12"
           >
-            {/* Animated icon */}
             <div className="w-24 h-24 mx-auto mb-6 relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20 animate-pulse" />
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse" />
@@ -179,23 +274,22 @@ export default function ClientOnboardingPage() {
             </div>
 
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent mb-4">
-              {dict.welcomeTitle || "Find the Perfect Freelancer"}
+              Set up your company profile
             </h1>
             
             <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-              {dict.welcomeDescription || "Tell us about your project and we'll match you with the best talent"}
+              Complete your business profile to start hiring top talent. This information will help us match you with the best freelancers.
             </p>
 
-            {/* Feature cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               {[
-                { icon: <Users className="h-5 w-5" />, text: "Top 1% Talent", color: "from-blue-500 to-cyan-500", gradient: "from-blue-500/10 to-cyan-500/10" },
-                { icon: <Clock className="h-5 w-5" />, text: "Fast Matching", color: "from-purple-500 to-pink-500", gradient: "from-purple-500/10 to-pink-500/10" },
-                { icon: <Award className="h-5 w-5" />, text: "Quality Guaranteed", color: "from-green-500 to-emerald-500", gradient: "from-green-500/10 to-emerald-500/10" }
+                { icon: <Shield className="h-5 w-5" />, text: "Verified Companies", color: "from-blue-500 to-cyan-500" },
+                { icon: <TrendingUp className="h-5 w-5" />, text: "Better Matches", color: "from-purple-500 to-pink-500" },
+                { icon: <Clock className="h-5 w-5" />, text: "Faster Hiring", color: "from-green-500 to-emerald-500" }
               ].map((item, i) => (
                 <div
                   key={i}
-                  className={`group p-4 rounded-xl bg-gradient-to-r ${item.gradient} backdrop-blur-sm border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:scale-105 hover:shadow-lg`}
+                  className="group p-4 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:scale-105 hover:shadow-lg"
                 >
                   <div className={`inline-flex p-2 rounded-lg bg-gradient-to-r ${item.color} text-white mb-2 group-hover:scale-110 transition-transform`}>
                     {item.icon}
@@ -209,13 +303,13 @@ export default function ClientOnboardingPage() {
               onClick={handleNext}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8"
             >
-              Get Started
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              Start Setup
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </motion.div>
         ) : (
           <>
-            {/* Progress Section */}
+            {/* Progress */}
             <div className="mb-6">
               <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
                 <span>Step {steps.findIndex(s => s.id === currentStep) + 1}/{steps.length}</span>
@@ -224,31 +318,45 @@ export default function ClientOnboardingPage() {
               <Progress value={progress} className="h-2 bg-gray-200 dark:bg-gray-700" />
             </div>
 
-            {/* Step Indicators - Desktop */}
-            <div className="hidden md:flex gap-2 mb-6">
-              {steps.map((step) => {
+            {/* Step Indicators */}
+            <div className="hidden md:flex gap-3 mb-8">
+              {steps.map((step, idx) => {
                 const isCurrent = currentStep === step.id
-                const isCompleted = steps.findIndex(s => s.id === currentStep) > steps.findIndex(s => s.id === step.id)
+                const isCompleted = steps.findIndex(s => s.id === currentStep) > idx
                 const StepIcon = step.icon
                 return (
-                  <button
+                  <div
                     key={step.id}
-                    onClick={() => !isCompleted && setCurrentStep(step.id)}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    className={`flex-1 flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
                       isCurrent
-                        ? `bg-gradient-to-r ${step.color} text-white shadow-md scale-[1.02]`
+                        ? `bg-gradient-to-r ${step.color} text-white shadow-lg`
                         : isCompleted
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                     }`}
                   >
-                    {isCompleted ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : (
-                      <StepIcon className="h-4 w-4" />
-                    )}
-                    <span>{step.title}</span>
-                  </button>
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                      isCurrent
+                        ? 'bg-white/20'
+                        : isCompleted
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700'
+                    }`}>
+                      {isCompleted ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        <StepIcon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`} />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-xs font-medium ${isCurrent ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                        Step {idx + 1}
+                      </p>
+                      <p className={`text-sm font-semibold ${isCurrent ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                        {step.title}
+                      </p>
+                    </div>
+                  </div>
                 )
               })}
             </div>
@@ -262,17 +370,9 @@ export default function ClientOnboardingPage() {
                 <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               </button>
               
-              <div className="flex gap-1">
-                {steps.map((step, idx) => (
-                  <div
-                    key={step.id}
-                    className={`h-2 rounded-full transition-all ${
-                      idx <= steps.findIndex(s => s.id === currentStep)
-                        ? `w-6 bg-gradient-to-r ${step.color}`
-                        : 'w-2 bg-gray-300 dark:bg-gray-600'
-                    }`}
-                  />
-                ))}
+              <div className="text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Step {steps.findIndex(s => s.id === currentStep) + 1}</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{currentStepConfig?.title}</p>
               </div>
               
               <div className={`p-2 rounded-full bg-gradient-to-r ${currentStepConfig?.color} text-white shadow-sm`}>
@@ -280,9 +380,8 @@ export default function ClientOnboardingPage() {
               </div>
             </div>
 
-            {/* Main Form Card */}
+            {/* Form Card */}
             <Card className="border-0 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm overflow-hidden">
-              {/* Card header with gradient */}
               <div className={`h-1 bg-gradient-to-r ${currentStepConfig?.color}`} />
               
               <CardContent className="p-6 md:p-8">
@@ -295,226 +394,322 @@ export default function ClientOnboardingPage() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     
-                    {/* Company Info Step */}
+                    {/* Company Information Step */}
                     {currentStep === 'company' && (
-                      <div className="space-y-5">
-                        <div className="text-center mb-2">
-                          <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${currentStepConfig?.bgColor} border ${currentStepConfig?.borderColor} mb-3`}>
-                            <Building className={`h-6 w-6 bg-gradient-to-r ${currentStepConfig?.color} bg-clip-text text-transparent`} />
+                      <div className="space-y-6">
+                        <div className="text-center mb-4">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Company Information</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Tell us about your business</p>
+                        </div>
+
+                        {/* Company Logo Upload */}
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                          <div className="relative">
+                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
+                              {avatarPreview || session?.user?.image ? (
+                                <Image
+                                  src={avatarPreview || session.user.image}
+                                  alt="Company logo"
+                                  width={64}
+                                  height={64}
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <Building className="h-8 w-8 text-white" />
+                              )}
+                            </div>
+                            <label className="absolute -bottom-1 -right-1 p-1 bg-white dark:bg-gray-700 rounded-full cursor-pointer shadow-md">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    setAvatarPreview(URL.createObjectURL(file))
+                                    setAvatarFile(file)
+                                    handleAvatarUpload(file)
+                                  }
+                                }}
+                              />
+                              <Camera className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+                            </label>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Tell us about your company</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">This helps us understand your needs better</p>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Name *</Label>
-                          <Input
-                            value={formData.companyName}
-                            onChange={(e) => updateForm('companyName', e.target.value)}
-                            placeholder="e.g., TechCorp Inc."
-                            className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Size *</Label>
-                            <Select value={formData.companySize} onValueChange={(v) => updateForm('companySize', v)}>
-                              <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                                <SelectValue placeholder="Select size" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="1-10">1-10 employees</SelectItem>
-                                <SelectItem value="11-50">11-50 employees</SelectItem>
-                                <SelectItem value="51-200">51-200 employees</SelectItem>
-                                <SelectItem value="201+">201+ employees</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Company Logo</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Upload your logo (optional)</p>
                           </div>
+                        </div>
 
+                        <div className="grid gap-5">
                           <div>
-                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Industry *</Label>
-                            <Select value={formData.industry} onValueChange={(v) => updateForm('industry', v)}>
-                              <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                                <SelectValue placeholder="Select industry" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="tech">Technology</SelectItem>
-                                <SelectItem value="finance">Finance</SelectItem>
-                                <SelectItem value="healthcare">Healthcare</SelectItem>
-                                <SelectItem value="ecommerce">E-commerce</SelectItem>
-                                <SelectItem value="education">Education</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Name *</Label>
+                            <Input
+                              value={formData.companyName}
+                              onChange={(e) => updateForm('companyName', e.target.value)}
+                              placeholder="e.g., TechCorp Solutions"
+                              className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                            />
                           </div>
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Project Info Step */}
-                    {currentStep === 'project' && (
-                      <div className="space-y-5">
-                        <div className="text-center mb-2">
-                          <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${currentStepConfig?.bgColor} border ${currentStepConfig?.borderColor} mb-3`}>
-                            <Target className={`h-6 w-6 bg-gradient-to-r ${currentStepConfig?.color} bg-clip-text text-transparent`} />
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Describe your project</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">The more details, the better matches we'll find</p>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Title *</Label>
-                          <Input
-                            value={formData.projectTitle}
-                            onChange={(e) => updateForm('projectTitle', e.target.value)}
-                            placeholder="e.g., E-commerce Website Development"
-                            className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Type *</Label>
-                          <Select value={formData.projectType} onValueChange={(v) => updateForm('projectType', v)}>
-                            <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="web">Web Development</SelectItem>
-                              <SelectItem value="mobile">Mobile App</SelectItem>
-                              <SelectItem value="design">UI/UX Design</SelectItem>
-                              <SelectItem value="marketing">Digital Marketing</SelectItem>
-                              <SelectItem value="content">Content Writing</SelectItem>
-                              <SelectItem value="consulting">Business Consulting</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Description *</Label>
-                          <Textarea
-                            value={formData.projectDescription}
-                            onChange={(e) => updateForm('projectDescription', e.target.value)}
-                            placeholder="Describe your project requirements, goals, and expectations..."
-                            rows={4}
-                            className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 resize-none"
-                          />
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {formData.projectDescription.length}/500 characters
-                          </p>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Team Size</Label>
-                          <Select value={formData.teamSize} onValueChange={(v) => updateForm('teamSize', v)}>
-                            <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">Just me (Solo)</SelectItem>
-                              <SelectItem value="2-5">2-5 people (Small team)</SelectItem>
-                              <SelectItem value="6-10">6-10 people (Medium team)</SelectItem>
-                              <SelectItem value="10+">10+ people (Large team)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Budget Step */}
-                    {currentStep === 'budget' && (
-                      <div className="space-y-5">
-                        <div className="text-center mb-2">
-                          <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${currentStepConfig?.bgColor} border ${currentStepConfig?.borderColor} mb-3`}>
-                            <DollarSign className={`h-6 w-6 bg-gradient-to-r ${currentStepConfig?.color} bg-clip-text text-transparent`} />
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Set your budget</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Be transparent to attract the right freelancers</p>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Budget Range *</Label>
-                          <Select value={formData.budget} onValueChange={(v) => updateForm('budget', v)}>
-                            <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                              <SelectValue placeholder="Select budget range" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="under-1k">Under $1,000</SelectItem>
-                              <SelectItem value="1k-5k">$1,000 - $5,000</SelectItem>
-                              <SelectItem value="5k-10k">$5,000 - $10,000</SelectItem>
-                              <SelectItem value="10k-25k">$10,000 - $25,000</SelectItem>
-                              <SelectItem value="25k-50k">$25,000 - $50,000</SelectItem>
-                              <SelectItem value="50k+">$50,000+</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-100 dark:border-blue-900">
-                          <div className="flex items-start gap-3">
-                            <Sparkles className="h-5 w-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Pro Tip</p>
-                              <p className="text-sm text-blue-700 dark:text-blue-300">
-                                A clear budget range helps attract the most qualified freelancers for your project scope
-                              </p>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Size *</Label>
+                              <Select value={formData.companySize} onValueChange={(v) => updateForm('companySize', v)}>
+                                <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                  <SelectValue placeholder="Select size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1-10">1-10 employees (Startup)</SelectItem>
+                                  <SelectItem value="11-50">11-50 employees (Small business)</SelectItem>
+                                  <SelectItem value="51-200">51-200 employees (Medium business)</SelectItem>
+                                  <SelectItem value="201-500">201-500 employees (Large business)</SelectItem>
+                                  <SelectItem value="501+">501+ employees (Enterprise)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Industry *</Label>
+                              <Select value={formData.industry} onValueChange={(v) => updateForm('industry', v)}>
+                                <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                  <SelectValue placeholder="Select industry" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="tech">Technology / Software</SelectItem>
+                                  <SelectItem value="finance">Finance / Banking</SelectItem>
+                                  <SelectItem value="healthcare">Healthcare / Medical</SelectItem>
+                                  <SelectItem value="ecommerce">E-commerce / Retail</SelectItem>
+                                  <SelectItem value="education">Education / Training</SelectItem>
+                                  <SelectItem value="marketing">Marketing / Advertising</SelectItem>
+                                  <SelectItem value="consulting">Consulting / Professional Services</SelectItem>
+                                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                                  <SelectItem value="realestate">Real Estate</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Website</Label>
+                            <Input
+                              value={formData.companyWebsite}
+                              onChange={(e) => updateForm('companyWebsite', e.target.value)}
+                              placeholder="https://yourcompany.com"
+                              className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Description</Label>
+                            <textarea
+                              value={formData.companyDescription}
+                              onChange={(e) => updateForm('companyDescription', e.target.value)}
+                              placeholder="Tell us about your company's mission, values, and what you do..."
+                              rows={3}
+                              className="mt-1.5 w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Year Founded</Label>
+                              <Input
+                                value={formData.yearFounded}
+                                onChange={(e) => updateForm('yearFounded', e.target.value)}
+                                placeholder="e.g., 2020"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Location Section */}
+                        <div className="pt-2">
+                          <div className="flex items-center gap-2 mb-4">
+                            <MapPin className="h-4 w-4 text-blue-500" />
+                            <Label className="text-sm font-semibold text-gray-900 dark:text-white">Location *</Label>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Country *</Label>
+                              <Select value={formData.country} onValueChange={(v) => updateForm('country', v)}>
+                                <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                  <SelectValue placeholder="Select country" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="us">United States</SelectItem>
+                                  <SelectItem value="uk">United Kingdom</SelectItem>
+                                  <SelectItem value="ca">Canada</SelectItem>
+                                  <SelectItem value="au">Australia</SelectItem>
+                                  <SelectItem value="fr">France</SelectItem>
+                                  <SelectItem value="de">Germany</SelectItem>
+                                  <SelectItem value="es">Spain</SelectItem>
+                                  <SelectItem value="it">Italy</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">City *</Label>
+                              <Input
+                                value={formData.city}
+                                onChange={(e) => updateForm('city', e.target.value)}
+                                placeholder="e.g., San Francisco"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</Label>
+                              <Input
+                                value={formData.address}
+                                onChange={(e) => updateForm('address', e.target.value)}
+                                placeholder="Street address (optional)"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
                             </div>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Timeline Step */}
-                    {currentStep === 'timeline' && (
-                      <div className="space-y-5">
-                        <div className="text-center mb-2">
-                          <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${currentStepConfig?.bgColor} border ${currentStepConfig?.borderColor} mb-3`}>
-                            <Calendar className={`h-6 w-6 bg-gradient-to-r ${currentStepConfig?.color} bg-clip-text text-transparent`} />
-                          </div>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Set your timeline</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Help freelancers understand your schedule</p>
+                    {/* Contact Information Step */}
+                    {currentStep === 'contact' && (
+                      <div className="space-y-6">
+                        <div className="text-center mb-4">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Contact Information</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">How should freelancers reach you?</p>
                         </div>
 
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Timeline *</Label>
-                          <Select value={formData.timeline} onValueChange={(v) => updateForm('timeline', v)}>
-                            <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                              <SelectValue placeholder="Select timeline" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="urgent">ASAP (Less than 1 week)</SelectItem>
-                              <SelectItem value="2-weeks">1-2 weeks</SelectItem>
-                              <SelectItem value="month">1 month</SelectItem>
-                              <SelectItem value="1-3months">1-3 months</SelectItem>
-                              <SelectItem value="3-6months">3-6 months</SelectItem>
-                              <SelectItem value="6+months">6+ months</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Urgency Level</Label>
-                          <Select value={formData.urgency} onValueChange={(v) => updateForm('urgency', v)}>
-                            <SelectTrigger className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="low">Low - Planning / Research phase</SelectItem>
-                              <SelectItem value="normal">Normal - Ready to start within a month</SelectItem>
-                              <SelectItem value="high">High - Need to start immediately</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-lg p-4 border border-orange-100 dark:border-orange-900">
-                          <div className="flex items-start gap-3">
-                            <Clock className="h-5 w-5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                        <div className="grid gap-5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <p className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-1">Timeline Note</p>
-                              <p className="text-sm text-orange-700 dark:text-orange-300">
-                                Being realistic about your timeline helps ensure quality delivery and reduces stress
-                              </p>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Full Name *</Label>
+                              <Input
+                                value={formData.contactName}
+                                onChange={(e) => updateForm('contactName', e.target.value)}
+                                placeholder="Your full name"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Position / Title</Label>
+                              <Input
+                                value={formData.contactPosition}
+                                onChange={(e) => updateForm('contactPosition', e.target.value)}
+                                placeholder="e.g., CEO, Hiring Manager"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
                             </div>
                           </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Address *</Label>
+                              <Input
+                                type="email"
+                                value={formData.contactEmail}
+                                onChange={(e) => updateForm('contactEmail', e.target.value)}
+                                placeholder="contact@company.com"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number *</Label>
+                              <Input
+                                value={formData.contactPhone}
+                                onChange={(e) => updateForm('contactPhone', e.target.value)}
+                                placeholder="+1 (555) 000-0000"
+                                className="mt-1.5 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-100 dark:border-blue-900">
+                            <div className="flex items-start gap-3">
+                              <Shield className="h-5 w-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Privacy Protected</p>
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                  Your contact information is only shared with freelancers you hire
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Verify Step */}
+                    {currentStep === 'verify' && (
+                      <div className="space-y-6">
+                        <div className="text-center mb-4">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Verify Your Information</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please review your details</p>
+                        </div>
+
+                        {/* Summary Cards */}
+                        <div className="space-y-3">
+                          <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Building className="h-4 w-4 text-blue-500" />
+                              <h4 className="font-semibold text-gray-900 dark:text-white">Company Information</h4>
+                            </div>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="text-gray-500 dark:text-gray-400">Name:</span> {formData.companyName || 'Not provided'}</p>
+                              <p><span className="text-gray-500 dark:text-gray-400">Industry:</span> {formData.industry || 'Not provided'}</p>
+                              <p><span className="text-gray-500 dark:text-gray-400">Size:</span> {formData.companySize || 'Not provided'}</p>
+                              <p><span className="text-gray-500 dark:text-gray-400">Location:</span> {formData.city}, {formData.country}</p>
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                            <div className="flex items-center gap-2 mb-3">
+                              <User className="h-4 w-4 text-purple-500" />
+                              <h4 className="font-semibold text-gray-900 dark:text-white">Contact Person</h4>
+                            </div>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="text-gray-500 dark:text-gray-400">Name:</span> {formData.contactName}</p>
+                              <p><span className="text-gray-500 dark:text-gray-400">Email:</span> {formData.contactEmail}</p>
+                              <p><span className="text-gray-500 dark:text-gray-400">Phone:</span> {formData.contactPhone}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Terms */}
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.termsAccepted}
+                              onChange={(e) => updateForm('termsAccepted', e.target.checked)}
+                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              I confirm that the information provided is accurate and I agree to the 
+                              <a href="#" className="text-blue-600 hover:underline mx-1">Terms of Service</a>
+                              and
+                              <a href="#" className="text-blue-600 hover:underline mx-1">Privacy Policy</a>
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.newsletterOptIn}
+                              onChange={(e) => updateForm('newsletterOptIn', e.target.checked)}
+                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              Subscribe to our newsletter for tips and updates (optional)
+                            </span>
+                          </label>
                         </div>
                       </div>
                     )}
@@ -537,7 +732,7 @@ export default function ClientOnboardingPage() {
                     onClick={handleNext}
                     disabled={loading || !isStepValid()}
                     className={`flex-1 transition-all duration-300 ${
-                      currentStep === 'timeline'
+                      currentStep === 'verify'
                         ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
                         : `bg-gradient-to-r ${currentStepConfig?.color} hover:opacity-90`
                     } text-white shadow-lg hover:shadow-xl`}
@@ -547,7 +742,7 @@ export default function ClientOnboardingPage() {
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                         Saving...
                       </>
-                    ) : currentStep === 'timeline' ? (
+                    ) : currentStep === 'verify' ? (
                       <>
                         Complete Setup
                         <CheckCircle className="h-4 w-4 ml-2" />
@@ -559,13 +754,6 @@ export default function ClientOnboardingPage() {
                       </>
                     )}
                   </Button>
-                </div>
-
-                {/* Progress summary */}
-                <div className="mt-4 text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    {Math.round(progress)}% complete • {steps.findIndex(s => s.id === currentStep) + 1} of {steps.length} steps
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -593,3 +781,6 @@ export default function ClientOnboardingPage() {
     </div>
   )
 }
+
+// Missing Camera import
+import { Camera } from 'lucide-react'
