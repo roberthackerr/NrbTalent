@@ -50,13 +50,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/auth/signup`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/auth/signin`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.8,
     },
   ]
 }
