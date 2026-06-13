@@ -379,7 +379,7 @@ const handleComplete = async () => {
                     </div>
                   </div>
                 ) 
-              })}
+              })} 
             </div>  
 
             {/* Mobile Step Indicator */}
