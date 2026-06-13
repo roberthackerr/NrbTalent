@@ -378,7 +378,7 @@ const handleComplete = async () => {
                       </p>
                     </div>
                   </div>
-                )
+                ) 
               })}
             </div>  
 
