@@ -167,59 +167,60 @@ export default function ClientOnboardingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleComplete = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/users/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          section: 'clientOnboarding',
-          data: {
-            onboardingCompleted: true,
-            role: 'client',
-            clientProfile: {
-              company: {
-                name: formData.companyName,
-                website: formData.companyWebsite,
-                size: formData.companySize,
-                industry: formData.industry,
-                description: formData.companyDescription,
-                yearFounded: formData.yearFounded,
-                logo: session?.user?.image || null
-              },
-              location: {
-                country: formData.country,
-                city: formData.city,
-                address: formData.address
-              },
-              contact: {
-                name: formData.contactName,
-                position: formData.contactPosition,
-                phone: formData.contactPhone,
-                email: formData.contactEmail
-              },
-              preferences: {
-                language: formData.preferredLanguage,
-                newsletter: formData.newsletterOptIn
-              }
-            }
+
+
+const handleComplete = async () => {
+  setLoading(true)
+  try {
+    const response = await fetch('/api/users/client-onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientProfile: {
+          company: {
+            name: formData.companyName,
+            website: formData.companyWebsite,
+            size: formData.companySize,
+            industry: formData.industry,
+            description: formData.companyDescription,
+            yearFounded: formData.yearFounded,
+            logo: session?.user?.image || null
+          },
+          location: {
+            country: formData.country,
+            city: formData.city,
+            address: formData.address
+          },
+          contact: {
+            name: formData.contactName,
+            position: formData.contactPosition,
+            phone: formData.contactPhone,
+            email: formData.contactEmail
+          },
+          preferences: {
+            language: formData.preferredLanguage,
+            newsletter: formData.newsletterOptIn
           }
-        })
+        }
       })
+    })
 
-      if (response.ok) {
-        await update()
-        toast.success(dict?.success || "Company profile setup complete!")
-        setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
-      }
-    } catch (error) {
-      toast.error(dict?.error || "Something went wrong")
-    } finally {
-      setLoading(false)
+    const data = await response.json()
+
+    if (response.ok) {
+      await update()
+      toast.success(data.message || "Company profile setup complete!")
+      setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
+    } else {
+      throw new Error(data.error || "Something went wrong")
     }
+  } catch (error) {
+    console.error('Error completing onboarding:', error)
+    toast.error(error instanceof Error ? error.message : "Something went wrong")
+  } finally {
+    setLoading(false)
   }
-
+}
   const isStepValid = () => {
     switch (currentStep) {
       case 'company':

@@ -417,7 +417,14 @@ export async function PATCH(request: Request) {
           }
         }
         break
-
+        case 'clientOnboarding':
+  updateOperation.$set = {
+    ...updateOperation.$set,
+    onboardingCompleted: data.onboardingCompleted,
+    role: data.role || 'client',
+    clientProfile: data.clientProfile
+  }
+  break
       case 'portfolio':
         await ensureFieldExists('portfolio', [])
         
