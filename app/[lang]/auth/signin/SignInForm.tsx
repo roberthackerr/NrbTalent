@@ -209,12 +209,12 @@ export default function SignInForm({ dict, lang }: Props) {
               </p>
             </div>
 
-            {/* Alert for pending verification */}
-            {showResendButton && (
+            Alert for pending verification
+            {/* {showResendButton && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                  {/* <div className="flex-1">
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
                       {dict.auth?.emailNotVerified || 'Email non vérifié'}
                     </p>
@@ -234,10 +234,10 @@ export default function SignInForm({ dict, lang }: Props) {
                         <>{dict.auth?.resendVerificationEmail || 'Renvoyer l\'email de vérification'}</>
                       )}
                     </Button>
-                  </div> */}
+                  </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-lg dark:bg-slate-950/90 dark:backdrop-blur-sm">
               <div className="p-6">
