@@ -99,7 +99,7 @@ export async function POST(request: Request) {
               industry: clientProfile.company.industry,
               description: clientProfile.company.description || null,
               yearFounded: clientProfile.company.yearFounded || null,
-              logo: clientProfile.company.logo || session.user.image || null
+              logo: clientProfile.company.logo  || null
             },
             location: {
               country: clientProfile.location.country,

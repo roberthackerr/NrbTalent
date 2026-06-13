@@ -116,30 +116,50 @@ export default function ClientOnboardingPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleAvatarUpload = async (file: File) => {
-    if (!file) return
+ const handleCompanyLogoUpload = async (file: File) => {
+  if (!file) return
+  
+  setUploadingAvatar(true)
+  const formData = new FormData()
+  formData.append('logo', file) // Note: 'logo' instead of 'avatar'
+  
+  try {
+    const response = await fetch('/api/users/company-logo', {
+      method: 'POST',
+      body: formData,
+    })
     
-    setUploadingAvatar(true)
-    const formData = new FormData()
-    formData.append('avatar', file)
-    
-    try {
-      const response = await fetch('/api/users/avatar', {
-        method: 'POST',
-        body: formData,
+    if (response.ok) {
+      const data = await response.json()
+      setAvatarPreview(data.logoUrl)
+      
+      // Update session with new logo
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          clientProfile: {
+            ...(session?.user as any)?.clientProfile,
+            company: {
+              ...(session?.user as any)?.clientProfile?.company,
+              logo: data.logoUrl
+            }
+          }
+        }
       })
       
-      if (response.ok) {
-        const data = await response.json()
-        await update({ image: data.avatarUrl })
-        toast.success('Company logo uploaded!')
-      }
-    } catch (error) {
-      toast.error('Failed to upload logo')
-    } finally {
-      setUploadingAvatar(false)
+      toast.success('Company logo uploaded successfully!')
+    } else {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to upload logo')
     }
+  } catch (error) {
+    console.error('Error uploading company logo:', error)
+    toast.error(error instanceof Error ? error.message : 'Failed to upload logo')
+  } finally {
+    setUploadingAvatar(false)
   }
+}
 
   const handleNext = () => {
     if (currentStep === 'welcome') {
@@ -420,19 +440,19 @@ const handleComplete = async () => {
                               )}
                             </div>
                             <label className="absolute -bottom-1 -right-1 p-1 bg-white dark:bg-gray-700 rounded-full cursor-pointer shadow-md">
-                              <input
+                                <input
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
                                 onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (file) {
+                                    const file = e.target.files?.[0]
+                                    if (file) {
                                     setAvatarPreview(URL.createObjectURL(file))
                                     setAvatarFile(file)
-                                    handleAvatarUpload(file)
-                                  }
+                                    handleCompanyLogoUpload(file) // Use the new function
+                                    }
                                 }}
-                              />
+                                />
                               <Camera className="h-3 w-3 text-gray-600 dark:text-gray-300" />
                             </label>
                           </div>
