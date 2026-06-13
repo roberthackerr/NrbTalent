@@ -376,7 +376,7 @@ const handleComplete = async () => {
                       <p className={`text-sm font-semibold ${isCurrent ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                         {step.title} 
                       </p>
-                    </div>
+                    </div> 
                   </div>
                 )  
               })} 
