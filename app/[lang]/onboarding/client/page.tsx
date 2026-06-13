@@ -12,9 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Building, User, MapPin, Globe, Phone, Mail, Briefcase,
-  ArrowRight, ArrowLeft, CheckCircle, Users, Calendar,
-  Sparkles, Shield, TrendingUp, Award, Clock, Star
+  Building, User, MapPin, ArrowRight, ArrowLeft, CheckCircle,
+  Sparkles, Shield, TrendingUp, Clock, Camera
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Locale } from '@/lib/i18n/config'
@@ -33,78 +32,114 @@ export default function ClientOnboardingPage() {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome')
   const [loading, setLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [avatarPreview, setAvatarPreview] = useState<string>('')
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   
   const [formData, setFormData] = useState({
-    // Company Information
     companyName: '',
     companyWebsite: '',
     companySize: '',
     industry: '',
     companyDescription: '',
     yearFounded: '',
-    
-    // Location
     country: '',
     city: '',
     address: '',
-    
-    // Contact Person
     contactName: '',
     contactPosition: '',
     contactPhone: '',
     contactEmail: '',
-    
-    // Preferences
     preferredLanguage: 'en',
     newsletterOptIn: false,
     termsAccepted: false
   })
 
+  // Load dictionary and check existing profile
   useEffect(() => {
     setIsMounted(true)
-    getDictionarySafe(lang).then(setDict)
     
-    // Pre-fill with session data
-    if (session?.user) {
-      setFormData(prev => ({
-        ...prev,
-        contactName: session.user.name || '',
-        contactEmail: session.user.email || '',
-      }))
+    const loadData = async () => {
+      const dictionary = await getDictionarySafe(lang)
+      setDict(dictionary)
+      
+      if (session?.user) {
+        await loadClientProfile()
+      }
     }
     
-    if (session?.user?.onboardingCompleted) {
+    loadData()
+  }, [lang, session])
+
+  // Redirect if already onboarded
+  useEffect(() => {
+    if (!isLoadingProfile && session?.user?.onboardingCompleted) {
       router.push(`/${lang}/dashboard`)
     }
-  }, [session, router, lang])
+  }, [session, isLoadingProfile, router, lang])
+
+  const loadClientProfile = async () => {
+    try {
+      const response = await fetch('/api/users/client-profile')
+      const data = await response.json()
+
+      if (response.ok) {
+        if (data.onboardingCompleted === true) {
+          toast.info(dict?.alreadyCompleted || "Your profile is already set up!")
+          setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
+          return
+        }
+
+        if (data.clientProfile) {
+          const profile = data.clientProfile
+          setFormData(prev => ({
+            ...prev,
+            companyName: profile.company?.name || '',
+            companyWebsite: profile.company?.website || '',
+            companySize: profile.company?.size || '',
+            industry: profile.company?.industry || '',
+            companyDescription: profile.company?.description || '',
+            yearFounded: profile.company?.yearFounded || '',
+            country: profile.location?.country || '',
+            city: profile.location?.city || '',
+            address: profile.location?.address || '',
+            contactName: profile.contact?.name || session?.user?.name || '',
+            contactPosition: profile.contact?.position || '',
+            contactPhone: profile.contact?.phone || '',
+            contactEmail: profile.contact?.email || session?.user?.email || '',
+            newsletterOptIn: profile.preferences?.newsletter || false
+          }))
+
+          if (profile.company?.logo) {
+            setAvatarPreview(profile.company.logo)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading client profile:', error)
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
 
   const steps = [
     { 
       id: 'company', 
       icon: Building, 
       title: 'Company', 
-      description: 'Tell us about your business',
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'from-blue-500/10 to-cyan-500/10'
+      color: 'from-blue-500 to-cyan-500'
     },
     { 
       id: 'contact', 
       icon: User, 
       title: 'Contact', 
-      description: 'How to reach you',
-      color: 'from-purple-500 to-pink-500',
-      bgColor: 'from-purple-500/10 to-pink-500/10'
+      color: 'from-purple-500 to-pink-500'
     },
     { 
       id: 'verify', 
       icon: Shield, 
       title: 'Verify', 
-      description: 'Confirm your details',
-      color: 'from-green-500 to-emerald-500',
-      bgColor: 'from-green-500/10 to-emerald-500/10'
+      color: 'from-green-500 to-emerald-500'
     }
   ]
 
@@ -116,50 +151,34 @@ export default function ClientOnboardingPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
- const handleCompanyLogoUpload = async (file: File) => {
-  if (!file) return
-  
-  setUploadingAvatar(true)
-  const formData = new FormData()
-  formData.append('logo', file) // Note: 'logo' instead of 'avatar'
-  
-  try {
-    const response = await fetch('/api/users/company-logo', {
-      method: 'POST',
-      body: formData,
-    })
+  const handleCompanyLogoUpload = async (file: File) => {
+    if (!file) return
     
-    if (response.ok) {
-      const data = await response.json()
-      setAvatarPreview(data.logoUrl)
-      
-      // Update session with new logo
-      await update({
-        ...session,
-        user: {
-          ...session?.user,
-          clientProfile: {
-            ...(session?.user as any)?.clientProfile,
-            company: {
-              ...(session?.user as any)?.clientProfile?.company,
-              logo: data.logoUrl
-            }
-          }
-        }
+    setUploadingAvatar(true)
+    const formDataLogo = new FormData()
+    formDataLogo.append('logo', file)
+    
+    try {
+      const response = await fetch('/api/users/company-logo', {
+        method: 'POST',
+        body: formDataLogo,
       })
       
-      toast.success('Company logo uploaded successfully!')
-    } else {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to upload logo')
+      if (response.ok) {
+        const data = await response.json()
+        setAvatarPreview(data.logoUrl)
+        toast.success('Company logo uploaded successfully!')
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload logo')
+      }
+    } catch (error) {
+      console.error('Error uploading company logo:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to upload logo')
+    } finally {
+      setUploadingAvatar(false)
     }
-  } catch (error) {
-    console.error('Error uploading company logo:', error)
-    toast.error(error instanceof Error ? error.message : 'Failed to upload logo')
-  } finally {
-    setUploadingAvatar(false)
   }
-}
 
   const handleNext = () => {
     if (currentStep === 'welcome') {
@@ -187,60 +206,59 @@ export default function ClientOnboardingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-
-
-const handleComplete = async () => {
-  setLoading(true)
-  try {
-    const response = await fetch('/api/users/client-onboarding', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clientProfile: {
-          company: {
-            name: formData.companyName,
-            website: formData.companyWebsite,
-            size: formData.companySize,
-            industry: formData.industry,
-            description: formData.companyDescription,
-            yearFounded: formData.yearFounded,
-            logo: session?.user?.image || null
-          },
-          location: {
-            country: formData.country,
-            city: formData.city,
-            address: formData.address
-          },
-          contact: {
-            name: formData.contactName,
-            position: formData.contactPosition,
-            phone: formData.contactPhone,
-            email: formData.contactEmail
-          },
-          preferences: {
-            language: formData.preferredLanguage,
-            newsletter: formData.newsletterOptIn
+  const handleComplete = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/users/client-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientProfile: {
+            company: {
+              name: formData.companyName,
+              website: formData.companyWebsite,
+              size: formData.companySize,
+              industry: formData.industry,
+              description: formData.companyDescription,
+              yearFounded: formData.yearFounded,
+              logo: avatarPreview || null
+            },
+            location: {
+              country: formData.country,
+              city: formData.city,
+              address: formData.address
+            },
+            contact: {
+              name: formData.contactName,
+              position: formData.contactPosition,
+              phone: formData.contactPhone,
+              email: formData.contactEmail
+            },
+            preferences: {
+              language: formData.preferredLanguage,
+              newsletter: formData.newsletterOptIn
+            }
           }
-        }
+        })
       })
-    })
 
-    const data = await response.json()
+      const data = await response.json()
 
-    if (response.ok) {
-      await update()
-      toast.success(data.message || "Company profile setup complete!")
-      setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
-    } else {
-      throw new Error(data.error || "Something went wrong")
+      if (response.ok) {
+        await update()
+        toast.success(data.message || "Company profile setup complete!")
+        setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
+      } else {
+        throw new Error(data.error || "Something went wrong")
+      }
+    } catch (error) {
+      console.error('Error completing onboarding:', error)
+      toast.error(error instanceof Error ? error.message : "Something went wrong")
+    } finally {
+      setLoading(false)
     }
-  } catch (error) {
-    console.error('Error completing onboarding:', error)
-    toast.error(error instanceof Error ? error.message : "Something went wrong")
-  } finally {
-    setLoading(false)
   }
-}
+
   const isStepValid = () => {
     switch (currentStep) {
       case 'company':
@@ -255,7 +273,8 @@ const handleComplete = async () => {
     }
   }
 
-  if (!isMounted || !dict) {
+  // Loading state
+  if (!isMounted || !dict || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="relative">
@@ -339,7 +358,7 @@ const handleComplete = async () => {
               <Progress value={progress} className="h-2 bg-gray-200 dark:bg-gray-700" />
             </div>
 
-            {/* Step Indicators */}
+            {/* Step Indicators Desktop */}
             <div className="hidden md:flex gap-3 mb-8">
               {steps.map((step, idx) => {
                 const isCurrent = currentStep === step.id
@@ -374,13 +393,13 @@ const handleComplete = async () => {
                         Step {idx + 1}
                       </p>
                       <p className={`text-sm font-semibold ${isCurrent ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                        {step.title} 
+                        {step.title}
                       </p>
-                    </div> 
+                    </div>
                   </div>
-                )  
-              })} 
-            </div>  
+                )
+              })}
+            </div>
 
             {/* Mobile Step Indicator */}
             <div className="md:hidden flex items-center justify-between mb-6">
@@ -427,9 +446,9 @@ const handleComplete = async () => {
                         <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                           <div className="relative">
                             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
-                              {avatarPreview || session?.user?.image ? (
+                              {avatarPreview ? (
                                 <Image
-                                  src={avatarPreview || session.user.image}
+                                  src={avatarPreview}
                                   alt="Company logo"
                                   width={64}
                                   height={64}
@@ -440,19 +459,18 @@ const handleComplete = async () => {
                               )}
                             </div>
                             <label className="absolute -bottom-1 -right-1 p-1 bg-white dark:bg-gray-700 rounded-full cursor-pointer shadow-md">
-                                <input
+                              <input
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
                                 onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    if (file) {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
                                     setAvatarPreview(URL.createObjectURL(file))
-                                    setAvatarFile(file)
-                                    handleCompanyLogoUpload(file) // Use the new function
-                                    }
+                                    handleCompanyLogoUpload(file)
+                                  }
                                 }}
-                                />
+                              />
                               <Camera className="h-3 w-3 text-gray-600 dark:text-gray-300" />
                             </label>
                           </div>
@@ -675,7 +693,6 @@ const handleComplete = async () => {
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please review your details</p>
                         </div>
 
-                        {/* Summary Cards */}
                         <div className="space-y-3">
                           <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                             <div className="flex items-center gap-2 mb-3">
@@ -703,7 +720,6 @@ const handleComplete = async () => {
                           </div>
                         </div>
 
-                        {/* Terms */}
                         <div className="space-y-3">
                           <label className="flex items-center gap-3 cursor-pointer">
                             <input
@@ -802,6 +818,3 @@ const handleComplete = async () => {
     </div>
   )
 }
-
-// Missing Camera import
-import { Camera } from 'lucide-react'
