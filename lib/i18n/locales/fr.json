@@ -1,5 +1,77 @@
 {
-  
+  "clientOnboarding": {
+    "welcomeTitle": "Configurez votre profil d'entreprise",
+    "welcomeDescription": "Complétez votre profil professionnel pour commencer à recruter les meilleurs talents.",
+    "startSetup": "Commencer",
+    "step": "Étape",
+    "back": "Retour",
+    "continue": "Continuer",
+    "complete": "Terminer",
+    "saving": "Enregistrement...",
+    "success": "Profil d'entreprise configuré avec succès !",
+    "error": "Une erreur est survenue",
+    "alreadyCompleted": "Votre profil est déjà configuré !",
+    "logoSuccess": "Logo de l'entreprise téléchargé avec succès !",
+    "logoError": "Échec du téléchargement du logo",
+    
+    "steps": {
+      "company": "Entreprise",
+      "contact": "Contact",
+      "verify": "Vérification"
+    },
+    
+    "benefits": {
+      "verified": "Entreprises vérifiées",
+      "matches": "Meilleures correspondances",
+      "hiring": "Recrutement plus rapide"
+    },
+    
+    "company": {
+      "title": "Informations de l'entreprise",
+      "description": "Parlez-nous de votre entreprise",
+      "logo": "Logo de l'entreprise",
+      "logoHint": "Téléchargez votre logo (optionnel)",
+      "name": "Nom de l'entreprise",
+      "namePlaceholder": "ex : TechCorp Solutions",
+      "size": "Taille de l'entreprise",
+      "sizePlaceholder": "Sélectionnez la taille",
+      "industry": "Secteur d'activité",
+      "industryPlaceholder": "Sélectionnez le secteur",
+      "website": "Site web de l'entreprise",
+      "description": "Description de l'entreprise",
+      "descriptionPlaceholder": "Parlez-nous de votre entreprise...",
+      "founded": "Année de création",
+      "location": "Localisation",
+      "country": "Pays",
+      "countryPlaceholder": "Sélectionnez le pays",
+      "city": "Ville",
+      "address": "Adresse",
+      "addressPlaceholder": "Adresse (optionnel)"
+    },
+    
+    "contact": {
+      "title": "Informations de contact",
+      "description": "Comment les freelances peuvent vous joindre ?",
+      "fullName": "Nom complet",
+      "namePlaceholder": "Votre nom complet",
+      "position": "Poste / Titre",
+      "positionPlaceholder": "ex : PDG, Responsable recrutement",
+      "email": "Adresse email",
+      "phone": "Numéro de téléphone",
+      "privacyTitle": "Confidentialité protégée",
+      "privacyText": "Vos informations de contact ne sont partagées qu'avec les freelances que vous embauchez"
+    },
+    
+    "verify": {
+      "title": "Vérifiez vos informations",
+      "description": "Veuillez vérifier vos informations",
+      "companySection": "Informations de l'entreprise",
+      "contactSection": "Personne à contacter",
+      "terms": "Je confirme que les informations fournies sont exactes et j'accepte les",
+      "and": "et",
+      "newsletter": "S'abonner à notre newsletter pour recevoir des conseils et mises à jour (optionnel)"
+    }
+  },
 "orders_id": {
     "title": "Mes Commandes",
     "subtitle": "Gérez vos commandes en tant qu'acheteur ou vendeur",

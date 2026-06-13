@@ -57,7 +57,6 @@ export default function RoleSelectionPage() {
     // Si l'onboarding complet est déjà fait, rediriger vers dashboard
     if (onboardingCompleted && !isRedirecting) {
       setIsRedirecting(true)
-      console.log("✅ Onboarding already completed, redirecting to dashboard")
       router.push(`/${lang}/dashboard`)
       return
     }
@@ -65,8 +64,6 @@ export default function RoleSelectionPage() {
     // Redirection immédiate si le rôle est déjà sélectionné et l'onboarding role complété
     if (onboardingRoleCompleted && currentRole && !isRedirecting) {
       setIsRedirecting(true)
-      console.log("✅ Onboarding role already completed, redirecting to role-specific onboarding")
-      alert(currentRole)
       // Rediriger vers l'onboarding spécifique au rôle
       if (currentRole === "client") {
         router.push(`/${lang}/onboarding/client`)

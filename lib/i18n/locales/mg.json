@@ -1,4 +1,77 @@
 {
+  "clientOnboarding": {
+    "welcomeTitle": "Fametrahana ny mombamomba ny orinasanao",
+    "welcomeDescription": "Fenoy ny mombamomba ny orinasanao mba hanombohana manakarama talenta tsara indrindra.",
+    "startSetup": "Hanomboka",
+    "step": "Dingana",
+    "back": "Miverina",
+    "continue": "Manaraka",
+    "complete": "Hamita",
+    "saving": "Tehirizina...",
+    "success": "Vita soa aman-tsara ny fametrahana ny mombamomba ny orinasa!",
+    "error": "Nisy hadisoana nitranga",
+    "alreadyCompleted": "Efa napetraka ny mombamomba anao!",
+    "logoSuccess": "Vita soa aman-tsara ny fampidirana ny lozon'ny orinasa!",
+    "logoError": "Tsy nahomby ny fampidirana ny lozo",
+    
+    "steps": {
+      "company": "Orinasa",
+      "contact": "Fifandraisana",
+      "verify": "Fanamarinana"
+    },
+    
+    "benefits": {
+      "verified": "Orinasa voamarina",
+      "matches": "Fifanarahana tsara kokoa",
+      "hiring": "Fakarama haingana kokoa"
+    },
+    
+    "company": {
+      "title": "Fampahalalana momba ny orinasa",
+      "description": "Lazao anay ny momba ny orinasanao",
+      "logo": "Lozon'ny orinasa",
+      "logoHint": "Ampidiro ny lozon'ny orinasanao (tsy voatery)",
+      "name": "Anaran'ny orinasa",
+      "namePlaceholder": "ohatra: TechCorp Solutions",
+      "size": "Haben'ny orinasa",
+      "sizePlaceholder": "Misafidia habe",
+      "industry": "Sektioran'ny asa",
+      "industryPlaceholder": "Misafidia sektoran'asa",
+      "website": "Tranokalan'ny orinasa",
+      "description": "Famaritana ny orinasa",
+      "descriptionPlaceholder": "Lazao anay ny momba ny orinasanao...",
+      "founded": "Taona nananganana",
+      "location": "Toerana misy",
+      "country": "Firenena",
+      "countryPlaceholder": "Misafidia firenena",
+      "city": "Tanàna",
+      "address": "Adiresy",
+      "addressPlaceholder": "Adiresy (tsy voatery)"
+    },
+    
+    "contact": {
+      "title": "Fampahalalana momba ny fifandraisana",
+      "description": "Ahoana no ahafahan'ny freelancer hifandray aminao?",
+      "fullName": "Anarana feno",
+      "namePlaceholder": "Ny anarana fonao",
+      "position": "Toerana / Sata",
+      "positionPlaceholder": "ohatra: CEO, Mpandraharaha",
+      "email": "Adiresy mailaka",
+      "phone": "Nomeraon-telefaona",
+      "privacyTitle": "Tsiambaratelo voaaro",
+      "privacyText": "Ny fampahalalana momba ny fifandraisanao dia zaraina amin'ireo freelancer izay manakarama anao ihany"
+    },
+    
+    "verify": {
+      "title": "Hamafiso ny fampahalalana",
+      "description": "Azafady, diniho ny antsipirihanao",
+      "companySection": "Fampahalalana momba ny orinasa",
+      "contactSection": "Olona ifandraisana",
+      "terms": "Manamafy aho fa marina ny fampahalalana nomenao ary manaiky ny",
+      "and": "sy ny",
+      "newsletter": "Misoratra anarana amin'ny gazetiboky mba hahazoana torohevitra sy vaovao farany (tsy voatery)"
+    }
+  },
   "orders_id": {
     "title": "Fanafarana",
     "subtitle": "Tantano ny baikonao amin'ny maha-mpividy na mpivarotra",

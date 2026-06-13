@@ -1,4 +1,78 @@
 {
+
+  "clientOnboarding": {
+    "welcomeTitle": "Set up your company profile",
+    "welcomeDescription": "Complete your business profile to start hiring top talent.",
+    "startSetup": "Start Setup",
+    "step": "Step",
+    "back": "Back",
+    "continue": "Continue",
+    "complete": "Complete Setup",
+    "saving": "Saving...",
+    "success": "Company profile setup complete!",
+    "error": "Something went wrong",
+    "alreadyCompleted": "Your profile is already set up!",
+    "logoSuccess": "Company logo uploaded successfully!",
+    "logoError": "Failed to upload logo",
+    
+    "steps": {
+      "company": "Company",
+      "contact": "Contact",
+      "verify": "Verify"
+    },
+    
+    "benefits": {
+      "verified": "Verified Companies",
+      "matches": "Better Matches",
+      "hiring": "Faster Hiring"
+    },
+    
+    "company": {
+      "title": "Company Information",
+      "description": "Tell us about your business",
+      "logo": "Company Logo",
+      "logoHint": "Upload your logo (optional)",
+      "name": "Company Name",
+      "namePlaceholder": "e.g., TechCorp Solutions",
+      "size": "Company Size",
+      "sizePlaceholder": "Select size",
+      "industry": "Industry",
+      "industryPlaceholder": "Select industry",
+      "website": "Company Website",
+      "description": "Company Description",
+      "descriptionPlaceholder": "Tell us about your company...",
+      "founded": "Year Founded",
+      "location": "Location",
+      "country": "Country",
+      "countryPlaceholder": "Select country",
+      "city": "City",
+      "address": "Address",
+      "addressPlaceholder": "Street address (optional)"
+    },
+    
+    "contact": {
+      "title": "Contact Information",
+      "description": "How should freelancers reach you?",
+      "fullName": "Full Name",
+      "namePlaceholder": "Your full name",
+      "position": "Position / Title",
+      "positionPlaceholder": "e.g., CEO, Hiring Manager",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "privacyTitle": "Privacy Protected",
+      "privacyText": "Your contact information is only shared with freelancers you hire"
+    },
+    
+    "verify": {
+      "title": "Verify Your Information",
+      "description": "Please review your details",
+      "companySection": "Company Information",
+      "contactSection": "Contact Person",
+      "terms": "I confirm that the information provided is accurate and I agree to the",
+      "and": "and",
+      "newsletter": "Subscribe to our newsletter for tips and updates (optional)"
+    }
+  },
    "orders_id": {
     "title": "My Orders",
     "subtitle": "Manage your orders as buyer or seller",
