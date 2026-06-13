@@ -66,12 +66,12 @@ export default function RoleSelectionPage() {
     if (onboardingRoleCompleted && currentRole && !isRedirecting) {
       setIsRedirecting(true)
       console.log("✅ Onboarding role already completed, redirecting to role-specific onboarding")
-      
+      alert(currentRole)
       // Rediriger vers l'onboarding spécifique au rôle
       if (currentRole === "client") {
         router.push(`/${lang}/onboarding/client`)
       } else {
-        router.push(`/${lang}/onboarding`)
+               router.push(`/${lang}/onboarding`)
       }
       return
     }
