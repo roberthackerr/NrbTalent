@@ -157,7 +157,7 @@ export default function ClientOnboardingPage() {
   // Redirect if already onboarded
   useEffect(() => {
     if (!isLoadingProfile && session?.user?.onboardingCompleted) {
-      router.push(`/${lang}/dashboard`)
+      router.push(`/${lang}`)
     }
   }, [session, isLoadingProfile, router, lang])
 
@@ -169,7 +169,7 @@ export default function ClientOnboardingPage() {
       if (response.ok) {
         if (data.onboardingCompleted === true) {
           toast.info(dict?.clientOnboarding?.alreadyCompleted || "Your profile is already set up!")
-          setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
+          setTimeout(() => router.push(`/${lang}`), 1500)
           return
         }
 
@@ -330,7 +330,7 @@ export default function ClientOnboardingPage() {
       if (response.ok) {
         await update()
         toast.success(data.message || dict?.clientOnboarding?.success || "Company profile setup complete!")
-        setTimeout(() => router.push(`/${lang}/dashboard`), 1500)
+        setTimeout(() => router.push(`/${lang}`), 1500)
       } else {
         throw new Error(data.error || dict?.clientOnboarding?.error || "Something went wrong")
       }
