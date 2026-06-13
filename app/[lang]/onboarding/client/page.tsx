@@ -380,7 +380,7 @@ const handleComplete = async () => {
                   </div>
                 )
               })}
-            </div>
+            </div> 
 
             {/* Mobile Step Indicator */}
             <div className="md:hidden flex items-center justify-between mb-6">
