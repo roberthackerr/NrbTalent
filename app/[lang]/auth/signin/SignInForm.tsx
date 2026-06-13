@@ -214,7 +214,7 @@ export default function SignInForm({ dict, lang }: Props) {
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
+                  {/* <div className="flex-1">
                     <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
                       {dict.auth?.emailNotVerified || 'Email non vérifié'}
                     </p>
@@ -234,7 +234,7 @@ export default function SignInForm({ dict, lang }: Props) {
                         <>{dict.auth?.resendVerificationEmail || 'Renvoyer l\'email de vérification'}</>
                       )}
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             )}
