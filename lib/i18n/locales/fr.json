@@ -1,4 +1,57 @@
 {
+
+  "companySettings": {
+  "title": "Paramètres de l'entreprise",
+  "description": "Gérez le profil de votre entreprise et vos coordonnées",
+  "companyLogo": "Logo de l'entreprise",
+  "logoHint": "Téléchargez le logo de votre entreprise. Taille recommandée : 200x200px",
+  "logoSuccess": "Logo de l'entreprise mis à jour !",
+  "logoError": "Échec du téléchargement du logo",
+  "uploading": "Téléchargement...",
+  "companyDetails": "Détails de l'entreprise",
+  "companyDetailsDesc": "Gérez les informations de votre entreprise",
+  "edit": "Modifier",
+  "cancel": "Annuler",
+  "save": "Enregistrer",
+  "saving": "Enregistrement...",
+  "saveSuccess": "Profil d'entreprise mis à jour !",
+  "saveError": "Échec de l'enregistrement",
+  "employees": "employés",
+  "vatNumber": "Numéro de TVA",
+  "vatPlaceholder": "ex : TVA123456789",
+  "registrationNumber": "Numéro d'enregistrement",
+  "regPlaceholder": "ex : REG123456",
+  "tabs": {
+    "general": "Général",
+    "location": "Localisation",
+    "contact": "Contact"
+  },
+  "industries": {
+    "tech": "Technologie / Logiciel",
+    "finance": "Finance / Banque",
+    "healthcare": "Santé / Médical",
+    "ecommerce": "E-commerce / Commerce de détail",
+    "education": "Éducation / Formation",
+    "marketing": "Marketing / Publicité",
+    "consulting": "Conseil",
+    "other": "Autre"
+  },
+  "stats": {
+    "profileCompletion": "Complétion du profil",
+    "totalProjects": "Projets totaux",
+    "activeHires": "Recrutements actifs"
+  }
+},
+"countries": {
+  "us": "États-Unis",
+  "uk": "Royaume-Uni",
+  "ca": "Canada",
+  "fr": "France",
+  "de": "Allemagne",
+  "es": "Espagne",
+  "it": "Italie",
+  "other": "Autre"
+},
   "clientOnboarding": {
     "welcomeTitle": "Configurez votre profil d'entreprise",
     "welcomeDescription": "Complétez votre profil professionnel pour commencer à recruter les meilleurs talents.",
