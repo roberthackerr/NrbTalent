@@ -1,4 +1,56 @@
 {
+  "companySettings": {
+  "title": "Fandrindrana ny orinasa",
+  "description": "Ahitsio ny mombamomba ny orinasanao sy ny fifandraisana",
+  "companyLogo": "Lozon'ny orinasa",
+  "logoHint": "Ampidiro ny lozon'ny orinasanao. Haben-kitikitika: 200x200px",
+  "logoSuccess": "Vita ny fanovana ny lozon'ny orinasa!",
+  "logoError": "Tsy nahomby ny fampidirana ny lozo",
+  "uploading": "Fandefasana...",
+  "companyDetails": "Antsipirihan'ny orinasa",
+  "companyDetailsDesc": "Ahitsio ny fampahalalana momba ny orinasanao",
+  "edit": "Hanova",
+  "cancel": "Hafoina",
+  "save": "Tehirizina",
+  "saving": "Tehirizina...",
+  "saveSuccess": "Vita ny fanovana ny mombamomba ny orinasa!",
+  "saveError": "Tsy nahomby ny fanovana",
+  "employees": "mpiasa",
+  "vatNumber": "Laharan'ny VAT",
+  "vatPlaceholder": "ohatra: VAT123456789",
+  "registrationNumber": "Laharan'ny fisoratana anarana",
+  "regPlaceholder": "ohatra: REG123456",
+  "tabs": {
+    "general": "Ankapobeny",
+    "location": "Toerana",
+    "contact": "Fifandraisana"
+  },
+  "industries": {
+    "tech": "Teknolojia / Rindrankajy",
+    "finance": "Volana / Banky",
+    "healthcare": "Fahasalamana",
+    "ecommerce": "Varotra an-tserasera",
+    "education": "Fanabeazana",
+    "marketing": "Varotra / Dokam-barotra",
+    "consulting": "Mpanolo-tsaina",
+    "other": "Hafa"
+  },
+  "stats": {
+    "profileCompletion": "Fahavitan'ny mombamomba",
+    "totalProjects": "Tetika rehetra",
+    "activeHires": "Miasa ankehitriny"
+  }
+},
+"countries": {
+  "us": "Etazonia",
+  "uk": "Angletera",
+  "ca": "Kanada",
+  "fr": "Frantsa",
+  "de": "Alemaina",
+  "es": "Espaina",
+  "it": "Italia",
+  "other": "Hafa"
+},
   "clientOnboarding": {
     "welcomeTitle": "Fametrahana ny mombamomba ny orinasanao",
     "welcomeDescription": "Fenoy ny mombamomba ny orinasanao mba hanombohana manakarama talenta tsara indrindra.",

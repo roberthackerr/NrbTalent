@@ -1,5 +1,56 @@
 {
-
+"companySettings": {
+  "title": "Company Settings",
+  "description": "Manage your company profile and contact information",
+  "companyLogo": "Company Logo",
+  "logoHint": "Upload your company logo. Recommended size: 200x200px",
+  "logoSuccess": "Company logo updated!",
+  "logoError": "Failed to upload logo",
+  "uploading": "Uploading...",
+  "companyDetails": "Company Details",
+  "companyDetailsDesc": "Manage your company information",
+  "edit": "Edit",
+  "cancel": "Cancel",
+  "save": "Save Changes",
+  "saving": "Saving...",
+  "saveSuccess": "Company profile updated!",
+  "saveError": "Failed to save changes",
+  "employees": "employees",
+  "vatNumber": "VAT Number",
+  "vatPlaceholder": "e.g., VAT123456789",
+  "registrationNumber": "Registration Number",
+  "regPlaceholder": "e.g., REG123456",
+  "tabs": {
+    "general": "General",
+    "location": "Location",
+    "contact": "Contact"
+  },
+  "industries": {
+    "tech": "Technology / Software",
+    "finance": "Finance / Banking",
+    "healthcare": "Healthcare / Medical",
+    "ecommerce": "E-commerce / Retail",
+    "education": "Education / Training",
+    "marketing": "Marketing / Advertising",
+    "consulting": "Consulting",
+    "other": "Other"
+  },
+  "stats": {
+    "profileCompletion": "Profile Completion",
+    "totalProjects": "Total Projects",
+    "activeHires": "Active Hires"
+  }
+},
+"countries": {
+  "us": "United States",
+  "uk": "United Kingdom",
+  "ca": "Canada",
+  "fr": "France",
+  "de": "Germany",
+  "es": "Spain",
+  "it": "Italy",
+  "other": "Other"
+},
   "clientOnboarding": {
     "welcomeTitle": "Set up your company profile",
     "welcomeDescription": "Complete your business profile to start hiring top talent.",
