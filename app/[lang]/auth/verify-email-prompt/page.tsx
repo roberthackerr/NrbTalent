@@ -95,10 +95,10 @@ export default function VerifyEmailPromptPage() {
           redirect: false,
         })
 
-        setTimeout(() => {
-          router.push(`/${lang}/onboarding`)
-          router.refresh()
-        }, 2000)
+ setTimeout(() => {
+  router.push(`/${lang}/onboarding/role`)
+  router.refresh()
+}, 2000)
       } else {
         toast.error(data.error || dict?.auth?.invalidCode || "Code invalide")
       }

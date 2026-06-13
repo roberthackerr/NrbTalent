@@ -52,12 +52,27 @@ export default function RoleSelectionPage() {
 
     const onboardingRoleCompleted = (session.user as any)?.onboardingRoleCompleted
     const currentRole = (session.user as any)?.role
+    const onboardingCompleted = (session.user as any)?.onboardingCompleted
 
-    // Redirection immédiate si déjà complété
+    // Si l'onboarding complet est déjà fait, rediriger vers dashboard
+    if (onboardingCompleted && !isRedirecting) {
+      setIsRedirecting(true)
+      console.log("✅ Onboarding already completed, redirecting to dashboard")
+      router.push(`/${lang}/dashboard`)
+      return
+    }
+
+    // Redirection immédiate si le rôle est déjà sélectionné et l'onboarding role complété
     if (onboardingRoleCompleted && currentRole && !isRedirecting) {
       setIsRedirecting(true)
-      console.log("✅ Onboarding role already completed, redirecting to /onboarding")
-      router.push(`/${lang}/onboarding`)
+      console.log("✅ Onboarding role already completed, redirecting to role-specific onboarding")
+      
+      // Rediriger vers l'onboarding spécifique au rôle
+      if (currentRole === "client") {
+        router.push(`/${lang}/onboarding/client`)
+      } else {
+        router.push(`/${lang}/onboarding`)
+      }
       return
     }
 
@@ -115,7 +130,12 @@ export default function RoleSelectionPage() {
           : dict?.roleSelection?.success?.client || "Welcome as a client!"
       )
       
-      router.push(`/${lang}/onboarding`)
+      // Rediriger vers l'onboarding spécifique au rôle
+      if (selectedRole === "client") {
+        router.push(`/${lang}/onboarding/client`)
+      } else {
+        router.push(`/${lang}/onboarding`)
+      }
 
     } catch (error) {
       console.error("❌ Erreur:", error)
