@@ -374,7 +374,7 @@ const handleComplete = async () => {
                         Step {idx + 1}
                       </p>
                       <p className={`text-sm font-semibold ${isCurrent ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                        {step.title}
+                        {step.title} 
                       </p>
                     </div>
                   </div>
