@@ -1,735 +1,509 @@
-  // app/[lang]/games/combat/page.tsx
+// app/[lang]/games/combat-3d/page.tsx
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Swords, Shield, Heart, Zap, Skull, Trophy, 
-  RefreshCw, Sword, Users, Sparkles, TrendingUp,
-  Star, Crown, Target, Wind, Flame, Shield as ShieldIcon
-} from 'lucide-react'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls, Text, Box, Sphere, Cylinder, useTexture, Html } from '@react-three/drei'
+import { Physics, useBox, useSphere, usePlane } from '@react-three/cannon'
+import { motion } from 'framer-motion'
+import * as THREE from 'three'
+import { Swords, Heart, Zap, Shield, Target, Trophy, Skull, RefreshCw } from 'lucide-react'
 
-// Types
+// Interface pour les personnages
 interface Character {
   id: string
   name: string
-  avatar: string
   health: number
   maxHealth: number
-  mana: number
-  maxMana: number
   attack: number
   defense: number
-  speed: number
-  level: number
-  experience: number
-  skills: Skill[]
-  element: 'fire' | 'water' | 'earth' | 'wind' | 'lightning'
-  wins: number
-  losses: number
+  isAttacking: boolean
+  isHit: boolean
 }
 
-interface Skill {
-  id: string
+// Composant Personnage 3D
+function Character3D({ 
+  position, 
+  color, 
+  health, 
+  maxHealth,
+  isAttacking,
+  isHit,
+  name,
+  onAttack
+}: { 
+  position: [number, number, number]
+  color: string
+  health: number
+  maxHealth: number
+  isAttacking: boolean
+  isHit: boolean
   name: string
-  description: string
-  damage: number
-  manaCost: number
-  cooldown: number
-  currentCooldown: number
-  type: 'physical' | 'magical' | 'heal' | 'buff'
-  icon: any
-  effect?: string
-}
+  onAttack?: () => void
+}) {
+  const groupRef = useRef<THREE.Group>(null)
+  const [attackAnimation, setAttackAnimation] = useState(0)
+  const [hitAnimation, setHitAnimation] = useState(0)
+  const [idleRotation, setIdleRotation] = useState(0)
 
-interface BattleLog {
-  id: number
-  message: string
-  type: 'damage' | 'heal' | 'critical' | 'miss' | 'info' | 'victory'
-  timestamp: Date
-}
-
-// Personnages disponibles
-const AVAILABLE_CHARACTERS: Character[] = [
-  {
-    id: 'warrior',
-    name: 'Guerrier Draconique',
-    avatar: '⚔️',
-    health: 450,
-    maxHealth: 450,
-    mana: 100,
-    maxMana: 100,
-    attack: 85,
-    defense: 70,
-    speed: 60,
-    level: 1,
-    experience: 0,
-    element: 'fire',
-    wins: 0,
-    losses: 0,
-    skills: [
-      {
-        id: 'slash',
-        name: 'Lame Ardente',
-        description: 'Attaque puissante qui inflige des dégâts de feu',
-        damage: 65,
-        manaCost: 15,
-        cooldown: 0,
-        currentCooldown: 0,
-        type: 'physical',
-        icon: Sword
-      },
-      {
-        id: 'shield',
-        name: 'Bouclier Protecteur',
-        description: 'Augmente la défense pour 2 tours',
-        damage: 0,
-        manaCost: 20,
-        cooldown: 3,
-        currentCooldown: 0,
-        type: 'buff',
-        icon: Shield
+  useFrame((state) => {
+    if (groupRef.current) {
+      // Animation d'attaque
+      if (isAttacking && attackAnimation < 1) {
+        setAttackAnimation(prev => Math.min(prev + 0.15, 1))
+        groupRef.current.position.x = position[0] + Math.sin(attackAnimation * Math.PI) * 0.5
+        groupRef.current.rotation.z = Math.sin(attackAnimation * Math.PI) * 0.5
+      } else if (attackAnimation > 0) {
+        setAttackAnimation(prev => Math.max(prev - 0.1, 0))
+        groupRef.current.position.x = position[0]
+        groupRef.current.rotation.z = 0
       }
-    ]
-  },
-  {
-    id: 'mage',
-    name: 'Archimage Éthéré',
-    avatar: '🔮',
-    health: 320,
-    maxHealth: 320,
-    mana: 200,
-    maxMana: 200,
-    attack: 95,
-    defense: 40,
-    speed: 75,
-    level: 1,
-    experience: 0,
-    element: 'lightning',
-    wins: 0,
-    losses: 0,
-    skills: [
-      {
-        id: 'fireball',
-        name: 'Boule de Foudre',
-        description: 'Projectile magique dévastateur',
-        damage: 80,
-        manaCost: 25,
-        cooldown: 0,
-        currentCooldown: 0,
-        type: 'magical',
-        icon: Zap
-      },
-      {
-        id: 'heal',
-        name: 'Soins Mystiques',
-        description: 'Restaure 50 PV',
-        damage: -50,
-        manaCost: 30,
-        cooldown: 2,
-        currentCooldown: 0,
-        type: 'heal',
-        icon: Heart
+
+      // Animation de dégât
+      if (isHit && hitAnimation < 1) {
+        setHitAnimation(prev => Math.min(prev + 0.2, 1))
+        groupRef.current.position.y = position[1] + Math.sin(hitAnimation * Math.PI) * 0.3
+        groupRef.current.rotation.x = Math.sin(hitAnimation * Math.PI) * 0.3
+      } else if (hitAnimation > 0) {
+        setHitAnimation(prev => Math.max(prev - 0.1, 0))
+        groupRef.current.position.y = position[1]
+        groupRef.current.rotation.x = 0
       }
-    ]
-  },
-  {
-    id: 'assassin',
-    name: 'Ombre Mortelle',
-    avatar: '🗡️',
-    health: 280,
-    maxHealth: 280,
-    mana: 120,
-    maxMana: 120,
-    attack: 100,
-    defense: 35,
-    speed: 95,
-    level: 1,
-    experience: 0,
-    element: 'wind',
-    wins: 0,
-    losses: 0,
-    skills: [
-      {
-        id: 'stab',
-        name: 'Dague Empoisonnée',
-        description: 'Attaque critique avec poison',
-        damage: 70,
-        manaCost: 15,
-        cooldown: 0,
-        currentCooldown: 0,
-        type: 'physical',
-        icon: Swords
-      },
-      {
-        id: 'dodge',
-        name: 'Esquive Mortelle',
-        description: 'Esquive la prochaine attaque',
-        damage: 0,
-        manaCost: 20,
-        cooldown: 3,
-        currentCooldown: 0,
-        type: 'buff',
-        icon: Wind
+
+      // Animation d'inactivité
+      if (!isAttacking && !isHit && attackAnimation === 0 && hitAnimation === 0) {
+        idleRotation += 0.02
+        groupRef.current.position.y = position[1] + Math.sin(idleRotation) * 0.05
       }
-    ]
-  }
-]
-
-// Ennemi aléatoire
-const generateEnemy = (playerLevel: number): Character => {
-  const enemyTypes = [
-    { name: 'Gobelins Sauvages', avatar: '👹', attack: 60, defense: 45, health: 250, element: 'earth' as const },
-    { name: 'Chevalier Noir', avatar: '🗡️', attack: 75, defense: 60, health: 350, element: 'fire' as const },
-    { name: 'Dragonnet', avatar: '🐉', attack: 80, defense: 50, health: 300, element: 'fire' as const },
-    { name: 'Esprit Maléfique', avatar: '👻', attack: 70, defense: 35, health: 220, element: 'wind' as const },
-    { name: 'Golem de Roc', avatar: '🗿', attack: 55, defense: 80, health: 400, element: 'earth' as const }
-  ]
-  
-  const enemy = enemyTypes[Math.floor(Math.random() * enemyTypes.length)]
-  
-  return {
-    id: `enemy_${Date.now()}`,
-    name: enemy.name,
-    avatar: enemy.avatar,
-    health: enemy.health + (playerLevel - 1) * 20,
-    maxHealth: enemy.health + (playerLevel - 1) * 20,
-    mana: 80,
-    maxMana: 80,
-    attack: enemy.attack + (playerLevel - 1) * 5,
-    defense: enemy.defense + (playerLevel - 1) * 3,
-    speed: 50 + Math.random() * 20,
-    level: playerLevel,
-    experience: 0,
-    element: enemy.element,
-    wins: 0,
-    losses: 0,
-    skills: [
-      {
-        id: 'enemy_attack',
-        name: 'Attaque Sauvage',
-        description: 'Attaque physique brutale',
-        damage: 45,
-        manaCost: 0,
-        cooldown: 0,
-        currentCooldown: 0,
-        type: 'physical',
-        icon: Swords
-      }
-    ]
-  }
-}
-
-export default function CombatGamePage() {
-  const [player, setPlayer] = useState<Character>(AVAILABLE_CHARACTERS[0])
-  const [enemy, setEnemy] = useState<Character | null>(null)
-  const [battleLogs, setBattleLogs] = useState<BattleLog[]>([])
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true)
-  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
-  const [battleEnded, setBattleEnded] = useState(false)
-  const [battleResult, setBattleResult] = useState<'victory' | 'defeat' | null>(null)
-  const [animating, setAnimating] = useState(false)
-  const [showSkillEffect, setShowSkillEffect] = useState(false)
-  const [playerHealthBarWidth, setPlayerHealthBarWidth] = useState(100)
-  const [enemyHealthBarWidth, setEnemyHealthBarWidth] = useState(100)
-
-  // Initialiser le combat
-  useEffect(() => {
-    startNewBattle()
-  }, [])
-
-  // Mettre à jour les barres de vie
-  useEffect(() => {
-    if (player) {
-      setPlayerHealthBarWidth((player.health / player.maxHealth) * 100)
     }
-    if (enemy) {
-      setEnemyHealthBarWidth((enemy.health / enemy.maxHealth) * 100)
+  })
+
+  return (
+    <group ref={groupRef} position={position}>
+      {/* Corps */}
+      <mesh castShadow receiveShadow>
+        <cylinderGeometry args={[0.5, 0.5, 1, 8]} />
+        <meshStandardMaterial color={color} metalness={0.7} roughness={0.3} />
+      </mesh>
+      
+      {/* Tête */}
+      <mesh position={[0, 0.7, 0]} castShadow>
+        <sphereGeometry args={[0.4, 32, 32]} />
+        <meshStandardMaterial color={color} metalness={0.5} roughness={0.2} />
+      </mesh>
+      
+      {/* Yeux */}
+      <mesh position={[-0.15, 0.8, 0.4]} castShadow>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="white" />
+      </mesh>
+      <mesh position={[0.15, 0.8, 0.4]} castShadow>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="white" />
+      </mesh>
+      
+      {/* Casque/Armure */}
+      <mesh position={[0, 0.65, 0]} castShadow>
+        <cylinderGeometry args={[0.45, 0.5, 0.3, 8]} />
+        <meshStandardMaterial color="#ffd700" metalness={0.9} roughness={0.2} />
+      </mesh>
+      
+      {/* Épée (si le personnage attaque) */}
+      {isAttacking && (
+        <mesh position={[0.6, 0.2, 0]} rotation={[0, 0, -Math.PI / 4]} castShadow>
+          <boxGeometry args={[0.8, 0.1, 0.1]} />
+          <meshStandardMaterial color="#silver" metalness={0.9} />
+        </mesh>
+      )}
+      
+      {/* Barre de vie */}
+      <Html position={[0, 1.2, 0]} center>
+        <div className="bg-black/80 rounded-lg px-3 py-1 min-w-[120px] backdrop-blur-sm">
+          <div className="text-white text-xs font-bold mb-1">{name}</div>
+          <div className="h-2 bg-red-500/30 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-red-500 to-red-600 transition-all duration-300"
+              style={{ width: `${(health / maxHealth) * 100}%` }}
+            />
+          </div>
+          <div className="text-white text-xs mt-1 text-center">{health}/{maxHealth}</div>
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+// Plateforme de combat
+function Arena() {
+  return (
+    <>
+      {/* Sol */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
+        <planeGeometry args={[10, 10]} />
+        <meshStandardMaterial color="#2a2a2a" metalness={0.2} roughness={0.8} />
+      </mesh>
+      
+      {/* Grille d'arène */}
+      <gridHelper args={[10, 20, '#444', '#333']} position={[0, -0.4, 0]} />
+      
+      {/* Lumières */}
+      <pointLight position={[2, 3, 2]} intensity={1} castShadow />
+      <pointLight position={[-2, 3, -2]} intensity={0.5} />
+      <ambientLight intensity={0.5} />
+      
+      {/* Effet de lumière rouge/bleue */}
+      <spotLight
+        position={[3, 2, 0]}
+        angle={0.3}
+        penumbra={0.5}
+        intensity={0.5}
+        color="#ff3366"
+      />
+      <spotLight
+        position={[-3, 2, 0]}
+        angle={0.3}
+        penumbra={0.5}
+        intensity={0.5}
+        color="#33ff66"
+      />
+    </>
+  )
+}
+
+// Particules d'attaque
+function AttackEffect({ position, onComplete }: { position: [number, number, number], onComplete: () => void }) {
+  const particlesRef = useRef<THREE.Points>(null)
+  let time = 0
+
+  useFrame(() => {
+    time += 0.1
+    if (particlesRef.current && time < 1) {
+      particlesRef.current.rotation.y = time * Math.PI * 2
+      particlesRef.current.scale.setScalar(1 - time * 0.5)
+    } else if (time >= 1) {
+      onComplete()
     }
-  }, [player?.health, enemy?.health])
+  })
 
-  const startNewBattle = () => {
-    const newEnemy = generateEnemy(player.level)
-    setEnemy(newEnemy)
-    setBattleLogs([])
-    setIsPlayerTurn(true)
-    setBattleEnded(false)
-    setBattleResult(null)
-    setSelectedSkill(null)
-    addBattleLog(`⚔️ Combat contre ${newEnemy.name} commence !`, 'info')
-    addBattleLog(`✨ ${player.name} vs ${newEnemy.name}`, 'info')
+  return (
+    <points ref={particlesRef} position={position}>
+      <sphereGeometry args={[0.5, 8, 8]} />
+      <pointsMaterial color="#ff3366" size={0.1} />
+    </points>
+  )
+}
+
+// Composant principal du jeu
+export default function Combat3DGame() {
+  const [player, setPlayer] = useState<Character>({
+    id: 'player',
+    name: 'Guerrier',
+    health: 100,
+    maxHealth: 100,
+    attack: 25,
+    defense: 10,
+    isAttacking: false,
+    isHit: false
+  })
+  
+  const [enemy, setEnemy] = useState<Character>({
+    id: 'enemy',
+    name: 'Démon des Abysses',
+    health: 120,
+    maxHealth: 120,
+    attack: 20,
+    defense: 8,
+    isAttacking: false,
+    isHit: false
+  })
+  
+  const [battleLogs, setBattleLogs] = useState<{ message: string, type: string }[]>([])
+  const [gameOver, setGameOver] = useState(false)
+  const [victory, setVictory] = useState(false)
+  const [showAttackEffect, setShowAttackEffect] = useState(false)
+  const [attackEffectPos, setAttackEffectPos] = useState<[number, number, number]>([0, 0, 0])
+  const [playerTurn, setPlayerTurn] = useState(true)
+  const [cooldown, setCooldown] = useState(0)
+
+  const addLog = (message: string, type: string) => {
+    setBattleLogs(prev => [...prev.slice(-9), { message, type }])
   }
 
-  const addBattleLog = (message: string, type: BattleLog['type']) => {
-    setBattleLogs(prev => [...prev, {
-      id: Date.now(),
-      message,
-      type,
-      timestamp: new Date()
-    }])
-  }
-
-  const calculateDamage = (attacker: Character, defender: Character, skill: Skill): number => {
-    let baseDamage = skill.damage + attacker.attack * 0.5 - defender.defense * 0.3
-    baseDamage = Math.max(10, baseDamage)
-    
-    // Critique (15% de chance)
+  const calculateDamage = (attacker: Character, defender: Character): number => {
+    let damage = Math.max(5, attacker.attack - defender.defense + Math.floor(Math.random() * 15))
     const isCritical = Math.random() < 0.15
     if (isCritical) {
-      baseDamage *= 1.5
-      addBattleLog(`💥 Coup critique !`, 'critical')
+      damage = Math.floor(damage * 1.5)
+      addLog(`💥 Coup critique! +${damage} dégâts!`, 'critical')
     }
-    
-    // Élément (avantage)
-    const elementAdvantage: Record<string, Record<string, number>> = {
-      fire: { wind: 1.2, water: 0.8 },
-      water: { fire: 1.2, earth: 0.8 },
-      earth: { lightning: 1.2, wind: 0.8 },
-      wind: { earth: 1.2, fire: 0.8 },
-      lightning: { water: 1.2, earth: 0.8 }
-    }
-    
-    const advantage = elementAdvantage[attacker.element]?.[defender.element] || 1
-    if (advantage > 1) {
-      baseDamage *= advantage
-      addBattleLog(`✨ Avantage élémentaire !`, 'info')
-    } else if (advantage < 1) {
-      baseDamage *= advantage
-      addBattleLog(`⚠️ Désavantage élémentaire...`, 'info')
-    }
-    
-    return Math.floor(baseDamage)
+    return damage
   }
 
-  const performSkill = (skill: Skill) => {
-    if (!enemy || battleEnded || !isPlayerTurn || animating) return
+  const playerAttack = async () => {
+    if (!playerTurn || gameOver || cooldown > 0) return
     
-    // Vérifier mana
-    if (player.mana < skill.manaCost) {
-      addBattleLog(`❌ Pas assez de mana pour ${skill.name}!`, 'info')
-      return
-    }
+    setPlayerTurn(false)
+    setCooldown(2)
     
-    // Vérifier cooldown
-    if (skill.currentCooldown > 0) {
-      addBattleLog(`⏳ ${skill.name} est en recharge (${skill.currentCooldown} tours)`, 'info')
-      return
-    }
-    
-    setAnimating(true)
-    setShowSkillEffect(true)
+    // Animation d'attaque
+    setPlayer(prev => ({ ...prev, isAttacking: true }))
+    setAttackEffectPos([1.2, 0.2, 0])
+    setShowAttackEffect(true)
     
     setTimeout(() => {
-      if (skill.type === 'heal') {
-        // Soin
-        const healAmount = Math.abs(skill.damage)
-        const newHealth = Math.min(player.maxHealth, player.health + healAmount)
-        setPlayer(prev => ({ ...prev, health: newHealth, mana: prev.mana - skill.manaCost }))
-        addBattleLog(`💚 ${player.name} utilise ${skill.name} et récupère ${healAmount} PV!`, 'heal')
-      } else if (skill.type === 'buff') {
-        // Buff (à implémenter)
-        addBattleLog(`✨ ${player.name} utilise ${skill.name}! Effet spécial activé!`, 'info')
-        setPlayer(prev => ({ ...prev, mana: prev.mana - skill.manaCost }))
-      } else {
-        // Attaque
-        const damage = calculateDamage(player, enemy, skill)
-        const newEnemyHealth = Math.max(0, enemy.health - damage)
-        setEnemy(prev => prev ? { ...prev, health: newEnemyHealth } : null)
-        addBattleLog(`⚔️ ${player.name} inflige ${damage} dégâts avec ${skill.name}!`, 'damage')
-        setPlayer(prev => ({ ...prev, mana: prev.mana - skill.manaCost }))
-      }
+      const damage = calculateDamage(player, enemy)
+      const newEnemyHealth = Math.max(0, enemy.health - damage)
       
-      // Mettre à jour cooldowns
-      setPlayer(prev => ({
-        ...prev,
-        skills: prev.skills.map(s => ({
-          ...s,
-          currentCooldown: s.currentCooldown > 0 ? s.currentCooldown - 1 : 0
-        }))
-      }))
+      setEnemy(prev => ({ ...prev, health: newEnemyHealth, isHit: true }))
+      addLog(`⚔️ ${player.name} inflige ${damage} dégâts!`, 'damage')
       
-      setShowSkillEffect(false)
-      setAnimating(false)
-      
-      // Vérifier si l'ennemi est mort
-      if (enemy && enemy.health <= 0) {
-        handleVictory()
-      } else {
-        setIsPlayerTurn(false)
-        setTimeout(() => enemyTurn(), 1000)
-      }
+      setTimeout(() => {
+        setEnemy(prev => ({ ...prev, isHit: false }))
+        setPlayer(prev => ({ ...prev, isAttacking: false }))
+        
+        if (newEnemyHealth <= 0) {
+          setGameOver(true)
+          setVictory(true)
+          addLog(`🎉 Victoire! ${player.name} a vaincu ${enemy.name}!`, 'victory')
+        } else {
+          setTimeout(() => enemyAttack(), 1000)
+        }
+      }, 300)
     }, 500)
   }
 
-  const enemyTurn = () => {
-    if (!enemy || battleEnded) return
-    
-    setAnimating(true)
+  const enemyAttack = () => {
+    setEnemy(prev => ({ ...prev, isAttacking: true }))
+    setAttackEffectPos([-1.2, 0.2, 0])
+    setShowAttackEffect(true)
     
     setTimeout(() => {
-      const enemySkill = enemy.skills[0]
-      const damage = calculateDamage(enemy, player, enemySkill)
+      const damage = calculateDamage(enemy, player)
       const newPlayerHealth = Math.max(0, player.health - damage)
-      setPlayer(prev => ({ ...prev, health: newPlayerHealth }))
-      addBattleLog(`💢 ${enemy.name} attaque et inflige ${damage} dégâts!`, 'damage')
       
-      setAnimating(false)
+      setPlayer(prev => ({ ...prev, health: newPlayerHealth, isHit: true }))
+      addLog(`💢 ${enemy.name} inflige ${damage} dégâts!`, 'damage')
       
-      if (newPlayerHealth <= 0) {
-        handleDefeat()
-      } else {
-        setIsPlayerTurn(true)
-      }
-    }, 800)
+      setTimeout(() => {
+        setPlayer(prev => ({ ...prev, isHit: false }))
+        setEnemy(prev => ({ ...prev, isAttacking: false }))
+        
+        if (newPlayerHealth <= 0) {
+          setGameOver(true)
+          setVictory(false)
+          addLog(`💀 Défaite... ${player.name} a été vaincu!`, 'defeat')
+        } else {
+          setPlayerTurn(true)
+        }
+      }, 300)
+    }, 500)
   }
 
-  const handleVictory = () => {
-    setBattleEnded(true)
-    setBattleResult('victory')
-    const expGain = 100 + enemy!.level * 20
-    const goldGain = 50 + enemy!.level * 10
-    
-    addBattleLog(`🎉 Victoire! +${expGain} XP`, 'victory')
-    addBattleLog(`💰 +${goldGain} pièces d'or`, 'victory')
-    
-    setPlayer(prev => ({
-      ...prev,
-      experience: prev.experience + expGain,
-      wins: prev.wins + 1,
-      health: prev.maxHealth,
-      mana: prev.maxMana
-    }))
+  const resetGame = () => {
+    setPlayer({
+      id: 'player',
+      name: 'Guerrier',
+      health: 100,
+      maxHealth: 100,
+      attack: 25,
+      defense: 10,
+      isAttacking: false,
+      isHit: false
+    })
+    setEnemy({
+      id: 'enemy',
+      name: 'Démon des Abysses',
+      health: 120,
+      maxHealth: 120,
+      attack: 20,
+      defense: 8,
+      isAttacking: false,
+      isHit: false
+    })
+    setBattleLogs([])
+    setGameOver(false)
+    setVictory(false)
+    setPlayerTurn(true)
+    setCooldown(0)
+    addLog('⚔️ Nouveau combat!', 'info')
   }
 
-  const handleDefeat = () => {
-    setBattleEnded(true)
-    setBattleResult('defeat')
-    addBattleLog(`💀 Défaite... ${player.name} a été vaincu!`, 'victory')
-    setPlayer(prev => ({
-      ...prev,
-      losses: prev.losses + 1,
-      health: prev.maxHealth,
-      mana: prev.maxMana
-    }))
-  }
-
-  const getElementColor = (element: string) => {
-    const colors = {
-      fire: 'from-red-500 to-orange-500',
-      water: 'from-blue-500 to-cyan-500',
-      earth: 'from-green-500 to-emerald-500',
-      wind: 'from-teal-500 to-green-500',
-      lightning: 'from-yellow-500 to-amber-500'
+  // Effet de cooldown
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(prev => prev - 1), 1000)
+      return () => clearTimeout(timer)
     }
-    return colors[element as keyof typeof colors] || 'from-gray-500 to-slate-500'
-  }
-
-  if (!enemy) return null
+  }, [cooldown])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-8 px-4">
-      {/* Background decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse animation-delay-2000"></div>
-      </div>
-
-      <div className="relative max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 via-red-500 to-purple-500 bg-clip-text text-transparent mb-2">
-            Combat Arène
-          </h1>
-          <p className="text-gray-400">Affrontez des ennemis puissants et devenez une légende!</p>
-        </div>
-
-        {/* Stats du joueur */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-            <div className="flex items-center gap-2 text-yellow-400 mb-2">
-              <Trophy className="h-5 w-5" />
-              <span className="text-sm font-semibold">Victoires</span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      <div className="relative h-screen">
+        {/* Canvas 3D */}
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-4 mx-auto" />
+              <p className="text-white">Chargement du jeu 3D...</p>
             </div>
-            <p className="text-2xl font-bold text-white">{player.wins}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-            <div className="flex items-center gap-2 text-red-400 mb-2">
-              <Skull className="h-5 w-5" />
-              <span className="text-sm font-semibold">Défaites</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{player.losses}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-            <div className="flex items-center gap-2 text-blue-400 mb-2">
-              <Sparkles className="h-5 w-5" />
-              <span className="text-sm font-semibold">Niveau</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{player.level}</p>
-          </div>
-        </div>
-
-        {/* Zone de combat */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Joueur */}
-          <motion.div
-            animate={animating && isPlayerTurn ? { x: [0, -10, 10, -10, 0] } : {}}
-            transition={{ duration: 0.3 }}
-            className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30"
+        }>
+          <Canvas
+            shadows
+            camera={{ position: [0, 2, 8], fov: 60 }}
+            style={{ background: 'radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%)' }}
           >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-6xl">{player.avatar}</div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-white">{player.name}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-2 py-0.5 rounded-full text-xs bg-gradient-to-r ${getElementColor(player.element)} text-white`}>
-                    {player.element.toUpperCase()}
-                  </span>
-                  <span className="text-xs text-gray-400">Niv. {player.level}</span>
-                </div>
-              </div>
-            </div>
+            <Arena />
+            
+            {/* Personnage Joueur */}
+            <Character3D
+              position={[-2, -0.2, 0]}
+              color="#3b82f6"
+              health={player.health}
+              maxHealth={player.maxHealth}
+              isAttacking={player.isAttacking}
+              isHit={player.isHit}
+              name={player.name}
+            />
+            
+            {/* Personnage Ennemi */}
+            <Character3D
+              position={[2, -0.2, 0]}
+              color="#ef4444"
+              health={enemy.health}
+              maxHealth={enemy.maxHealth}
+              isAttacking={enemy.isAttacking}
+              isHit={enemy.isHit}
+              name={enemy.name}
+            />
+            
+            {/* Effet d'attaque */}
+            {showAttackEffect && (
+              <AttackEffect
+                position={attackEffectPos}
+                onComplete={() => setShowAttackEffect(false)}
+              />
+            )}
+            
+            <OrbitControls 
+              enablePan={false} 
+              enableZoom={false}
+              maxPolarAngle={Math.PI / 3}
+              target={[0, 0.5, 0]}
+            />
+          </Canvas>
+        </Suspense>
 
-            {/* Barre de vie */}
-            <div className="mb-3">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-red-400">❤️ PV</span>
-                <span className="text-white">{player.health}/{player.maxHealth}</span>
-              </div>
-              <div className="h-3 bg-red-900/50 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full"
-                  style={{ width: `${playerHealthBarWidth}%` }}
-                  animate={{ width: `${playerHealthBarWidth}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-            </div>
-
-            {/* Barre de mana */}
-            <div className="mb-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-blue-400">💙 Mana</span>
-                <span className="text-white">{player.mana}/{player.maxMana}</span>
-              </div>
-              <div className="h-2 bg-blue-900/50 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
-                  style={{ width: `${(player.mana / player.maxMana) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Statistiques */}
-            <div className="grid grid-cols-3 gap-2 text-center text-sm">
-              <div>
-                <p className="text-gray-400">⚔️ Attaque</p>
-                <p className="text-white font-bold">{player.attack}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">🛡️ Défense</p>
-                <p className="text-white font-bold">{player.defense}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">⚡ Vitesse</p>
-                <p className="text-white font-bold">{player.speed}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* VS */}
-          <div className="flex items-center justify-center">
-            <div className="text-5xl font-bold bg-gradient-to-r from-red-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
-              VS
-            </div>
+        {/* Interface Utilisateur */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Titre */}
+          <div className="absolute top-4 left-0 right-0 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 via-red-500 to-purple-500 bg-clip-text text-transparent">
+              Combat Arène 3D
+            </h1>
           </div>
 
-          {/* Ennemi */}
-          <motion.div
-            animate={animating && !isPlayerTurn ? { x: [0, 10, -10, 10, 0] } : {}}
-            transition={{ duration: 0.3 }}
-            className="bg-gradient-to-br from-red-900/50 to-orange-900/50 backdrop-blur-sm rounded-2xl p-6 border border-red-500/30"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-6xl">{enemy.avatar}</div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-white">{enemy.name}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-2 py-0.5 rounded-full text-xs bg-gradient-to-r ${getElementColor(enemy.element)} text-white`}>
-                    {enemy.element.toUpperCase()}
-                  </span>
-                  <span className="text-xs text-gray-400">Niv. {enemy.level}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Barre de vie ennemie */}
-            <div className="mb-3">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-red-400">❤️ PV</span>
-                <span className="text-white">{Math.max(0, enemy.health)}/{enemy.maxHealth}</span>
-              </div>
-              <div className="h-3 bg-red-900/50 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full"
-                  style={{ width: `${enemyHealthBarWidth}%` }}
-                  animate={{ width: `${enemyHealthBarWidth}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-            </div>
-
-            {/* Statistiques ennemies */}
-            <div className="grid grid-cols-3 gap-2 text-center text-sm">
-              <div>
-                <p className="text-gray-400">⚔️ Attaque</p>
-                <p className="text-white font-bold">{enemy.attack}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">🛡️ Défense</p>
-                <p className="text-white font-bold">{enemy.defense}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">⚡ Vitesse</p>
-                <p className="text-white font-bold">{enemy.speed}</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Zone de combat - Skills */}
-        {!battleEnded && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Compétences du joueur */}
-            <div className="lg:col-span-2">
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <Swords className="h-5 w-5 text-yellow-400" />
-                  Compétences
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {player.skills.map((skill) => {
-                    const SkillIcon = skill.icon
-                    const isAvailable = player.mana >= skill.manaCost && skill.currentCooldown === 0 && isPlayerTurn && !battleEnded
-                    return (
-                      <motion.button
-                        key={skill.id}
-                        whileHover={{ scale: isAvailable ? 1.02 : 1 }}
-                        whileTap={{ scale: isAvailable ? 0.98 : 1 }}
-                        onClick={() => performSkill(skill)}
-                        disabled={!isAvailable || !isPlayerTurn || battleEnded}
-                        className={`p-4 rounded-xl text-left transition-all ${
-                          isAvailable && isPlayerTurn
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg cursor-pointer'
-                            : 'bg-gray-700/50 cursor-not-allowed opacity-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <SkillIcon className="h-5 w-5 text-white" />
-                          <span className="font-semibold text-white">{skill.name}</span>
-                          {skill.currentCooldown > 0 && (
-                            <span className="text-xs text-yellow-400 ml-auto">{skill.currentCooldown}</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-300 mb-2">{skill.description}</p>
-                        <div className="flex gap-3 text-xs">
-                          <span className="text-blue-300">💙 {skill.manaCost}</span>
-                          <span className="text-red-300">⚔️ {skill.damage > 0 ? skill.damage : skill.damage < 0 ? 'Soin' : 'Buff'}</span>
-                        </div>
-                      </motion.button>
-                    )
-                  })}
+          {/* Panneau de contrôle */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-md pointer-events-auto">
+            {!gameOver ? (
+              <div className="bg-black/80 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div className="flex gap-4">
+                  <button
+                    onClick={playerAttack}
+                    disabled={!playerTurn || cooldown > 0}
+                    className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+                      playerTurn && cooldown === 0
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg cursor-pointer'
+                        : 'bg-gray-700 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    <Swords className="h-5 w-5" />
+                    {cooldown > 0 ? `Recharge (${cooldown})` : 'Attaquer!'}
+                  </button>
                 </div>
                 
-                {!isPlayerTurn && !battleEnded && (
-                  <div className="mt-4 text-center text-yellow-400 animate-pulse">
-                    ⏳ Tour de l'ennemi...
-                  </div>
+                {/* Indicateur de tour */}
+                <div className="mt-4 text-center">
+                  {playerTurn ? (
+                    <div className="text-green-400 animate-pulse">Votre tour!</div>
+                  ) : (
+                    <div className="text-yellow-400 animate-pulse">Tour de l'ennemi...</div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-black/80 backdrop-blur-md rounded-2xl p-6 border border-white/20 text-center">
+                {victory ? (
+                  <>
+                    <Trophy className="h-16 w-16 mx-auto mb-4 text-yellow-400" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Victoire!</h2>
+                    <p className="text-gray-300 mb-4">Vous avez triomphé de l'ennemi!</p>
+                  </>
+                ) : (
+                  <>
+                    <Skull className="h-16 w-16 mx-auto mb-4 text-red-400" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Défaite...</h2>
+                    <p className="text-gray-300 mb-4">Vous avez été vaincu</p>
+                  </>
                 )}
+                <button
+                  onClick={resetGame}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-semibold hover:shadow-lg transition-all inline-flex items-center gap-2"
+                >
+                  <RefreshCw className="h-5 w-5" />
+                  Nouveau combat
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Journal de combat */}
+          <div className="absolute top-20 right-4 w-72 pointer-events-auto">
+            <div className="bg-black/80 backdrop-blur-md rounded-xl p-4 border border-white/20">
+              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Journal de combat
+              </h3>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {battleLogs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={`text-xs p-2 rounded ${
+                      log.type === 'damage' ? 'bg-red-500/20 text-red-300' :
+                      log.type === 'critical' ? 'bg-yellow-500/20 text-yellow-300' :
+                      log.type === 'victory' ? 'bg-green-500/20 text-green-300' :
+                      log.type === 'defeat' ? 'bg-purple-500/20 text-purple-300' :
+                      'bg-gray-500/20 text-gray-300'
+                    }`}
+                  >
+                    {log.message}
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
 
-            {/* Journal de combat */}
-            <div>
-              <div className="bg-black/50 backdrop-blur-sm rounded-xl p-6 border border-white/10 h-full">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <Target className="h-5 w-5 text-purple-400" />
-                  Journal de combat
-                </h3>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  <AnimatePresence>
-                    {battleLogs.slice(-8).map((log) => (
-                      <motion.div
-                        key={log.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0 }}
-                        className={`text-sm p-2 rounded ${
-                          log.type === 'damage' ? 'bg-red-500/20 text-red-300' :
-                          log.type === 'heal' ? 'bg-green-500/20 text-green-300' :
-                          log.type === 'critical' ? 'bg-yellow-500/20 text-yellow-300' :
-                          log.type === 'victory' ? 'bg-purple-500/20 text-purple-300' :
-                          'bg-gray-500/20 text-gray-300'
-                        }`}
-                      >
-                        {log.message}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+          {/* Statistiques */}
+          <div className="absolute bottom-4 left-4 pointer-events-auto">
+            <div className="bg-black/80 backdrop-blur-md rounded-xl p-3 border border-white/20">
+              <div className="flex gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <Heart className="h-4 w-4 text-red-400" />
+                  <span className="text-white">PV: {player.health}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Zap className="h-4 w-4 text-yellow-400" />
+                  <span className="text-white">Atk: {player.attack}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Shield className="h-4 w-4 text-blue-400" />
+                  <span className="text-white">Def: {player.defense}</span>
                 </div>
               </div>
             </div>
           </div>
-        )}
-
-        {/* Résultat du combat */}
-        {battleEnded && (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mt-6 text-center"
-          >
-            <div className={`rounded-2xl p-8 ${
-              battleResult === 'victory' 
-                ? 'bg-gradient-to-r from-green-600 to-emerald-600' 
-                : 'bg-gradient-to-r from-red-600 to-red-700'
-            }`}>
-              {battleResult === 'victory' ? (
-                <>
-                  <Trophy className="h-16 w-16 mx-auto mb-4 text-yellow-300" />
-                  <h2 className="text-3xl font-bold text-white mb-2">Victoire!</h2>
-                  <p className="text-white/90 mb-4">Vous avez vaincu {enemy.name}!</p>
-                </>
-              ) : (
-                <>
-                  <Skull className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h2 className="text-3xl font-bold text-white mb-2">Défaite...</h2>
-                  <p className="text-white/90 mb-4">Vous avez été vaincu par {enemy.name}</p>
-                </>
-              )}
-              <button
-                onClick={startNewBattle}
-                className="px-8 py-3 bg-white text-gray-900 rounded-xl font-semibold hover:shadow-lg transition-all inline-flex items-center gap-2"
-              >
-                <RefreshCw className="h-5 w-5" />
-                Nouveau combat
-              </button>
-            </div>
-          </motion.div>
-        )}
+        </div>
       </div>
-
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.1; }
-          50% { opacity: 0.3; }
-        }
-        .animate-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
     </div>
   )
 }
