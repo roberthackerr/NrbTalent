@@ -72,7 +72,8 @@ function Character3D({
 
       // Animation d'inactivité
       if (!isAttacking && !isHit && attackAnimation === 0 && hitAnimation === 0) {
-        idleRotation += 0.02
+        setIdleRotation(idleRotation => idleRotation += 0.02 )
+       
         groupRef.current.position.y = position[1] + Math.sin(idleRotation) * 0.05
       }
     }
